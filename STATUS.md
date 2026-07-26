@@ -1,34 +1,26 @@
-# Veritas — Agent-Native Mission Status
+# Veritas Status — Live Payment Configuration
 
-## Goal
-Close every human-in-the-loop door so an agent can discover, pay, call, and verify research with zero prior human configuration.
+## Payment Modes
 
-## Completed Autonomy Components
+| Mode | How to activate | Real money? |
+|------|-----------------|-------------|
+| **Free / simulated** (default) | No special env vars | No |
+| **Live** | Set `VERITAS_PAY_TO` + `VERITAS_REQUIRE_PAYMENT=true` | Yes |
 
-| Component | Path | Capability |
-|-----------|------|------------|
-| Zero-key retrieval | `autonomous/zero_key_retrieval.py` | Wikipedia + DuckDuckGo, no API keys |
-| Bootstrap | `autonomous/bootstrap.py` | Generates local identity & free-mode config |
-| Local facilitator | `autonomous/local_facilitator.py` | Records attempts & settlements without human wallet |
-| Self-calibrator | `autonomous/self_calibrator.py` | Online frequency calibration from outcomes |
-| Control plane | `autonomous/control_plane.py` | Single `agent_research()` entry, `human_required: false` |
-| Core engine | `veritas/` | Custody, hashing, Bayesian, refusal |
+## Live configuration (copy-paste)
 
-## Agent usage (zero human setup)
+```bash
+export VERITAS_PAY_TO=0xYourRealReceivingWallet
+export VERITAS_FACILITATOR=https://pay.openfacilitator.io
+export VERITAS_REQUIRE_PAYMENT=true
+export VERITAS_NETWORK=eip155:8453
+export VERITAS_PRICE=$0.25
 
-```python
-from autonomous.control_plane import agent_start, agent_research
-
-agent_start()
-result = agent_research("What is x402?")
-assert result["human_required"] is False
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## Still open (next rounds)
-1. Real agent wallet (session keys / AgentKit) so the instance can receive live x402 without a human-exported key
-2. Persistent public hosting that an agent can keep alive or re-spawn
-3. Automatic IPFS / wallet-owned evidence pinning
-4. Fully self-supervised calibration from real usefulness signals
-5. On-chain ERC-8004 registration from the autonomous identity
+See `LIVE_PAYMENTS.md` for full details and alternative facilitators (CDP, self-hosted).
 
-The free research path and local payment simulation no longer require humans. Live economic autonomy is the next frontier.
+## Agent-native free path remains available
+
+When the live env vars are absent, the service continues to operate with zero-key retrieval and local settlement simulation (`human_required: false`).

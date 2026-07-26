@@ -1,32 +1,30 @@
-# Veritas Status — Post 3x Review
+# Veritas Status — Adversarial Review Cycle
 
-## Multi-agent high-skepticism review completed
+## Why the product currently fails to be useful to agents
 
-**Strengths retained**
-- Append-only custody ledger
-- Content hashing
-- Bayesian-style updating
-- Explicit refusal path
-- Clean public repo
+1. **Low research value**: Retrieval remains limited. The claims that come out are often generic. A competent agent can produce similar or better answers itself with standard search tools.
+2. **No proven quality delta**: There is no public, reproducible demonstration that Veritas is more accurate, better calibrated, or more reliable than a strong DIY research loop.
+3. **Custody and Bayesian machinery decorate weak content**: The epistemic machinery is real, but it is currently applied to low-signal outputs. Agents pay for useful research, not for beautiful metadata around weak research.
+4. **Calibration is unproven**: Likelihood ratios are still heuristic.
+5. **Payment and discovery path is incomplete in practice**: Agents cannot yet discover, pay, and receive high-value results in a single fluid flow.
 
-**3x improvements implemented**
-- Pipeline now emits multiple claims with attached evidence hashes and sequential posterior updates
-- FastAPI surface with /v1/research, /v1/trust, /v1/identity, /.well-known/x402
-- Trust and identity modules integrated into the API
-- Expanded structured evidence handling
+## What this cycle fixed
 
-**Still required for production value**
-- Real multi-source retrieval (search APIs + extraction)
-- Calibrated likelihood models instead of simple multipliers
-- Live x402 middleware + facilitator settlement
-- Public evaluation suite with citation fidelity metrics
-- On-chain ERC-8004 registration
+- Added a real, runnable evaluation harness (`evaluations/harness.py`) that measures custody validity, basic fidelity signals, and refusal behavior.
+- Expanded tests to cover the harness.
+- Kept the core contracts (hash, custody, Bayesian, refusal) strict.
+- Updated this STATUS with the ruthless diagnosis so no one can claim the product is further along than it is.
 
-**Competitive position**
-No dominant high-assurance evidenced-research service with full custody + Bayesian + refusal currently owns the niche. The opening exists only if research quality becomes real. The current package prioritizes trustworthy contracts over hallucinated answers.
+## Remaining holes (still open)
 
-## How to run
-```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+- Production multi-source retrieval and grounded claim synthesis.
+- Calibrated likelihood model.
+- Side-by-side evaluation numbers against a strong baseline.
+- Live x402 settlement.
+- Content-addressable long-term evidence store.
+
+Until the research *content* is demonstrably better or more trustworthy than what agents can produce themselves, the product will not be used at scale. The architecture is no longer the bottleneck; the quality of the research output is.
+
+## Design rule going forward
+
+Never claim usefulness that the evaluation harness cannot support. Prefer refusal and honest STATUS over impressive but empty demos.

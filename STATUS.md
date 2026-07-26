@@ -1,19 +1,32 @@
-# Veritas Status
+# Veritas Status — Post 3x Review
 
-This repository contains a clean, high-skepticism re-implementation of the Veritas Research core under the Bayesian Knowledge Ledger design.
+## Multi-agent high-skepticism review completed
 
-## What is present
-- Content hashing + verification
-- Append-only hash-chain custody ledger
-- Bayesian belief updating
-- Evidence-first pipeline (refuses when evidence is weak)
-- Trust scoring
-- ERC-8004-compatible identity document
-- Basic tests
+**Strengths retained**
+- Append-only custody ledger
+- Content hashing
+- Bayesian-style updating
+- Explicit refusal path
+- Clean public repo
 
-## What is deliberately minimal
-- Retrieval is a conservative placeholder (prefers refusal over hallucination)
-- No live x402 facilitator settlement yet
-- No on-chain ERC-8004 registration transaction yet
+**3x improvements implemented**
+- Pipeline now emits multiple claims with attached evidence hashes and sequential posterior updates
+- FastAPI surface with /v1/research, /v1/trust, /v1/identity, /.well-known/x402
+- Trust and identity modules integrated into the API
+- Expanded structured evidence handling
 
-The structural contracts (custody, hashing, Bayesian updating, refusal) are solid and independently verifiable.
+**Still required for production value**
+- Real multi-source retrieval (search APIs + extraction)
+- Calibrated likelihood models instead of simple multipliers
+- Live x402 middleware + facilitator settlement
+- Public evaluation suite with citation fidelity metrics
+- On-chain ERC-8004 registration
+
+**Competitive position**
+No dominant high-assurance evidenced-research service with full custody + Bayesian + refusal currently owns the niche. The opening exists only if research quality becomes real. The current package prioritizes trustworthy contracts over hallucinated answers.
+
+## How to run
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```

@@ -265,6 +265,12 @@ and it is cheap, so it goes first.
   *Acceptance:* zero unmatched settlements across a 50-request testnet run.
 - **0.4 Replay protection.** Track spent payment nonces; reject resubmission.
   *Acceptance:* the same `X-PAYMENT` header submitted twice does the work once.
+- **0.5 Signature-scheme compatibility probe.** The Phase 3 custody endgame
+  (smart account + session keys) requires the facilitator to verify ERC-1271
+  contract-wallet signatures for the `exact` scheme, and the deployed USDC on
+  each target network to accept them in `transferWithAuthorization` (v2.2+).
+  Neither is proven. *Acceptance:* a recorded testnet result per facilitator
+  and network; the 3.2 session-key decision must cite it.
 
 *Risk:* a public facilitator may not support the chosen network or scheme.
 Self-hosting adds ~1 week and an RPC dependency.
@@ -328,20 +334,47 @@ This is the larger half of agent-to-agent commerce.
   base64 into `X-PAYMENT`. Validate the received `accepts` entry — asset,
   network, amount — before signing. *Acceptance:* a buyer completes
   402 → pay → 200 against our own service on testnet with no human step.
-- **3.2 Key custody.**
+- **3.2 Key custody — committed design (encoded 2026-07-27).**
 
-  | Option | Blast radius | Effort |
-  |--------|--------------|--------|
-  | Hot key in env, capped balance | Full balance | 0.5 wk |
-  | Managed signer (Turnkey / Privy / CDP) | Policy-bounded | 2 wk |
-  | Smart account + session key (ERC-4337) | Per-key scope | 4 wk |
+  1. **The key never enters the agent process.** Key bytes live only in the
+     signer (managed signer service, or KMS/HSM behind a policy shim). The
+     agent holds a short-lived credential to *request* signatures: it sends
+     the EIP-712 payload, it receives a signature. `veritas.payer.Signer` is
+     the abstract seam; there is no code path that loads key material.
+  2. **Two independent policy layers.** The agent-side `SpendPolicy` (3.3) and
+     the signer's own policy both gate every authorization. The agent's
+     judgment is assumed compromisable (prompt injection is the primary
+     threat), so signer-side caps are the backstop, not a duplicate.
+     An exhausted policy fails the signature; there is no fallback key.
+  3. **Payment parameters derive only from the validated 402 challenge.** The
+     signing path accepts only a `ValidatedAccepts` produced by
+     `validate_accepts`; retrieved content has no route into amount, payTo,
+     asset, or network. (Python cannot make this absolute against deliberate
+     internal bypass; it is enforced structurally and checked by the payment
+     model.)
+  4. **Treasury tiering, not ephemeral keys.** A fresh key per payment fails
+     for EOAs: each new address holds nothing, funding it costs an on-chain
+     transfer signed by a funded key, and that funding key becomes the real
+     hot key. Instead: cold treasury (hardware/multisig) tops up a
+     capped-float spending account; compromise loses at most the float. The
+     seller side needs no key at all — `VERITAS_PAY_TO` should simply be a
+     cold address; settlement executes the buyer's authorization.
+  5. **Ephemerality at the layers where it works.** Per payment: the EIP-3009
+     nonce is random and single-use, the amount exact, the validity window
+     short (~60 s). Per session, once 0.5 proves ERC-1271 support end to end:
+     ERC-4337 smart account with a cold root owner granting short-lived,
+     scope-capped, revocable session keys.
 
-  Recommend managed signer first, session keys once volume justifies it. Keep
-  the `Signer` interface abstract. *Acceptance:* an exhausted policy fails
-  signing rather than falling back to an unscoped key. *Risk:* an agent holding
-  a funded key with no approval loop is one prompt-injection away from draining
-  it. Treat retrieved web content as untrusted input to the buying agent; never
-  let retrieved text influence payment parameters.
+  | Option | Blast radius | Effort | Status |
+  |--------|--------------|--------|--------|
+  | Hot key in env, capped balance | Full float | 0.5 wk | First testnet run only; rejected as end-state |
+  | Managed signer (Turnkey / Privy / CDP) | Policy-bounded | 2 wk | **Committed first step** |
+  | Smart account + session key (ERC-4337) | Per-key scope | 4 wk | Gated on the 0.5 probe |
+
+  *Acceptance:* an exhausted policy fails signing rather than falling back to
+  an unscoped key. *Risk:* unchanged — an agent holding a funded signing
+  credential with no policy backstop is one prompt-injection away from
+  draining the float; that is why layer 2 is signer-side.
 - **3.3 Budget enforcement.** Per-request, per-hour, per-day, per-counterparty
   caps; network and asset allowlists. Enforce before signing; persist counters.
   *Acceptance:* a $1/day cap refuses the exceeding request, and counters survive

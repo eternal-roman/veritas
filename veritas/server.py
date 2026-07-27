@@ -26,6 +26,7 @@ from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
+from veritas.replay import SpentNonceStore, extract_nonce
 from veritas.trust import OutcomeLog, score_service
 from veritas.x402 import PriceError, build_402_challenge, build_payment_requirements
 
@@ -34,6 +35,7 @@ app = FastAPI(title="Veritas Research", version=__version__)
 RESOURCE_PATH = "/v1/research"
 store = CustodyStore()
 outcomes = OutcomeLog()
+nonces = SpentNonceStore()
 
 
 class ResearchRequest(BaseModel):
@@ -141,6 +143,27 @@ def research(req: ResearchRequest, request: Request):
             return JSONResponse(status_code=402, content=build_402_challenge(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH, error=reason,
             ))
+
+        # Replay protection (roadmap 0.4). The nonce is claimed after the
+        # facilitator accepts the payment and BEFORE any retrieval pass, so a
+        # resubmitted header cannot make us do the work a second time. The
+        # claim is never released: the authorization stays live on chain, so
+        # re-admitting it would restore the double-work this prevents.
+        claim = nonces.claim(extract_nonce(payment_payload))
+        if not claim.claimed:
+            reason = claim.reason or "payment_nonce_rejected"
+            if reason.startswith("replay_store_unavailable"):
+                # Fail closed: an unusable guard must not become no guard.
+                return JSONResponse(status_code=503, content={
+                    "error": "replay_protection_unavailable", "detail": reason,
+                })
+            return JSONResponse(status_code=409, content={
+                "error": reason,
+                "detail": (
+                    "This payment authorization has already been used. Request a "
+                    "fresh 402 challenge and sign a new authorization."
+                ),
+            })
 
     result = run_research(req.query, max_results=req.max_results)
     record = store.save(result)

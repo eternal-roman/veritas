@@ -40,7 +40,7 @@ jobs:
 
       - name: Compile all Python modules
         run: |
-          python -m compileall -q veritas tests
+          python -m compileall -q veritas tests scripts
 
       - name: Import all modules
         run: |
@@ -48,7 +48,7 @@ jobs:
 
       - name: Lint (ruff)
         run: |
-          ruff check veritas tests
+          ruff check veritas tests scripts
 
       - name: Run unit / integration tests
         run: |
@@ -76,6 +76,10 @@ jobs:
               print(f"QUALITY GATE FAILED: {f}")
           sys.exit(1 if failures else 0)
           PY
+
+      - name: Payment model — bounded invariant check must hold
+        run: |
+          python -m veritas.evaluations.payment_model
 
       - name: Basic secret pattern scan
         run: |

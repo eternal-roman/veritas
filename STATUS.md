@@ -21,6 +21,9 @@ file described a system that did not import.
 | Behaviour-derived trust score | Working, reports `UNPROVEN` until 10 samples |
 | Evaluation harness + CI quality gates | Working |
 | Installable package (`pip install .`, single `veritas` namespace, `veritas-server` script) | Working; CI builds the wheel and installs it in a clean venv. Not yet on PyPI |
+| Keyed Serper retrieval tier (env-configured, key never serialised, degrades to zero-key tier) | Working against fixture-shaped responses; not yet exercised against the live API with a real key |
+| Buyer-side payment construction + spend policy (`veritas.payer`, key-free signer seam) | Working; L1 unit tests + L2 bounded model check (I1–I7, 8,720 traces, CI-gated). EIP-712 signature round-trip verified against `eth_account`. No on-chain settlement yet |
+| Replay protection (`veritas.replay`) | Working; a resubmitted `X-PAYMENT` does the work once (tested). Single-instance scope — local disk |
 | Venue constitution (`/v1/constitution`, `veritas/constitution.py`) | Working, tested: every L1 article's enforcement pointer resolves; L0 articles carry none; `CONSTITUTION.md` sync-tested |
 
 ## What is built but unproven
@@ -51,6 +54,7 @@ file described a system that did not import.
 | Public deployment | High | No hosted instance |
 | Quality benchmark vs strong baselines | High | Harness proves invariants, not quality |
 | Rate limiting / abuse controls | Medium | Not implemented |
+| Shared replay/spend state across instances | Medium | Both are local disk; a second instance does not see them (roadmap 6.2) |
 | Bazaar / registry auto-registration | Medium | Manual |
 | Durable evidence re-fetch (IPFS pinning) | Medium | Receipts store hashes, not content |
 | Solana settlement | Low | Deliberately excluded from advertised networks |

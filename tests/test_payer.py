@@ -16,6 +16,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 import veritas.payer
 from veritas.payer import (
     PaymentClient,
@@ -24,7 +25,6 @@ from veritas.payer import (
     build_authorization,
     validate_accepts,
 )
-
 from veritas.x402 import USDC_ASSETS
 
 NETWORK = "eip155:8453"
@@ -484,3 +484,158 @@ def test_payer_source_contains_no_key_material():
     # The stdlib `secrets` module (nonce entropy) is the only permitted match.
     for match in re.finditer(r"secret\w*", lowered):
         assert match.group(0) == "secrets"
+
+
+# ---------------------------------------------------------------------------
+# Regressions from the adversarial review panel (policy edges, nonce/time,
+# parameter provenance). Each pins a finding that was demonstrated live.
+# ---------------------------------------------------------------------------
+
+
+def test_per_counterparty_cap_binds_across_address_casings(tmp_path):
+    """One recipient has 2**40 hex casings; all must share one budget."""
+    policy = _policy(tmp_path, per_request=3, per_day=100, per_counterparty=3)
+    lower = "0x" + "ab" * 20
+    upper = "0x" + "AB" * 20
+    mixed = "0x" + "aB" * 20
+    policy.record(3, lower)
+    for spelling in (upper, mixed, lower):
+        decision = policy.authorize(1, NETWORK, spelling)
+        assert not decision.allowed
+        assert decision.check == "per_counterparty_cap"
+
+
+def test_state_file_counterparty_keys_fold_on_load(tmp_path):
+    (tmp_path / "spend_policy.json").write_text(json.dumps({
+        "date": "2026-07-27",
+        "spent": 4,
+        "per_counterparty": {"0x" + "ab" * 20: 2, "0x" + "AB" * 20: 2},
+    }))
+    policy = _policy(tmp_path, per_request=5, per_day=100, per_counterparty=5)
+    decision = policy.authorize(2, NETWORK, "0x" + "aB" * 20, now_utc_date="2026-07-27")
+    assert not decision.allowed and decision.check == "per_counterparty_cap"
+
+
+def test_two_policy_instances_sharing_state_accumulate(tmp_path):
+    """Last-writer-wins under-counting: instance B must see instance A's spend."""
+    a = _policy(tmp_path, per_request=2, per_day=4)
+    b = _policy(tmp_path, per_request=2, per_day=4)  # constructed before A spends
+    a.record(2, PAY_TO)
+    a.record(2, PAY_TO)
+    decision = b.authorize(2, NETWORK, PAY_TO)
+    assert not decision.allowed and decision.check == "per_day_cap"
+
+
+def test_backwards_date_does_not_reset_daily_cap(tmp_path):
+    policy = _policy(tmp_path, per_request=2, per_day=2)
+    assert policy.authorize(2, NETWORK, PAY_TO, now_utc_date="2026-07-27").allowed
+    policy.record(2, PAY_TO, now_utc_date="2026-07-27")
+    # Alternating back to an earlier day must not re-grant the budget.
+    decision = policy.authorize(2, NETWORK, PAY_TO, now_utc_date="2026-07-26")
+    assert not decision.allowed and decision.check == "per_day_cap"
+
+
+def test_malformed_date_is_denied(tmp_path):
+    decision = _policy(tmp_path).authorize(1, NETWORK, PAY_TO, now_utc_date="yesterday")
+    assert not decision.allowed and decision.check == "invalid_date"
+
+
+def test_nonpositive_amounts_denied_and_record_raises(tmp_path):
+    policy = _policy(tmp_path)
+    for bad in (0, -1, True):
+        assert policy.authorize(bad, NETWORK, PAY_TO).check == "invalid_amount"
+    with pytest.raises(ValueError):
+        policy.record(-4, PAY_TO)
+    with pytest.raises(ValueError):
+        policy.record(0, PAY_TO)
+
+
+def test_negative_or_bool_state_counters_treated_as_corrupt(tmp_path):
+    (tmp_path / "spend_policy.json").write_text(json.dumps({
+        "date": "2026-07-27", "spent": -1000000, "per_counterparty": {},
+    }))
+    policy = _policy(tmp_path, per_request=2, per_day=4)
+    # Negative spent would silently EXPAND the budget; it must load as fresh.
+    assert not policy.authorize(2, NETWORK, PAY_TO).allowed or policy._spent == 0
+    (tmp_path / "spend_policy.json").write_text(json.dumps({
+        "date": "2026-07-27", "spent": True, "per_counterparty": {},
+    }))
+    assert _policy(tmp_path)._spent == 0
+
+
+def test_build_authorization_rejects_degenerate_windows():
+    with pytest.raises(ValueError):
+        build_authorization(_valid(), PAYER, now=0)
+    with pytest.raises(ValueError):
+        build_authorization(_valid(), PAYER, now=-5)
+    with pytest.raises(ValueError):
+        build_authorization(_valid(), PAYER, now=NOW, validity_seconds=0)
+
+
+def test_pay_rejects_out_of_range_validity_window(tmp_path):
+    signer = _StubSigner()
+    client = PaymentClient(signer, _policy(tmp_path, per_request=250000, per_day=500000))
+    for now, validity in ((NOW, 0), (NOW, -5), (NOW, 999_999_999), (0, 60)):
+        result = client.pay(_valid(), now=now, validity_seconds=validity)
+        assert not result.paid and result.check == "invalid_validity_window"
+    assert signer.calls == []
+
+
+def test_replace_derived_instance_is_refused(tmp_path):
+    """dataclasses.replace() mints an equal-typed instance that never passed
+    validate_accepts; the client must refuse it."""
+    tampered = dataclasses.replace(_valid(), pay_to="0x" + "ee" * 20)
+    signer = _StubSigner()
+    client = PaymentClient(signer, _policy(tmp_path, per_request=250000, per_day=500000))
+    result = client.pay(tampered, now=NOW)
+    assert not result.paid and result.check == "unvalidated_input"
+    assert signer.calls == []
+
+
+def test_attempt_journal_written_ahead_of_signer(tmp_path):
+    signer = _StubSigner()
+    client = PaymentClient(signer, _policy(tmp_path, per_request=250000, per_day=500000))
+    result = client.pay(_valid(), now=NOW)
+    assert result.paid
+    lines = [json.loads(x) for x in
+             (tmp_path / "authorization_attempts.jsonl").read_text().splitlines()]
+    assert [x["stage"] for x in lines] == ["pre_sign", "signed"]
+    assert lines[0]["nonce"] == result.nonce
+    assert lines[0]["amount"] == 250000
+    assert lines[0]["pay_to"] == PAY_TO
+
+
+def test_signer_error_leaves_pre_sign_journal_entry(tmp_path):
+    class _RaisingSigner:
+        address = PAYER
+
+        def sign_typed_data(self, payload):
+            raise ConnectionError("transport lost after send")
+
+    client = PaymentClient(_RaisingSigner(), _policy(tmp_path, per_request=250000,
+                                                     per_day=500000))
+    result = client.pay(_valid(), now=NOW)
+    assert not result.paid and result.check == "signer_error"
+    lines = [json.loads(x) for x in
+             (tmp_path / "authorization_attempts.jsonl").read_text().splitlines()]
+    assert lines[0]["stage"] == "pre_sign"
+    assert lines[1]["stage"].startswith("signer_error:")
+
+
+def test_unwritable_journal_refuses_to_sign(tmp_path):
+    blocked = tmp_path / "blocked"
+    blocked.write_text("a regular file where the journal dir should be")
+    signer = _StubSigner()
+    client = PaymentClient(signer, _policy(tmp_path, per_request=250000, per_day=500000),
+                           base_dir=blocked)
+    result = client.pay(_valid(), now=NOW)
+    assert not result.paid and result.check == "journal_error"
+    assert signer.calls == []
+
+
+@pytest.mark.parametrize("raw", ["2_500_000", " 250000", "250000\n", "+250000",
+                                 str(2**256)])
+def test_amount_wire_format_is_strict(raw):
+    validated, problems = validate_accepts(_entry(maxAmountRequired=raw))
+    assert validated is None
+    assert problems

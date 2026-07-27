@@ -256,7 +256,11 @@ and it is cheap, so it goes first.
   with `VERITAS_NETWORK=eip155:84532`, `VERITAS_REQUIRE_PAYMENT=true`. Drive a
   real 402 → sign → verify → settle cycle. Record the transaction hash.
   *Acceptance:* a Base Sepolia transaction in which USDC moves from a buyer
-  wallet to `VERITAS_PAY_TO`, initiated by an unattended request.
+  wallet to `VERITAS_PAY_TO`, initiated by an unattended request. While there:
+  record each network's actual on-chain USDC EIP-712 domain (`name()` /
+  `version()` — e.g. "USD Coin" vs "USDC" varies by deployment) and pin them
+  in `USDC_ASSETS`; today the buyer trusts the challenge's `extra` block for
+  the domain, and a wrong value means signatures that cannot settle.
 - **0.2 Facilitator contract tests.** Record real `/verify` and `/settle`
   request/response bodies as fixtures. *Acceptance:* fixtures replay green;
   renaming a field fails a test.
@@ -355,11 +359,16 @@ This is the larger half of agent-to-agent commerce.
      threat), so signer-side caps are the backstop, not a duplicate.
      An exhausted policy fails the signature; there is no fallback key.
   3. **Payment parameters derive only from the validated 402 challenge.** The
-     signing path accepts only a `ValidatedAccepts` produced by
-     `validate_accepts`; retrieved content has no route into amount, payTo,
-     asset, or network. (Python cannot make this absolute against deliberate
-     internal bypass; it is enforced structurally and checked by the payment
-     model.)
+     signing path accepts only a `ValidatedAccepts` produced and registered by
+     `validate_accepts`; pipeline evidence text has no route into amount,
+     payTo, asset, or network. Scope, precisely: the challenge itself is
+     content from an untrusted counterparty and is the sole source of `payTo`
+     and `amount` — this guarantee pins parameters to the challenge the buyer
+     validated, it does not authenticate the seller (that is 5.2); only spend
+     caps bound loss to a hostile seller. (Python cannot make the structural
+     guard absolute against deliberate in-process bypass; it is enforced
+     structurally — including against `dataclasses.replace` copies — and
+     checked by the payment model.)
   4. **Treasury tiering, not ephemeral keys.** A fresh key per payment fails
      for EOAs: each new address holds nothing, funding it costs an on-chain
      transfer signed by a funded key, and that funding key becomes the real

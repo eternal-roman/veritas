@@ -5,7 +5,7 @@ stub signer defined below) through the FULL enumeration of a small bounded
 request space — every trace of up to ``MAX_TRACE_LEN`` requests over the
 request alphabet, each in its own temp dir, plus a restart variant per
 multi-step trace where the policy is re-instantiated from disk mid-trace —
-and asserts the semantic invariants I1–I6 over every executed trace.
+and asserts the semantic invariants I1–I7 over every executed trace.
 
 Evidence level, stated per the repository's locked gate: this is L2 — the
 invariants hold for the stated bounds, and for nothing beyond them. It is
@@ -52,6 +52,9 @@ VALID_NETWORK = "eip155:8453"
 UNKNOWN_NETWORK = "eip155:999999"
 COUNTERPARTY_A = "0x" + "aa" * 20
 COUNTERPARTY_B = "0x" + "bb" * 20
+# Same on-chain address as A in a different hex casing: the per-counterparty
+# cap must treat every spelling of one address as one budget.
+COUNTERPARTY_A_MIXED = "0x" + "aA" * 20
 INVALID_KINDS = ("unknown_network", "wrong_asset", "malformed_pay_to", "zero_amount")
 # Structurally valid requests whose signer call raises: the signer boundary
 # is untrusted, and without these symbols the ordering of policy.record()
@@ -72,7 +75,8 @@ BOUNDS = {
     "max_per_request": PER_REQUEST_CAP,
     "max_per_day": PER_DAY_CAP,
     "max_per_day_per_counterparty": PER_COUNTERPARTY_CAP,
-    "counterparties": [COUNTERPARTY_A, COUNTERPARTY_B],
+    "counterparties": [COUNTERPARTY_A, COUNTERPARTY_B, COUNTERPARTY_A_MIXED],
+    "casing_note": "COUNTERPARTY_A_MIXED is the same address as A in a different hex casing",
     "networks": [VALID_NETWORK, UNKNOWN_NETWORK],
     "invalid_variants": list(INVALID_KINDS),
     "signer_fault_variants": [
@@ -122,7 +126,7 @@ def _symbols() -> list[tuple[str, int, str]]:
     syms = [
         ("valid", amount, counterparty)
         for amount in AMOUNTS
-        for counterparty in (COUNTERPARTY_A, COUNTERPARTY_B)
+        for counterparty in (COUNTERPARTY_A, COUNTERPARTY_B, COUNTERPARTY_A_MIXED)
     ]
     syms.extend((kind, 1, COUNTERPARTY_A) for kind in INVALID_KINDS)
     syms.extend(SIGNER_FAULT_SYMBOLS)
@@ -155,7 +159,7 @@ def _model_allows(amount: int, counterparty: str, spent: int, per_cp: dict[str, 
         return False
     if spent + amount > PER_DAY_CAP:
         return False
-    if per_cp.get(counterparty, 0) + amount > PER_COUNTERPARTY_CAP:
+    if per_cp.get(counterparty.lower(), 0) + amount > PER_COUNTERPARTY_CAP:
         return False
     return True
 
@@ -264,14 +268,15 @@ def _run_trace(
                     _violate(violations, "I3", f"nonce reused across run: {result.nonce}")
                 seen_nonces.add(result.nonce)
                 spent += amount
-                per_cp[counterparty] = per_cp.get(counterparty, 0) + amount
+                cp_key = counterparty.lower()
+                per_cp[cp_key] = per_cp.get(cp_key, 0) + amount
                 if spent > PER_DAY_CAP:
                     _violate(violations, "I4", f"daily spend {spent} > {PER_DAY_CAP} in {trace}")
-                if per_cp[counterparty] > PER_COUNTERPARTY_CAP:
+                if per_cp[cp_key] > PER_COUNTERPARTY_CAP:
                     _violate(
                         violations,
                         "I4",
-                        f"counterparty spend {per_cp[counterparty]} > "
+                        f"counterparty spend {per_cp[cp_key]} > "
                         f"{PER_COUNTERPARTY_CAP} in {trace}",
                     )
             else:

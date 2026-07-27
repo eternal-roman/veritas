@@ -16,11 +16,26 @@ Two policy layers gate every payment:
 2. Spend caps — :class:`SpendPolicy` enforces per-request, per-day, and
    per-counterparty limits that persist across process restarts.
 
-Limits, stated plainly: the ``ValidatedAccepts`` construction token is a
-structural guard, not a cryptographic one — deliberate internal code can
-bypass it (the bounded model checker in
-``veritas.evaluations.payment_model`` exercises the honest paths). Failures
-are explicit results, never control-flow exceptions.
+Limits, stated plainly:
+
+- The ``ValidatedAccepts`` construction token is a structural guard, not a
+  cryptographic one. ``PaymentClient`` additionally requires instances to be
+  registered by ``validate_accepts`` itself (a ``WeakSet`` membership check),
+  which also rejects ``dataclasses.replace``-derived copies — but deliberate
+  in-process code can still defeat Python-level guards. The bounded model
+  checker in ``veritas.evaluations.payment_model`` exercises the honest paths.
+- Pinning parameters to the validated challenge does NOT authenticate the
+  seller. The 402 challenge is itself content from an untrusted counterparty
+  and is the sole source of ``payTo`` and ``amount``; a hostile seller can
+  name any recipient and any price, and only :class:`SpendPolicy` bounds the
+  loss. Counterparty vetting is roadmap 5.2, not this module.
+- A signer exception after the payload has left the process is an
+  *indeterminate* outcome: a signature may exist even though none was
+  returned. The pre-sign attempt journal exists so reconciliation (roadmap
+  0.3) can find such orphan authorizations; retrying mints a new nonce and a
+  second live authorization, so retries must be bounded and reconciled.
+
+Failures are explicit results, never control-flow exceptions.
 """
 
 from __future__ import annotations
@@ -31,19 +46,50 @@ import json
 import os
 import re
 import secrets
+import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
+
+try:  # advisory same-host file locking; absent on some platforms
+    import fcntl
+except ImportError:  # pragma: no cover - non-POSIX fallback
+    fcntl = None  # type: ignore[assignment]
 
 from veritas.x402 import USDC_ASSETS
 
 _CONSTRUCTION_TOKEN = object()
 
+# Instances produced by validate_accepts, keyed by identity (id -> instance
+# via weak values, with an `is` check on lookup so a recycled id cannot false-
+# positive). PaymentClient refuses anything not registered, which closes the
+# dataclasses.replace() construction route. Identity, not equality: a WeakSet
+# would skip add() for an equal instance and then evict both on GC of the
+# first — the model checker caught exactly that.
+_VALIDATED_REGISTRY: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
+
+
+def _register_validated(instance: ValidatedAccepts) -> None:
+    _VALIDATED_REGISTRY[id(instance)] = instance
+
+
+def _is_registered(instance: ValidatedAccepts) -> bool:
+    return _VALIDATED_REGISTRY.get(id(instance)) is instance
+
 _CAIP2_RE = re.compile(r"eip155:\d+")
 _ADDRESS_RE = re.compile(r"0x[0-9a-fA-F]{40}")
+_AMOUNT_RE = re.compile(r"[0-9]+")
+_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+_UINT256_MAX = 2**256 - 1
 
 _STATE_FILENAME = "spend_policy.json"
+_ATTEMPTS_FILENAME = "authorization_attempts.jsonl"
 _DEFAULT_RUNTIME_DIR = ".veritas_runtime"
+
+# Ceiling on the authorization validity window PaymentClient will sign. The
+# window bounds replay exposure only if something bounds the window itself.
+MAX_VALIDITY_SECONDS = 3600
 
 
 @dataclass(frozen=True)
@@ -115,13 +161,18 @@ def validate_accepts(entry: object) -> tuple[ValidatedAccepts | None, list[str]]
     amount_raw = entry.get("maxAmountRequired")
     amount: int | None = None
     if isinstance(amount_raw, str):
-        try:
-            amount = int(amount_raw)
-        except ValueError:
-            problems.append(f"maxAmountRequired does not parse as an integer: {amount_raw!r}")
+        # Strict wire format: ASCII digits only. int() alone also accepts
+        # "+1", "1_000", whitespace and non-ASCII digits, which would make the
+        # number the buyer signs diverge from what a strict facilitator parses.
+        if not _AMOUNT_RE.fullmatch(amount_raw):
+            problems.append(f"maxAmountRequired is not a plain decimal integer: {amount_raw!r}")
         else:
+            amount = int(amount_raw)
             if amount <= 0:
                 problems.append(f"maxAmountRequired must be > 0, got {amount}")
+                amount = None
+            elif amount > _UINT256_MAX:
+                problems.append(f"maxAmountRequired exceeds uint256: {amount_raw!r}")
                 amount = None
     else:
         problems.append(f"maxAmountRequired must be a string integer, got {amount_raw!r}")
@@ -139,20 +190,19 @@ def validate_accepts(entry: object) -> tuple[ValidatedAccepts | None, list[str]]
     if problems:
         return None, problems
     assert chain_id is not None and amount is not None  # narrowed by the checks above
-    return (
-        ValidatedAccepts(
-            scheme="exact",
-            network=network,
-            chain_id=chain_id,
-            asset=asset,
-            pay_to=pay_to,
-            amount_atomic=amount,
-            domain_name=domain_name,
-            domain_version=domain_version,
-            _token=_CONSTRUCTION_TOKEN,
-        ),
-        [],
+    validated = ValidatedAccepts(
+        scheme="exact",
+        network=network,
+        chain_id=chain_id,
+        asset=asset,
+        pay_to=pay_to,
+        amount_atomic=amount,
+        domain_name=domain_name,
+        domain_version=domain_version,
+        _token=_CONSTRUCTION_TOKEN,
     )
+    _register_validated(validated)
+    return validated, []
 
 
 class Signer(Protocol):
@@ -180,9 +230,25 @@ def build_authorization(
 
     Every parameter that matters (chain, asset contract, recipient, value)
     comes from the validated challenge, never from free-form caller input.
-    ``validAfter`` is ``now - 1`` so the authorization is immediately valid;
-    ``validBefore`` bounds replay exposure to ``validity_seconds``.
+    ``validAfter`` is ``now - 1`` so the authorization is immediately valid
+    under EIP-3009's strict ``validAfter < ts < validBefore`` comparison;
+    ``validBefore`` bounds replay exposure to ``validity_seconds`` — a bound
+    that only holds if the caller bounds ``validity_seconds`` itself, as
+    ``PaymentClient`` does (``MAX_VALIDITY_SECONDS``).
+
+    A caller-supplied ``nonce`` makes the CALLER responsible for uniqueness:
+    this function performs no duplicate detection, and two calls with the
+    same nonce return identical, independently signable messages. Omit it
+    (fresh 32-byte CSPRNG nonce) unless you are reconstructing a payload for
+    audit. Raises ``ValueError`` on a non-positive ``now`` or
+    ``validity_seconds`` — both would produce a window that can never be
+    valid, or one that silently spans millennia on a milliseconds-for-seconds
+    mistake.
     """
+    if now <= 0:
+        raise ValueError(f"now must be a positive unix timestamp in seconds, got {now}")
+    if validity_seconds < 1:
+        raise ValueError(f"validity_seconds must be >= 1, got {validity_seconds}")
     if nonce is None:
         nonce = "0x" + secrets.token_bytes(32).hex()
     return {
@@ -234,11 +300,21 @@ class SpendPolicy:
 
     State lives in ``<base_dir>/spend_policy.json`` and survives process
     restarts (a crashed and restarted buyer cannot double its daily budget).
-    Fail-closed choices: a corrupt or unreadable state file is treated as a
-    fresh day (caps still enforced from zero); a failed state WRITE keeps the
-    in-memory counters authoritative for this process so we never under-count.
-    The residual gap is honest: if the state file is lost AND the process
-    restarts, that day's already-spent amount is forgotten.
+    Counterparty ledger keys are case-folded: hex-address casing is
+    meaningless on-chain, so every spelling of one address is one budget.
+    Writes are atomic (temp file + rename) and, on POSIX, serialised with an
+    advisory file lock plus a read-merge so several policy instances on one
+    host sharing a state file accumulate rather than overwrite each other.
+
+    Residual gaps, stated plainly (with respect to money these are OPEN in
+    the under-count direction, not closed): a state file that is lost, or
+    corrupted by something other than our own writes, forgets that day's
+    already-spent amount and re-grants the full budget from zero; a failed
+    WRITE keeps in-memory counters authoritative for this process only —
+    other processes and later restarts will not see that spend. Anything
+    that can write the state file can reset the budget; local disk is
+    trusted. Cross-host enforcement needs shared state (roadmap 6.2), and
+    the signer-side policy layer (3.2) is the backstop for all of this.
     """
 
     def __init__(
@@ -268,6 +344,17 @@ class SpendPolicy:
     def _today() -> str:
         return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
 
+    @staticmethod
+    def _fold(pay_to: str) -> str:
+        """Ledger key for a counterparty. Hex-address casing is meaningless
+        on-chain; without folding, one recipient owns 2**40 fresh budgets."""
+        return pay_to.lower()
+
+    @staticmethod
+    def _counter_ok(value: object) -> bool:
+        # bool is an int subclass; True would silently load as 1.
+        return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
     def _load_state(self) -> tuple[str, int, dict[str, int]]:
         try:
             raw = json.loads(self._state_path.read_text())
@@ -276,40 +363,95 @@ class SpendPolicy:
             per_counterparty = raw["per_counterparty"]
             if (
                 not isinstance(date, str)
-                or not isinstance(spent, int)
+                or not _DATE_RE.fullmatch(date)
+                or not self._counter_ok(spent)
                 or not isinstance(per_counterparty, dict)
                 or not all(
-                    isinstance(k, str) and isinstance(v, int)
+                    isinstance(k, str) and self._counter_ok(v)
                     for k, v in per_counterparty.items()
                 )
             ):
-                raise ValueError("state file has wrong shape")
-            return date, spent, dict(per_counterparty)
+                raise ValueError("state file has wrong shape or negative counters")
+            folded: dict[str, int] = {}
+            for key, value in per_counterparty.items():
+                fk = self._fold(key)
+                folded[fk] = folded.get(fk, 0) + value
+            return date, spent, folded
         except (OSError, ValueError, KeyError, TypeError):
-            # Fail closed toward a fresh day: caps are still enforced from
-            # zero; we never crash the buyer over unreadable bookkeeping.
+            # Known under-count direction, documented in the class docstring:
+            # an unreadable or malformed file re-grants the day's budget from
+            # zero. Range checks above at least reject negative counters,
+            # which would silently EXPAND the budget.
             return self._today(), 0, {}
+
+    def _merge_disk(self) -> None:
+        """Fold the on-disk counters into memory, taking the maximum per
+        counter. With locked read-modify-write in record(), disk carries the
+        accumulated spend of every instance on this host; max() keeps our own
+        unpersisted spend when the disk is stale or unwritable."""
+        disk_date, disk_spent, disk_cp = self._load_state()
+        if disk_date > self._date:
+            self._roll_day(disk_date)
+        if disk_date == self._date:
+            self._spent = max(self._spent, disk_spent)
+            for key, value in disk_cp.items():
+                self._per_counterparty[key] = max(self._per_counterparty.get(key, 0), value)
 
     def _persist(self) -> None:
         try:
             self._base_dir.mkdir(parents=True, exist_ok=True)
-            self._state_path.write_text(
-                json.dumps(
-                    {
-                        "date": self._date,
-                        "spent": self._spent,
-                        "per_counterparty": self._per_counterparty,
-                    }
-                )
+            tmp = self._state_path.with_suffix(".json.tmp")
+            payload = json.dumps(
+                {
+                    "date": self._date,
+                    "spent": self._spent,
+                    "per_counterparty": self._per_counterparty,
+                }
             )
+            # Atomic rename prevents torn state; no fsync — losing the very
+            # last write to an OS crash is the already-documented under-count
+            # residual, and per-payment fsyncs are not worth their cost here.
+            tmp.write_text(payload)
+            os.replace(tmp, self._state_path)
         except OSError:
             # In-memory counters stay authoritative for this process; the
             # next authorize() must not under-count, so we swallow the write
             # failure rather than reset anything.
             pass
 
+    def _locked(self):
+        """Advisory exclusive lock on the state directory, when available."""
+
+        class _Lock:
+            def __init__(self, base_dir: Path) -> None:
+                self._base_dir = base_dir
+                self._fh = None
+
+            def __enter__(self):
+                if fcntl is not None:
+                    try:
+                        self._base_dir.mkdir(parents=True, exist_ok=True)
+                        self._fh = (self._base_dir / ".spend_policy.lock").open("w")
+                        fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
+                    except OSError:
+                        self._fh = None
+                return self
+
+            def __exit__(self, *exc):
+                if self._fh is not None:
+                    try:
+                        fcntl.flock(self._fh.fileno(), fcntl.LOCK_UN)
+                    finally:
+                        self._fh.close()
+                return False
+
+        return _Lock(self._base_dir)
+
     def _roll_day(self, now_utc_date: str) -> None:
-        if now_utc_date != self._date:
+        # Forward-only: a caller-supplied earlier date must not reset the
+        # day's counters (alternating dates would otherwise multiply the
+        # daily budget without limit).
+        if now_utc_date > self._date:
             self._date = now_utc_date
             self._spent = 0
             self._per_counterparty = {}
@@ -324,7 +466,20 @@ class SpendPolicy:
         now_utc_date: str | None = None,
     ) -> PolicyDecision:
         """Check caps without consuming budget; record() charges after signing."""
+        if now_utc_date is not None and not _DATE_RE.fullmatch(now_utc_date):
+            return PolicyDecision(
+                allowed=False,
+                check="invalid_date",
+                detail=f"now_utc_date is not YYYY-MM-DD: {now_utc_date!r}",
+            )
+        if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
+            return PolicyDecision(
+                allowed=False,
+                check="invalid_amount",
+                detail=f"amount must be a positive integer, got {amount!r}",
+            )
         self._roll_day(now_utc_date or self._today())
+        self._merge_disk()
 
         known = self.allowed_networks if self.allowed_networks is not None else set(USDC_ASSETS)
         if network not in known:
@@ -349,7 +504,7 @@ class SpendPolicy:
                 ),
             )
         if self.max_per_day_per_counterparty is not None:
-            already = self._per_counterparty.get(pay_to, 0)
+            already = self._per_counterparty.get(self._fold(pay_to), 0)
             if already + amount > self.max_per_day_per_counterparty:
                 return PolicyDecision(
                     allowed=False,
@@ -361,11 +516,23 @@ class SpendPolicy:
                 )
         return PolicyDecision(allowed=True, check="ok", detail="within all caps")
 
-    def record(self, amount: int, pay_to: str) -> None:
-        """Charge the budget. Called only AFTER a successful signature."""
-        self._spent += amount
-        self._per_counterparty[pay_to] = self._per_counterparty.get(pay_to, 0) + amount
-        self._persist()
+    def record(self, amount: int, pay_to: str, now_utc_date: str | None = None) -> None:
+        """Charge the budget. Called only AFTER a successful signature.
+
+        Locked read-modify-write: under the advisory lock the on-disk
+        counters (which accumulate every instance's spend on this host) are
+        merged in before the increment is added and persisted, so concurrent
+        instances add up instead of overwriting each other.
+        """
+        if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
+            raise ValueError(f"record() amount must be a positive integer, got {amount!r}")
+        with self._locked():
+            self._roll_day(now_utc_date or self._today())
+            self._merge_disk()
+            key = self._fold(pay_to)
+            self._spent += amount
+            self._per_counterparty[key] = self._per_counterparty.get(key, 0) + amount
+            self._persist()
 
 
 @dataclass(frozen=True)
@@ -387,18 +554,55 @@ def _denied(denial: str, check: str | None) -> PaymentResult:
 
 
 class PaymentClient:
-    """Fail-closed payment flow: validate → policy → build → sign → record.
+    """Payment flow: validate → policy → journal → sign → record.
 
-    The signer is the custody boundary — see the module docstring. Any signer
-    exception fails closed with the budget untouched. Nonces are tracked
-    in-process and a duplicate is refused outright: signing the same nonce
-    twice would hand out a replayable authorization.
+    The signer is the custody boundary — see the module docstring.
+
+    Honest scope of the guards here:
+
+    - ``_used_nonces`` is a per-instance, in-memory, defensive check. pay()
+      always generates a fresh CSPRNG nonce, so a duplicate indicates RNG
+      failure, not caller error; the set does not survive restarts, is not
+      shared between instances or processes, and grows for the life of the
+      instance. It is belt-and-braces, not replay protection.
+    - A signer exception leaves the BUDGET untouched, but the outcome is
+      indeterminate: the payload had already left the process, so a
+      signature may exist that we never received. Every attempt is
+      journalled to ``authorization_attempts.jsonl`` BEFORE the signer is
+      called (fail-closed: an unwritable journal refuses the payment), so
+      reconciliation against on-chain transfers (roadmap 0.3) can find
+      orphan authorizations. A retry mints a new nonce — a second live
+      authorization — so callers must bound retries and reconcile first.
     """
 
-    def __init__(self, signer: Signer, policy: SpendPolicy) -> None:
+    def __init__(
+        self,
+        signer: Signer,
+        policy: SpendPolicy,
+        base_dir: Path | str | None = None,
+    ) -> None:
         self._signer = signer
         self._policy = policy
         self._used_nonces: set[str] = set()
+        self._base_dir = Path(base_dir) if base_dir is not None else policy._base_dir
+
+    def _journal(self, entry: dict) -> bool:
+        """Append one line to the attempt journal. Returns False on failure.
+
+        Only the ``pre_sign`` line is fsynced: it is the one write whose loss
+        to an OS crash could leave a live authorization undiscoverable.
+        Outcome lines are best-effort refinements of it.
+        """
+        try:
+            self._base_dir.mkdir(parents=True, exist_ok=True)
+            with (self._base_dir / _ATTEMPTS_FILENAME).open("a") as fh:
+                fh.write(json.dumps(entry) + "\n")
+                fh.flush()
+                if entry.get("stage") == "pre_sign":
+                    os.fsync(fh.fileno())
+            return True
+        except OSError:
+            return False
 
     def pay(
         self,
@@ -412,6 +616,17 @@ class PaymentClient:
         callers omit it and the policy uses the real UTC date."""
         if not isinstance(validated, ValidatedAccepts):
             return _denied("unvalidated_input", None)
+        if not _is_registered(validated):
+            # Not produced by validate_accepts — e.g. a dataclasses.replace()
+            # copy with altered fields. Parameters must come from a validated
+            # challenge, so refuse.
+            return _denied("unvalidated_input", "unvalidated_input")
+        if now <= 0 or not 1 <= validity_seconds <= MAX_VALIDITY_SECONDS:
+            return _denied(
+                f"validity window rejected: now={now}, "
+                f"validity_seconds={validity_seconds} (allowed 1..{MAX_VALIDITY_SECONDS})",
+                "invalid_validity_window",
+            )
 
         decision = self._policy.authorize(
             validated.amount_atomic, validated.network, validated.pay_to,
@@ -427,13 +642,29 @@ class PaymentClient:
         if nonce in self._used_nonces:
             return _denied("nonce_reuse", "nonce_reuse")
 
+        # Write-ahead of the signer call: once the payload leaves the
+        # process a signature may exist even if we never hear back, so the
+        # attempt must be durably discoverable BEFORE that can happen.
+        journalled = self._journal({
+            "nonce": nonce,
+            "amount": validated.amount_atomic,
+            "pay_to": validated.pay_to,
+            "network": validated.network,
+            "valid_before": payload["message"]["validBefore"],
+            "stage": "pre_sign",
+        })
+        if not journalled:
+            return _denied("attempt journal unwritable; refusing to sign", "journal_error")
+
         try:
             signature = self._signer.sign_typed_data(payload)
-        except Exception as exc:  # fail closed on ANY signer failure
+        except Exception as exc:  # budget untouched; outcome INDETERMINATE (see docstring)
+            self._journal({"nonce": nonce, "stage": f"signer_error:{type(exc).__name__}"})
             return _denied(f"signer_error:{type(exc).__name__}", "signer_error")
 
         self._used_nonces.add(nonce)
-        self._policy.record(validated.amount_atomic, validated.pay_to)
+        self._journal({"nonce": nonce, "stage": "signed"})
+        self._policy.record(validated.amount_atomic, validated.pay_to, now_utc_date=now_utc_date)
         header = base64.b64encode(
             json.dumps(
                 {

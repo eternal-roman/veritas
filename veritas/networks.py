@@ -39,4 +39,20 @@ def normalize_network(network: str) -> str:
     return CAIP2_NETWORKS.get(network.lower(), network)
 
 def supported_networks() -> List[str]:
-    return list(CAIP2_NETWORKS.values())
+    """Networks we can actually settle on.
+
+    Derived from the settlement asset table rather than the alias table, which
+    is the single source of truth for payability. Previously this returned
+    every alias — including Solana and testnets with no configured USDC asset —
+    so `/.well-known/x402` advertised networks on which a 402 challenge could
+    not even be constructed. An offer you cannot fulfil is worse than no offer.
+    """
+    from .x402 import USDC_ASSETS
+
+    return [net for net in CAIP2_NETWORKS.values() if net in USDC_ASSETS]
+
+
+def is_settleable(network: str) -> bool:
+    from .x402 import USDC_ASSETS
+
+    return normalize_network(network) in USDC_ASSETS

@@ -1,94 +1,194 @@
 """Zero-key multi-source retrieval for fully agent-native operation.
 
 Uses only free, no-API-key sources:
-- DuckDuckGo via the `ddgs` package (pip install ddgs)
 - Wikipedia REST API
+- DuckDuckGo via the optional `ddgs` package, falling back to the Instant
+  Answer endpoint
 
-Falls back gracefully if packages or network are unavailable.
+Every failure path records a RetrievalError instead of silently returning an
+empty list. The previous version wrapped all network access in bare
+`except Exception: pass`, which meant a proxy rejection, a missing dependency
+and a genuinely empty result were indistinguishable to the caller — and the
+service would then tell a paying agent "no evidence exists" when it had in
+fact never reached the network.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Any
-import urllib.request
-import urllib.parse
-import json
 
-def wikipedia_summary(query: str, limit: int = 2) -> List[Dict[str, Any]]:
-    results = []
+import json
+import urllib.error
+import urllib.parse
+import urllib.request
+from typing import Any, Dict, List, Tuple
+
+from veritas.retrieval import RetrievalError, RetrievalResult
+
+USER_AGENT = "VeritasAgent/0.5 (+https://github.com/eternal-roman/veritas)"
+TIMEOUT_SECONDS = 8
+
+
+def _classify(exc: Exception) -> Tuple[str, str]:
+    """Map an exception onto a stable (error_type, detail) pair."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return "http_error", f"HTTP {exc.code}"
+    if isinstance(exc, urllib.error.URLError):
+        return "network_unreachable", str(exc.reason)[:200]
+    if isinstance(exc, TimeoutError):
+        return "timeout", f"exceeded {TIMEOUT_SECONDS}s"
+    if isinstance(exc, json.JSONDecodeError):
+        return "malformed_response", str(exc)[:200]
+    return type(exc).__name__, str(exc)[:200]
+
+
+def _get_json(url: str) -> Dict[str, Any]:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
+        return json.loads(resp.read().decode())
+
+
+def wikipedia_summary(query: str, limit: int = 2) -> RetrievalResult:
+    result = RetrievalResult(providers_attempted=["wikipedia"])
     try:
-        # Search first
         search_url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
             "action": "query", "list": "search", "srsearch": query,
-            "format": "json", "srlimit": limit
+            "format": "json", "srlimit": limit,
         })
-        req = urllib.request.Request(search_url, headers={"User-Agent": "VeritasAgent/0.3"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode())
-        for item in data.get("query", {}).get("search", [])[:limit]:
-            title = item.get("title", "")
-            # Get summary
-            sum_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(title)}"
-            req2 = urllib.request.Request(sum_url, headers={"User-Agent": "VeritasAgent/0.3"})
-            with urllib.request.urlopen(req2, timeout=8) as resp2:
-                sdata = json.loads(resp2.read().decode())
-            extract = sdata.get("extract", item.get("snippet", ""))
-            results.append({
-                "url": sdata.get("content_urls", {}).get("desktop", {}).get("page") or f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title)}",
-                "title": title,
-                "text": extract[:800]
-            })
-    except Exception:
-        pass
-    return results
+        data = _get_json(search_url)
+    except Exception as exc:  # noqa: BLE001 - classified and surfaced below
+        etype, detail = _classify(exc)
+        result.errors.append(RetrievalError("wikipedia", etype, detail))
+        return result
 
-def duckduckgo_search(query: str, max_results: int = 4) -> List[Dict[str, Any]]:
-    results = []
+    for item in data.get("query", {}).get("search", [])[:limit]:
+        title = item.get("title", "")
+        if not title:
+            continue
+        try:
+            summary_url = (
+                "https://en.wikipedia.org/api/rest_v1/page/summary/"
+                + urllib.parse.quote(title, safe="")
+            )
+            sdata = _get_json(summary_url)
+            extract = sdata.get("extract") or ""
+            page_url = (
+                sdata.get("content_urls", {}).get("desktop", {}).get("page")
+                or f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title, safe='')}"
+            )
+        except Exception as exc:  # noqa: BLE001
+            etype, detail = _classify(exc)
+            result.errors.append(RetrievalError("wikipedia", etype, f"{title}: {detail}"))
+            continue
+
+        if extract:
+            result.sources.append({
+                "url": page_url,
+                "title": title,
+                "text": extract[:800],
+                "provider": "wikipedia",
+                "provenance": "live_fetch",
+            })
+
+    # The search call itself succeeded, so the provider is reachable even if
+    # individual page fetches failed or the topic genuinely has no article.
+    result.providers_succeeded.append("wikipedia")
+    return result
+
+
+def duckduckgo_search(query: str, max_results: int = 4) -> RetrievalResult:
+    result = RetrievalResult(providers_attempted=["duckduckgo"])
+
     try:
         from ddgs import DDGS
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=max_results):
-                results.append({
-                    "url": r.get("href") or r.get("link") or "",
-                    "title": r.get("title") or "",
-                    "text": (r.get("body") or r.get("snippet") or "")[:600]
-                })
-    except Exception:
-        # Fallback: DuckDuckGo Instant Answer (no key)
+    except ImportError:
+        result.errors.append(RetrievalError(
+            "duckduckgo", "dependency_missing",
+            "ddgs not installed; falling back to Instant Answer API",
+        ))
+    else:
         try:
-            url = "https://api.duckduckgo.com/?" + urllib.parse.urlencode({
-                "q": query, "format": "json", "no_html": 1
-            })
-            req = urllib.request.Request(url, headers={"User-Agent": "VeritasAgent/0.3"})
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read().decode())
-            if data.get("Abstract"):
-                results.append({
-                    "url": data.get("AbstractURL") or "https://duckduckgo.com",
-                    "title": data.get("Heading") or query,
-                    "text": data.get("Abstract")[:600]
-                })
-        except Exception:
-            pass
-    return results
+            with DDGS() as ddgs:
+                for r in ddgs.text(query, max_results=max_results):
+                    text = (r.get("body") or r.get("snippet") or "")[:600]
+                    url = r.get("href") or r.get("link") or ""
+                    if text and url:
+                        result.sources.append({
+                            "url": url,
+                            "title": r.get("title") or "",
+                            "text": text,
+                            "provider": "duckduckgo",
+                            "provenance": "live_fetch",
+                        })
+            result.providers_succeeded.append("duckduckgo")
+            return result
+        except Exception as exc:  # noqa: BLE001
+            etype, detail = _classify(exc)
+            result.errors.append(RetrievalError("duckduckgo", etype, detail))
+
+    # Fallback: keyless Instant Answer endpoint.
+    try:
+        url = "https://api.duckduckgo.com/?" + urllib.parse.urlencode({
+            "q": query, "format": "json", "no_html": 1,
+        })
+        data = _get_json(url)
+    except Exception as exc:  # noqa: BLE001
+        etype, detail = _classify(exc)
+        result.errors.append(RetrievalError("duckduckgo_ia", etype, detail))
+        return result
+
+    abstract = data.get("Abstract")
+    if abstract:
+        result.sources.append({
+            "url": data.get("AbstractURL") or "https://duckduckgo.com",
+            "title": data.get("Heading") or query,
+            "text": abstract[:600],
+            "provider": "duckduckgo_ia",
+            "provenance": "live_fetch",
+        })
+    result.providers_succeeded.append("duckduckgo_ia")
+    return result
+
+
+class ZeroKeyRetriever:
+    """Retriever facade over the keyless providers."""
+
+    name = "zero_key"
+
+    def retrieve(self, query: str, max_results: int = 5) -> RetrievalResult:
+        merged = RetrievalResult()
+        seen = set()
+
+        for sub in (wikipedia_summary(query, limit=2),
+                    duckduckgo_search(query, max_results=max_results)):
+            merged.providers_attempted.extend(sub.providers_attempted)
+            merged.providers_succeeded.extend(sub.providers_succeeded)
+            merged.errors.extend(sub.errors)
+            for src in sub.sources:
+                url = src.get("url") or ""
+                if url and url not in seen:
+                    seen.add(url)
+                    merged.sources.append(src)
+
+        merged.sources = merged.sources[:max_results]
+        return merged
+
 
 def free_retrieve(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-    """Primary zero-key retrieval entry point."""
-    results = []
-    results.extend(wikipedia_summary(query, limit=2))
-    results.extend(duckduckgo_search(query, max_results=max(2, max_results - len(results))))
-    # Deduplicate by URL
-    seen = set()
-    unique = []
-    for r in results:
-        u = r.get("url") or ""
-        if u and u not in seen:
-            seen.add(u)
-            unique.append(r)
-    return unique[:max_results]
+    """Backwards-compatible entry point returning bare source dicts.
+
+    Prefer ZeroKeyRetriever.retrieve() — this helper discards the error
+    channel, which is exactly the information the pipeline needs.
+    """
+    return ZeroKeyRetriever().retrieve(query, max_results=max_results).sources
+
 
 if __name__ == "__main__":
     import sys
+
     q = " ".join(sys.argv[1:]) or "x402 protocol"
-    for r in free_retrieve(q):
+    res = ZeroKeyRetriever().retrieve(q)
+    print(f"providers ok: {res.providers_succeeded} | errors: {len(res.errors)}")
+    for err in res.errors:
+        print(f"  ! {err.provider}: {err.error_type} - {err.detail}")
+    for r in res.sources:
         print(r["title"], "-", r["url"])
         print(r["text"][:150], "...\n")

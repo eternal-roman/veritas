@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 
 
@@ -76,3 +78,70 @@ class CustodyLedger:
 
     def to_list(self) -> List[Dict[str, Any]]:
         return [asdict(e) for e in self.events]
+
+
+def verify_chain_records(events: List[Dict[str, Any]]) -> bool:
+    """Verify a chain that was serialised earlier (e.g. loaded from a receipt).
+
+    Lets a buying agent re-run our integrity check against stored JSON without
+    reconstructing CustodyEvent objects.
+    """
+    if not events:
+        return True
+    prev_hash = None
+    for record in events:
+        rebuilt = CustodyEvent(
+            event_type=record.get("event_type", ""),
+            actor=record.get("actor", ""),
+            timestamp=record.get("timestamp", ""),
+            prev_hash=record.get("prev_hash"),
+            payload=record.get("payload", {}),
+        )
+        if rebuilt.compute_hash() != record.get("event_hash"):
+            return False
+        if record.get("prev_hash") != prev_hash:
+            return False
+        prev_hash = record.get("event_hash")
+    return True
+
+
+class CustodyStore:
+    """Durable custody receipts.
+
+    An in-memory ledger that dies with the request cannot be audited after the
+    fact, which defeats the point of custody: the buyer's verification step in
+    the workflow happens *after* the response is returned. Receipts are written
+    as JSON so a result stays checkable for its retention window.
+    """
+
+    def __init__(self, base_dir: Optional[str] = None):
+        self.base_dir = Path(base_dir or os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime")) / "receipts"
+
+    def save(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        record = {
+            "request_id": result.get("request_id"),
+            "query": result.get("query"),
+            "status": result.get("status"),
+            "custody_root": result.get("custody_root"),
+            "custody_valid": result.get("custody_valid"),
+            "evidence_hashes": [e.get("content_hash") for e in result.get("evidence", [])],
+            "stored_at": _now(),
+        }
+        try:
+            self.base_dir.mkdir(parents=True, exist_ok=True)
+            path = self.base_dir / f"{record['request_id']}.json"
+            path.write_text(json.dumps(record, indent=2))
+            record["persisted"] = True
+        except OSError as exc:
+            # Never fail a paid request because the disk is unavailable; report
+            # honestly that the receipt is not durable.
+            record["persisted"] = False
+            record["error"] = str(exc)[:200]
+        return record
+
+    def load(self, request_id: str) -> Optional[Dict[str, Any]]:
+        path = self.base_dir / f"{request_id}.json"
+        try:
+            return json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            return None

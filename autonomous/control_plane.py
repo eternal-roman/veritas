@@ -1,21 +1,26 @@
 """Unified agent-native control plane.
 
-Single entry point that requires zero human configuration.
+Single entry point requiring zero human configuration.
+
+This module used to contain a *second*, independent implementation of the
+research pipeline — its own retrieval, custody, Bayesian updating and refusal
+logic — while the HTTP surface ran a different one. The two drifted: the API
+served a static three-document corpus while the real retrieval lived here and
+was never reachable over the network. There is now one engine
+(`veritas.pipeline`); this module adds only the agent-native concerns:
+zero-config bootstrap, local settlement recording, and calibration feedback.
 """
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from autonomous.bootstrap import bootstrap, load_config
-from autonomous.zero_key_retrieval import free_retrieve
-from autonomous.local_facilitator import verify_payment, record_settlement, record_attempt
+from autonomous.local_facilitator import record_attempt, record_settlement, verify_payment
 from autonomous.self_calibrator import SelfCalibrator
-from veritas.hashing import compute_content_hash
-from veritas.custody import CustodyLedger
-from veritas.bayesian import BayesianBelief, update_belief
+from veritas.pipeline import run_research
+from veritas.trust import OutcomeLog
 
 
 def _now() -> str:
@@ -23,21 +28,28 @@ def _now() -> str:
 
 
 def agent_start() -> Dict[str, Any]:
+    """Provision a free-mode config with no human input."""
     return bootstrap()
 
 
-def agent_research(query: str, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+def agent_research(
+    query: str,
+    headers: Optional[Dict[str, str]] = None,
+    max_results: int = 4,
+) -> Dict[str, Any]:
+    """Run research through the shared engine under agent-native settlement."""
     headers = headers or {}
     cfg = load_config()
-    request_id = str(uuid.uuid4())
+    require = bool(cfg.get("require_payment", False))
 
-    # Payment check (local autonomous mode defaults to allow)
-    require = cfg.get("require_payment", False)
+    result = run_research(query, max_results=max_results)
+    request_id = result["request_id"]
     record_attempt(request_id, headers)
+
     if not verify_payment(headers, require=require):
         return {
-            "status": "payment_required",
             "request_id": request_id,
+            "status": "payment_required",
             "human_required": False,
             "payment": {
                 "payTo": cfg.get("pay_to"),
@@ -46,88 +58,48 @@ def agent_research(query: str, headers: Optional[Dict[str, str]] = None) -> Dict
             },
         }
 
-    ledger = CustodyLedger()
-    ledger.append("created", "control_plane", {"query": query, "request_id": request_id})
-
-    sources = free_retrieve(query, max_results=4)
-    evidence_items = []
-    for s in sources:
-        text = s.get("text") or ""
-        if len(text) < 20:
-            continue
-        h = compute_content_hash(text)
-        ledger.append("evidence_created", "zero_key_retrieval", {"content_hash": h, "url": s.get("url")})
-        evidence_items.append({
-            "hash": h,
-            "url": s.get("url"),
-            "title": s.get("title"),
-            "excerpt": text[:320],
-        })
-
-    if not evidence_items:
-        ledger.append("refused", "control_plane", {"reason": "no_evidence"})
-        record_settlement(request_id, "$0.00", status="refused")
-        return {
-            "request_id": request_id,
-            "status": "refused",
-            "query": query,
-            "posterior": 0.1,
-            "claims": [],
-            "evidence": [],
-            "custody_root": ledger.root_hash(),
-            "custody_valid": ledger.verify_chain(),
-            "human_required": False,
-            "mode": "autonomous_free",
-            "timestamp": _now(),
-        }
-
-    claims = []
-    overall = BayesianBelief(hypothesis=query, prior=0.3)
-    for i, ev in enumerate(evidence_items):
-        statement = f"[{ev.get('title') or ev['url']}] {ev['excerpt']}"
-        belief = BayesianBelief(hypothesis=statement, prior=0.4)
-        belief = update_belief(belief, 0.8, 0.25, ev["hash"])
-        claims.append({
-            "id": f"c{i+1}",
-            "statement": statement,
-            "evidence_hash": ev["hash"],
-            "confidence": round(belief.posterior, 3),
-        })
-        overall = update_belief(overall, 0.75, 0.3, ev["hash"])
-
-    if len(evidence_items) >= 2:
-        overall = update_belief(overall, 0.85, 0.22, "multi_source")
-
-    # Self-calibration pass
+    # Calibration is applied only as a reporting overlay: the raw posterior is
+    # always returned alongside it so a buyer can see both.
     calibrator = SelfCalibrator()
-    calibrated = calibrator.calibrate(overall.posterior)
+    raw_posterior = result["posterior"]
+    calibrated = calibrator.calibrate(raw_posterior)
 
-    status = "completed" if calibrated >= 0.4 else "refused"
-    if status == "refused":
-        claims = []
+    OutcomeLog().record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
 
-    ledger.append(status, "control_plane", {"posterior": calibrated})
-    record_settlement(request_id, "$0.00" if not require else "$0.25", status=status)
+    # Never record settlement for work we could not perform.
+    if result["billable"]:
+        record_settlement(request_id, "$0.25" if require else "$0.00", status=result["status"])
+    else:
+        record_settlement(request_id, "$0.00", status="not_billable")
 
-    return {
-        "request_id": request_id,
-        "status": status,
-        "query": query,
-        "posterior": round(calibrated, 3),
-        "raw_posterior": round(overall.posterior, 3),
-        "claims": claims,
-        "evidence": evidence_items,
-        "custody_root": ledger.root_hash(),
-        "custody_valid": ledger.verify_chain(),
+    result.update({
+        "raw_posterior": raw_posterior,
+        "calibrated_posterior": round(calibrated, 3),
+        "calibration": calibrator.summary(),
         "human_required": False,
-        "mode": "autonomous_free",
-        "calibrator": calibrator.summary(),
-        "timestamp": _now(),
-    }
+        "mode": "live" if require else "autonomous_free",
+        "served_at": _now(),
+    })
+    return result
+
+
+def record_feedback(raw_posterior: float, was_correct: bool) -> Dict[str, Any]:
+    """Feed a ground-truth outcome back into the calibrator and persist it.
+
+    The calibrator can only learn from labelled outcomes. Nothing in the
+    service generates those labels on its own, so this must be called by an
+    evaluation harness or by a consuming agent reporting back. Until it is,
+    `calibrate()` is an honest identity function rather than a fake adjustment.
+    """
+    calibrator = SelfCalibrator()
+    calibrator.update(raw_posterior, 1.0 if was_correct else 0.0)
+    calibrator.save()
+    return calibrator.summary()
 
 
 if __name__ == "__main__":
     import pprint
+
     print("Starting autonomous control plane...")
     pprint.pp(agent_start())
     print("\nResearch:")

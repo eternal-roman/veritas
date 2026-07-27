@@ -17,6 +17,10 @@ STATE_PATH = RUNTIME / "calibrator_state.json"
 
 
 class SelfCalibrator:
+    # Observations required in a bin before its empirical rate replaces the
+    # raw posterior. Below this, one or two samples would swing confidence wildly.
+    MIN_OBSERVATIONS = 3
+
     def __init__(self, n_bins: int = 10):
         self.n_bins = n_bins
         self.bins: Dict[int, Dict[str, float]] = defaultdict(lambda: {"sum": 0.0, "count": 0.0})
@@ -32,11 +36,20 @@ class SelfCalibrator:
         self.bins[b]["sum"] += observed
         self.bins[b]["count"] += 1
 
+    @property
+    def is_trained(self) -> bool:
+        """False while no bin has enough observations to adjust anything.
+
+        Exposed so callers can report calibration as unavailable rather than
+        presenting a pass-through value as though it were calibrated.
+        """
+        return any(stats["count"] >= self.MIN_OBSERVATIONS for stats in self.bins.values())
+
     def calibrate(self, raw_posterior: float) -> float:
         b = self._bin(raw_posterior)
         stats = self.bins.get(b)
-        if not stats or stats["count"] < 3:
-            return raw_posterior  # not enough data
+        if not stats or stats["count"] < self.MIN_OBSERVATIONS:
+            return raw_posterior  # not enough data; pass through unchanged
         return stats["sum"] / stats["count"]
 
     def save(self) -> None:
@@ -60,4 +73,6 @@ class SelfCalibrator:
             "n_bins": self.n_bins,
             "populated_bins": len([b for b in self.bins.values() if b["count"] > 0]),
             "total_updates": sum(b["count"] for b in self.bins.values()),
+            "is_trained": self.is_trained,
+            "status": "calibrated" if self.is_trained else "passthrough_untrained",
         }

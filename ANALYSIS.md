@@ -1,43 +1,80 @@
-# Zero-Skip End-to-End Deep Analysis & Hole Inventory
+# End-to-End Analysis: Dependency and Transmission Chain
 
-## Workflow Simulation (Buyer Agent Perspective)
+## Service dependency graph
 
-1. Discover endpoint via well-known / registry / MCP → **Supported in code**
-2. Inspect identity, trust, payment config → **Supported**
-3. Call research → receive 402 if live → **Supported**
-4. Pay via facilitator → **Requires live facilitator + real pay_to (configured, not auto-funded)**
-5. Receive evidence-backed response with hashes + custody → **Supported**
-6. Independently verify hashes → **Supported**
-7. Re-fetch evidence later → **Local CAS yes; durable public IPFS pinning still partial**
+```
+app/main.py ─────────────┐
+                         ├──> veritas/pipeline.py  (THE single engine)
+autonomous/control_plane ─┘         │
+                                    ├──> veritas/retrieval.py ──> autonomous/zero_key_retrieval.py
+                                    │                                   ├── Wikipedia REST  (network)
+                                    │                                   └── ddgs / DDG IA   (network, optional dep)
+                                    ├──> veritas/hashing.py
+                                    ├──> veritas/custody.py ──> CustodyStore (disk)
+                                    └──> veritas/bayesian.py
 
-## Hole / Gap Inventory (ruthless)
+app/main.py ──> veritas/x402.py        (challenge construction, atomic amounts)
+           └──> veritas/facilitator.py (network: POST /verify, POST /settle)
+           └──> veritas/payment_config.py ──> veritas/networks.py ──> veritas/x402.USDC_ASSETS
+```
 
-| # | Gap | Severity | Status |
-|---|-----|----------|--------|
-| 1 | No permanent public deployment | High | Operational (needs host) |
-| 2 | Live settlement requires real wallet + facilitator | High | Code ready; credentials external |
-| 3 | Zero-key retrieval quality limited for general queries | High | Improved but not commercial-grade |
-| 4 | Full official x402 middleware (not simplified 402 gate) | Medium | Simplified gate present; full SDK middleware recommended for production |
-| 5 | Automatic Bazaar / registry registration | Medium | Manual / scriptable; not auto on boot |
-| 6 | Durable cross-agent evidence retrieval (IPFS pinning) | Medium | Adapter skeleton; not default-on |
-| 7 | Agent-native wallet custody at scale | High | Testnet generation only; real key management is hard |
-| 8 | Measured public quality delta vs strong baselines | High | Harness exists; large public numbers missing |
-| 9 | Rate limiting / abuse protection | Medium | Not implemented |
-| 10 | Multi-instance coordination / reputation accumulation | Low-Medium | ERC-8004 identity ready but not registered |
+Two structural rules now hold, and both were previously violated:
 
-## What is solid
+1. **One engine.** `control_plane` used to contain a second, independent
+   pipeline. The HTTP surface served a static 3-document corpus while the real
+   retrieval was unreachable. Both now call `veritas.pipeline.run_research`.
+2. **One source of truth for payability.** `supported_networks()` derives from
+   `USDC_ASSETS`, so the service cannot advertise a network on which it cannot
+   construct a payment.
 
-- Custody + content hashing + Bayesian structure
-- Free-mode end-to-end path with `human_required: false`
-- Discovery documents and payment config surface
-- Clear live-mode activation via env vars
-- Evaluation harness for structural properties
-- Distributable repository that any agent or operator can run
+## Network dependencies and failure behaviour
 
-## Verdict on Product Delivery Ability
+| Dependency | Required for | On failure |
+|------------|--------------|------------|
+| Wikipedia REST | Retrieval | Error recorded; other providers continue |
+| ddgs / DDG IA | Retrieval | `dependency_missing` or error recorded; falls back to IA |
+| All providers fail | Retrieval | `status: unavailable`, `billable: false`, HTTP 503 |
+| Facilitator `/verify` | Live payment | **Fail closed** — HTTP 503, access denied |
+| Facilitator `/settle` | Live payment | HTTP 402 `settlement_failed`, result withheld |
+| Disk (receipts) | Auditability | Request still served; `persisted: false` reported |
 
-**Free / simulated agent-to-agent research path**: Deliverable today.
+The critical property: no network failure can produce a confident answer, and
+no failure of ours is billed to the buyer.
 
-**Live paid agent-to-agent research path**: Code-complete and distributable; becomes revenue-generating the moment a reachable instance is started with a real `VERITAS_PAY_TO` and a public facilitator. The remaining gaps are operational (hosting, wallet control, search quality) rather than missing architectural pieces.
+## Transmission ordering (live mode)
 
-The largest product risk is not the payment rails or the custody model — it is research quality under the free retrieval path and the absence of a permanently reachable, measured public instance.
+```
+402 challenge  ──>  buyer signs  ──>  X-PAYMENT header
+                                          │
+                              facilitator /verify   (fail closed)
+                                          │
+                                   run_research
+                                          │
+                        billable? ──no──> 503, no settlement
+                                          │yes
+                              facilitator /settle
+                                          │
+                         200 + X-PAYMENT-RESPONSE + custody receipt
+```
+
+Verify-before-work and settle-after-work is deliberate: a buyer is never
+charged for a request that produced nothing deliverable.
+
+## Verification path for the buying agent
+
+1. Receive response with `evidence[].content_hash` and `custody_root`.
+2. Re-hash each excerpt locally, or `POST /v1/verify`.
+3. Re-run the custody chain with `veritas.custody.verify_chain_records`.
+4. Re-fetch the receipt later at `GET /v1/receipts/{request_id}`.
+
+Step 4 was impossible before: ledgers were in-memory and died with the request.
+
+## Remaining chain weaknesses
+
+- **Evidence content is not durably stored**, only its hash. A buyer verifying
+  a week later can confirm the hash matches what we published, but cannot
+  re-obtain the text from us if the source URL rots.
+- **Facilitator settlement is untested against a real facilitator.** The client
+  matches the documented API; that is not the same as having settled once.
+- **Receipts are local disk**, so a multi-instance deployment needs shared
+  storage before `/v1/receipts` is reliable behind a load balancer.

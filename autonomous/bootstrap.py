@@ -39,6 +39,20 @@ def bootstrap_free_mode(agent_id: str = "default", base_dir: str = ".veritas_age
     config_path.write_text(json.dumps(config, indent=2))
     return config
 
+def load_config(base_dir: str = ".veritas_agent") -> dict:
+    """Return the agent config, bootstrapping free mode if none exists yet."""
+    config_path = Path(base_dir) / "config.json"
+    if config_path.exists():
+        try:
+            return json.loads(config_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    return bootstrap_free_mode(base_dir=base_dir)
+
+def bootstrap(agent_id: str = "default", base_dir: str = ".veritas_agent") -> dict:
+    """Zero-config entry point used by the control plane."""
+    return bootstrap_free_mode(agent_id=agent_id, base_dir=base_dir)
+
 def is_free_mode() -> bool:
     return os.getenv("VERITAS_MODE", "free").lower() == "free"
 

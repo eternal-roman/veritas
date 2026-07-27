@@ -15,6 +15,8 @@ ruff check veritas tests                 # lint — CI gates on this
 bandit -r veritas -lll -q                # security scan — CI gates on high severity
 python -m build && twine check dist/*    # packaging — CI builds and installs the wheel
 veritas-server                           # run the service (free mode by default)
+veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve
+veritas-mcp                              # serve the engine as local MCP tools (stdio)
 ```
 
 Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
@@ -73,10 +75,21 @@ package — CI's package job asserts this.
   without carrying evidence: "complete", "live-ready", "ZK", "revenue-ready".
 - Docs state limitations plainly (see README "Known limitations", STATUS.md).
   Keep that register: narrow claims, evidence cited.
+- **The venue constitution is enforcement-linked.** `veritas/constitution.py`
+  is the normative source; `CONSTITUTION.md` is a sync-tested rendering.
+  Changing an article means changing both and bumping `CONSTITUTION_VERSION`;
+  a new norm is either L1 with a resolving enforcement pointer or L0 marked
+  aspirational — `tests/test_constitution.py` rejects anything else.
 
 ## Consuming the service as an agent
 
-- Discovery: `GET /.well-known/x402` (payment requirements), `GET /v1/identity`.
+- Discovery: `GET /.well-known/x402` — self-traversing (its `links` object
+  reaches every surface below), plus `GET /v1/identity` and `GET /llms.txt`.
+- Contract: `GET /v1/schema` (wire contract as JSON Schema), `GET /v1/errors`
+  (registered error codes with status and retriability), `GET /openapi.json`.
+- Norms: `GET /v1/constitution` — the venue constitution, each article either
+  pointing at its enforcement artifact or marked aspirational (see
+  `CONSTITUTION.md` and `ECOSYSTEM.md`).
 - Research: `POST /v1/research` — returns 402 with an `accepts` array in live
   mode; retry with an `X-PAYMENT` header (base64 x402 payload).
 - Verification: `POST /v1/verify` re-checks any published `content_hash`;
@@ -84,6 +97,10 @@ package — CI's package job asserts this.
   `veritas.custody.verify_chain_records` re-runs chain validation client-side.
 - Trust: `GET /v1/trust` is behaviour-derived and reports `UNPROVEN` below 10
   recorded outcomes. Treat it as an input, not authorization.
+- Local tools: `veritas-mcp` exposes research/verify/trust/constitution as MCP
+  tools over stdio (free-mode local engine; no payment path over MCP).
+- Self-provisioning: `veritas-agent up` bootstraps config and a local wallet
+  and serves; funding the wallet and public TLS deployment remain external.
 
 ## Current state, honestly
 

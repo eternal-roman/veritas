@@ -9,17 +9,21 @@ Run it with the installed console script or uvicorn directly:
 from __future__ import annotations
 
 import base64
-import binascii
 import json
 import os
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from veritas import __version__
+from veritas.constitution import build_constitution
 from veritas.custody import CustodyStore
+from veritas.discovery import LLMS_TXT
+from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import get_facilitator
 from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
@@ -27,7 +31,12 @@ from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.replay import SpentNonceStore, extract_nonce
 from veritas.trust import OutcomeLog, score_service
-from veritas.x402 import PriceError, build_402_challenge, build_payment_requirements
+from veritas.x402 import (
+    PriceError,
+    build_402_challenge,
+    build_payment_requirements,
+    decode_payment_header,
+)
 
 app = FastAPI(title="Veritas Research", version=__version__)
 
@@ -35,6 +44,19 @@ RESOURCE_PATH = "/v1/research"
 store = CustodyStore()
 outcomes = OutcomeLog()
 nonces = SpentNonceStore()
+
+# 402 bodies are x402-spec-shaped, not registry envelopes; the header marks
+# the protocol so a client can recognise the challenge without parsing.
+PAYMENT_REQUIRED_HEADER = {"Payment-Required": "x402"}
+
+
+@app.exception_handler(RequestValidationError)
+def invalid_request_handler(request: Request, exc: RequestValidationError):
+    """422s previously leaked FastAPI's raw shape, unlike every other error."""
+    return JSONResponse(
+        status_code=422,
+        content=error_envelope(ErrorCode.INVALID_REQUEST, jsonable_encoder(exc.errors())),
+    )
 
 
 class ResearchRequest(BaseModel):
@@ -45,27 +67,6 @@ class ResearchRequest(BaseModel):
 class VerifyRequest(BaseModel):
     content: str
     content_hash: str
-
-
-def _decode_payment_header(raw: str) -> dict[str, Any] | None:
-    """Decode the base64-JSON X-PAYMENT header, tolerating raw JSON.
-
-    Returns None when the header cannot be interpreted, which the caller
-    treats as an invalid payment (fail closed).
-    """
-    if not raw:
-        return None
-    try:
-        decoded = base64.b64decode(raw, validate=True).decode("utf-8")
-        payload = json.loads(decoded)
-        return payload if isinstance(payload, dict) else None
-    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError):
-        pass
-    try:
-        payload = json.loads(raw)
-        return payload if isinstance(payload, dict) else None
-    except json.JSONDecodeError:
-        return None
 
 
 @app.get("/health")
@@ -95,10 +96,10 @@ def research(req: ResearchRequest, request: Request):
     # Payment was demanded but the configuration is invalid. Refuse to serve
     # rather than silently falling back to giving the paid service away.
     if cfg.mode == "misconfigured":
-        return JSONResponse(status_code=503, content={
-            "error": "payment_misconfigured",
-            "detail": cfg.config_errors,
-        })
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, cfg.config_errors),
+        )
 
     if cfg.require_payment:
         try:
@@ -108,11 +109,18 @@ def research(req: ResearchRequest, request: Request):
                 price=cfg.price,
                 resource=RESOURCE_PATH,
             )
-        except PriceError as exc:
-            # Misconfiguration must not silently become free service.
-            return JSONResponse(status_code=500, content={
-                "error": "payment_misconfigured", "detail": str(exc),
-            })
+        except PriceError:
+            # Misconfiguration must not silently become free service. The
+            # exception text describes server-side configuration, so it stays
+            # out of the response body (CodeQL: information exposure); the
+            # operator inspects config via /v1/payment-config, not this error.
+            return JSONResponse(
+                status_code=500,
+                content=error_envelope(
+                    ErrorCode.PAYMENT_MISCONFIGURED,
+                    "price configuration rejected at challenge construction",
+                ),
+            )
         requirements_dict = requirements.to_dict()
 
         header = request.headers.get("X-PAYMENT")
@@ -120,14 +128,15 @@ def research(req: ResearchRequest, request: Request):
             return JSONResponse(
                 status_code=402,
                 content=build_402_challenge(cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH),
+                headers=PAYMENT_REQUIRED_HEADER,
             )
 
-        payment_payload = _decode_payment_header(header)
+        payment_payload = decode_payment_header(header)
         if payment_payload is None:
             return JSONResponse(status_code=402, content=build_402_challenge(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
                 error="X-PAYMENT header is not valid base64-encoded JSON",
-            ))
+            ), headers=PAYMENT_REQUIRED_HEADER)
 
         facilitator = get_facilitator(cfg.facilitator, live=True)
         verification = facilitator.verify(payment_payload, requirements_dict)
@@ -136,12 +145,12 @@ def research(req: ResearchRequest, request: Request):
             # Facilitator outages fail closed as 503 so buyers retry rather
             # than treating the refusal as a permanent payment rejection.
             if reason.startswith(("facilitator_unreachable", "facilitator_http", "facilitator_bad_response")):
-                return JSONResponse(status_code=503, content={
-                    "error": "payment_verification_unavailable", "detail": reason,
-                })
+                return JSONResponse(status_code=503, content=error_envelope(
+                    ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason,
+                ))
             return JSONResponse(status_code=402, content=build_402_challenge(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH, error=reason,
-            ))
+            ), headers=PAYMENT_REQUIRED_HEADER)
 
         # Replay protection (roadmap 0.4). The nonce is claimed after the
         # facilitator accepts the payment and BEFORE any retrieval pass, so a
@@ -153,16 +162,14 @@ def research(req: ResearchRequest, request: Request):
             reason = claim.reason or "payment_nonce_rejected"
             if reason.startswith("replay_store_unavailable"):
                 # Fail closed: an unusable guard must not become no guard.
-                return JSONResponse(status_code=503, content={
-                    "error": "replay_protection_unavailable", "detail": reason,
-                })
-            return JSONResponse(status_code=409, content={
-                "error": reason,
-                "detail": (
-                    "This payment authorization has already been used. Request a "
-                    "fresh 402 challenge and sign a new authorization."
-                ),
-            })
+                return JSONResponse(status_code=503, content=error_envelope(
+                    ErrorCode.REPLAY_PROTECTION_UNAVAILABLE, reason,
+                ))
+            return JSONResponse(status_code=409, content=error_envelope(
+                reason,
+                "This payment authorization cannot be admitted. Request a "
+                "fresh 402 challenge and sign a new authorization.",
+            ))
 
     result = run_research(req.query, max_results=req.max_results)
     record = store.save(result)
@@ -172,17 +179,20 @@ def research(req: ResearchRequest, request: Request):
     # Retrieval failures are ours, not the buyer's: never settle for them.
     if result["status"] == "unavailable":
         result["payment"] = {"settled": False, "reason": "not_billable_retrieval_unavailable"}
+        # The registry code is additive: the full research body stays because
+        # the unavailability report is itself the deliverable here.
+        result["error"] = ErrorCode.RETRIEVAL_UNAVAILABLE.value
         return JSONResponse(status_code=503, content=result)
 
     if cfg.require_payment and facilitator is not None:
         settlement = facilitator.settle(payment_payload, requirements_dict)
         result["payment"] = {"settled": settlement.success, **settlement.to_dict()}
         if not settlement.success:
-            return JSONResponse(status_code=402, content={
-                "error": "settlement_failed",
-                "detail": settlement.error_reason,
-                "request_id": result["request_id"],
-            })
+            return JSONResponse(status_code=402, content=error_envelope(
+                ErrorCode.SETTLEMENT_FAILED,
+                settlement.error_reason,
+                request_id=result["request_id"],
+            ))
         return JSONResponse(
             status_code=200,
             content=result,
@@ -207,8 +217,9 @@ def receipt(request_id: str):
     """Retrieve a stored custody record so results stay auditable after the call."""
     record = store.load(request_id)
     if record is None:
-        return JSONResponse(status_code=404, content={"error": "receipt_not_found",
-                                                      "request_id": request_id})
+        return JSONResponse(status_code=404, content=error_envelope(
+            ErrorCode.RECEIPT_NOT_FOUND, request_id=request_id,
+        ))
     return record
 
 
@@ -216,6 +227,51 @@ def receipt(request_id: str):
 def trust():
     s = score_service()
     return s.to_dict()
+
+
+@app.get("/v1/schema")
+def schema():
+    """The wire contract as JSON Schema, generated from veritas.schema."""
+    from veritas.schema import response_json_schema
+
+    return {
+        "response": response_json_schema(),
+        "error_envelope": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "VeritasErrorEnvelope",
+            "type": "object",
+            "required": ["error"],
+            "properties": {
+                "error": {"type": "string", "enum": sorted(ERROR_REGISTRY)},
+                "detail": {},
+            },
+            "description": (
+                "All non-402 error responses. 402s use the x402 challenge "
+                "shape instead; see /v1/errors."
+            ),
+        },
+        "openapi": "/openapi.json",
+    }
+
+
+@app.get("/v1/errors")
+def errors():
+    """The registered failure surface, so an agent can learn it before paying."""
+    return {
+        "errors": ERROR_REGISTRY,
+        "exceptions": {
+            "payment_challenge": (
+                "402 responses use the x402 challenge shape (x402Version, accepts, "
+                "free-text error), owned by the x402 spec rather than this registry."
+            ),
+        },
+    }
+
+
+@app.get("/v1/constitution")
+def constitution():
+    """The venue constitution: enforced-or-aspirational articles, free to read."""
+    return build_constitution()
 
 
 @app.get("/v1/identity")
@@ -233,6 +289,21 @@ def well_known():
         "facilitator": cfg.facilitator,
         "network": cfg.network,
         "mode": cfg.mode,
+        # An empty accepts is an honest "no offer"; configured_price is the
+        # price that would apply in live mode — config, not an offer.
+        "accepts": [],
+        "configured_price": cfg.price,
+        # Discovery must be self-traversing: one document reaches every
+        # machine-readable surface. Relative paths, so no base URL is faked.
+        "links": {
+            "identity": "/v1/identity",
+            "trust": "/v1/trust",
+            "constitution": "/v1/constitution",
+            "errors": "/v1/errors",
+            "schema": "/v1/schema",
+            "openapi": "/openapi.json",
+            "llms": "/llms.txt",
+        },
     }
     if cfg.is_live_ready():
         try:
@@ -242,6 +313,12 @@ def well_known():
         except PriceError as exc:
             body["error"] = f"payment_misconfigured: {exc}"
     return body
+
+
+@app.get("/llms.txt")
+def llms_txt():
+    """Agent-readable discovery index; the repo-root llms.txt mirrors this."""
+    return PlainTextResponse(LLMS_TXT)
 
 
 def main() -> None:

@@ -5,12 +5,13 @@ Complete path for one agent to obtain high-assurance research from another agent
 ## End-to-End Sequence
 
 1. **Discovery**
-   - Agent finds Veritas via:
-     - Bazaar / x402 registry
-     - MCP tool listing
-     - `/.well-known/x402`
-     - ERC-8004 identity (when registered)
+   - Channels that exist today:
+     - `/.well-known/x402` (self-traversing: links every machine-readable surface)
+     - `/llms.txt` (agent-readable index)
      - Direct endpoint knowledge
+   - Planned, not yet real (ROADMAP Phase 4, blocked on a settlement proof):
+     - Bazaar / x402 registry listing
+     - ERC-8004 on-chain identity
 
 2. **Capability Inspection**
    - `GET /v1/identity`

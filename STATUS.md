@@ -24,6 +24,13 @@ file described a system that did not import.
 | Keyed Serper retrieval tier (env-configured, key never serialised, degrades to zero-key tier) | Working against fixture-shaped responses; not yet exercised against the live API with a real key |
 | Buyer-side payment construction + spend policy (`veritas.payer`, key-free signer seam) | Working; L1 unit tests + L2 bounded model check (I1–I7, 8,720 traces, CI-gated). EIP-712 signature round-trip verified against `eth_account`. No on-chain settlement yet |
 | Replay protection (`veritas.replay`) | Working; a resubmitted `X-PAYMENT` does the work once (tested). Single-instance scope — local disk |
+| Venue constitution (`/v1/constitution`, `veritas/constitution.py`, v1.1) | Working, tested: every L1 article's enforcement pointer resolves; L0 articles carry none; `CONSTITUTION.md` sync-tested; gap G1 closed under the register's own discipline, G2 opened |
+| Unified error contract (`veritas/errors.py`, `/v1/errors`) | Working, tested: registered codes, one envelope on every non-402 error including 422 and the previously code-less 503 unavailable body |
+| Self-traversing discovery (`/.well-known/x402` links, `/llms.txt`, `/v1/schema`) | Working, tested; identity document no longer fabricates a base URL when none is configured |
+| Wallet self-provisioning (`veritas/autonomous/wallet.py`) | Working, tested: locally minted encrypted keystore, owner-only files, plugs into the buyer Signer seam. Funding is external |
+| `veritas-agent` CLI (init/serve/up/status) | Working, tested: provisioned config now reaches the env the HTTP server reads |
+| MCP tools (`veritas-mcp`: research/verify/trust/constitution) | Working, tested against the SDK; local free-mode engine only, no payment path over MCP |
+| Container + release workflow (`Dockerfile`, `release.yml`) | Dockerfile CI-built; release workflow inert until a maintainer configures PyPI Trusted Publishing |
 
 ## What is built but unproven
 
@@ -33,6 +40,19 @@ file described a system that did not import.
   operational one.
 - **Calibration.** Machinery works and persists; no labelled outcomes exist, so
   it honestly reports `passthrough_untrained`.
+- **Aspirational constitution articles.** A16 (portable reputation), A17
+  (dispute path), and A18 (registry liveness) are L0 by construction: named
+  norms with no enforcement, each citing the roadmap phase expected to promote
+  it. Publishing them proves nothing beyond the naming.
+- **Known gap G2** (registered in the constitution, pinned by a witness test):
+  the local facilitator simulator now enforces payment structure (G1 closed)
+  but still does not verify signatures — weaker than the HTTP path's
+  facilitator verification. The control plane must not be exposed as a paid
+  network surface while G2 is open.
+- **What still needs a human**, stated rather than hidden: funding the
+  provisioned wallet, TLS/public deployment, the PyPI project + trusted
+  publisher (release workflow is otherwise ready), and the GHCR push
+  permission for the container.
 
 ## What is missing
 

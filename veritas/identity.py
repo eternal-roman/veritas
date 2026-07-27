@@ -8,9 +8,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from . import __version__
+from .constitution import CONSTITUTION_VERSION
 from .hashing import compute_content_hash
-
-DEFAULT_BASE_URL = "https://api.veritas.example"
 
 
 def build_identity(
@@ -19,7 +18,13 @@ def build_identity(
     price: str = "$0.25",
     base_url: str | None = None,
 ) -> dict[str, Any]:
-    base = (base_url or os.getenv("VERITAS_PUBLIC_URL", DEFAULT_BASE_URL)).rstrip("/")
+    # The previous version defaulted to https://api.veritas.example — a
+    # reserved domain nobody can dial — so a default deployment advertised
+    # endpoints that could never resolve. With no configured base URL the
+    # document now carries relative paths and says so, which is honest and
+    # still self-traversing for a client that already reached the service.
+    configured = base_url or os.getenv("VERITAS_PUBLIC_URL") or None
+    base = configured.rstrip("/") if configured else ""
 
     doc: dict[str, Any] = {
         "name": "Veritas Research",
@@ -35,14 +40,20 @@ def build_identity(
             "refusal",
             "independent-hash-verification",
         ],
+        "base_url_configured": configured is not None,
         "endpoints": {
             "research": f"{base}/v1/research",
             "verify": f"{base}/v1/verify",
             "receipts": f"{base}/v1/receipts/{{request_id}}",
             "identity": f"{base}/v1/identity",
+            "constitution": f"{base}/v1/constitution",
             "wellKnown": f"{base}/.well-known/x402",
         },
         "x402": {"network": network, "price": price},
+        "constitution": {
+            "version": CONSTITUTION_VERSION,
+            "endpoint": f"{base}/v1/constitution",
+        },
         "version": __version__,
     }
 

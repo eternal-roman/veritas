@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from veritas.x402 import decode_payment_header, payment_authorization
+
 RUNTIME = Path(os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
 SETTLEMENTS = RUNTIME / "settlements.jsonl"
 ATTEMPTS = RUNTIME / "payment_attempts.jsonl"
@@ -52,9 +54,29 @@ def record_settlement(request_id: str, amount: str, status: str = "recorded", me
 
 
 def verify_payment(headers: dict[str, str], require: bool = False) -> bool:
-    """In local mode: always allow if not required; otherwise accept any non-empty signature header.
-    Live mode would call the real facilitator.
+    """Structural payment check for the local simulator.
+
+    `require=False` is free mode: the request is allowed through and nothing
+    is verified — that is stated, not disguised as verification.
+
+    `require=True` decodes the header with the same logic the HTTP surface
+    uses (`veritas.x402.decode_payment_header`) and demands the x402
+    structural minimum: a payload carrying an authorization object. This
+    closed gap G1 (any non-empty string previously bought access). What it
+    still does not do is verify signatures — that is gap G2 in the
+    constitution's register, and it is why this module must never be exposed
+    as a paid network surface; the server's facilitator verification is the
+    strong gate.
     """
     if not require:
         return True
-    return bool(headers.get("PAYMENT-SIGNATURE") or headers.get("X-PAYMENT") or headers.get("payment-signature"))
+    raw = (
+        headers.get("X-PAYMENT")
+        or headers.get("PAYMENT-SIGNATURE")
+        or headers.get("payment-signature")
+        or ""
+    )
+    payload = decode_payment_header(raw)
+    if payload is None:
+        return False
+    return payment_authorization(payload) is not None

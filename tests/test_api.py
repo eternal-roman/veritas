@@ -102,3 +102,25 @@ def test_query_validation_rejects_empty(free_client):
 
 def test_receipt_missing_returns_404(free_client):
     assert free_client.get("/v1/receipts/does-not-exist").status_code == 404
+
+
+def test_schema_endpoint_matches_real_pipeline_output(free_client):
+    """/v1/schema is generated from the same constants validate_response
+    enforces, so a non-Python agent gets the contract without reading source
+    — and it must describe what the pipeline actually emits."""
+    from veritas.pipeline import run_research
+    from veritas.schema import REQUIRED_FIELDS, RefusalReason, Status
+
+    body = free_client.get("/v1/schema").json()
+    response_schema = body["response"]
+    assert set(response_schema["required"]) == set(REQUIRED_FIELDS)
+    assert set(response_schema["properties"]["status"]["enum"]) == {s.value for s in Status}
+    reasons = set(response_schema["properties"]["refusal_reason"]["enum"])
+    assert {r.value for r in RefusalReason} <= reasons
+
+    result = run_research("What is x402?", allow_network=False)
+    for key in response_schema["required"]:
+        assert key in result, f"schema requires {key} but pipeline does not emit it"
+
+    envelope = body["error_envelope"]
+    assert envelope["required"] == ["error"]

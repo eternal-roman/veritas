@@ -1,0 +1,53 @@
+# PyPI release via Trusted Publishing (OIDC — no long-lived token secret).
+#
+# INERT UNTIL A HUMAN ACTS: this workflow can only succeed after a
+# maintainer creates the `veritas-research` project on PyPI and configures
+# this repository/workflow as a trusted publisher (ROADMAP P.5 — the name
+# is currently unreserved). Until then, pushing a tag runs the build and
+# fails at the publish step with an authorization error, which is the
+# honest behaviour: no silent skip, no fake success.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write  # Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Tag must match the single-sourced package version
+        run: |
+          python - <<'PY'
+          import os, sys
+          sys.path.insert(0, ".")
+          from veritas import __version__
+          tag = os.environ["GITHUB_REF_NAME"]
+          expected = f"v{__version__}"
+          if tag != expected:
+              print(f"tag {tag} does not match veritas.__version__ ({expected})")
+              sys.exit(1)
+          print(f"tag {tag} matches package version")
+          PY
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine check dist/*
+
+      - name: Publish to PyPI (Trusted Publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1

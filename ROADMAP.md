@@ -6,7 +6,11 @@ system does, what is verified, what is broken, and what to build in what order.
 Last full evaluation: 2026-07-27, against `main` @ `b498652` plus the fixes in
 `95a75ef`. Amended the same day by the packaging pass (single installable
 `veritas` package, wheel/sdist build gated in CI — see Phase P below); paths in
-this document reflect the post-restructure tree.
+this document reflect the post-restructure tree. Amended again the same day by
+the constitution pass (machine-readable venue constitution with enforcement
+pointers — see Phase C below, `CONSTITUTION.md`, and `ECOSYSTEM.md`) and by
+the agent-autonomy pass (error contract, self-traversing discovery,
+self-provisioning, MCP tools — see Phase D below).
 
 ---
 
@@ -92,7 +96,7 @@ PROPERTY: The service never reports absent evidence when retrieval failed, never
           facilitator-verified payment.
 EVIDENCE LEVEL: L1 (tests and adversarial examples)
 CHECKED ARTIFACT: veritas/pipeline.py, veritas/retrieval.py, veritas/facilitator.py,
-          veritas/server.py, veritas/autonomous/control_plane.py; 65 tests; CI harness gates
+          veritas/server.py, veritas/autonomous/control_plane.py; 240 tests; CI harness gates
 ASSUMPTIONS: - Retrievers may raise and may ignore max_results (both now defended)
              - The facilitator honours the documented x402 /verify and /settle contract
              - Receipts are written to a filesystem that persists for the retention window
@@ -135,8 +139,14 @@ strongest claim these support.
 | JIT packets | Stable identity across chain, MAC signatures, enforced expiry, verified linkage |
 | Trust scoring | Derived from recorded outcomes; `UNPROVEN` below 10 samples |
 | Wire contract | `validate_response` run against live pipeline output across three retriever types |
+| Venue constitution | Every L1 article's enforcement pointer resolves to a real test/CI-gate/schema artifact; L0 articles carry none and are rendered as aspirational; `CONSTITUTION.md` sync-tested against `veritas/constitution.py` |
+| Error contract | Registered codes (`veritas/errors.py`), one envelope on every non-402 error, 422 included; served at `/v1/errors` |
+| Discovery surfaces | Self-traversing `/.well-known/x402` with live links; identity honest about unset base URL; `/llms.txt` sync-tested and lists only real endpoints; `/v1/schema` matches real pipeline output |
+| Agent self-provisioning | `veritas-agent up` bootstraps config + encrypted wallet keystore (owner-only files) and applies it to the env the server reads; wallet plugs into the buyer Signer seam |
+| MCP tools | research/verify/trust/constitution register with the SDK; module imports without the SDK installed |
+| Packaging floors | requirements.txt pins never fall below pyproject install floors (tested) |
 
-**Test suite: 65 passing.** CI runs compileall, an import check of all
+**Test suite: 240 passing.** CI runs compileall, an import check of all
 top-level modules, the tests, and harness quality gates (citation fidelity,
 custody validity, refusal discrimination, unavailability handling), plus Bandit
 and pip-audit.
@@ -245,17 +255,68 @@ research, and asserts no stray top-level packages):**
 
 **Remaining:**
 
-- **P.5 PyPI publication.** Reserve the `veritas-research` name; publish via a
-  tag-triggered GitHub Actions release workflow using PyPI Trusted Publishing
-  (OIDC — no long-lived token secret). *Acceptance:* `pip install
-  veritas-research` from a clean machine serves `/health`.
-- **P.6 Release discipline.** Tag `vX.Y.Z` matching `veritas.__version__`;
-  keep a CHANGELOG; CI job that fails if the tag and package version diverge.
-- **P.7 Container image** (folds into 6.1). The wheel is the input to the
-  image; publish to GHCR alongside PyPI.
+- **P.5 PyPI publication.** The tag-triggered Trusted Publishing workflow
+  exists (`.github/workflows/release.yml`, with a tag↔version gate covering
+  the CI half of P.6) but is inert until a maintainer creates the
+  `veritas-research` project on PyPI and configures the trusted publisher —
+  the name is still unreserved. *Acceptance:* `pip install veritas-research`
+  from a clean machine serves `/health`. Until then, install works directly
+  from the repository: `pip install "veritas-research[retrieval] @
+  git+https://github.com/eternal-roman/veritas"`.
+- **P.6 Release discipline.** The tag↔version check ships in release.yml;
+  remaining: a CHANGELOG.
+- **P.7 Container image** (folds into 6.1). A `Dockerfile` exists (non-root,
+  healthcheck, binds 0.0.0.0) and CI builds it; publishing to GHCR needs a
+  registry-permissions decision a maintainer must make.
 
-*Risk:* none technical; P.5 needs a PyPI account/maintainer decision, which is
-why it is not done from this branch.
+*Risk:* none technical; P.5 and the GHCR push need account/permissions
+decisions, which is why they are not done from this branch.
+
+## Phase C — Venue constitution (done; now at version 1.1)
+
+The norms the service holds toward the venue — buyer agents, facilitators,
+registries, attesters — made machine-readable and enforcement-linked.
+`veritas/constitution.py` is the normative source: 18 L1 articles each
+pointing at the test, CI gate, or schema invariant that enforces it (1.1
+added A19 replay refusal, A20 bounded buyer spending, A21 agent
+self-provisioning), 3 L0 articles marked aspirational with their promotion
+phase named, and a known-gaps register whose open entries are pinned by
+witness tests — G1 (simulator accepted any payment header) was closed under
+that discipline and its residual weakness registered as G2 (the simulator
+does not verify signatures). Served unpaid at `GET /v1/constitution`,
+referenced from `/v1/identity`, rendered in `CONSTITUTION.md` (sync-tested),
+with the surrounding venue architecture in `ECOSYSTEM.md`. *Evidence:*
+`tests/test_constitution.py`; CI green. What this does not prove: that the
+articles are sufficient against a hostile venue, or anything about the L0
+articles beyond their being named.
+
+## Phase D — Agent-autonomy surfaces (done in this pass)
+
+Four gaps between "an agent can call this" and "an agent can adopt this
+without a human", each closed with tests:
+
+- **Unified error contract.** `veritas/errors.py` registry + one envelope on
+  every non-402 error; the 503 retrieval-unavailable body previously had no
+  `error` key at all; 422s were raw FastAPI shape; served at `GET /v1/errors`.
+- **Self-traversing discovery.** `/.well-known/x402` links every
+  machine-readable surface; free mode publishes an honest empty `accepts`
+  plus `configured_price`; the identity document dropped its fake
+  `api.veritas.example` default for relative paths and an explicit
+  `base_url_configured` flag; `GET /llms.txt` (+ sync-tested repo copy);
+  `GET /v1/schema` renders the wire contract as JSON Schema.
+- **Self-provisioning.** `veritas-agent up` = bootstrap config + locally
+  minted encrypted wallet keystore (`veritas/autonomous/wallet.py`) + config
+  applied to the environment the server actually reads
+  (`bootstrap.apply_to_env`) + serve. Funding the wallet, TLS, and public
+  deployment remain external and are stated (constitution A21).
+- **MCP surface (the local half of 4.2).** `veritas-mcp` serves
+  research/verify/trust/constitution as stdio MCP tools over the one engine;
+  no payment path over MCP — mapping the 402 challenge into an MCP error for
+  remote paid use remains open in 4.2.
+
+*Evidence:* `tests/test_errors.py`, `test_discovery.py`, `test_wallet.py`,
+`test_agent_cli.py`, `test_mcp_server.py`, `test_autonomous_payment.py`,
+`test_packaging.py`; CI green.
 
 ## Phase 0 — Prove settlement (2 weeks)
 
@@ -358,7 +419,7 @@ This is the larger half of agent-to-agent commerce.
   challenge validation → EIP-712 payload → policy gate → abstract signer →
   `X-PAYMENT` header; no key material in-process). Evidence: L1 unit tests
   plus an L2 bounded model check (`veritas/evaluations/payment_model.py`,
-  CI-gated) — invariants I1–I7 hold across an exhaustive ~3,800-trace bounded
+  CI-gated) — invariants I1–I7 hold across an exhaustive 8,720-trace bounded
   space including signer-fault and restart variants. Remaining for
   acceptance: the unattended testnet run against a funded wallet. A real
   signer now exists — `veritas.buyer_payment.LocalAccountSigner` puts an
@@ -432,10 +493,14 @@ This is the larger half of agent-to-agent commerce.
 - **4.1 Registry publication.** Post identity and payment requirements to the
   CDP x402 Bazaar and other live registries; re-register on boot and config
   change, deregister on shutdown. *Acceptance:* appears in a capability query
-  within 5 minutes of boot, disappears within 5 of shutdown.
-- **4.2 MCP surface.** Expose research as an MCP tool; map the 402 challenge
-  into an MCP error carrying payment requirements.
-- **4.3 ERC-8004 registration.** On-chain identity so reputation is portable.
+  within 5 minutes of boot, disappears within 5 of shutdown. Registry payloads
+  should carry the constitution reference (version + endpoint) already exposed
+  by `/v1/identity`; completing this promotes article A18.
+- **4.2 MCP surface.** *Local half done* (Phase D: `veritas-mcp` serves the
+  engine as stdio tools). Remaining: map the 402 challenge into an MCP error
+  carrying payment requirements, so a remote MCP client can pay.
+- **4.3 ERC-8004 registration.** On-chain identity so reputation is portable
+  (with 5.1, the promotion path for article A16).
 
 *Blocked by:* 0.1. Registry presence creates inbound traffic; inbound traffic
 against an unproven payment path produces failed settlements.
@@ -444,7 +509,9 @@ against an unproven payment path produces failed settlements.
 
 - **5.1 Signed attestations.** Sign served results; let buyers publish outcome
   attestations against `request_id`; aggregate into the trust basis, weighted
-  below local telemetry.
+  below local telemetry. Attestations should cite constitution article ids
+  (`CONSTITUTION.md`) so a dispute names the norm at issue; with 4.3 this is
+  the promotion path for articles A16 and A17.
 - **5.2 Counterparty checks.** Before paying, fetch the seller's identity and
   trust document; require a minimum score and a settled history; cap first-time
   exposure. *Acceptance:* a buyer refuses an unknown counterparty above the
@@ -523,8 +590,8 @@ runs alongside from the start.
 ## Commands
 
 ```bash
-pip install -e ".[retrieval,dev]"
-python -m pytest tests/ -q               # 65 tests
+pip install -e ".[retrieval,signing,dev]"
+python -m pytest tests/ -q               # 240 tests
 python -m veritas.evaluations.harness    # quality report
 veritas-server                           # free mode (or: python -m uvicorn veritas.server:app)
 ruff check veritas tests

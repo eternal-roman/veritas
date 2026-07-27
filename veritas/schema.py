@@ -81,6 +81,70 @@ REQUIRED_CLAIM_FIELDS = ("id", "statement", "confidence", "evidence_hash", "sour
 REQUIRED_EVIDENCE_FIELDS = ("url", "excerpt", "content_hash")
 
 
+def response_json_schema() -> dict[str, Any]:
+    """A JSON-Schema rendering of the wire contract, for non-Python consumers.
+
+    Derived from the same constants `validate_response` enforces, so the
+    served schema cannot drift from the enforced one. Nullability mirrors the
+    pipeline's actual output (refusal_reason and custody_root are null on
+    completed responses).
+    """
+    evidence_properties = {
+        "url": {"type": "string"},
+        "title": {"type": ["string", "null"]},
+        "excerpt": {"type": "string"},
+        "content_hash": {"type": "string", "pattern": "^sha256:"},
+        "provider": {"type": ["string", "null"]},
+        "provenance": {"type": ["string", "null"], "enum": [p.value for p in Provenance] + [None]},
+        "relevance": {"type": "number"},
+    }
+    claim_properties = {
+        "id": {"type": "string"},
+        "statement": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        "evidence_hash": {"type": "string", "pattern": "^sha256:"},
+        "source_url": {"type": "string"},
+        "provenance": {"type": ["string", "null"], "enum": [p.value for p in Provenance] + [None]},
+    }
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "VeritasResponse",
+        "type": "object",
+        "required": list(REQUIRED_FIELDS),
+        "properties": {
+            "request_id": {"type": "string"},
+            "status": {"type": "string", "enum": [s.value for s in Status]},
+            "query": {"type": "string"},
+            "posterior": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "claims": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": list(REQUIRED_CLAIM_FIELDS),
+                    "properties": claim_properties,
+                },
+            },
+            "evidence": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": list(REQUIRED_EVIDENCE_FIELDS),
+                    "properties": evidence_properties,
+                },
+            },
+            "custody_root": {"type": ["string", "null"]},
+            "custody_valid": {"type": "boolean"},
+            "retrieval": {"type": "object"},
+            "refusal_reason": {
+                "type": ["string", "null"],
+                "enum": [r.value for r in RefusalReason] + [None],
+            },
+            "billable": {"type": "boolean"},
+            "timestamp": {"type": "string"},
+        },
+    }
+
+
 def validate_response(payload: dict[str, Any]) -> list[str]:
     """Return a list of contract violations; empty means conformant."""
     problems: list[str] = []

@@ -6,7 +6,9 @@ system does, what is verified, what is broken, and what to build in what order.
 Last full evaluation: 2026-07-27, against `main` @ `b498652` plus the fixes in
 `95a75ef`. Amended the same day by the packaging pass (single installable
 `veritas` package, wheel/sdist build gated in CI — see Phase P below); paths in
-this document reflect the post-restructure tree.
+this document reflect the post-restructure tree. Amended again the same day by
+the constitution pass (machine-readable venue constitution with enforcement
+pointers — see Phase C below, `CONSTITUTION.md`, and `ECOSYSTEM.md`).
 
 ---
 
@@ -92,7 +94,7 @@ PROPERTY: The service never reports absent evidence when retrieval failed, never
           facilitator-verified payment.
 EVIDENCE LEVEL: L1 (tests and adversarial examples)
 CHECKED ARTIFACT: veritas/pipeline.py, veritas/retrieval.py, veritas/facilitator.py,
-          veritas/server.py, veritas/autonomous/control_plane.py; 65 tests; CI harness gates
+          veritas/server.py, veritas/autonomous/control_plane.py; 77 tests; CI harness gates
 ASSUMPTIONS: - Retrievers may raise and may ignore max_results (both now defended)
              - The facilitator honours the documented x402 /verify and /settle contract
              - Receipts are written to a filesystem that persists for the retention window
@@ -134,8 +136,9 @@ strongest claim these support.
 | JIT packets | Stable identity across chain, MAC signatures, enforced expiry, verified linkage |
 | Trust scoring | Derived from recorded outcomes; `UNPROVEN` below 10 samples |
 | Wire contract | `validate_response` run against live pipeline output across three retriever types |
+| Venue constitution | Every L1 article's enforcement pointer resolves to a real test/CI-gate/schema artifact; L0 articles carry none and are rendered as aspirational; `CONSTITUTION.md` sync-tested against `veritas/constitution.py` |
 
-**Test suite: 65 passing.** CI runs compileall, an import check of all
+**Test suite: 77 passing.** CI runs compileall, an import check of all
 top-level modules, the tests, and harness quality gates (citation fidelity,
 custody validity, refusal discrimination, unavailability handling), plus Bandit
 and pip-audit.
@@ -247,6 +250,20 @@ research, and asserts no stray top-level packages):**
 *Risk:* none technical; P.5 needs a PyPI account/maintainer decision, which is
 why it is not done from this branch.
 
+## Phase C — Venue constitution (done in this pass)
+
+The norms the service holds toward the venue — buyer agents, facilitators,
+registries, attesters — made machine-readable and enforcement-linked.
+`veritas/constitution.py` is the normative source: 15 L1 articles each
+pointing at the test, CI gate, or schema invariant that enforces it, 3 L0
+articles marked aspirational with their promotion phase named, and a known-gaps
+register whose open entries are pinned by witness tests. Served unpaid at
+`GET /v1/constitution`, referenced from `/v1/identity`, rendered in
+`CONSTITUTION.md` (sync-tested), with the surrounding venue architecture in
+`ECOSYSTEM.md`. *Evidence:* `tests/test_constitution.py`; CI green. What this
+does not prove: that the articles are sufficient against a hostile venue, or
+anything about the L0 articles beyond their being named.
+
 ## Phase 0 — Prove settlement (2 weeks)
 
 No payment has ever completed. Every commercial claim downstream rests on this,
@@ -350,10 +367,13 @@ This is the larger half of agent-to-agent commerce.
 - **4.1 Registry publication.** Post identity and payment requirements to the
   CDP x402 Bazaar and other live registries; re-register on boot and config
   change, deregister on shutdown. *Acceptance:* appears in a capability query
-  within 5 minutes of boot, disappears within 5 of shutdown.
+  within 5 minutes of boot, disappears within 5 of shutdown. Registry payloads
+  should carry the constitution reference (version + endpoint) already exposed
+  by `/v1/identity`; completing this promotes article A18.
 - **4.2 MCP surface.** Expose research as an MCP tool; map the 402 challenge
   into an MCP error carrying payment requirements.
-- **4.3 ERC-8004 registration.** On-chain identity so reputation is portable.
+- **4.3 ERC-8004 registration.** On-chain identity so reputation is portable
+  (with 5.1, the promotion path for article A16).
 
 *Blocked by:* 0.1. Registry presence creates inbound traffic; inbound traffic
 against an unproven payment path produces failed settlements.
@@ -362,7 +382,9 @@ against an unproven payment path produces failed settlements.
 
 - **5.1 Signed attestations.** Sign served results; let buyers publish outcome
   attestations against `request_id`; aggregate into the trust basis, weighted
-  below local telemetry.
+  below local telemetry. Attestations should cite constitution article ids
+  (`CONSTITUTION.md`) so a dispute names the norm at issue; with 4.3 this is
+  the promotion path for articles A16 and A17.
 - **5.2 Counterparty checks.** Before paying, fetch the seller's identity and
   trust document; require a minimum score and a settled history; cap first-time
   exposure. *Acceptance:* a buyer refuses an unknown counterparty above the
@@ -442,7 +464,7 @@ runs alongside from the start.
 
 ```bash
 pip install -e ".[retrieval,dev]"
-python -m pytest tests/ -q               # 65 tests
+python -m pytest tests/ -q               # 77 tests
 python -m veritas.evaluations.harness    # quality report
 veritas-server                           # free mode (or: python -m uvicorn veritas.server:app)
 ruff check veritas tests

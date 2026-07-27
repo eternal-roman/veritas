@@ -21,6 +21,7 @@ file described a system that did not import.
 | Behaviour-derived trust score | Working, reports `UNPROVEN` until 10 samples |
 | Evaluation harness + CI quality gates | Working |
 | Installable package (`pip install .`, single `veritas` namespace, `veritas-server` script) | Working; CI builds the wheel and installs it in a clean venv. Not yet on PyPI |
+| Venue constitution (`/v1/constitution`, `veritas/constitution.py`) | Working, tested: every L1 article's enforcement pointer resolves; L0 articles carry none; `CONSTITUTION.md` sync-tested |
 
 ## What is built but unproven
 
@@ -30,6 +31,15 @@ file described a system that did not import.
   operational one.
 - **Calibration.** Machinery works and persists; no labelled outcomes exist, so
   it honestly reports `passthrough_untrained`.
+- **Aspirational constitution articles.** A16 (portable reputation), A17
+  (dispute path), and A18 (registry liveness) are L0 by construction: named
+  norms with no enforcement, each citing the roadmap phase expected to promote
+  it. Publishing them proves nothing beyond the naming.
+- **Known gap G1** (registered in the constitution, pinned by a witness test):
+  the local facilitator simulator accepts any non-empty payment header and the
+  control plane hardcodes its price — labelled simulator behaviour, weaker
+  than the HTTP path. The control plane must not be exposed as a paid network
+  surface until fixed.
 
 ## What is missing
 

@@ -62,10 +62,18 @@ package — CI's package job asserts this.
   without carrying evidence: "complete", "live-ready", "ZK", "revenue-ready".
 - Docs state limitations plainly (see README "Known limitations", STATUS.md).
   Keep that register: narrow claims, evidence cited.
+- **The venue constitution is enforcement-linked.** `veritas/constitution.py`
+  is the normative source; `CONSTITUTION.md` is a sync-tested rendering.
+  Changing an article means changing both and bumping `CONSTITUTION_VERSION`;
+  a new norm is either L1 with a resolving enforcement pointer or L0 marked
+  aspirational — `tests/test_constitution.py` rejects anything else.
 
 ## Consuming the service as an agent
 
 - Discovery: `GET /.well-known/x402` (payment requirements), `GET /v1/identity`.
+- Norms: `GET /v1/constitution` — the venue constitution, each article either
+  pointing at its enforcement artifact or marked aspirational (see
+  `CONSTITUTION.md` and `ECOSYSTEM.md`).
 - Research: `POST /v1/research` — returns 402 with an `accepts` array in live
   mode; retry with an `X-PAYMENT` header (base64 x402 payload).
 - Verification: `POST /v1/verify` re-checks any published `content_hash`;

@@ -18,7 +18,9 @@ Invariants:
   I2 signed value == the quoted maxAmountRequired, exactly.
   I3 all nonces are unique across every signed authorization in the run.
   I4 signed amounts within a day stay <= the daily cap and <= the
-     per-counterparty cap, in every trace including restart variants.
+     per-counterparty cap, in every trace including restart variants — and
+     the implementation's own persisted ledger agrees with the model, so
+     this is an independent reading rather than a restatement of I1.
   I5 a denial means zero signer calls for that request (signer-fault
      requests excepted: there the one attempt is the injected failure).
   I6 invalid entries (unknown network / wrong asset / malformed payTo /
@@ -50,12 +52,18 @@ PER_DAY_CAP = 4
 PER_COUNTERPARTY_CAP = 3
 VALID_NETWORK = "eip155:8453"
 UNKNOWN_NETWORK = "eip155:999999"
+# A network with a real USDC asset (so validate_accepts accepts it) that the
+# policy allowlist deliberately excludes. Without this the network_allowlist
+# denial branch is never executed by the model.
+ALT_NETWORK = "eip155:84532"
 COUNTERPARTY_A = "0x" + "aa" * 20
 COUNTERPARTY_B = "0x" + "bb" * 20
 # Same on-chain address as A in a different hex casing: the per-counterparty
 # cap must treat every spelling of one address as one budget.
 COUNTERPARTY_A_MIXED = "0x" + "aA" * 20
 INVALID_KINDS = ("unknown_network", "wrong_asset", "malformed_pay_to", "zero_amount")
+# Structurally valid on a known network, but outside the policy's allowlist.
+OFF_ALLOWLIST_SYMBOL = ("off_allowlist", 1, COUNTERPARTY_A)
 # Structurally valid requests whose signer call raises: the signer boundary
 # is untrusted, and without these symbols the ordering of policy.record()
 # relative to the signer call is invisible to the model.
@@ -63,6 +71,7 @@ SIGNER_FAULT_SYMBOLS = (
     ("signer_fault", 1, COUNTERPARTY_A),
     ("signer_fault", 2, COUNTERPARTY_B),
 )
+ALLOWED_NETWORKS = {VALID_NETWORK}
 MAX_TRACE_LEN = 3
 NOW = 1_753_600_000
 # The policy day is pinned so a UTC-midnight rollover mid-run cannot reset the
@@ -79,12 +88,17 @@ BOUNDS = {
     "casing_note": "COUNTERPARTY_A_MIXED is the same address as A in a different hex casing",
     "networks": [VALID_NETWORK, UNKNOWN_NETWORK],
     "invalid_variants": list(INVALID_KINDS),
+    "off_allowlist_variant": f"valid challenge on {ALT_NETWORK}, allowlist={sorted(ALLOWED_NETWORKS)}",
     "signer_fault_variants": [
         f"signer raises on a valid request for {amount} to {counterparty}"
         for _, amount, counterparty in SIGNER_FAULT_SYMBOLS
     ],
     "max_trace_len": MAX_TRACE_LEN,
-    "restart_variant": "policy re-instantiated from disk before request index 1",
+    "restart_variant": (
+        "policy re-instantiated from disk before request index 1; multi-payment "
+        "state deserialisation is additionally exercised on every authorize(), "
+        "which re-reads the ledger, and checked by I4 against the model"
+    ),
     "fixed_utc_date": FIXED_UTC_DATE,
 }
 
@@ -130,6 +144,7 @@ def _symbols() -> list[tuple[str, int, str]]:
     ]
     syms.extend((kind, 1, COUNTERPARTY_A) for kind in INVALID_KINDS)
     syms.extend(SIGNER_FAULT_SYMBOLS)
+    syms.append(OFF_ALLOWLIST_SYMBOL)
     return syms
 
 
@@ -142,7 +157,10 @@ def _entry(kind: str, amount: int, counterparty: str) -> dict:
         "asset": USDC_ASSETS[VALID_NETWORK]["address"],
         "extra": {"name": "USDC", "version": "2"},
     }
-    if kind == "unknown_network":
+    if kind == "off_allowlist":
+        entry["network"] = ALT_NETWORK
+        entry["asset"] = USDC_ASSETS[ALT_NETWORK]["address"]
+    elif kind == "unknown_network":
         entry["network"] = UNKNOWN_NETWORK
     elif kind == "wrong_asset":
         entry["asset"] = "0x" + "11" * 20
@@ -153,8 +171,16 @@ def _entry(kind: str, amount: int, counterparty: str) -> dict:
     return entry
 
 
-def _model_allows(amount: int, counterparty: str, spent: int, per_cp: dict[str, int]) -> bool:
+def _model_allows(
+    amount: int,
+    counterparty: str,
+    spent: int,
+    per_cp: dict[str, int],
+    network: str = VALID_NETWORK,
+) -> bool:
     """The semantic model of the caps, independent of the implementation."""
+    if network not in ALLOWED_NETWORKS:
+        return False
     if amount > PER_REQUEST_CAP:
         return False
     if spent + amount > PER_DAY_CAP:
@@ -162,6 +188,22 @@ def _model_allows(amount: int, counterparty: str, spent: int, per_cp: dict[str, 
     if per_cp.get(counterparty.lower(), 0) + amount > PER_COUNTERPARTY_CAP:
         return False
     return True
+
+
+def _persisted_ledger(base: Path) -> dict | None:
+    """Read the implementation's own spend ledger from disk, or None."""
+    path = base / "spend_policy.json"
+    try:
+        raw = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    per_cp = raw.get("per_counterparty")
+    return {
+        "spent": raw.get("spent"),
+        "per_counterparty": per_cp if isinstance(per_cp, dict) else {},
+    }
 
 
 def _violate(violations: dict[str, str], name: str, detail: str) -> None:
@@ -183,7 +225,7 @@ def _run_trace(
                 max_per_request=PER_REQUEST_CAP,
                 max_per_day=PER_DAY_CAP,
                 max_per_day_per_counterparty=PER_COUNTERPARTY_CAP,
-                allowed_networks=None,
+                allowed_networks=ALLOWED_NETWORKS,
                 base_dir=base,
             )
 
@@ -211,7 +253,10 @@ def _run_trace(
 
             calls_before = len(signer.calls)
             attempts_before = signer.attempts
-            model_ok = _model_allows(amount, counterparty, spent, per_cp)
+            model_ok = _model_allows(
+                amount, counterparty, spent, per_cp,
+                network=ALT_NETWORK if kind == "off_allowlist" else VALID_NETWORK,
+            )
             if kind == "signer_fault":
                 signer.fail_next = True
             result = client.pay(validated, now=NOW, now_utc_date=FIXED_UTC_DATE)
@@ -279,6 +324,41 @@ def _run_trace(
                         f"counterparty spend {per_cp[cp_key]} > "
                         f"{PER_COUNTERPARTY_CAP} in {trace}",
                     )
+                # Independent reading: the implementation's own persisted
+                # ledger must agree with the model. Derived purely from the
+                # model, I4 could only restate I1; reading the file makes it
+                # an actual check of what the buyer recorded on disk.
+                ledger = _persisted_ledger(base)
+                if ledger is None:
+                    _violate(violations, "I4", f"no spend ledger persisted after payment in {trace}")
+                else:
+                    if ledger["spent"] != spent:
+                        _violate(
+                            violations,
+                            "I4",
+                            f"persisted spend {ledger['spent']} != model {spent} in {trace}",
+                        )
+                    if ledger["spent"] > PER_DAY_CAP:
+                        _violate(
+                            violations,
+                            "I4",
+                            f"persisted spend {ledger['spent']} > cap {PER_DAY_CAP} in {trace}",
+                        )
+                    for key, value in ledger["per_counterparty"].items():
+                        if value > PER_COUNTERPARTY_CAP:
+                            _violate(
+                                violations,
+                                "I4",
+                                f"persisted counterparty spend {key}={value} > "
+                                f"{PER_COUNTERPARTY_CAP} in {trace}",
+                            )
+                        if per_cp.get(key, 0) != value:
+                            _violate(
+                                violations,
+                                "I4",
+                                f"persisted counterparty {key}={value} != model "
+                                f"{per_cp.get(key, 0)} in {trace}",
+                            )
             else:
                 counters["denied"] += 1
                 if attempt_delta != 0:

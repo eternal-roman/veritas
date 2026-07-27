@@ -25,7 +25,8 @@ network is not a research service. Veritas never bills for its own outage.
 - **Tiered retrieval**: keyed Serper (Google) when configured, zero-key
   Wikipedia + DuckDuckGo always, with provider errors surfaced and outages
   degrading tier by tier — never silently
-- **x402 payment** with real facilitator `verify` / `settle` and fail-closed gating
+- **x402 payment** with real facilitator `verify` / `settle`, fail-closed gating,
+  and replay protection (a resubmitted authorization never buys a second pass)
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
 - **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
 

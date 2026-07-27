@@ -7,7 +7,7 @@ are load-bearing.
 ## Setup and commands
 
 ```bash
-pip install -e ".[retrieval,dev]"        # everything needed to develop
+pip install -e ".[retrieval,signing,dev]"  # everything needed to develop
 python -m pytest tests/ -q               # test suite — must stay green
 python -m veritas.evaluations.harness    # quality report (JSON to stdout)
 python -m veritas.evaluations.payment_model  # bounded payment-invariant check — CI gates on this
@@ -45,7 +45,8 @@ package — CI's package job asserts this.
    load-bearing; settlement is gated on it.
 4. **Verify payment before work, settle after.** An unpaid caller must not
    consume a retrieval pass; a buyer must never be charged for undeliverable
-   work.
+   work. A payment nonce is claimed before the work too, so a resubmitted
+   `X-PAYMENT` cannot make us pay for the same request twice.
 5. **Retrievers are untrusted.** They may raise and may ignore `max_results`;
    the pipeline defends against both.
 6. **The wire contract is enforced.** `veritas.schema.validate_response` runs
@@ -53,7 +54,11 @@ package — CI's package job asserts this.
    extending the contract.
 7. **Misconfiguration never silently becomes free service.** Invalid payment
    config → `mode: misconfigured` → 503.
-8. **Version is single-sourced.** `veritas.__version__` feeds pyproject
+8. **One buyer payment path.** `veritas.payer` owns challenge validation,
+   spend caps, the attempt journal, and the `Signer` seam. Signing backends
+   adapt to that seam (`veritas.buyer_payment.LocalAccountSigner` is the
+   testnet one); never add a second path that signs without the gate.
+9. **Version is single-sourced.** `veritas.__version__` feeds pyproject
    (dynamic), the server, the identity document, and the retrieval user-agent.
    Bump it in exactly one place: `veritas/__init__.py`.
 

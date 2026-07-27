@@ -1,6 +1,6 @@
 """Veritas Research - High-assurance evidenced research for agents."""
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 from .bayesian import BayesianBelief, update_belief
 from .custody import CustodyEvent, CustodyLedger, CustodyStore, verify_chain_records

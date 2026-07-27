@@ -3,7 +3,12 @@
 
 Acceptance: Base Sepolia USDC transfer buyer → VERITAS_PAY_TO from unattended request.
 
-Uses veritas.buyer_payment for payload construction (additive package API).
+Uses veritas.buyer_payment.pay_via_policy, which routes signing through
+veritas.payer: the challenge is validated against the known USDC asset for its
+network, spend caps are enforced before signing, and every attempt is
+journalled before the payload reaches the signer. An unattended harness with a
+funded key and no caps is how a loop drains a wallet overnight.
+
 Does not claim Phase 0.1 success without a non-simulated on-chain tx hash.
 """
 
@@ -18,13 +23,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from veritas.buyer_payment import (
-    BuyerPaymentError,
-    acceptance_met,
-    build_exact_payment_payload,
-    encode_x_payment,
-    extract_settlement_proof,
-)
+try:
+    from veritas.buyer_payment import (
+        BuyerPaymentError,
+        acceptance_met,
+        extract_settlement_proof,
+        pay_via_policy,
+    )
+except ModuleNotFoundError:  # running from a source checkout, package not installed
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from veritas.buyer_payment import (
+        BuyerPaymentError,
+        acceptance_met,
+        extract_settlement_proof,
+        pay_via_policy,
+    )
 
 BASE_URL = os.environ.get("VERITAS_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 BUYER_KEY = os.environ.get("BUYER_PRIVATE_KEY", "")
@@ -110,7 +123,7 @@ def main() -> int:
     report["requirements"] = requirements
 
     try:
-        payment_payload = build_exact_payment_payload(requirements, BUYER_KEY)
+        x_payment, payment_payload = pay_via_policy(requirements, BUYER_KEY)
     except BuyerPaymentError as exc:
         report["steps"].append({"step": "build_payment", "error": str(exc)})
         report["acceptance"]["notes"].append(str(exc))
@@ -120,11 +133,11 @@ def main() -> int:
 
     report["steps"].append({
         "step": "build_payment",
-        "payer": payment_payload.get("payer"),
+        "payer": payment_payload.get("payload", {}).get("authorization", {}).get("from"),
         "network": payment_payload.get("network"),
+        "gated_by": "veritas.payer: validate_accepts + SpendPolicy + attempt journal",
     })
 
-    x_payment = encode_x_payment(payment_payload)
     paid_status, paid_body, paid_hdrs = http_json(
         "POST",
         f"{BASE_URL}/v1/research",

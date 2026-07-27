@@ -353,13 +353,39 @@ def test_policy_same_day_state_is_honoured(tmp_path):
     assert decision.check == "per_day_cap"
 
 
-def test_policy_corrupt_state_treated_as_fresh_but_caps_enforced(tmp_path):
+def test_policy_corrupt_state_fails_closed(tmp_path):
+    """Superseded the earlier "corrupt state = fresh day" behaviour: an
+    adversarial review showed that re-granting the full budget on a damaged
+    file hands a daily budget to anything able to damage it. If we cannot
+    establish today's spend, we cannot bound it, so we refuse."""
     (tmp_path / "spend_policy.json").write_text("{not json")
     policy = _policy(tmp_path, per_request=2, per_day=4)
-    assert policy.authorize(2, NETWORK, PAY_TO).allowed is True
-    decision = policy.authorize(3, NETWORK, PAY_TO)
+    decision = policy.authorize(1, NETWORK, PAY_TO)
     assert decision.allowed is False
-    assert decision.check == "per_request_cap"
+    assert decision.check == "corrupt_state"
+    assert "spend_policy.json" in decision.detail
+
+
+def test_policy_absent_state_is_a_fresh_start(tmp_path):
+    """Absent state is first-run, not damage — it must still be allowed."""
+    assert _policy(tmp_path, per_request=2, per_day=4).authorize(2, NETWORK, PAY_TO).allowed
+
+
+def test_policy_recovers_once_corrupt_state_is_removed(tmp_path):
+    (tmp_path / "spend_policy.json").write_text("{not json")
+    policy = _policy(tmp_path, per_request=2, per_day=4)
+    assert policy.authorize(1, NETWORK, PAY_TO).check == "corrupt_state"
+    (tmp_path / "spend_policy.json").unlink()
+    assert policy.authorize(1, NETWORK, PAY_TO).allowed, "operator repair must clear the latch"
+
+
+def test_corrupt_state_blocks_signing_end_to_end(tmp_path):
+    (tmp_path / "spend_policy.json").write_text('{"date": "2026-07-27", "spent": -5}')
+    signer = _StubSigner()
+    client = PaymentClient(signer, _policy(tmp_path, per_request=250000, per_day=500000))
+    result = client.pay(_valid(), now=NOW)
+    assert not result.paid and result.check == "corrupt_state"
+    assert signer.calls == [], "no signature may be requested on unbounded budget"
 
 
 def test_policy_write_failure_keeps_memory_counters_authoritative(tmp_path):

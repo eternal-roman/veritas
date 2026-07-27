@@ -306,13 +306,17 @@ class SpendPolicy:
     advisory file lock plus a read-merge so several policy instances on one
     host sharing a state file accumulate rather than overwrite each other.
 
-    Residual gaps, stated plainly (with respect to money these are OPEN in
-    the under-count direction, not closed): a state file that is lost, or
-    corrupted by something other than our own writes, forgets that day's
-    already-spent amount and re-grants the full budget from zero; a failed
-    WRITE keeps in-memory counters authoritative for this process only —
-    other processes and later restarts will not see that spend. Anything
-    that can write the state file can reset the budget; local disk is
+    Corrupt state fails closed: a file that exists but cannot be trusted
+    latches the policy into ``corrupt_state`` and every authorization is
+    refused until an operator repairs or removes it. An ABSENT file is a
+    fresh start and is allowed — that distinction is the whole guard, since
+    resetting to zero on damage would hand a full daily budget to anything
+    able to damage the file.
+
+    Residual gaps, stated plainly: a state file that is DELETED still starts
+    a fresh budget (indistinguishable from first run); a failed WRITE keeps
+    in-memory counters authoritative for this process only, so other
+    processes and later restarts will not see that spend. Local disk is
     trusted. Cross-host enforcement needs shared state (roadmap 6.2), and
     the signer-side policy layer (3.2) is the backstop for all of this.
     """
@@ -332,6 +336,7 @@ class SpendPolicy:
         self._base_dir = Path(
             base_dir or os.environ.get("VERITAS_RUNTIME_DIR") or _DEFAULT_RUNTIME_DIR
         )
+        self._state_corrupt: str | None = None
         self._date, self._spent, self._per_counterparty = self._load_state()
 
     # -- state -----------------------------------------------------------
@@ -356,6 +361,18 @@ class SpendPolicy:
         return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
     def _load_state(self) -> tuple[str, int, dict[str, int]]:
+        """Load persisted counters.
+
+        Absent state is a fresh start and is allowed. State that EXISTS but
+        cannot be trusted is different in kind: we cannot tell how much has
+        already been spent today, so the policy latches into a corrupt state
+        and refuses to authorize anything until an operator intervenes.
+        Resetting to zero instead would hand a fresh daily budget to anyone
+        (or anything) able to damage the file.
+        """
+        if not self._state_path.exists():
+            self._state_corrupt = None
+            return self._today(), 0, {}
         try:
             raw = json.loads(self._state_path.read_text())
             date = raw["date"]
@@ -371,18 +388,16 @@ class SpendPolicy:
                     for k, v in per_counterparty.items()
                 )
             ):
-                raise ValueError("state file has wrong shape or negative counters")
+                raise ValueError("state file has wrong shape or out-of-range counters")
             folded: dict[str, int] = {}
             for key, value in per_counterparty.items():
                 fk = self._fold(key)
                 folded[fk] = folded.get(fk, 0) + value
-            return date, spent, folded
-        except (OSError, ValueError, KeyError, TypeError):
-            # Known under-count direction, documented in the class docstring:
-            # an unreadable or malformed file re-grants the day's budget from
-            # zero. Range checks above at least reject negative counters,
-            # which would silently EXPAND the budget.
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            self._state_corrupt = f"{type(exc).__name__}: {str(exc)[:120]}"
             return self._today(), 0, {}
+        self._state_corrupt = None
+        return date, spent, folded
 
     def _merge_disk(self) -> None:
         """Fold the on-disk counters into memory, taking the maximum per
@@ -480,6 +495,17 @@ class SpendPolicy:
             )
         self._roll_day(now_utc_date or self._today())
         self._merge_disk()
+        if self._state_corrupt is not None:
+            # We cannot establish today's spend, so we cannot bound it.
+            return PolicyDecision(
+                allowed=False,
+                check="corrupt_state",
+                detail=(
+                    f"spend state at {self._state_path} is unreadable "
+                    f"({self._state_corrupt}); refusing to authorize until it is "
+                    "repaired or removed"
+                ),
+            )
 
         known = self.allowed_networks if self.allowed_networks is not None else set(USDC_ASSETS)
         if network not in known:

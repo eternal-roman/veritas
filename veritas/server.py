@@ -310,8 +310,10 @@ def well_known():
             body["accepts"] = [build_payment_requirements(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
             ).to_dict()]
-        except PriceError as exc:
-            body["error"] = f"payment_misconfigured: {exc}"
+        except PriceError:
+            # Category only, same as the /v1/research path: the exception
+            # text describes server-side configuration.
+            body["error"] = "payment_misconfigured: price configuration rejected"
     return body
 
 

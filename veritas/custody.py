@@ -134,9 +134,11 @@ class CustodyStore:
             record["persisted"] = True
         except OSError as exc:
             # Never fail a paid request because the disk is unavailable; report
-            # honestly that the receipt is not durable.
+            # honestly that the receipt is not durable. Exception type only:
+            # the message names server filesystem paths and this record is
+            # served to buyers as the custody receipt.
             record["persisted"] = False
-            record["error"] = str(exc)[:200]
+            record["error"] = f"receipt_not_persisted_{type(exc).__name__}"
         return record
 
     def load(self, request_id: str) -> dict[str, Any] | None:

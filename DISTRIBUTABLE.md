@@ -3,24 +3,47 @@
 ## Package Contents (agent-consumable)
 
 - Core research engine (`veritas/`)
-- Zero-key retrieval (`veritas/autonomous/zero_key_retrieval.py`)
+- Zero-key retrieval (`veritas/autonomous/zero_key_retrieval.py`), keyed
+  Serper tier (`veritas/providers.py`)
 - Payment configuration + live/free switch (`veritas/payment_config.py`)
-- Local facilitator simulator (`veritas/autonomous/local_facilitator.py`)
-- Self-calibrator, custody, hashing, identity, trust
-- FastAPI surface with discovery endpoints (`veritas/server.py`)
+- Buyer payment path with spend caps (`veritas/payer.py`,
+  `veritas/buyer_payment.py`), replay protection (`veritas/replay.py`)
+- Wallet self-provisioning (`veritas/autonomous/wallet.py`) and the
+  `veritas-agent` CLI (`veritas/agent_cli.py`)
+- Local facilitator simulator (`veritas/autonomous/local_facilitator.py`) —
+  structural checks only, see constitution gap G2
+- Self-calibrator, custody, hashing, identity, trust, constitution
+- FastAPI surface with self-traversing discovery (`veritas/server.py`),
+  error registry (`veritas/errors.py`), `llms.txt` (`veritas/discovery.py`)
+- MCP stdio tools (`veritas/mcp_server.py`, `veritas-mcp`)
 - Evaluation harness
 
 ## Minimum Agent-to-Agent Deployment
 
-1. Clone or install the package.
-2. (Optional) Set live payment env vars.
-3. Run the API or import the pipeline.
-4. Publish the public URL + `/.well-known/x402` so other agents can discover it.
+```bash
+pip install "veritas-research[retrieval,signing] @ git+https://github.com/eternal-roman/veritas"
+veritas-agent up            # config + wallet + serve, free mode
+veritas-agent up --paid     # same, requiring payment to the agent's wallet
+```
+
+Or containerised: `docker build -t veritas-research . && docker run -p 8000:8000 veritas-research`.
+
+What `up` provisions with no human input: the agent config, a locally minted
+encrypted wallet keystore (its address becomes `pay_to`), and a running
+server whose environment reflects that config. What remains external, stated
+plainly: funding the wallet, TLS/public deployment, and publishing the URL
+(registry announcement is ROADMAP Phase 4).
 
 ## Payment System Between Agents
 
-- **Seller agent / service**: runs Veritas with `VERITAS_PAY_TO` set to an address it controls.
-- **Buyer agent**: discovers the endpoint, receives 402, pays via x402 using its own wallet, retries with payment proof.
-- **Facilitator**: public (OpenFacilitator / CDP) or self-hosted; settles on-chain.
+- **Seller agent / service**: runs Veritas with `pay_to` set to an address it
+  controls — `veritas-agent up --paid` uses the self-provisioned wallet.
+- **Buyer agent**: discovers the endpoint, receives 402, pays via x402 within
+  its spend policy (`veritas.buyer_payment.pay_via_policy`), retries with
+  payment proof. A resubmitted authorization is refused (replay protection).
+- **Facilitator**: public (OpenFacilitator / CDP) or self-hosted; settles
+  on-chain. No settlement has yet been proven end-to-end (ROADMAP 0.1).
 
-No human is required in the payment or research loop once the service is running and the receiving wallet is funded/controlled by the seller agent or its operator.
+Once the service is running and the receiving wallet is funded, the payment
+and research loop is agent-to-agent; the funding step and public deployment
+are the remaining human touchpoints.

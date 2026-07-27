@@ -15,6 +15,8 @@ ruff check veritas tests                 # lint — CI gates on this
 bandit -r veritas -lll -q                # security scan — CI gates on high severity
 python -m build && twine check dist/*    # packaging — CI builds and installs the wheel
 veritas-server                           # run the service (free mode by default)
+veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve
+veritas-mcp                              # serve the engine as local MCP tools (stdio)
 ```
 
 Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
@@ -81,7 +83,10 @@ package — CI's package job asserts this.
 
 ## Consuming the service as an agent
 
-- Discovery: `GET /.well-known/x402` (payment requirements), `GET /v1/identity`.
+- Discovery: `GET /.well-known/x402` — self-traversing (its `links` object
+  reaches every surface below), plus `GET /v1/identity` and `GET /llms.txt`.
+- Contract: `GET /v1/schema` (wire contract as JSON Schema), `GET /v1/errors`
+  (registered error codes with status and retriability), `GET /openapi.json`.
 - Norms: `GET /v1/constitution` — the venue constitution, each article either
   pointing at its enforcement artifact or marked aspirational (see
   `CONSTITUTION.md` and `ECOSYSTEM.md`).
@@ -92,6 +97,10 @@ package — CI's package job asserts this.
   `veritas.custody.verify_chain_records` re-runs chain validation client-side.
 - Trust: `GET /v1/trust` is behaviour-derived and reports `UNPROVEN` below 10
   recorded outcomes. Treat it as an input, not authorization.
+- Local tools: `veritas-mcp` exposes research/verify/trust/constitution as MCP
+  tools over stdio (free-mode local engine; no payment path over MCP).
+- Self-provisioning: `veritas-agent up` bootstraps config and a local wallet
+  and serves; funding the wallet and public TLS deployment remain external.
 
 ## Current state, honestly
 

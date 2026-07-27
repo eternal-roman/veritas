@@ -39,8 +39,11 @@ per-request human approval uneconomic (see ROADMAP Part III, assumptions).
 discover ──> evaluate ──> pay ──> consume ──> verify ──> attest
 ```
 
-1. **Discover.** `GET /.well-known/x402` and `GET /v1/identity` are unpaid.
-   Today discovery requires knowing the endpoint; registry publication is
+1. **Discover.** `GET /.well-known/x402`, `GET /v1/identity`, and
+   `GET /llms.txt` are unpaid, and the well-known document is
+   self-traversing: its `links` object reaches every machine-readable
+   surface (identity, trust, constitution, errors, schema, OpenAPI). Today
+   discovery still requires knowing the endpoint; registry publication is
    ROADMAP Phase 4.
 2. **Evaluate.** The buyer reads the identity document, fetches
    `GET /v1/constitution`, checks enforcement pointers against the published

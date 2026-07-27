@@ -64,6 +64,7 @@ dev = [
 
 [project.scripts]
 veritas-server = "veritas.server:main"
+veritas-agent = "veritas.agent_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/eternal-roman/veritas"

@@ -146,6 +146,27 @@ Every article in this constitution carries an evidence level, and any unenforced
 Enforced by `tests/test_constitution.py::test_article_ids_unique_and_levels_consistent`,
 which fails on any article that claims L1 without enforcement or L0 with it.
 
+### A19 — Replay refusal (L1)
+
+A resubmitted payment authorization is refused before a second retrieval pass is consumed, and an unusable replay guard refuses rather than waves through.
+
+Enforced by `tests/test_replay.py::test_resubmitted_header_does_the_work_once`
+and `tests/test_replay.py::test_unusable_store_fails_closed`.
+
+### A20 — Bounded buyer spending (L1)
+
+A buyer-side payment is signed only after challenge validation and within declared spend caps, and a refused payment never reaches the signer.
+
+Enforced by `tests/test_gated_payment.py::test_gated_payment_enforces_spend_caps`
+and the `veritas.evaluations.payment_model` bounded model check gated in CI.
+
+### A21 — Agent self-provisioning (L1)
+
+An agent can provision this service — configuration, receiving keypair, and running server — without human input, with key material created locally and never transmitted, and with the steps that still require a human, funding and public deployment, stated rather than hidden.
+
+Enforced by `tests/test_wallet.py::test_wallet_key_material_stays_on_disk`
+and `tests/test_agent_cli.py::test_up_configures_server_from_bootstrap_config`.
+
 ---
 
 ## Aspirational articles

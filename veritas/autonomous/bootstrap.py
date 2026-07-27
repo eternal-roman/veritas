@@ -41,6 +41,31 @@ def bootstrap_free_mode(agent_id: str = "default", base_dir: str = ".veritas_age
     config_path.write_text(json.dumps(config, indent=2))
     return config
 
+def apply_to_env(config: dict) -> None:
+    """Apply an agent config to the environment the HTTP server reads.
+
+    `bootstrap_free_mode` writes a config file that only the in-process
+    control plane consumed; `PaymentConfig.from_env` never saw it, so an
+    agent that "provisioned" itself had configured nothing the served
+    surface uses. This is the bridge: config keys map onto the VERITAS_*
+    variables, and only keys actually present (and non-None) are applied —
+    PaymentConfig's own validation still decides free/live/misconfigured.
+    """
+    os.environ["VERITAS_REQUIRE_PAYMENT"] = (
+        "true" if config.get("require_payment") else "false"
+    )
+    mapping = {
+        "pay_to": "VERITAS_PAY_TO",
+        "facilitator": "VERITAS_FACILITATOR",
+        "network": "VERITAS_NETWORK",
+        "price": "VERITAS_PRICE",
+    }
+    for key, var in mapping.items():
+        value = config.get(key)
+        if value is not None:
+            os.environ[var] = str(value)
+
+
 def load_config(base_dir: str = ".veritas_agent") -> dict:
     """Return the agent config, bootstrapping free mode if none exists yet."""
     config_path = Path(base_dir) / "config.json"

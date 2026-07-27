@@ -22,7 +22,7 @@ import urllib.request
 from typing import Any
 
 from veritas import __version__
-from veritas.retrieval import RetrievalError, RetrievalResult
+from veritas.retrieval import RetrievalError, RetrievalResult, classify_transport_error
 
 USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
 TIMEOUT_SECONDS = 8
@@ -30,15 +30,7 @@ TIMEOUT_SECONDS = 8
 
 def _classify(exc: Exception) -> tuple[str, str]:
     """Map an exception onto a stable (error_type, detail) pair."""
-    if isinstance(exc, urllib.error.HTTPError):
-        return "http_error", f"HTTP {exc.code}"
-    if isinstance(exc, urllib.error.URLError):
-        return "network_unreachable", str(exc.reason)[:200]
-    if isinstance(exc, TimeoutError):
-        return "timeout", f"exceeded {TIMEOUT_SECONDS}s"
-    if isinstance(exc, json.JSONDecodeError):
-        return "malformed_response", str(exc)[:200]
-    return type(exc).__name__, str(exc)[:200]
+    return classify_transport_error(exc, TIMEOUT_SECONDS)
 
 
 def _get_json(url: str) -> dict[str, Any]:

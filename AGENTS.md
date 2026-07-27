@@ -10,11 +10,17 @@ are load-bearing.
 pip install -e ".[retrieval,dev]"        # everything needed to develop
 python -m pytest tests/ -q               # test suite — must stay green
 python -m veritas.evaluations.harness    # quality report (JSON to stdout)
+python -m veritas.evaluations.payment_model  # bounded payment-invariant check — CI gates on this
 ruff check veritas tests                 # lint — CI gates on this
 bandit -r veritas -lll -q                # security scan — CI gates on high severity
 python -m build && twine check dist/*    # packaging — CI builds and installs the wheel
 veritas-server                           # run the service (free mode by default)
 ```
+
+Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
+the keyed Serper provider ahead of the zero-key tier. Keys are configuration,
+never payload — read from env, sent only as a provider request header, never
+serialised into results, errors, custody events, or receipts (tested).
 
 Offline development: `run_research(query, allow_network=False)` uses the
 labelled offline corpus. The corpus is **not** a fallback for provider outages

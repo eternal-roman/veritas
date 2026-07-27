@@ -77,6 +77,10 @@ jobs:
           sys.exit(1 if failures else 0)
           PY
 
+      - name: Payment model — bounded invariant check must hold
+        run: |
+          python -m veritas.evaluations.payment_model
+
       - name: Basic secret pattern scan
         run: |
           set -e

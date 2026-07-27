@@ -256,7 +256,11 @@ and it is cheap, so it goes first.
   with `VERITAS_NETWORK=eip155:84532`, `VERITAS_REQUIRE_PAYMENT=true`. Drive a
   real 402 → sign → verify → settle cycle. Record the transaction hash.
   *Acceptance:* a Base Sepolia transaction in which USDC moves from a buyer
-  wallet to `VERITAS_PAY_TO`, initiated by an unattended request.
+  wallet to `VERITAS_PAY_TO`, initiated by an unattended request. While there:
+  record each network's actual on-chain USDC EIP-712 domain (`name()` /
+  `version()` — e.g. "USD Coin" vs "USDC" varies by deployment) and pin them
+  in `USDC_ASSETS`; today the buyer trusts the challenge's `extra` block for
+  the domain, and a wrong value means signatures that cannot settle.
 - **0.2 Facilitator contract tests.** Record real `/verify` and `/settle`
   request/response bodies as fixtures. *Acceptance:* fixtures replay green;
   renaming a field fails a test.
@@ -265,6 +269,12 @@ and it is cheap, so it goes first.
   *Acceptance:* zero unmatched settlements across a 50-request testnet run.
 - **0.4 Replay protection.** Track spent payment nonces; reject resubmission.
   *Acceptance:* the same `X-PAYMENT` header submitted twice does the work once.
+- **0.5 Signature-scheme compatibility probe.** The Phase 3 custody endgame
+  (smart account + session keys) requires the facilitator to verify ERC-1271
+  contract-wallet signatures for the `exact` scheme, and the deployed USDC on
+  each target network to accept them in `transferWithAuthorization` (v2.2+).
+  Neither is proven. *Acceptance:* a recorded testnet result per facilitator
+  and network; the 3.2 session-key decision must cite it.
 
 *Risk:* a public facilitator may not support the chosen network or scheme.
 Self-hosting adds ~1 week and an RPC dependency.
@@ -277,11 +287,15 @@ This is the product. Everything else is plumbing around it.
   (`trafilatura` or `readability-lxml`); hash the extracted passage, not the
   snippet. *Acceptance:* median evidence length > 1,500 chars on the eval set,
   extraction failures reported as provider errors.
-- **1.2 Paid retrieval backends.** Implement `Retriever` for Exa, Brave, Serper
-  behind env config. The protocol and `CompositeRetriever` already support this;
-  register paid providers ahead of keyless ones and keep zero-key as the free
-  tier. *Acceptance:* a provider outage degrades to the next tier and is
-  reported, with no pipeline change.
+- **1.2 Paid retrieval backends.** *Serper done* (`veritas/providers.py`):
+  registered ahead of the zero-key tier when `VERITAS_SERPER_API_KEY` /
+  `SERPER_API_KEY` is set; the acceptance criterion — a provider outage
+  degrades to the next tier and is reported, with no pipeline change — is a
+  test (`test_serper_outage_degrades_to_next_tier`), as is key non-leakage
+  into any serialised output. *Note:* exercised against a recorded fixture of
+  the Serper response shape, not yet against the live API with a real key —
+  that first live call is the remaining acceptance step. Exa and Brave remain,
+  following the same shape.
 - **1.3 Claim synthesis.** Replace grounded excerpts with assertions supported
   by one or more sources, each carrying the `content_hash` of its support. Gate
   with entailment scoring (NLI model or LLM judge); drop claims below threshold.
@@ -324,24 +338,70 @@ This is the larger half of agent-to-agent commerce.
   base64 into `X-PAYMENT`. Validate the received `accepts` entry — asset,
   network, amount — before signing. *Acceptance:* a buyer completes
   402 → pay → 200 against our own service on testnet with no human step.
-- **3.2 Key custody.**
+  *Status:* the offline half is implemented and TDD'd (`veritas/payer.py`:
+  challenge validation → EIP-712 payload → policy gate → abstract signer →
+  `X-PAYMENT` header; no key material in-process). Evidence: L1 unit tests
+  plus an L2 bounded model check (`veritas/evaluations/payment_model.py`,
+  CI-gated) — invariants I1–I7 hold across an exhaustive ~3,800-trace bounded
+  space including signer-fault and restart variants. Remaining for
+  acceptance: a real signer integration and the unattended testnet run. No
+  signature has ever been produced by a real key through this path.
+- **3.2 Key custody — committed design (encoded 2026-07-27).**
 
-  | Option | Blast radius | Effort |
-  |--------|--------------|--------|
-  | Hot key in env, capped balance | Full balance | 0.5 wk |
-  | Managed signer (Turnkey / Privy / CDP) | Policy-bounded | 2 wk |
-  | Smart account + session key (ERC-4337) | Per-key scope | 4 wk |
+  1. **The key never enters the agent process.** Key bytes live only in the
+     signer (managed signer service, or KMS/HSM behind a policy shim). The
+     agent holds a short-lived credential to *request* signatures: it sends
+     the EIP-712 payload, it receives a signature. `veritas.payer.Signer` is
+     the abstract seam; there is no code path that loads key material.
+  2. **Two independent policy layers.** The agent-side `SpendPolicy` (3.3) and
+     the signer's own policy both gate every authorization. The agent's
+     judgment is assumed compromisable (prompt injection is the primary
+     threat), so signer-side caps are the backstop, not a duplicate.
+     An exhausted policy fails the signature; there is no fallback key.
+  3. **Payment parameters derive only from the validated 402 challenge.** The
+     signing path accepts only a `ValidatedAccepts` produced and registered by
+     `validate_accepts`; pipeline evidence text has no route into amount,
+     payTo, asset, or network. Scope, precisely: the challenge itself is
+     content from an untrusted counterparty and is the sole source of `payTo`
+     and `amount` — this guarantee pins parameters to the challenge the buyer
+     validated, it does not authenticate the seller (that is 5.2); only spend
+     caps bound loss to a hostile seller. (Python cannot make the structural
+     guard absolute against deliberate in-process bypass; it is enforced
+     structurally — including against `dataclasses.replace` copies — and
+     checked by the payment model.)
+  4. **Treasury tiering, not ephemeral keys.** A fresh key per payment fails
+     for EOAs: each new address holds nothing, funding it costs an on-chain
+     transfer signed by a funded key, and that funding key becomes the real
+     hot key. Instead: cold treasury (hardware/multisig) tops up a
+     capped-float spending account; compromise loses at most the float. The
+     seller side needs no key at all — `VERITAS_PAY_TO` should simply be a
+     cold address; settlement executes the buyer's authorization.
+  5. **Ephemerality at the layers where it works.** Per payment: the EIP-3009
+     nonce is random and single-use, the amount exact, the validity window
+     short (~60 s). Per session, once 0.5 proves ERC-1271 support end to end:
+     ERC-4337 smart account with a cold root owner granting short-lived,
+     scope-capped, revocable session keys.
 
-  Recommend managed signer first, session keys once volume justifies it. Keep
-  the `Signer` interface abstract. *Acceptance:* an exhausted policy fails
-  signing rather than falling back to an unscoped key. *Risk:* an agent holding
-  a funded key with no approval loop is one prompt-injection away from draining
-  it. Treat retrieved web content as untrusted input to the buying agent; never
-  let retrieved text influence payment parameters.
+  | Option | Blast radius | Effort | Status |
+  |--------|--------------|--------|--------|
+  | Hot key in env, capped balance | Full float | 0.5 wk | First testnet run only; rejected as end-state |
+  | Managed signer (Turnkey / Privy / CDP) | Policy-bounded | 2 wk | **Committed first step** |
+  | Smart account + session key (ERC-4337) | Per-key scope | 4 wk | Gated on the 0.5 probe |
+
+  *Acceptance:* an exhausted policy fails signing rather than falling back to
+  an unscoped key. *Risk:* unchanged — an agent holding a funded signing
+  credential with no policy backstop is one prompt-injection away from
+  draining the float; that is why layer 2 is signer-side.
 - **3.3 Budget enforcement.** Per-request, per-hour, per-day, per-counterparty
   caps; network and asset allowlists. Enforce before signing; persist counters.
   *Acceptance:* a $1/day cap refuses the exceeding request, and counters survive
   restart.
+  *Status:* agent-side layer implemented (`veritas.payer.SpendPolicy`):
+  per-request / per-day / per-counterparty caps, network allowlist, persisted
+  counters that survive restart (tested, and exercised by the model's
+  restart variants). Remaining: per-hour granularity, asset allowlists, and —
+  per the 3.2 design — the independent signer-side policy layer, which no
+  local code can substitute for.
 
 ## Phase 4 — Discovery (2–3 weeks)
 

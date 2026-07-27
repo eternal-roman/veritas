@@ -13,6 +13,8 @@ means.
 
 from __future__ import annotations
 
+import json
+import urllib.error
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -58,6 +60,23 @@ class RetrievalError:
 
     def to_dict(self) -> dict[str, str]:
         return {"provider": self.provider, "error_type": self.error_type, "detail": self.detail}
+
+
+def classify_transport_error(exc: Exception, timeout_seconds: int) -> tuple[str, str]:
+    """Map a transport exception onto a stable (error_type, detail) pair.
+
+    Shared by every network-backed retriever so the pipeline and buyers see
+    one error vocabulary regardless of provider.
+    """
+    if isinstance(exc, urllib.error.HTTPError):
+        return "http_error", f"HTTP {exc.code}"
+    if isinstance(exc, urllib.error.URLError):
+        return "network_unreachable", str(exc.reason)[:200]
+    if isinstance(exc, TimeoutError):
+        return "timeout", f"exceeded {timeout_seconds}s"
+    if isinstance(exc, json.JSONDecodeError):
+        return "malformed_response", str(exc)[:200]
+    return type(exc).__name__, str(exc)[:200]
 
 
 @dataclass
@@ -228,7 +247,16 @@ def default_retriever(allow_network: bool = True) -> Retriever:
     if not allow_network:
         return corpus
     # Imported lazily so importing the core engine never pulls in the
-    # agent layer's network stack unless live retrieval is actually wanted.
+    # network stack unless live retrieval is actually wanted.
     from .autonomous.zero_key_retrieval import ZeroKeyRetriever
+    from .providers import SerperRetriever, serper_api_key
 
-    return CompositeRetriever([ZeroKeyRetriever()], fallback=corpus)
+    retrievers: list[Retriever] = []
+    # Keyed providers rank ahead of the zero-key tier (roadmap 1.2). A missing
+    # key is a configuration state, not an outage: the provider is simply not
+    # registered and the free tier serves unchanged. A registered provider's
+    # outage degrades to the next retriever with the error preserved.
+    if serper_api_key():
+        retrievers.append(SerperRetriever())
+    retrievers.append(ZeroKeyRetriever())
+    return CompositeRetriever(retrievers, fallback=corpus)

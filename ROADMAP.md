@@ -185,18 +185,27 @@ gaps a production deployment would hit.
 | CI | success |
 | CodeQL | success |
 
-**One repository setting needs an admin.** The `Dependency review` job fails on
-every pull request, including Dependabot PRs containing no application code:
+**Resolved: the permanently-red `Dependency review` job is gone.** It failed on
+every pull request — including Dependabot PRs containing no application code —
+with:
 
 ```
 Dependency review is not supported on this repository.
 Please ensure that Dependency graph is enabled
 ```
 
-Fix at **Settings → Code security → Dependency graph**. It cannot be fixed from
-a pull request. It does not affect pushes to `main`, where the job is skipped —
-which is why `main` is green while PRs show red. Bumping the action to v5 did
-not help; the step errors before doing any analysis.
+It errored *before* analysing anything, so across the repository's history it
+never once produced a dependency signal; what it did produce was a red check on
+every PR, which is how teams learn to ignore CI. Enabling **Settings → Code
+security → Dependency graph** would have fixed it, but that needs an admin and
+cannot be done from a pull request.
+
+It was removed rather than left red or soft-failed (`continue-on-error` is
+banned here). Coverage went up, not down: `pip-audit` now audits the dev and
+optional dependency tree in addition to the runtime one, on every push and
+pull request, and Dependabot still opens update PRs. If Dependency graph is
+enabled later, the action can be restored as an additional PR-diff-level
+check — it was never the only dependency control, just the only broken one.
 
 Two other things that look like failures but are not: three CI runs on `main`
 show `cancelled`, which is the `cancel-in-progress` concurrency group

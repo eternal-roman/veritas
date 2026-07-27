@@ -44,5 +44,6 @@ gh api -X PUT repos/eternal-roman/veritas/branches/main/protection \
 - Tests and compileall **fail the job** on error (no `|| true` soft-fail)
 - Bandit high severity fails CI
 - pip-audit fails on known vulnerable deps
-- Dependency review fails PRs on high severity
+- `pip-audit` fails the Security scan job on a known vulnerability in the
+  runtime or dev dependency tree
 - Secret pattern scan fails on obvious private keys

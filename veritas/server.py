@@ -9,7 +9,6 @@ Run it with the installed console script or uvicorn directly:
 from __future__ import annotations
 
 import base64
-import binascii
 import json
 import os
 from typing import Any
@@ -32,7 +31,12 @@ from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.replay import SpentNonceStore, extract_nonce
 from veritas.trust import OutcomeLog, score_service
-from veritas.x402 import PriceError, build_402_challenge, build_payment_requirements
+from veritas.x402 import (
+    PriceError,
+    build_402_challenge,
+    build_payment_requirements,
+    decode_payment_header,
+)
 
 app = FastAPI(title="Veritas Research", version=__version__)
 
@@ -63,27 +67,6 @@ class ResearchRequest(BaseModel):
 class VerifyRequest(BaseModel):
     content: str
     content_hash: str
-
-
-def _decode_payment_header(raw: str) -> dict[str, Any] | None:
-    """Decode the base64-JSON X-PAYMENT header, tolerating raw JSON.
-
-    Returns None when the header cannot be interpreted, which the caller
-    treats as an invalid payment (fail closed).
-    """
-    if not raw:
-        return None
-    try:
-        decoded = base64.b64decode(raw, validate=True).decode("utf-8")
-        payload = json.loads(decoded)
-        return payload if isinstance(payload, dict) else None
-    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError):
-        pass
-    try:
-        payload = json.loads(raw)
-        return payload if isinstance(payload, dict) else None
-    except json.JSONDecodeError:
-        return None
 
 
 @app.get("/health")
@@ -142,7 +125,7 @@ def research(req: ResearchRequest, request: Request):
                 headers=PAYMENT_REQUIRED_HEADER,
             )
 
-        payment_payload = _decode_payment_header(header)
+        payment_payload = decode_payment_header(header)
         if payment_payload is None:
             return JSONResponse(status_code=402, content=build_402_challenge(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,

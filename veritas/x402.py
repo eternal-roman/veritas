@@ -9,6 +9,9 @@ x402 buyer — the payment path was unreachable in principle, not just unwired.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import json
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -136,3 +139,42 @@ def build_402_challenge(
         "error": error,
         "accepts": [requirements.to_dict()],
     }
+
+
+def decode_payment_header(raw: str) -> dict[str, Any] | None:
+    """Decode a base64-JSON X-PAYMENT header, tolerating raw JSON.
+
+    Returns None when the header cannot be interpreted, which every caller
+    treats as an invalid payment (fail closed). This is the one decode path:
+    the HTTP surface and the agent-native simulator both use it, so their
+    notion of "well-formed" cannot drift apart.
+    """
+    if not raw:
+        return None
+    try:
+        decoded = base64.b64decode(raw, validate=True).decode("utf-8")
+        payload = json.loads(decoded)
+        return payload if isinstance(payload, dict) else None
+    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        pass
+    try:
+        payload = json.loads(raw)
+        return payload if isinstance(payload, dict) else None
+    except json.JSONDecodeError:
+        return None
+
+
+def payment_authorization(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Extract the authorization object from a decoded x402 payment payload.
+
+    Tolerates both the nested spec shape (payload.payload.authorization) and
+    a flat authorization key. Returns None when no authorization dict exists
+    — the structural minimum for a payment to be worth verifying.
+    """
+    inner = payload.get("payload")
+    if isinstance(inner, dict):
+        auth = inner.get("authorization")
+        if isinstance(auth, dict):
+            return auth
+    auth = payload.get("authorization")
+    return auth if isinstance(auth, dict) else None

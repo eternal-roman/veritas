@@ -130,18 +130,6 @@ def test_known_gaps_shape():
             )
 
 
-def test_known_gap_simulator_accepts_any_header():
-    """Witness for gap G1: the local simulator's payment check accepts any
-    non-empty header, which is weaker than the HTTP path's facilitator
-    verification. If this test fails, the gap has been fixed — close G1 in
-    veritas/constitution.py and delete this test."""
-    from veritas.autonomous import local_facilitator
-
-    assert local_facilitator.verify_payment(
-        {"X-PAYMENT": "garbage-not-a-payment"}, require=True
-    ) is True
-
-
 def test_constitution_endpoint(free_client):
     """/v1/constitution serves the same document this module builds, unpaid
     (discovery must be free to read, article A10)."""

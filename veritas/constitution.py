@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "1.0"
+CONSTITUTION_VERSION = "1.1"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -243,16 +243,36 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G1",
         "article": "A14",
+        "status": "closed",
+        "description": (
+            "veritas/autonomous/local_facilitator.py verify_payment() accepted any "
+            "non-empty payment header, and control_plane.agent_research() hardcoded "
+            "the $0.25 price instead of reading payment config. Both were labelled "
+            "simulator behaviour, but they were weaker than the HTTP path, whose "
+            "facilitator verification fails closed."
+        ),
+        "resolution": (
+            "Closed in constitution 1.1: the simulator now decodes headers via the "
+            "shared veritas.x402.decode_payment_header and requires the x402 "
+            "structural shape (tests/test_autonomous_payment.py::"
+            "test_simulator_rejects_malformed_header_when_required), and the control "
+            "plane's recorded amounts follow payment config (tests/"
+            "test_autonomous_payment.py::test_control_plane_price_follows_payment_config). "
+            "The remaining weakness is registered as G2."
+        ),
+    },
+    {
+        "id": "G2",
+        "article": "A14",
         "status": "open",
         "description": (
-            "veritas/autonomous/local_facilitator.py verify_payment() accepts any "
-            "non-empty payment header, and control_plane.agent_research() hardcodes "
-            "the $0.25 price instead of reading payment config. Both are labelled "
-            "simulator behaviour, but they are weaker than the HTTP path, whose "
-            "facilitator verification fails closed. The control plane must not be "
-            "exposed as a paid network surface until this is fixed."
+            "The local simulator validates payment structure and configuration, not "
+            "signatures: a structurally valid payload with a forged signature passes. "
+            "The HTTP path's facilitator verification remains the strong gate, and "
+            "the control plane must not be exposed as a paid network surface while "
+            "this gap is open."
         ),
-        "witness_test": "tests/test_constitution.py::test_known_gap_simulator_accepts_any_header",
+        "witness_test": "tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures",
     },
 )
 

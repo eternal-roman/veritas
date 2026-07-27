@@ -17,6 +17,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.trust import OutcomeLog
 
@@ -43,13 +44,16 @@ def agent_research(
     headers = headers or {}
     cfg = load_config()
     require = bool(cfg.get("require_payment", False))
+    # The recorded amount follows payment config; it was previously a
+    # hardcoded "$0.25" that ignored VERITAS_PRICE entirely.
+    price = get_payment_config().price
 
     # Verify before doing the work. The previous ordering ran the full
     # retrieval and belief pass first and discarded the result if payment was
     # missing, which let an unpaid caller consume the entire cost of a request
     # and contradicted the verify-before-work ordering the HTTP surface uses.
     request_id = str(uuid.uuid4())
-    record_attempt(request_id, headers)
+    record_attempt(request_id, headers, amount=price if require else "$0.00")
 
     if not verify_payment(headers, require=require):
         return {
@@ -78,7 +82,7 @@ def agent_research(
 
     # Never record settlement for work we could not perform.
     if result["billable"]:
-        record_settlement(request_id, "$0.25" if require else "$0.00", status=result["status"])
+        record_settlement(request_id, price if require else "$0.00", status=result["status"])
     else:
         record_settlement(request_id, "$0.00", status="not_billable")
 

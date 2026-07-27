@@ -51,6 +51,9 @@ retrieval = ["ddgs>=6.0"]
 # and server never sign anything, and production custody keeps keys out of
 # this process entirely (ROADMAP 3.2).
 signing = ["eth_account>=0.13"]
+# MCP stdio surface (veritas-mcp). Optional: the module imports without it;
+# serving requires it.
+mcp = ["mcp>=1.0"]
 dev = [
     "eth_account>=0.13",
     "pytest>=8.0",
@@ -65,6 +68,7 @@ dev = [
 [project.scripts]
 veritas-server = "veritas.server:main"
 veritas-agent = "veritas.agent_cli:main"
+veritas-mcp = "veritas.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/eternal-roman/veritas"

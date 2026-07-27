@@ -49,3 +49,16 @@ file described a system that did not import.
 The epistemic core is sound and the payment path is now real code rather than a
 header check. What remains between this and revenue is not architecture — it is
 retrieval quality, one funded settlement test, and a deployment.
+
+## Security / CI
+
+| Control | State |
+|---------|--------|
+| CI workflows | On `main` — tests must pass (no soft-fail) |
+| Import check | All top-level modules must import |
+| Harness quality gates | Fidelity, custody, refusal discrimination, unavailability handling |
+| Security scan job | Bandit + pip-audit, fail on high |
+| Dependabot config | Present (weekly pip + Actions) |
+| CODEOWNERS | Present |
+| Branch protection | **Documented only** — admin must apply in Settings |
+| Dependabot alerts product | Enable in repo Settings → Code security |

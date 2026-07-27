@@ -1,0 +1,15 @@
+# Require owner review on sensitive paths (effective once branch protection requires code owners)
+
+* @eternal-roman
+
+# Critical security and payment surfaces
+.github/ @eternal-roman
+.github/workflows/ @eternal-roman
+veritas/payment_config.py @eternal-roman
+veritas/pipeline.py @eternal-roman
+autonomous/zk_wallet.py @eternal-roman
+autonomous/jit_packet.py @eternal-roman
+autonomous/local_facilitator.py @eternal-roman
+app/main.py @eternal-roman
+SECURITY.md @eternal-roman
+requirements.txt @eternal-roman

@@ -1,269 +1,348 @@
-# Veritas Roadmap
+# Veritas — State of the System and Delivery Roadmap
 
-Sequenced by dependency, not by appeal. Each phase lists deliverables,
-acceptance criteria that can be checked mechanically, and the risks that would
-invalidate the phase.
+Self-contained handoff. Everything needed to pick this up cold is here: what the
+system does, what is verified, what is broken, and what to build in what order.
 
-Sizing is in engineer-weeks for one experienced engineer. "Blocked by" means the
-prior item must land first; anything else can run in parallel.
+Last full evaluation: 2026-07-27, against `main` @ `b498652` plus the fixes in
+`95a75ef`.
 
 ---
+
+# Part I — What this is
+
+An evidence-grounded research service that other agents pay for over x402. A
+buyer sends a question; it returns claims, each citing a content-hashed
+passage, with a Bayesian posterior and a hash-chained custody ledger the buyer
+can independently verify.
+
+The distinguishing behaviour is the outcome taxonomy:
+
+| Status | Meaning | Billable |
+|--------|---------|----------|
+| `completed` | Evidence found; every claim cites a hash present in the response | Yes |
+| `refused` | Providers reachable, nothing relevant found | Yes |
+| `unavailable` | Retrieval itself failed | **No** |
+
+The third row is the product. Any service can return confident text. A service
+that separates "no evidence exists" from "I could not look", and declines to
+bill for the second, is selling something a language model cannot fake.
+
+## Architecture
+
+```
+app/main.py ─────────────┐
+                         ├──> veritas/pipeline.py   (single engine)
+autonomous/control_plane ─┘         │
+                                    ├──> veritas/retrieval.py ──> autonomous/zero_key_retrieval.py
+                                    │                                  ├── Wikipedia REST
+                                    │                                  └── ddgs / DDG Instant Answer
+                                    ├──> veritas/hashing.py
+                                    ├──> veritas/custody.py ──> CustodyStore (disk receipts)
+                                    └──> veritas/bayesian.py
+
+app/main.py ──> veritas/x402.py         (402 challenges, atomic amounts)
+           ├──> veritas/facilitator.py  (POST /verify, POST /settle)
+           └──> veritas/payment_config.py ──> veritas/networks.py ──> veritas/x402.USDC_ASSETS
+```
+
+Two invariants hold structurally, and both were violated before this work:
+
+1. **One engine.** `control_plane` previously contained a second, independent
+   pipeline while the HTTP surface served a static three-document corpus. The
+   live retrieval was unreachable and the reachable code was fabricated.
+2. **One source of truth for payability.** `supported_networks()` derives from
+   `USDC_ASSETS`, so the service cannot advertise a network on which it cannot
+   construct a payment.
+
+## Request flow, live mode
+
+```
+402 challenge  ──>  buyer signs  ──>  X-PAYMENT header
+                                          │
+                              facilitator /verify   (fail closed)
+                                          │
+                                   run_research
+                                          │
+                        billable? ──no──> 503, no settlement
+                                          │yes
+                              facilitator /settle
+                                          │
+                         200 + X-PAYMENT-RESPONSE + custody receipt
+```
+
+Verify-before-work and settle-after-work is deliberate: a buyer is never
+charged for a request that produced nothing deliverable.
+
+---
+
+# Part II — Evaluation
+
+## Formal gate
+
+Per `skills/adversarial-code-truth.md`, which is a locked gate on all code work
+in this repository.
+
+```
+PROPERTY: The service never reports absent evidence when retrieval failed, never
+          bills for its own failure, and never serves paid research without a
+          facilitator-verified payment.
+EVIDENCE LEVEL: L1 (tests and adversarial examples)
+CHECKED ARTIFACT: veritas/pipeline.py, veritas/retrieval.py, veritas/facilitator.py,
+          app/main.py, autonomous/control_plane.py; 65 tests; CI harness gates
+ASSUMPTIONS: - Retrievers may raise and may ignore max_results (both now defended)
+             - The facilitator honours the documented x402 /verify and /settle contract
+             - Receipts are written to a filesystem that persists for the retention window
+             - Single-instance deployment (receipts and outcome log are local disk)
+NOT PROVEN:  - No payment has ever settled. Fail-closed is exercised; success is not.
+             - No conforming third-party x402 client has completed the path end to end.
+             - Retrieval quality is untested against any real benchmark; the harness
+               runs on a 3-document corpus and its perfect scores are structural.
+             - No replay protection: a resubmitted X-PAYMENT header repeats the work.
+             - Behaviour under concurrency, load, or a hostile caller is unmeasured.
+```
+
+**Structural vs application success.** Everything green below is structural: it
+proves the code does what its design says on the cases exercised. It does not
+prove the product works. A skeptical external agent cannot today discover this
+service, pay it, and receive research competitive with a direct search API —
+because nothing is deployed, nothing has settled, and retrieval is snippet-grade.
+Those are the product-killing gaps, and they are Phases 0, 1 and 4 below.
+
+## Verified working (structural, L1)
+
+Each row is covered by a test or a CI gate. "Holds on these cases" is the
+strongest claim these support.
+
+| Component | Evidence |
+|-----------|----------|
+| Content hashing + normalization | Round-trip and tamper tests |
+| Custody hash-chain | Tamper detection test; `verify_chain_records` for post-hoc audit |
+| Durable receipts (`/v1/receipts`) | Written to disk, 404 on unknown id |
+| Bayesian updating | Correct Bayes; correlated-source damping keeps 3 same-provider sources under 0.9 |
+| Refusal taxonomy | Discrimination measured both ways: refuse unsupported, answer supported |
+| Outage honesty | Failing retriever yields `unavailable`, never `no_evidence`, never billable |
+| Retriever robustness | Raising retriever converts to `unavailable`; `max_results` enforced against the retriever |
+| x402 challenges | Atomic amounts (`$0.25` → `250000`), real USDC assets, spec-shaped `accepts` |
+| Facilitator client | Fails closed on unconfigured, unreachable, HTTP error, malformed response |
+| Payment ordering | Unpaid caller cannot consume a retrieval pass (both surfaces) |
+| Config validation | Invalid address/network/facilitator → `misconfigured` + 503, never silent free service |
+| Wallet commitments | Salt never published; forged and challenge-replayed proofs rejected |
+| JIT packets | Stable identity across chain, MAC signatures, enforced expiry, verified linkage |
+| Trust scoring | Derived from recorded outcomes; `UNPROVEN` below 10 samples |
+| Wire contract | `validate_response` run against live pipeline output across three retriever types |
+
+**Test suite: 65 passing.** CI runs compileall, an import check of all
+top-level modules, the tests, and harness quality gates (citation fidelity,
+custody validity, refusal discrimination, unavailability handling), plus Bandit
+and pip-audit.
+
+## Defects found in this evaluation and fixed (`95a75ef`)
+
+All three were in the hardening work itself, found by adversarial probing
+rather than by the test suite — worth noting, because it shows the suite was
+testing the happy path of its own design.
+
+1. **`max_results` was not enforced.** It was passed to the retriever and
+   trusted. Asking for 5 and receiving 50 produced 50 evidence items and a
+   0.896 posterior off correlated sources. Unbounded work and response size per
+   request.
+2. **A raising retriever escaped as a 500**, bypassing the `unavailable` /
+   non-billable path that exists precisely so provider failure is never charged.
+3. **`control_plane` ran the research before checking payment**, discarding the
+   result if unpaid. An unpaid caller could consume the full cost of a request,
+   contradicting the documented verify-before-work ordering.
+
+## Known-unfixed issues
+
+Ordered by severity. None is a correctness bug in the happy path; all are real
+gaps a production deployment would hit.
+
+| # | Issue | Severity | Notes |
+|---|-------|----------|-------|
+| 1 | Live settlement never exercised | High | Client matches the documented API and is tested against unreachable hosts. That verifies fail-closed, not that a payment completes. |
+| 2 | Retrieval is snippet-grade | High | Wikipedia + DuckDuckGo. Will not sustain a paid price against a buyer who can call a search API directly. |
+| 3 | Claims are extractive | High | A claim is a grounded excerpt, not an answer synthesised across sources. |
+| 4 | No replay protection | Medium | The same `X-PAYMENT` header resubmitted causes the work to run again. Facilitator nonce handling should prevent double-spend, but our cost is incurred twice. |
+| 5 | No rate limiting | Medium | No per-IP or per-payer caps, no request-size limit on the `X-PAYMENT` header. |
+| 6 | Receipts and outcome log are local disk | Medium | `/v1/receipts` is unreliable behind a load balancer. `OutcomeLog.stats()` re-reads the whole file per call. Both grow unbounded. |
+| 7 | Evidence content is not stored | Medium | Only hashes. A buyer can confirm what we published but cannot re-obtain the passage after a source URL rots. |
+| 8 | Calibrator is untrained | Medium | Machinery works and persists; reports `passthrough_untrained`. Needs labelled outcomes. |
+| 9 | Layering inversion | Low | `veritas/retrieval.py` lazily imports `autonomous.zero_key_retrieval`; the core package depends on the agent layer. |
+| 10 | Benchmark is a 3-document corpus | Low | Harness proves invariants hold. Its perfect scores are not a quality claim. |
+| 11 | Solana advertised nowhere but aliased | Low | Deliberately excluded from payable networks; SPL settlement unimplemented. |
+
+## Repository health
+
+`main` is green. Both workflows pass at HEAD:
+
+| Workflow | Result at `b498652` |
+|----------|---------------------|
+| CI | success |
+| CodeQL | success |
+
+**One repository setting needs an admin.** The `Dependency review` job fails on
+every pull request, including Dependabot PRs containing no application code:
+
+```
+Dependency review is not supported on this repository.
+Please ensure that Dependency graph is enabled
+```
+
+Fix at **Settings → Code security → Dependency graph**. It cannot be fixed from
+a pull request. It does not affect pushes to `main`, where the job is skipped —
+which is why `main` is green while PRs show red. Bumping the action to v5 did
+not help; the step errors before doing any analysis.
+
+Two other things that look like failures but are not: three CI runs on `main`
+show `cancelled`, which is the `cancel-in-progress` concurrency group
+superseding queued runs when four PRs merged in quick succession; and the
+historical failures on `2cc5eaa` and `5e548ef` are the pre-fix commits where
+the package could not import.
+
+---
+
+# Part III — Roadmap
+
+Sequenced by dependency. Sizing is engineer-weeks for one experienced engineer.
 
 ## Phase 0 — Prove settlement (2 weeks)
 
-The facilitator client is written and tested against unreachable hosts, which
-exercises the failure path only. No payment has ever completed. Every revenue
-claim downstream depends on this working, so it goes first and it is cheap.
+No payment has ever completed. Every commercial claim downstream rests on this,
+and it is cheap, so it goes first.
 
-### 0.1 Testnet settlement run
-- Fund a Base Sepolia wallet with test USDC.
-- Run the service with `VERITAS_NETWORK=eip155:84532`, `VERITAS_REQUIRE_PAYMENT=true`.
-- Drive a real 402 → sign → verify → settle cycle against a public facilitator.
-- Record the transaction hash in `docs/settlement-proof.md`.
+- **0.1 Testnet settlement run.** Fund a Base Sepolia wallet with test USDC. Run
+  with `VERITAS_NETWORK=eip155:84532`, `VERITAS_REQUIRE_PAYMENT=true`. Drive a
+  real 402 → sign → verify → settle cycle. Record the transaction hash.
+  *Acceptance:* a Base Sepolia transaction in which USDC moves from a buyer
+  wallet to `VERITAS_PAY_TO`, initiated by an unattended request.
+- **0.2 Facilitator contract tests.** Record real `/verify` and `/settle`
+  request/response bodies as fixtures. *Acceptance:* fixtures replay green;
+  renaming a field fails a test.
+- **0.3 Reconciliation.** Extend receipts with `transaction`, `payer`,
+  `settled_at`; add a script comparing receipts to on-chain transfers.
+  *Acceptance:* zero unmatched settlements across a 50-request testnet run.
+- **0.4 Replay protection.** Track spent payment nonces; reject resubmission.
+  *Acceptance:* the same `X-PAYMENT` header submitted twice does the work once.
 
-**Acceptance:** a Base Sepolia transaction hash exists in which USDC moves from
-a buyer wallet to `VERITAS_PAY_TO`, initiated by an unattended request.
-
-### 0.2 Facilitator contract tests
-- Add `tests/test_facilitator_contract.py` with recorded fixtures of real
-  `/verify` and `/settle` request/response bodies.
-- Pin the payload shape so a facilitator API change fails CI rather than
-  production.
-
-**Acceptance:** fixtures replay green; mutating a field name fails a test.
-
-### 0.3 Settlement reconciliation
-- Extend `CustodyStore` receipts with `transaction`, `payer`, `settled_at`.
-- Add `scripts/reconcile.py` comparing receipts against on-chain transfers to
-  `pay_to` over a block range.
-
-**Acceptance:** reconciliation reports zero unmatched settlements across a
-50-request testnet run.
-
-**Risk:** public facilitators may not support the chosen network or scheme. If
-so, self-host `x402-facilitator` — adds ~1 week and an RPC dependency.
-
----
+*Risk:* a public facilitator may not support the chosen network or scheme.
+Self-hosting adds ~1 week and an RPC dependency.
 
 ## Phase 1 — Retrieval quality (4–6 weeks)
 
-This is the product. Everything else is plumbing around it. Currently the
-engine returns Wikipedia and DuckDuckGo snippets, which will not sustain a
-$0.25 price against a buyer that can call a search API directly.
+This is the product. Everything else is plumbing around it.
 
-### 1.1 Full-text extraction
-- Add `veritas/extractors.py`: fetch the source URL, extract main content
-  (`trafilatura` or `readability-lxml`), fall back to the snippet on failure.
-- Hash the extracted text, not the snippet, so evidence is the full passage.
+- **1.1 Full-text extraction.** Fetch the source URL and extract main content
+  (`trafilatura` or `readability-lxml`); hash the extracted passage, not the
+  snippet. *Acceptance:* median evidence length > 1,500 chars on the eval set,
+  extraction failures reported as provider errors.
+- **1.2 Paid retrieval backends.** Implement `Retriever` for Exa, Brave, Serper
+  behind env config. The protocol and `CompositeRetriever` already support this;
+  register paid providers ahead of keyless ones and keep zero-key as the free
+  tier. *Acceptance:* a provider outage degrades to the next tier and is
+  reported, with no pipeline change.
+- **1.3 Claim synthesis.** Replace grounded excerpts with assertions supported
+  by one or more sources, each carrying the `content_hash` of its support. Gate
+  with entailment scoring (NLI model or LLM judge); drop claims below threshold.
+  *Acceptance:* ≥95% of synthesised claims entailed by a cited passage under
+  blind grading on a 100-question benchmark. *Risk:* synthesis reintroduces
+  hallucination, the exact failure mode the architecture exists to prevent. If
+  the gate cannot reach 95%, ship extractive claims and compete on
+  verifiability.
+- **1.4 Source-independence modelling.** Replace fixed per-provider damping with
+  domain and content-similarity clustering. *Acceptance:* posterior on three
+  syndicated copies of one wire story within 0.05 of the posterior on one copy.
 
-**Acceptance:** median evidence length > 1,500 chars on the eval set, with
-extraction failures reported as provider errors rather than silently truncated.
-
-**Blocked by:** nothing.
-
-### 1.2 Paid retrieval backends
-- Implement `Retriever` for Exa, Brave, and Serper behind env-var config.
-- `CompositeRetriever` already merges and dedupes; register paid providers
-  ahead of the keyless ones.
-- Keep zero-key providers as the free tier.
-
-**Acceptance:** the same `Retriever` protocol serves both tiers with no pipeline
-change; a provider outage degrades to the next tier and is reported.
-
-### 1.3 Claim synthesis
-- Replace the current extractive claim (a grounded excerpt) with a synthesis
-  step producing an assertion supported by one or more sources.
-- Every synthesised claim must carry the `content_hash` of each supporting
-  passage; a claim citing no present hash fails `validate_response`.
-- Add entailment scoring (NLI model or LLM judge) between claim and cited
-  passage; drop claims below threshold.
-
-**Acceptance:** on a 100-question benchmark, ≥95% of synthesised claims are
-entailed by at least one cited passage under blind grading.
-
-**Blocked by:** 1.1.
-
-**Risk:** synthesis reintroduces hallucination, which is the failure mode the
-architecture exists to prevent. The entailment gate is the control; if it
-cannot reach 95%, ship extractive claims and compete on verifiability instead.
-
-### 1.4 Source-independence modelling
-- Current damping applies a fixed factor per repeat from the same provider.
-- Replace with domain-level and content-similarity clustering: two articles
-  syndicated from one wire story are one observation, not two.
-
-**Acceptance:** posterior on three syndicated copies of one story is within
-0.05 of the posterior on one copy.
-
----
+*Blocked by:* nothing. 1.3 blocked by 1.1.
 
 ## Phase 2 — Benchmarking (2 weeks, parallel with Phase 1)
 
-Without this there is no evidence the service is better than a raw search call,
-and no way to detect regressions from Phase 1 changes.
+Without this there is no evidence the service beats a raw search call, and no
+regression detection for Phase 1.
 
-### 2.1 Real benchmark set
-- 100–200 questions with known answers, spanning answerable, unanswerable, and
-  stale-premise categories.
-- Store as `evaluations/datasets/*.jsonl` with provenance for each label.
+- **2.1 Dataset.** 100–200 questions with known answers across answerable,
+  unanswerable, and stale-premise categories, stored with label provenance.
+- **2.2 Baselines.** Raw search snippets; bare LLM; naive RAG. Metrics: answer
+  accuracy, citation precision/recall, ECE, correct-refusal rate.
+  *Acceptance:* published table with confidence intervals; CI gates on
+  regression against the last recorded run.
+- **2.3 Calibrator training.** Feed graded outcomes through `record_feedback`.
+  *Acceptance:* `is_trained: true`; post-calibration ECE below raw ECE on a
+  held-out split.
 
-### 2.2 Baseline comparison
-- Baselines: raw search snippets; a general LLM with no retrieval; an LLM with
-  naive RAG.
-- Metrics: answer accuracy, citation precision/recall, calibration error (ECE),
-  correct-refusal rate on unanswerable items.
-
-**Acceptance:** a published table with confidence intervals; CI gates on
-regression against the last recorded run.
-
-### 2.3 Calibration training
-- Feed graded outcomes into `record_feedback`, populating the calibrator.
-- Report ECE before and after.
-
-**Acceptance:** calibrator reports `is_trained: true`; post-calibration ECE
-lower than raw posterior ECE on a held-out split.
-
-**Blocked by:** 2.1. This is what turns the calibrator from a passthrough into
-a functioning component, and it is the one asset that compounds with usage.
-
----
+*Blocked by:* 2.1. This is the one asset that compounds with usage.
 
 ## Phase 3 — Buyer-side autonomy (5–7 weeks)
 
-The service can take payment unattended. Nothing in the repository lets an
-agent *make* one. This is the larger half of agent-to-agent commerce and the
-part with real security exposure.
+The service takes payment unattended. Nothing here lets an agent *make* one.
+This is the larger half of agent-to-agent commerce.
 
-### 3.1 Payment payload construction
-- Add `veritas/client/payer.py`: build an EIP-3009 `transferWithAuthorization`
-  authorization (`from`, `to`, `value`, `validAfter`, `validBefore`, `nonce`),
-  sign as EIP-712 typed data, wrap in the x402 payload shape, base64-encode
-  into `X-PAYMENT`.
-- Validate the received `accepts` entry before signing: asset address, network,
-  and amount must match expectation, or refuse to sign.
+- **3.1 Payment payload construction.** Build an EIP-3009
+  `transferWithAuthorization` (`from`, `to`, `value`, `validAfter`,
+  `validBefore`, `nonce`), sign as EIP-712, wrap in the x402 payload,
+  base64 into `X-PAYMENT`. Validate the received `accepts` entry — asset,
+  network, amount — before signing. *Acceptance:* a buyer completes
+  402 → pay → 200 against our own service on testnet with no human step.
+- **3.2 Key custody.**
 
-**Acceptance:** a `VeritasBuyer` completes a 402 → pay → 200 cycle against our
-own service on testnet with no human step.
+  | Option | Blast radius | Effort |
+  |--------|--------------|--------|
+  | Hot key in env, capped balance | Full balance | 0.5 wk |
+  | Managed signer (Turnkey / Privy / CDP) | Policy-bounded | 2 wk |
+  | Smart account + session key (ERC-4337) | Per-key scope | 4 wk |
 
-### 3.2 Key custody
-Three options, in increasing order of safety and cost:
-
-| Option | Model | Blast radius | Effort |
-|--------|-------|--------------|--------|
-| Hot key in env | Raw private key, hard-capped balance | Full balance | 0.5 wk |
-| Managed signer | Turnkey / Privy / CDP; policy enforced server-side | Policy-bounded | 2 wk |
-| Smart account + session key | ERC-4337 with scoped session key module | Per-key scope | 4 wk |
-
-Recommendation: managed signer for the first production buyer, session keys
-once transaction volume justifies the integration.
-
-**Acceptance:** the signer interface is abstract (`Signer` protocol) so custody
-can be swapped without touching payload construction. A key with an exhausted
-policy fails signing rather than falling back to an unscoped key.
-
-**Blocked by:** 3.1.
-
-**Risk:** this is the hardest unsolved problem in the space. An agent holding a
-funded key with no approval loop is one prompt-injection away from draining it.
-Treat retrieved web content as untrusted input to the buying agent; never let
-retrieved text influence payment parameters.
-
-### 3.3 Budget enforcement
-- `SpendPolicy`: per-request cap, per-hour and per-day totals, per-counterparty
-  cap, network allowlist, asset allowlist.
-- Enforce before signing, not after; persist counters so a restart does not
-  reset the budget.
-
-**Acceptance:** a buyer configured with a $1/day cap refuses the request that
-would exceed it, with the refusal recorded; counters survive process restart.
-
----
+  Recommend managed signer first, session keys once volume justifies it. Keep
+  the `Signer` interface abstract. *Acceptance:* an exhausted policy fails
+  signing rather than falling back to an unscoped key. *Risk:* an agent holding
+  a funded key with no approval loop is one prompt-injection away from draining
+  it. Treat retrieved web content as untrusted input to the buying agent; never
+  let retrieved text influence payment parameters.
+- **3.3 Budget enforcement.** Per-request, per-hour, per-day, per-counterparty
+  caps; network and asset allowlists. Enforce before signing; persist counters.
+  *Acceptance:* a $1/day cap refuses the exceeding request, and counters survive
+  restart.
 
 ## Phase 4 — Discovery (2–3 weeks)
 
-`/.well-known/x402` exists but nothing announces it. An agent cannot find the
-service without being handed the URL.
+`/.well-known/x402` exists but nothing announces it.
 
-### 4.1 Registry publication
-- `scripts/register.py` posting the identity document and payment requirements
-  to the CDP x402 Bazaar and any other live registry.
-- Re-register on boot and on config change; deregister on shutdown.
+- **4.1 Registry publication.** Post identity and payment requirements to the
+  CDP x402 Bazaar and other live registries; re-register on boot and config
+  change, deregister on shutdown. *Acceptance:* appears in a capability query
+  within 5 minutes of boot, disappears within 5 of shutdown.
+- **4.2 MCP surface.** Expose research as an MCP tool; map the 402 challenge
+  into an MCP error carrying payment requirements.
+- **4.3 ERC-8004 registration.** On-chain identity so reputation is portable.
 
-**Acceptance:** the service appears in a registry query for its capability
-within 5 minutes of boot, and disappears within 5 minutes of shutdown.
+*Blocked by:* 0.1. Registry presence creates inbound traffic; inbound traffic
+against an unproven payment path produces failed settlements.
 
-### 4.2 MCP server surface
-- Expose research as an MCP tool so MCP-native agents can call it without
-  bespoke HTTP code.
-- Map the 402 challenge into an MCP error carrying payment requirements.
+## Phase 5 — Reputation (3 weeks)
 
-**Acceptance:** an MCP client discovers the tool, receives the payment
-requirement, pays, and receives a result.
+- **5.1 Signed attestations.** Sign served results; let buyers publish outcome
+  attestations against `request_id`; aggregate into the trust basis, weighted
+  below local telemetry.
+- **5.2 Counterparty checks.** Before paying, fetch the seller's identity and
+  trust document; require a minimum score and a settled history; cap first-time
+  exposure. *Acceptance:* a buyer refuses an unknown counterparty above the
+  first-time cap, naming the failed check.
 
-### 4.3 ERC-8004 registration
-- Register the identity document on-chain so reputation is portable across
-  registries rather than locked to one index.
-
-**Blocked by:** 0.1 (a registered identity pointing at an unproven payment path
-is a support burden).
-
----
-
-## Phase 5 — Reputation and counterparty risk (3 weeks)
-
-Trust scoring is now derived from recorded outcomes, but it is self-reported
-and single-instance. A buyer deciding whether to pay a stranger needs something
-better than the seller's own claim.
-
-### 5.1 Signed outcome attestations
-- Sign each served result with the service key; buyers can publish
-  attestations of outcomes against `request_id`.
-- Aggregate published attestations into the trust basis alongside local
-  telemetry, weighted lower for unverified reporters.
-
-### 5.2 Buyer-side counterparty checks
-- Before paying, fetch the seller's identity and trust document; apply a
-  minimum score, require a settled-transaction history, and cap first-time
-  exposure.
-
-**Acceptance:** a buyer refuses an unknown counterparty above the first-time
-cap, and the refusal names the failed check.
-
-**Risk:** self-reported reputation is gameable by construction. Treat scores as
-one input to a spend policy, not as authorization.
-
----
+*Risk:* self-reported reputation is gameable by construction. It is an input to
+a spend policy, not authorization.
 
 ## Phase 6 — Operations (3 weeks, parallel from Phase 1)
 
-### 6.1 Deployment
-- Container image, health/readiness probes, structured JSON logs, one hosted
-  instance behind TLS.
-
-### 6.2 Shared state
-- Receipts and outcome logs currently write to local disk, so `/v1/receipts` is
-  unreliable behind a load balancer. Move to Postgres or object storage.
-
-**Acceptance:** receipts resolve correctly with two instances behind a balancer.
-
-### 6.3 Abuse controls
-- Per-IP and per-payer rate limits, request size caps, retrieval timeouts and
-  concurrency ceilings.
-- Free tier limited independently of the paid tier.
-
-**Acceptance:** a load test at 10× expected traffic degrades to 429 without
-falling over or serving unbilled paid work.
-
-### 6.4 Evidence durability
-- Receipts store hashes only; if a source URL rots, a buyer can confirm what we
-  published but cannot re-obtain the passage.
-- Add content-addressed storage for extracted passages with a stated retention
-  window; optional IPFS pinning for long-lived evidence.
-
-**Acceptance:** a passage is retrievable by `content_hash` for the full
-retention window after the original URL returns 404.
-
----
+- **6.1 Deployment.** Container image, health/readiness probes, structured JSON
+  logs, one hosted instance behind TLS.
+- **6.2 Shared state.** Move receipts and outcome log to Postgres or object
+  storage. *Acceptance:* receipts resolve correctly with two instances behind a
+  balancer.
+- **6.3 Abuse controls.** Per-IP and per-payer rate limits, request and header
+  size caps, retrieval timeouts and concurrency ceilings, free tier limited
+  independently. *Acceptance:* 10× expected load degrades to 429 without falling
+  over or serving unbilled paid work.
+- **6.4 Evidence durability.** Content-addressed storage for extracted passages
+  with a stated retention window. *Acceptance:* a passage is retrievable by
+  `content_hash` for the full window after its source URL returns 404.
 
 ## Critical path
 
@@ -277,20 +356,19 @@ retention window after the original URL returns 404.
       └─> 4.1 registry ─> 4.3 ERC-8004 ─> 5.1 attestations
 ```
 
-Phases 1 and 3 are independent and can run concurrently with two engineers.
-Phase 6 runs alongside from the start.
+Phases 1 and 3 are independent and run concurrently with two engineers. Phase 6
+runs alongside from the start.
 
 ## Sequencing rationale
 
-- **Phase 0 first** because it is two weeks and it determines whether the
-  commercial premise holds at all. Every later phase assumes payment works.
-- **Phase 1 before Phase 3** because a buyer client pointed at a service with
-  snippet-grade output demonstrates the protocol, not the product.
-- **Phase 2 alongside Phase 1** because synthesis changes cannot be evaluated
-  without a benchmark, and the calibrator has no input without graded outcomes.
-- **Phase 4 after Phase 0** because registry presence creates inbound traffic;
-  inbound traffic against an unproven payment path produces failed settlements.
-- **Phase 5 last** because reputation requires volume to be meaningful.
+- **Phase 0 first** — two weeks, and it determines whether the commercial
+  premise holds at all.
+- **Phase 1 before Phase 3** — a buyer client pointed at snippet-grade output
+  demonstrates the protocol, not the product.
+- **Phase 2 alongside Phase 1** — synthesis cannot be evaluated without a
+  benchmark, and the calibrator has no input without graded outcomes.
+- **Phase 4 after Phase 0** — see above.
+- **Phase 5 last** — reputation requires volume to mean anything.
 
 ## Estimate
 
@@ -308,9 +386,46 @@ Phase 6 runs alongside from the start.
 
 ## Assumptions
 
-- x402 remains the settlement protocol; a shift to another standard invalidates
-  Phases 0, 3, and 4.
-- USDC on an EVM L2 remains the settlement asset. Solana support requires an
-  SPL scheme implementation not covered here.
-- Prices stay in the sub-dollar range, which rules out per-request human
-  approval and makes Phase 3.3 budget enforcement the only viable control.
+- x402 remains the settlement protocol. A shift invalidates Phases 0, 3, 4.
+- USDC on an EVM L2 remains the asset. Solana needs an SPL scheme not covered.
+- Prices stay sub-dollar, which rules out per-request human approval and makes
+  Phase 3.3 budget enforcement the only viable control.
+
+---
+
+# Part IV — Working on this
+
+## Commands
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/ -q          # 65 tests
+python -m evaluations.harness       # quality report
+python -m uvicorn app.main:app      # free mode
+ruff check veritas autonomous app evaluations tests
+bandit -r veritas autonomous app -lll -q
+```
+
+Offline (no network): `run_research(query, allow_network=False)` uses the
+labelled corpus. Note the corpus is **not** a fallback for provider outages —
+substituting fixture text for a failed live fetch would hide the outage, so an
+outage propagates as `unavailable` instead.
+
+## Conventions worth preserving
+
+- **CI has no soft-fail.** `5e548ef` removed the `|| true` workarounds that let
+  five import errors sit on a green `main`. Do not add them back.
+- **`compileall` is not an import check.** It passes on unresolvable imports;
+  the explicit import step exists because of that.
+- **Retrievers are untrusted.** They may raise and may ignore `max_results`.
+  The pipeline defends against both.
+- **The wire contract is enforced.** `validate_response` runs against real
+  pipeline output in tests. Extending the response means extending the contract.
+- **Never bill for our own failure.** `billable: false` on `unavailable` is
+  load-bearing; the settle call is gated on it.
+- **`skills/adversarial-code-truth.md` is a locked gate.** Emit the PROPERTY /
+  EVIDENCE LEVEL block before any success claim. Tests are L1 — "holds on these
+  cases" — not proof the product works. Do not use "complete", "live-ready",
+  "ZK", or "revenue-ready" in this repository without evidence that carries
+  them; the payment path is spec-shaped but unsettled, and is therefore
+  incomplete rather than "wired".

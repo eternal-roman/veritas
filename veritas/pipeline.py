@@ -22,7 +22,13 @@ from typing import Any, Dict, List, Optional
 from .bayesian import BayesianBelief, update_belief
 from .custody import CustodyLedger
 from .hashing import compute_content_hash, verify_content_hash
-from .retrieval import Retriever, default_retriever, relevance_score
+from .retrieval import (
+    RetrievalError,
+    RetrievalResult,
+    Retriever,
+    default_retriever,
+    relevance_score,
+)
 
 # Minimum usable evidence length; shorter excerpts cannot ground a claim.
 MIN_EVIDENCE_CHARS = 40
@@ -110,7 +116,22 @@ def run_research(
     if retriever is None:
         retriever = default_retriever(allow_network=allow_network)
 
-    result = retriever.retrieve(query, max_results=max_results)
+    # A retriever is an untrusted collaborator: it may raise, and it may ignore
+    # max_results. Neither may escape as a 500 or as unbounded work, so the
+    # exception becomes an `unavailable` outcome and the cap is re-applied here
+    # rather than trusted.
+    try:
+        result = retriever.retrieve(query, max_results=max_results)
+    except Exception as exc:  # noqa: BLE001 - converted to an unavailable outcome
+        provider = getattr(retriever, "name", "unknown")
+        result = RetrievalResult(
+            errors=[RetrievalError(provider, type(exc).__name__, str(exc)[:200])],
+            providers_attempted=[provider],
+        )
+
+    if len(result.sources) > max_results:
+        result.sources = result.sources[:max_results]
+
     retrieval_meta = result.to_dict()
 
     for err in result.errors:

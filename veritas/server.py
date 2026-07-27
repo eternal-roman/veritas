@@ -17,12 +17,13 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from veritas import __version__
 from veritas.constitution import build_constitution
 from veritas.custody import CustodyStore
+from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import get_facilitator
 from veritas.hashing import verify_content_hash
@@ -299,6 +300,21 @@ def well_known():
         "facilitator": cfg.facilitator,
         "network": cfg.network,
         "mode": cfg.mode,
+        # An empty accepts is an honest "no offer"; configured_price is the
+        # price that would apply in live mode — config, not an offer.
+        "accepts": [],
+        "configured_price": cfg.price,
+        # Discovery must be self-traversing: one document reaches every
+        # machine-readable surface. Relative paths, so no base URL is faked.
+        "links": {
+            "identity": "/v1/identity",
+            "trust": "/v1/trust",
+            "constitution": "/v1/constitution",
+            "errors": "/v1/errors",
+            "schema": "/v1/schema",
+            "openapi": "/openapi.json",
+            "llms": "/llms.txt",
+        },
     }
     if cfg.is_live_ready():
         try:
@@ -308,6 +324,12 @@ def well_known():
         except PriceError as exc:
             body["error"] = f"payment_misconfigured: {exc}"
     return body
+
+
+@app.get("/llms.txt")
+def llms_txt():
+    """Agent-readable discovery index; the repo-root llms.txt mirrors this."""
+    return PlainTextResponse(LLMS_TXT)
 
 
 def main() -> None:

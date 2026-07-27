@@ -1,12 +1,12 @@
 """Live / free payment configuration with full CAIP-2 support."""
 
 from __future__ import annotations
-import os
-from dataclasses import dataclass
-from typing import List
-import re
 
-from .networks import normalize_network, DEFAULT_NETWORK, supported_networks, is_settleable
+import os
+import re
+from dataclasses import dataclass, field
+
+from .networks import DEFAULT_NETWORK, is_settleable, normalize_network, supported_networks
 
 DEFAULT_FACILITATOR = "https://pay.openfacilitator.io"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -22,11 +22,11 @@ class PaymentConfig:
     network: str
     price: str
     mode: str
-    supported_networks: List[str]
-    config_errors: List[str] = None
+    supported_networks: list[str]
+    config_errors: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_env(cls) -> "PaymentConfig":
+    def from_env(cls) -> PaymentConfig:
         pay_to = os.getenv("VERITAS_PAY_TO", ZERO_ADDRESS).strip()
         facilitator = os.getenv("VERITAS_FACILITATOR", DEFAULT_FACILITATOR).strip()
         require = os.getenv("VERITAS_REQUIRE_PAYMENT", "false").lower() in ("1", "true", "yes")
@@ -36,7 +36,7 @@ class PaymentConfig:
         # Validate before claiming live mode. The previous check accepted any
         # string of length >= 20 as a wallet, so a typo'd address would put the
         # service in live mode and settle payments to nowhere.
-        errors: List[str] = []
+        errors: list[str] = []
         if require:
             if not EVM_ADDRESS_RE.match(pay_to):
                 errors.append(f"VERITAS_PAY_TO is not a valid EVM address: {pay_to!r}")

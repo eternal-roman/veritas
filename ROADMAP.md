@@ -4,7 +4,9 @@ Self-contained handoff. Everything needed to pick this up cold is here: what the
 system does, what is verified, what is broken, and what to build in what order.
 
 Last full evaluation: 2026-07-27, against `main` @ `b498652` plus the fixes in
-`95a75ef`.
+`95a75ef`. Amended the same day by the packaging pass (single installable
+`veritas` package, wheel/sdist build gated in CI — see Phase P below); paths in
+this document reflect the post-restructure tree.
 
 ---
 
@@ -29,20 +31,22 @@ bill for the second, is selling something a language model cannot fake.
 
 ## Architecture
 
-```
-app/main.py ─────────────┐
-                         ├──> veritas/pipeline.py   (single engine)
-autonomous/control_plane ─┘         │
-                                    ├──> veritas/retrieval.py ──> autonomous/zero_key_retrieval.py
-                                    │                                  ├── Wikipedia REST
-                                    │                                  └── ddgs / DDG Instant Answer
-                                    ├──> veritas/hashing.py
-                                    ├──> veritas/custody.py ──> CustodyStore (disk receipts)
-                                    └──> veritas/bayesian.py
+Everything lives in one installable package, `veritas` (see Phase P):
 
-app/main.py ──> veritas/x402.py         (402 challenges, atomic amounts)
-           ├──> veritas/facilitator.py  (POST /verify, POST /settle)
-           └──> veritas/payment_config.py ──> veritas/networks.py ──> veritas/x402.USDC_ASSETS
+```
+veritas/server.py ────────────────┐
+                                  ├──> veritas/pipeline.py   (single engine)
+veritas/autonomous/control_plane ─┘         │
+                                            ├──> veritas/retrieval.py ──> veritas/autonomous/zero_key_retrieval.py
+                                            │                                  ├── Wikipedia REST
+                                            │                                  └── ddgs / DDG Instant Answer
+                                            ├──> veritas/hashing.py
+                                            ├──> veritas/custody.py ──> CustodyStore (disk receipts)
+                                            └──> veritas/bayesian.py
+
+veritas/server.py ──> veritas/x402.py         (402 challenges, atomic amounts)
+                 ├──> veritas/facilitator.py  (POST /verify, POST /settle)
+                 └──> veritas/payment_config.py ──> veritas/networks.py ──> veritas/x402.USDC_ASSETS
 ```
 
 Two invariants hold structurally, and both were violated before this work:
@@ -88,7 +92,7 @@ PROPERTY: The service never reports absent evidence when retrieval failed, never
           facilitator-verified payment.
 EVIDENCE LEVEL: L1 (tests and adversarial examples)
 CHECKED ARTIFACT: veritas/pipeline.py, veritas/retrieval.py, veritas/facilitator.py,
-          app/main.py, autonomous/control_plane.py; 65 tests; CI harness gates
+          veritas/server.py, veritas/autonomous/control_plane.py; 65 tests; CI harness gates
 ASSUMPTIONS: - Retrievers may raise and may ignore max_results (both now defended)
              - The facilitator honours the documented x402 /verify and /settle contract
              - Receipts are written to a filesystem that persists for the retention window
@@ -167,7 +171,7 @@ gaps a production deployment would hit.
 | 6 | Receipts and outcome log are local disk | Medium | `/v1/receipts` is unreliable behind a load balancer. `OutcomeLog.stats()` re-reads the whole file per call. Both grow unbounded. |
 | 7 | Evidence content is not stored | Medium | Only hashes. A buyer can confirm what we published but cannot re-obtain the passage after a source URL rots. |
 | 8 | Calibrator is untrained | Medium | Machinery works and persists; reports `passthrough_untrained`. Needs labelled outcomes. |
-| 9 | Layering inversion | Low | `veritas/retrieval.py` lazily imports `autonomous.zero_key_retrieval`; the core package depends on the agent layer. |
+| 9 | ~~Layering inversion~~ | — | Fixed by the packaging pass: the agent layer is now `veritas.autonomous`, a subpackage, and the lazy import no longer crosses top-level packages. |
 | 10 | Benchmark is a 3-document corpus | Low | Harness proves invariants hold. Its perfect scores are not a quality claim. |
 | 11 | Solana advertised nowhere but aliased | Low | Deliberately excluded from payable networks; SPL settlement unimplemented. |
 
@@ -204,6 +208,44 @@ the package could not import.
 # Part III — Roadmap
 
 Sequenced by dependency. Sizing is engineer-weeks for one experienced engineer.
+
+## Phase P — Packaging & distribution (mostly done; remainder ~0.5 week)
+
+Prerequisite for every phase that expects a third party — human or agent — to
+install and run this. Split into what is done (verified in CI) and what
+remains.
+
+**Done in this pass (evidence: CI `package` job builds sdist+wheel, passes
+`twine check`, installs the wheel in a clean venv, imports it, runs offline
+research, and asserts no stray top-level packages):**
+
+- **P.1 Single-package restructure.** `autonomous/`, `app/`, `evaluations/`
+  merged into the `veritas` package (`veritas.autonomous`, `veritas.server`,
+  `veritas.evaluations`). The wheel ships exactly one top-level name; the
+  core→agent-layer import no longer crosses packages (closes issue #9).
+- **P.2 Complete metadata.** SPDX license expression + LICENSE file
+  (Apache-2.0 text was previously claimed but absent from the repo),
+  classifiers, keywords, project URLs, `py.typed`, version single-sourced
+  from `veritas.__version__` (server, identity document, and retrieval
+  user-agent all derive from it).
+- **P.3 Entry point.** `veritas-server` console script; `VERITAS_HOST` /
+  `VERITAS_PORT` control binding.
+- **P.4 Install paths.** `pip install .`, `.[retrieval]` (ddgs), `.[dev]`
+  (test/lint/build tooling). Lint (ruff) added to CI with zero findings.
+
+**Remaining:**
+
+- **P.5 PyPI publication.** Reserve the `veritas-research` name; publish via a
+  tag-triggered GitHub Actions release workflow using PyPI Trusted Publishing
+  (OIDC — no long-lived token secret). *Acceptance:* `pip install
+  veritas-research` from a clean machine serves `/health`.
+- **P.6 Release discipline.** Tag `vX.Y.Z` matching `veritas.__version__`;
+  keep a CHANGELOG; CI job that fails if the tag and package version diverge.
+- **P.7 Container image** (folds into 6.1). The wheel is the input to the
+  image; publish to GHCR alongside PyPI.
+
+*Risk:* none technical; P.5 needs a PyPI account/maintainer decision, which is
+why it is not done from this branch.
 
 ## Phase 0 — Prove settlement (2 weeks)
 
@@ -374,6 +416,7 @@ runs alongside from the start.
 
 | Phase | Weeks (1 eng) |
 |-------|---------------|
+| P — Packaging (remainder: PyPI publish + release discipline) | 0.5 |
 | 0 — Settlement proof | 2 |
 | 1 — Retrieval quality | 4–6 |
 | 2 — Benchmarking | 2 |
@@ -398,12 +441,13 @@ runs alongside from the start.
 ## Commands
 
 ```bash
-pip install -r requirements-dev.txt
-python -m pytest tests/ -q          # 65 tests
-python -m evaluations.harness       # quality report
-python -m uvicorn app.main:app      # free mode
-ruff check veritas autonomous app evaluations tests
-bandit -r veritas autonomous app -lll -q
+pip install -e ".[retrieval,dev]"
+python -m pytest tests/ -q               # 65 tests
+python -m veritas.evaluations.harness    # quality report
+veritas-server                           # free mode (or: python -m uvicorn veritas.server:app)
+ruff check veritas tests
+bandit -r veritas -lll -q
+python -m build && twine check dist/*    # packaging, same gate CI runs
 ```
 
 Offline (no network): `run_research(query, allow_network=False)` uses the

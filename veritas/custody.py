@@ -5,10 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 
 def _now() -> str:
@@ -25,8 +25,8 @@ class CustodyEvent:
     event_type: str          # created | transformed | verified | reviewed | updated
     actor: str
     timestamp: str
-    prev_hash: Optional[str]
-    payload: Dict[str, Any]
+    prev_hash: str | None
+    payload: dict[str, Any]
     event_hash: str = ""
 
     def compute_hash(self) -> str:
@@ -44,9 +44,9 @@ class CustodyLedger:
     """Append-only ledger. Any mutation of past events breaks the chain."""
 
     def __init__(self):
-        self.events: List[CustodyEvent] = []
+        self.events: list[CustodyEvent] = []
 
-    def append(self, event_type: str, actor: str, payload: Dict[str, Any]) -> CustodyEvent:
+    def append(self, event_type: str, actor: str, payload: dict[str, Any]) -> CustodyEvent:
         prev_hash = self.events[-1].event_hash if self.events else None
         event = CustodyEvent(
             event_type=event_type,
@@ -73,14 +73,14 @@ class CustodyLedger:
                     return False
         return True
 
-    def root_hash(self) -> Optional[str]:
+    def root_hash(self) -> str | None:
         return self.events[-1].event_hash if self.events else None
 
-    def to_list(self) -> List[Dict[str, Any]]:
+    def to_list(self) -> list[dict[str, Any]]:
         return [asdict(e) for e in self.events]
 
 
-def verify_chain_records(events: List[Dict[str, Any]]) -> bool:
+def verify_chain_records(events: list[dict[str, Any]]) -> bool:
     """Verify a chain that was serialised earlier (e.g. loaded from a receipt).
 
     Lets a buying agent re-run our integrity check against stored JSON without
@@ -114,10 +114,10 @@ class CustodyStore:
     as JSON so a result stays checkable for its retention window.
     """
 
-    def __init__(self, base_dir: Optional[str] = None):
+    def __init__(self, base_dir: str | None = None):
         self.base_dir = Path(base_dir or os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime")) / "receipts"
 
-    def save(self, result: Dict[str, Any]) -> Dict[str, Any]:
+    def save(self, result: dict[str, Any]) -> dict[str, Any]:
         record = {
             "request_id": result.get("request_id"),
             "query": result.get("query"),
@@ -139,7 +139,7 @@ class CustodyStore:
             record["error"] = str(exc)[:200]
         return record
 
-    def load(self, request_id: str) -> Optional[Dict[str, Any]]:
+    def load(self, request_id: str) -> dict[str, Any] | None:
         path = self.base_dir / f"{request_id}.json"
         try:
             return json.loads(path.read_text())

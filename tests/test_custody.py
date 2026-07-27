@@ -1,6 +1,7 @@
 from veritas.custody import CustodyLedger
 from veritas.hashing import compute_content_hash, verify_content_hash
 
+
 def test_hash_roundtrip():
     text = "Veritas evidence test"
     h = compute_content_hash(text)

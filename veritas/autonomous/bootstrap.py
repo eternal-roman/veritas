@@ -5,11 +5,13 @@ Generates a local deterministic seed for testing and configures free retrieval.
 """
 
 from __future__ import annotations
-import os
+
 import hashlib
 import json
-from pathlib import Path
+import os
 from datetime import datetime, timezone
+from pathlib import Path
+
 
 def generate_local_seed(agent_id: str = "default") -> str:
     """Deterministic local seed for development / agent-controlled instances.
@@ -26,7 +28,7 @@ def bootstrap_free_mode(agent_id: str = "default", base_dir: str = ".veritas_age
     config = {
         "mode": "free",
         "agent_id": agent_id,
-        "retrieval": "zero_key",          # uses autonomous/zero_key_retrieval.py
+        "retrieval": "zero_key",          # uses veritas/autonomous/zero_key_retrieval.py
         "require_payment": False,        # can be flipped later by the agent
         "pay_to": None,                  # agent can later set its own address
         "facilitator": "https://pay.openfacilitator.io",  # public free facilitator option

@@ -3,17 +3,17 @@
 ## Service dependency graph
 
 ```
-app/main.py ─────────────┐
+veritas/server.py ─────────────┐
                          ├──> veritas/pipeline.py  (THE single engine)
-autonomous/control_plane ─┘         │
-                                    ├──> veritas/retrieval.py ──> autonomous/zero_key_retrieval.py
+veritas/autonomous/  ─────┘         │
+                                    ├──> veritas/retrieval.py ──> veritas/autonomous/zero_key_retrieval.py
                                     │                                   ├── Wikipedia REST  (network)
                                     │                                   └── ddgs / DDG IA   (network, optional dep)
                                     ├──> veritas/hashing.py
                                     ├──> veritas/custody.py ──> CustodyStore (disk)
                                     └──> veritas/bayesian.py
 
-app/main.py ──> veritas/x402.py        (challenge construction, atomic amounts)
+veritas/server.py ──> veritas/x402.py        (challenge construction, atomic amounts)
            └──> veritas/facilitator.py (network: POST /verify, POST /settle)
            └──> veritas/payment_config.py ──> veritas/networks.py ──> veritas/x402.USDC_ASSETS
 ```

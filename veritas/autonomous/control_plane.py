@@ -15,29 +15,30 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any
 
-from autonomous.bootstrap import bootstrap, load_config
-from autonomous.local_facilitator import record_attempt, record_settlement, verify_payment
-from autonomous.self_calibrator import SelfCalibrator
 from veritas.pipeline import run_research
 from veritas.trust import OutcomeLog
+
+from .bootstrap import bootstrap, load_config
+from .local_facilitator import record_attempt, record_settlement, verify_payment
+from .self_calibrator import SelfCalibrator
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def agent_start() -> Dict[str, Any]:
+def agent_start() -> dict[str, Any]:
     """Provision a free-mode config with no human input."""
     return bootstrap()
 
 
 def agent_research(
     query: str,
-    headers: Optional[Dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
     max_results: int = 4,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run research through the shared engine under agent-native settlement."""
     headers = headers or {}
     cfg = load_config()
@@ -92,7 +93,7 @@ def agent_research(
     return result
 
 
-def record_feedback(raw_posterior: float, was_correct: bool) -> Dict[str, Any]:
+def record_feedback(raw_posterior: float, was_correct: bool) -> dict[str, Any]:
     """Feed a ground-truth outcome back into the calibrator and persist it.
 
     The calibrator can only learn from labelled outcomes. Nothing in the

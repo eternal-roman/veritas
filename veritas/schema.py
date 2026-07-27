@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Status(str, Enum):
@@ -37,11 +37,11 @@ class Provenance(str, Enum):
 @dataclass
 class Evidence:
     url: str
-    title: Optional[str]
+    title: str | None
     excerpt: str
     content_hash: str
-    provider: Optional[str] = None
-    provenance: Optional[str] = None
+    provider: str | None = None
+    provenance: str | None = None
     relevance: float = 0.0
 
 
@@ -52,7 +52,7 @@ class Claim:
     confidence: float
     evidence_hash: str
     source_url: str
-    provenance: Optional[str] = None
+    provenance: str | None = None
 
 
 @dataclass
@@ -61,12 +61,12 @@ class VeritasResponse:
     status: Status
     query: str
     posterior: float
-    claims: List[Claim] = field(default_factory=list)
-    evidence: List[Evidence] = field(default_factory=list)
-    custody_root: Optional[str] = None
+    claims: list[Claim] = field(default_factory=list)
+    evidence: list[Evidence] = field(default_factory=list)
+    custody_root: str | None = None
     custody_valid: bool = False
-    retrieval: Dict[str, Any] = field(default_factory=dict)
-    refusal_reason: Optional[str] = None
+    retrieval: dict[str, Any] = field(default_factory=dict)
+    refusal_reason: str | None = None
     billable: bool = True
     timestamp: str = ""
 
@@ -81,9 +81,9 @@ REQUIRED_CLAIM_FIELDS = ("id", "statement", "confidence", "evidence_hash", "sour
 REQUIRED_EVIDENCE_FIELDS = ("url", "excerpt", "content_hash")
 
 
-def validate_response(payload: Dict[str, Any]) -> List[str]:
+def validate_response(payload: dict[str, Any]) -> list[str]:
     """Return a list of contract violations; empty means conformant."""
-    problems: List[str] = []
+    problems: list[str] = []
 
     for key in REQUIRED_FIELDS:
         if key not in payload:

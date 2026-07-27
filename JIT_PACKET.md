@@ -43,7 +43,7 @@ Traditional setups require both sides to already know endpoints, wallets, networ
 
 ## Implementation
 
-See `autonomous/jit_packet.py` for the prototype encoder/decoder and chaining helpers.
+See `veritas/autonomous/jit_packet.py` for the prototype encoder/decoder and chaining helpers.
 
 ## Relationship to x402 + CAIP-2
 

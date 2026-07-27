@@ -5,8 +5,8 @@ from __future__ import annotations
 import hashlib
 import re
 import unicodedata
-from typing import Tuple, Dict, Any
 from datetime import datetime, timezone
+from typing import Any
 
 
 def normalize_content(text: str) -> str:
@@ -30,7 +30,7 @@ def compute_content_hash(content: str) -> str:
     return f"sha256:{digest}"
 
 
-def verify_content_hash(content: str, expected_hash: str) -> Tuple[bool, Dict[str, Any]]:
+def verify_content_hash(content: str, expected_hash: str) -> tuple[bool, dict[str, Any]]:
     """Verify content against a claimed hash."""
     if not expected_hash or not expected_hash.startswith("sha256:"):
         return False, {"valid": False, "error": "malformed_hash"}

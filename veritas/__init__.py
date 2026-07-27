@@ -2,12 +2,12 @@
 
 __version__ = "0.5.0"
 
-from .hashing import compute_content_hash, verify_content_hash, normalize_content
-from .custody import CustodyLedger, CustodyEvent, CustodyStore, verify_chain_records
 from .bayesian import BayesianBelief, update_belief
-from .schema import Evidence, Claim, VeritasResponse, Status, validate_response
-from .retrieval import RetrievalResult, RetrievalError, StaticCorpusRetriever, default_retriever
+from .custody import CustodyEvent, CustodyLedger, CustodyStore, verify_chain_records
+from .hashing import compute_content_hash, normalize_content, verify_content_hash
 from .pipeline import run_research
+from .retrieval import RetrievalError, RetrievalResult, StaticCorpusRetriever, default_retriever
+from .schema import Claim, Evidence, Status, VeritasResponse, validate_response
 
 __all__ = [
     "compute_content_hash",

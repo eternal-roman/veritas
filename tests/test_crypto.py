@@ -4,14 +4,14 @@ import secrets
 
 import pytest
 
-from autonomous.jit_packet import (
+from veritas.autonomous.jit_packet import (
     AgentIdentity,
     JITPacket,
     chain_packet,
     create_packet,
     verify_packet,
 )
-from autonomous.zk_wallet import (
+from veritas.autonomous.zk_wallet import (
     commit_wallet,
     open_commitment,
     prove,
@@ -73,7 +73,7 @@ def test_wrong_address_fails_reveal():
 
 def test_unsafe_stealth_derivation_removed():
     """Hash-derived addresses have no private key; funds sent there are burned."""
-    from autonomous.zk_wallet import derive_stealth_address
+    from veritas.autonomous.zk_wallet import derive_stealth_address
 
     with pytest.raises(NotImplementedError):
         derive_stealth_address(b"x", b"y")

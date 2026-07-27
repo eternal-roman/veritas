@@ -7,7 +7,7 @@ with the weather cannot support a quality claim.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from veritas.hashing import verify_content_hash
 from veritas.pipeline import run_research
@@ -28,14 +28,14 @@ UNSUPPORTED_QUERIES = [
 ]
 
 
-def _retriever(retriever: Optional[Retriever]) -> Retriever:
+def _retriever(retriever: Retriever | None) -> Retriever:
     return retriever or StaticCorpusRetriever()
 
 
 def evaluate_fidelity(
-    queries: Optional[List[str]] = None,
-    retriever: Optional[Retriever] = None,
-) -> Dict[str, Any]:
+    queries: list[str] | None = None,
+    retriever: Retriever | None = None,
+) -> dict[str, Any]:
     """Every published claim must hash-match the evidence it cites."""
     queries = queries or SUPPORTED_QUERIES
     r = _retriever(retriever)
@@ -73,7 +73,7 @@ def evaluate_fidelity(
     }
 
 
-def evaluate_refusal(retriever: Optional[Retriever] = None) -> Dict[str, Any]:
+def evaluate_refusal(retriever: Retriever | None = None) -> dict[str, Any]:
     """Measure discrimination: answer the supported, refuse the unsupported.
 
     Refusal rate alone is not a quality signal — a service that refuses
@@ -104,7 +104,7 @@ def evaluate_refusal(retriever: Optional[Retriever] = None) -> Dict[str, Any]:
     }
 
 
-def evaluate_unavailability_honesty() -> Dict[str, Any]:
+def evaluate_unavailability_honesty() -> dict[str, Any]:
     """A failing retriever must yield `unavailable`, never `no_evidence`.
 
     This guards the property that separates Veritas from a guesser: it must
@@ -132,7 +132,7 @@ def evaluate_unavailability_honesty() -> Dict[str, Any]:
     }
 
 
-def run_full_harness() -> Dict[str, Any]:
+def run_full_harness() -> dict[str, Any]:
     return {
         "fidelity": evaluate_fidelity(),
         "refusal": evaluate_refusal(),

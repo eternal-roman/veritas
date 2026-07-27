@@ -31,7 +31,7 @@ import json
 import secrets
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 def _now_dt() -> datetime:
@@ -42,7 +42,7 @@ def _iso(dt: datetime) -> str:
     return dt.isoformat().replace("+00:00", "Z")
 
 
-def _parse_iso(value: str) -> Optional[datetime]:
+def _parse_iso(value: str) -> datetime | None:
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except (ValueError, AttributeError):
@@ -60,7 +60,7 @@ class AgentIdentity:
     signing_key: bytes
 
     @classmethod
-    def create(cls, base: str = "veritas", salt: Optional[str] = None) -> "AgentIdentity":
+    def create(cls, base: str = "veritas", salt: str | None = None) -> AgentIdentity:
         salt = salt or secrets.token_hex(16)
         digest = hashlib.sha256(f"{base}:{salt}".encode()).hexdigest()[:24]
         return cls(agent_id=f"sid:{digest}", signing_key=secrets.token_bytes(32))
@@ -72,51 +72,51 @@ class JITPacket:
     agent_id: str
     packet_id: str
     created_at: str
-    expires_at: Optional[str] = None
+    expires_at: str | None = None
 
     # Payment. `pay_to_commitment` carries a hiding commitment instead of a
     # cleartext address so a broadcast offer does not leak the payout wallet.
-    pay_to_commitment: Optional[str] = None
-    pay_to: Optional[str] = None
+    pay_to_commitment: str | None = None
+    pay_to: str | None = None
     network: str = "eip155:8453"
     price: str = "$0.25"
-    facilitator: Optional[str] = None
-    asset: Optional[str] = None
+    facilitator: str | None = None
+    asset: str | None = None
 
     capability: str = "research"
-    endpoint_hint: Optional[str] = None
-    schema_hint: Optional[Dict[str, Any]] = None
+    endpoint_hint: str | None = None
+    schema_hint: dict[str, Any] | None = None
 
-    payload: Optional[Dict[str, Any]] = None
-    evidence_hashes: List[str] = field(default_factory=list)
+    payload: dict[str, Any] | None = None
+    evidence_hashes: list[str] = field(default_factory=list)
 
-    prev_packet_id: Optional[str] = None
-    prev_packet_hash: Optional[str] = None
-    chain_root: Optional[str] = None
+    prev_packet_id: str | None = None
+    prev_packet_hash: str | None = None
+    chain_root: str | None = None
 
     disposable: bool = True
-    signature: Optional[str] = None
+    signature: str | None = None
 
     def _signable(self) -> str:
         """Canonical encoding excluding the signature itself."""
         data = {k: v for k, v in asdict(self).items() if k != "signature"}
         return json.dumps(data, sort_keys=True, separators=(",", ":"))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     def encode(self) -> str:
         return json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
 
     @classmethod
-    def decode(cls, raw: str) -> "JITPacket":
+    def decode(cls, raw: str) -> JITPacket:
         data = json.loads(raw)
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
     def content_hash(self) -> str:
         return "sha256:" + hashlib.sha256(self._signable().encode()).hexdigest()
 
-    def sign(self, signing_key: bytes) -> "JITPacket":
+    def sign(self, signing_key: bytes) -> JITPacket:
         self.signature = hmac.new(signing_key, self._signable().encode(), hashlib.sha256).hexdigest()
         return self
 
@@ -126,7 +126,7 @@ class JITPacket:
         expected = hmac.new(signing_key, self._signable().encode(), hashlib.sha256).hexdigest()
         return hmac.compare_digest(expected, self.signature)
 
-    def is_expired(self, now: Optional[datetime] = None) -> bool:
+    def is_expired(self, now: datetime | None = None) -> bool:
         if not self.expires_at:
             return False
         expiry = _parse_iso(self.expires_at)
@@ -137,14 +137,14 @@ class JITPacket:
 
 def create_packet(
     identity: AgentIdentity,
-    pay_to_commitment: Optional[str] = None,
-    pay_to: Optional[str] = None,
+    pay_to_commitment: str | None = None,
+    pay_to: str | None = None,
     network: str = "eip155:8453",
     price: str = "$0.25",
-    facilitator: Optional[str] = None,
+    facilitator: str | None = None,
     capability: str = "research",
-    payload: Optional[Dict[str, Any]] = None,
-    prev: Optional[JITPacket] = None,
+    payload: dict[str, Any] | None = None,
+    prev: JITPacket | None = None,
     ttl_seconds: int = 300,
 ) -> JITPacket:
     """Create a fresh, disposable, signed JIT packet under a stable identity."""
@@ -190,9 +190,9 @@ def chain_packet(prev: JITPacket, identity: AgentIdentity, **kwargs) -> JITPacke
 def verify_packet(
     packet: JITPacket,
     signing_key: bytes,
-    prev: Optional[JITPacket] = None,
-    now: Optional[datetime] = None,
-) -> Tuple[bool, str]:
+    prev: JITPacket | None = None,
+    now: datetime | None = None,
+) -> tuple[bool, str]:
     """Validate signature, expiry and chain linkage. Returns (ok, reason)."""
     if not packet.verify_signature(signing_key):
         return False, "invalid_signature"

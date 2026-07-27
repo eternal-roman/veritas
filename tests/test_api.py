@@ -11,8 +11,9 @@ from fastapi.testclient import TestClient
 def free_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
-    import app.main as main_module
     import importlib
+
+    import veritas.server as main_module
     importlib.reload(main_module)
     return TestClient(main_module.app)
 
@@ -24,8 +25,9 @@ def paid_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
     # Unroutable facilitator so verification cannot succeed.
     monkeypatch.setenv("VERITAS_FACILITATOR", "http://127.0.0.1:1")
-    import app.main as main_module
     import importlib
+
+    import veritas.server as main_module
     importlib.reload(main_module)
     return TestClient(main_module.app)
 

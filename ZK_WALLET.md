@@ -45,13 +45,13 @@ When the buyer accepts and pays, settlement can use the opened address or a stea
 
 ## Files
 
-- `autonomous/zk_wallet.py` — commitment, verify, open, stealth helper
+- `veritas/autonomous/zk_wallet.py` — commitment, verify, open, stealth helper
 - This document — design notes
 
 ## Usage sketch
 
 ```python
-from autonomous.zk_wallet import commit_wallet, verify_commitment, open_commitment
+from veritas.autonomous.zk_wallet import commit_wallet, verify_commitment, open_commitment
 
 wc, opening = commit_wallet("0xSellerAddress...", network="eip155:8453")
 assert verify_commitment(wc)

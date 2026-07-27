@@ -9,14 +9,14 @@ x402 buyer — the payment path was unreachable in principle, not just unwired.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, Optional
+from typing import Any
 
 X402_VERSION = 1
 
 # Canonical USDC deployments per CAIP-2 network, with decimals.
-USDC_ASSETS: Dict[str, Dict[str, Any]] = {
+USDC_ASSETS: dict[str, dict[str, Any]] = {
     # Mainnets
     "eip155:1": {"address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "decimals": 6, "symbol": "USDC"},
     "eip155:8453": {"address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6, "symbol": "USDC"},
@@ -88,9 +88,9 @@ class PaymentRequirements:
     asset: str
     mimeType: str = "application/json"
     maxTimeoutSeconds: int = 60
-    extra: Optional[Dict[str, Any]] = None
+    extra: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         if data.get("extra") is None:
             data.pop("extra")
@@ -128,7 +128,7 @@ def build_402_challenge(
     price: str,
     resource: str,
     error: str = "X-PAYMENT header is required",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Construct a spec-shaped 402 body."""
     requirements = build_payment_requirements(pay_to, network, price, resource)
     return {

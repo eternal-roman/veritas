@@ -1,7 +1,7 @@
 """Evidence-first research pipeline with grounded claims and Bayesian updates.
 
 This is the single research engine for the whole system. Both the HTTP surface
-(`app/main.py`) and the agent-native control plane (`autonomous/control_plane.py`)
+(`veritas/server.py`) and the agent-native control plane (`veritas/autonomous/control_plane.py`)
 call into it, so there is exactly one implementation of retrieval, hashing,
 custody and belief updating to audit.
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .bayesian import BayesianBelief, update_belief
 from .custody import CustodyLedger
@@ -47,7 +47,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _likelihoods(source: Dict[str, Any], relevance: float, repeats: int) -> tuple[float, float]:
+def _likelihoods(source: dict[str, Any], relevance: float, repeats: int) -> tuple[float, float]:
     """Map source quality onto (P(E|H), P(E|~H)).
 
     A highly relevant, independently fetched document is much more likely to
@@ -74,14 +74,14 @@ def _envelope(
     query: str,
     status: str,
     posterior: float,
-    claims: List[Dict[str, Any]],
-    evidence: List[Dict[str, Any]],
+    claims: list[dict[str, Any]],
+    evidence: list[dict[str, Any]],
     ledger: CustodyLedger,
-    retrieval_meta: Dict[str, Any],
+    retrieval_meta: dict[str, Any],
     billable: bool,
-    refusal_reason: Optional[str] = None,
+    refusal_reason: str | None = None,
     evidence_hashes_valid: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return {
         "request_id": request_id,
         "status": status,
@@ -100,10 +100,10 @@ def _envelope(
 
 def run_research(
     query: str,
-    retriever: Optional[Retriever] = None,
+    retriever: Retriever | None = None,
     max_results: int = 5,
     allow_network: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run one research request end to end.
 
     `retriever` is injectable so tests and offline deployments can pin a
@@ -147,7 +147,7 @@ def run_research(
             retrieval_meta, billable=False, refusal_reason="retrieval_unavailable",
         )
 
-    evidence: List[Dict[str, Any]] = []
+    evidence: list[dict[str, Any]] = []
     for src in result.sources:
         text = (src.get("text") or "").strip()
         if len(text) < MIN_EVIDENCE_CHARS:
@@ -179,8 +179,8 @@ def run_research(
         )
 
     overall = BayesianBelief(hypothesis=query, prior=0.3)
-    claims: List[Dict[str, Any]] = []
-    provider_counts: Dict[str, int] = {}
+    claims: list[dict[str, Any]] = []
+    provider_counts: dict[str, int] = {}
 
     for i, ev in enumerate(evidence):
         provider = ev.get("provider") or "unknown"

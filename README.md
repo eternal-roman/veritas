@@ -27,13 +27,30 @@ network is not a research service. Veritas never bills for its own outage.
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
 - **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
 
+## Install
+
+```bash
+pip install .                  # from a clone; not yet published to PyPI
+pip install ".[retrieval]"     # + ddgs for full zero-key web search
+pip install -e ".[retrieval,dev]"   # development install with test/lint tooling
+```
+
+The wheel ships a single top-level package, `veritas` (engine, agent layer,
+HTTP server, and evaluation harness), plus a `veritas-server` console script.
+Python >= 3.10. Verify an install in one line:
+
+```bash
+python -c "from veritas.pipeline import run_research; print(run_research('What is x402?', allow_network=False)['status'])"
+```
+
 ## Quick start (free mode)
 
 ```bash
-pip install -r requirements.txt
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+veritas-server                              # console script; VERITAS_HOST / VERITAS_PORT to bind
+# or equivalently
+python -m uvicorn veritas.server:app --host 0.0.0.0 --port 8000
 
-# or use the library
+# or use the library directly
 python -c "from veritas.pipeline import run_research; print(run_research('What is x402?'))"
 ```
 
@@ -51,7 +68,7 @@ export VERITAS_PAY_TO=0xYourWallet          # validated as a real EVM address
 export VERITAS_FACILITATOR=https://pay.openfacilitator.io
 export VERITAS_REQUIRE_PAYMENT=true
 export VERITAS_NETWORK=eip155:8453
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+veritas-server
 ```
 
 If any of these is invalid the service reports `mode: misconfigured` and returns
@@ -71,9 +88,10 @@ If any of these is invalid the service reports `mode: misconfigured` and returns
 ## Testing
 
 ```bash
-pip install pytest httpx
+pip install -e ".[retrieval,dev]"
 python -m pytest tests/ -q
-python -m evaluations.harness
+python -m veritas.evaluations.harness
+ruff check veritas tests
 ```
 
 ## Known limitations
@@ -93,16 +111,23 @@ Stated plainly, because a truth-telling service should not overstate itself:
 - **Wallet commitments are hiding, not zero-knowledge.** Public verification of
   the opening requires the reveal at settlement.
 
-See `LIVE_PAYMENTS.md`, `JIT_PACKET.md`, `ZK_WALLET.md`, `WORKFLOW.md`, `ANALYSIS.md`.
+See `LIVE_PAYMENTS.md`, `JIT_PACKET.md`, `ZK_WALLET.md`, `WORKFLOW.md`,
+`ANALYSIS.md`, and `AGENTS.md` (repo guide for agents and contributors).
 
 ## Layout
 
 ```
-veritas/           # engine: retrieval, pipeline, custody, hashing, bayesian, x402, facilitator
-autonomous/        # agent-native layer: zero-key retrieval, JIT packets, wallet commitments, bootstrap
-app/               # FastAPI surface
-evaluations/       # harness + CI quality gates
-tests/
+veritas/               # the installable package (everything below ships in the wheel)
+  pipeline.py          #   single research engine: retrieval -> hashing -> custody -> Bayes
+  retrieval.py         #   retriever protocol, offline corpus, composite merging
+  custody.py           #   hash-chained ledger + durable receipts
+  hashing.py bayesian.py schema.py trust.py identity.py
+  x402.py facilitator.py payment_config.py networks.py
+  server.py            #   FastAPI surface (`veritas-server` console script)
+  autonomous/          #   agent-native layer: zero-key retrieval, control plane,
+                       #   JIT packets, wallet commitments, bootstrap, calibrator
+  evaluations/         #   harness + CI quality gates
+tests/                 # not shipped in the wheel
 ```
 
 ## License

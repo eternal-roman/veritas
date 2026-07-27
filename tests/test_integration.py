@@ -8,7 +8,7 @@ def test_hashing():
     assert ok
 
 def test_networks():
-    from veritas.networks import normalize_network, CAIP2_NETWORKS
+    from veritas.networks import CAIP2_NETWORKS, normalize_network
     assert normalize_network("base") == "eip155:8453"
     assert "eip155:8453" in CAIP2_NETWORKS.values()
 
@@ -39,7 +39,7 @@ def test_every_supported_network_has_a_settlement_asset():
 
 def test_control_plane_uses_shared_engine():
     """The control plane must not reimplement the pipeline."""
-    from autonomous.control_plane import agent_research
+    from veritas.autonomous.control_plane import agent_research
     from veritas.schema import validate_response
     result = agent_research("What is the x402 protocol?")
     assert result["status"] in ("completed", "refused", "unavailable", "payment_required")
@@ -50,7 +50,7 @@ def test_control_plane_uses_shared_engine():
 def test_payment_is_checked_before_work_is_done(monkeypatch):
     """An unpaid caller must not consume a full retrieval pass. The earlier
     ordering ran the research first and discarded the result."""
-    import autonomous.control_plane as cp
+    import veritas.autonomous.control_plane as cp
 
     called = []
     monkeypatch.setattr(cp, "run_research", lambda *a, **k: called.append(1) or {})
@@ -61,7 +61,7 @@ def test_payment_is_checked_before_work_is_done(monkeypatch):
     assert called == [], "research ran despite payment being required"
 
 def test_calibrator_reports_untrained_honestly():
-    from autonomous.self_calibrator import SelfCalibrator
+    from veritas.autonomous.self_calibrator import SelfCalibrator
     c = SelfCalibrator()
     summary = c.summary()
     assert "is_trained" in summary

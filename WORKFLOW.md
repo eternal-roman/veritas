@@ -65,7 +65,7 @@ pip install -r requirements.txt
 # Optional live config
 export VERITAS_PAY_TO=0x...
 export VERITAS_REQUIRE_PAYMENT=true
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn veritas.server:app --host 0.0.0.0 --port 8000
 ```
 
 Or call the library directly:

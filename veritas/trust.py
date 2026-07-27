@@ -16,19 +16,19 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 MIN_SAMPLES_FOR_SCORE = 10
 
 
 @dataclass
 class TrustScore:
-    overall: Optional[float]
+    overall: float | None
     recommendation: str
-    flags: List[str] = field(default_factory=list)
-    basis: Dict[str, Any] = field(default_factory=dict)
+    flags: list[str] = field(default_factory=list)
+    basis: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "overall": self.overall,
             "recommendation": self.recommendation,
@@ -40,7 +40,7 @@ class TrustScore:
 class OutcomeLog:
     """Append-only record of served requests, used to compute trust."""
 
-    def __init__(self, base_dir: Optional[str] = None):
+    def __init__(self, base_dir: str | None = None):
         runtime = Path(base_dir or os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
         self.path = runtime / "outcomes.jsonl"
 
@@ -57,7 +57,7 @@ class OutcomeLog:
             # Trust telemetry must never break request serving.
             pass
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         total = completed = refused = unavailable = custody_ok = 0
         try:
             with self.path.open() as fh:
@@ -83,7 +83,7 @@ class OutcomeLog:
         }
 
 
-def score_service(log: Optional[OutcomeLog] = None) -> TrustScore:
+def score_service(log: OutcomeLog | None = None) -> TrustScore:
     stats = (log or OutcomeLog()).stats()
     total = stats["total"]
 
@@ -104,7 +104,7 @@ def score_service(log: Optional[OutcomeLog] = None) -> TrustScore:
 
     score = 100.0 * (0.5 * custody_rate + 0.3 * availability + 0.2 * refusal_health)
 
-    flags: List[str] = []
+    flags: list[str] = []
     if custody_rate < 1.0:
         flags.append("CUSTODY_FAILURES_OBSERVED")
     if availability < 0.9:

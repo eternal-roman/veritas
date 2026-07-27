@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -11,7 +10,7 @@ class BayesianBelief:
     hypothesis: str
     prior: float = 0.5
     posterior: float = 0.5
-    history: List[dict] = field(default_factory=list)
+    history: list[dict] = field(default_factory=list)
 
     def __post_init__(self):
         self.prior = max(1e-6, min(1.0 - 1e-6, self.prior))

@@ -9,7 +9,7 @@ export VERITAS_REQUIRE_PAYMENT=true
 export VERITAS_NETWORK=eip155:8453
 export VERITAS_PRICE=$0.25
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn veritas.server:app --host 0.0.0.0 --port 8000
 ```
 
 ## Recommended public facilitators

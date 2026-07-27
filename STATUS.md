@@ -20,6 +20,7 @@ file described a system that did not import.
 | Signed JIT packets, enforced expiry, chain verification | Working, tested |
 | Behaviour-derived trust score | Working, reports `UNPROVEN` until 10 samples |
 | Evaluation harness + CI quality gates | Working |
+| Installable package (`pip install .`, single `veritas` namespace, `veritas-server` script) | Working; CI builds the wheel and installs it in a clean venv. Not yet on PyPI |
 
 ## What is built but unproven
 

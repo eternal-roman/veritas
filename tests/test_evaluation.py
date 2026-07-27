@@ -1,6 +1,6 @@
 """Tests for the evaluation harness."""
 
-from evaluations.harness import (
+from veritas.evaluations.harness import (
     evaluate_fidelity,
     evaluate_refusal,
     evaluate_unavailability_honesty,

@@ -44,7 +44,7 @@ jobs:
 
       - name: Import all modules
         run: |
-          python -c "import veritas.server, veritas.autonomous.control_plane, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution"
+          python -c "import veritas.server, veritas.autonomous.control_plane, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution, veritas.payer, veritas.replay, veritas.providers, veritas.buyer_payment"
 
       - name: Lint (ruff)
         run: |

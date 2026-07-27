@@ -94,7 +94,7 @@ PROPERTY: The service never reports absent evidence when retrieval failed, never
           facilitator-verified payment.
 EVIDENCE LEVEL: L1 (tests and adversarial examples)
 CHECKED ARTIFACT: veritas/pipeline.py, veritas/retrieval.py, veritas/facilitator.py,
-          veritas/server.py, veritas/autonomous/control_plane.py; 77 tests; CI harness gates
+          veritas/server.py, veritas/autonomous/control_plane.py; 202 tests; CI harness gates
 ASSUMPTIONS: - Retrievers may raise and may ignore max_results (both now defended)
              - The facilitator honours the documented x402 /verify and /settle contract
              - Receipts are written to a filesystem that persists for the retention window
@@ -139,7 +139,7 @@ strongest claim these support.
 | Wire contract | `validate_response` run against live pipeline output across three retriever types |
 | Venue constitution | Every L1 article's enforcement pointer resolves to a real test/CI-gate/schema artifact; L0 articles carry none and are rendered as aspirational; `CONSTITUTION.md` sync-tested against `veritas/constitution.py` |
 
-**Test suite: 77 passing.** CI runs compileall, an import check of all
+**Test suite: 202 passing.** CI runs compileall, an import check of all
 top-level modules, the tests, and harness quality gates (citation fidelity,
 custody validity, refusal discrimination, unavailability handling), plus Bandit
 and pip-audit.
@@ -366,7 +366,7 @@ This is the larger half of agent-to-agent commerce.
   challenge validation → EIP-712 payload → policy gate → abstract signer →
   `X-PAYMENT` header; no key material in-process). Evidence: L1 unit tests
   plus an L2 bounded model check (`veritas/evaluations/payment_model.py`,
-  CI-gated) — invariants I1–I7 hold across an exhaustive ~3,800-trace bounded
+  CI-gated) — invariants I1–I7 hold across an exhaustive 8,720-trace bounded
   space including signer-fault and restart variants. Remaining for
   acceptance: the unattended testnet run against a funded wallet. A real
   signer now exists — `veritas.buyer_payment.LocalAccountSigner` puts an
@@ -536,8 +536,8 @@ runs alongside from the start.
 ## Commands
 
 ```bash
-pip install -e ".[retrieval,dev]"
-python -m pytest tests/ -q               # 77 tests
+pip install -e ".[retrieval,signing,dev]"
+python -m pytest tests/ -q               # 202 tests
 python -m veritas.evaluations.harness    # quality report
 veritas-server                           # free mode (or: python -m uvicorn veritas.server:app)
 ruff check veritas tests

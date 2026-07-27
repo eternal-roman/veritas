@@ -1,6 +1,6 @@
-pydantic>=2.0
-fastapi>=0.110
-uvicorn>=0.27
+pydantic>=2.13.4
+fastapi>=0.140.0
+uvicorn>=0.51.0
 
 # Zero-key web search. Optional: without it the retriever reports
 # `dependency_missing` and falls back to the DuckDuckGo Instant Answer API

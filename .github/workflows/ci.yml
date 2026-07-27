@@ -95,20 +95,6 @@ jobs:
           fi
           echo "No obvious secret patterns found"
 
-  dependency-review:
-    name: Dependency review
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v7
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v5
-        with:
-          fail-on-severity: high
-
   security-scan:
     name: Security scan
     runs-on: ubuntu-latest
@@ -135,9 +121,16 @@ jobs:
         run: |
           bandit -r veritas -lll -q
 
-      - name: pip-audit
+      # Covers runtime AND dev/optional dependencies. This replaces the
+      # dependency-review action, which could never run here (it requires the
+      # repository's Dependency graph feature and errored before analysing
+      # anything). pip-audit runs on every push and pull request and audits
+      # the full pinned tree, so removing that job widened coverage rather
+      # than narrowing it.
+      - name: pip-audit (runtime and dev dependencies)
         run: |
           pip-audit -r requirements.txt
+          pip-audit -r requirements-dev.txt
 
   package:
     name: Package build & install

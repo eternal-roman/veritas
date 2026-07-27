@@ -143,8 +143,10 @@ class SpentNonceStore:
                     }) + "\n")
                     fh.flush()
                     os.fsync(fh.fileno())
-        except OSError as exc:
-            return ClaimResult(False, f"replay_store_unavailable: {str(exc)[:120]}")
+        except OSError:
+            # Category only: the OSError text names server filesystem paths
+            # and this reason flows to external buyers in the 503 detail.
+            return ClaimResult(False, "replay_store_unavailable")
         return ClaimResult(True, None, key)
 
 

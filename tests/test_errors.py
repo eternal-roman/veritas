@@ -119,3 +119,45 @@ def test_errors_endpoint_serves_registry(free_client):
     body = free_client.get("/v1/errors").json()
     assert body["errors"] == ERROR_REGISTRY
     assert "402" in body["exceptions"]["payment_challenge"]
+
+
+def test_facilitator_failure_reasons_carry_no_exception_text():
+    """CodeQL: information exposure through an exception. Facilitator
+    failure reasons flow to external buyers (503 detail, 402 challenge
+    error); they must be bare categories, never exception messages."""
+    from veritas.facilitator import FacilitatorClient
+
+    client = FacilitatorClient("http://127.0.0.1:1")
+    verification = client.verify({"scheme": "exact"}, {"scheme": "exact"})
+    assert verification.invalid_reason == "facilitator_unreachable"
+    settlement = client.settle({"scheme": "exact"}, {"scheme": "exact"})
+    assert settlement.error_reason == "facilitator_unreachable"
+
+
+def test_replay_store_failure_reason_carries_no_exception_text(tmp_path):
+    """The OSError message contains server filesystem paths; the wire gets
+    the category only."""
+    from veritas.replay import SpentNonceStore
+
+    blocker = tmp_path / "blocked"
+    blocker.write_text("a file where the store wants a directory")
+    store = SpentNonceStore(base_dir=blocker / "nested")
+    result = store.claim("0x" + "a" * 64)
+    assert result.claimed is False
+    assert result.reason == "replay_store_unavailable"
+
+
+def test_unpersisted_receipt_carries_no_exception_text(tmp_path, monkeypatch):
+    """The receipt is served to buyers; a failed write must not leak the
+    OSError message (server paths) into it."""
+    from veritas.custody import CustodyStore
+
+    blocker = tmp_path / "blocked"
+    blocker.write_text("a file where the store wants a directory")
+    store = CustodyStore(base_dir=blocker / "nested")
+    record = store.save({
+        "request_id": "r-unpersisted", "status": "completed",
+        "custody_root": "sha256:x", "custody_valid": True, "evidence": [],
+    })
+    assert record["persisted"] is False
+    assert "/" not in record["error"] and "\\" not in record["error"]

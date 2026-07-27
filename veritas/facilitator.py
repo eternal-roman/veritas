@@ -91,10 +91,12 @@ class FacilitatorClient:
             data = self._post("/verify", body)
         except urllib.error.HTTPError as exc:
             return VerificationResult(False, invalid_reason=f"facilitator_http_{exc.code}")
-        except urllib.error.URLError as exc:
-            return VerificationResult(False, invalid_reason=f"facilitator_unreachable: {exc.reason}")
-        except (json.JSONDecodeError, TimeoutError) as exc:
-            return VerificationResult(False, invalid_reason=f"facilitator_bad_response: {exc}")
+        except urllib.error.URLError:
+            # Category only: the exception text (resolver/socket detail) is
+            # server-side information and flows to external buyers.
+            return VerificationResult(False, invalid_reason="facilitator_unreachable")
+        except (json.JSONDecodeError, TimeoutError):
+            return VerificationResult(False, invalid_reason="facilitator_bad_response")
 
         return VerificationResult(
             is_valid=bool(data.get("isValid")),
@@ -116,10 +118,10 @@ class FacilitatorClient:
             data = self._post("/settle", body)
         except urllib.error.HTTPError as exc:
             return SettlementResult(False, error_reason=f"facilitator_http_{exc.code}")
-        except urllib.error.URLError as exc:
-            return SettlementResult(False, error_reason=f"facilitator_unreachable: {exc.reason}")
-        except (json.JSONDecodeError, TimeoutError) as exc:
-            return SettlementResult(False, error_reason=f"facilitator_bad_response: {exc}")
+        except urllib.error.URLError:
+            return SettlementResult(False, error_reason="facilitator_unreachable")
+        except (json.JSONDecodeError, TimeoutError):
+            return SettlementResult(False, error_reason="facilitator_bad_response")
 
         return SettlementResult(
             success=bool(data.get("success")),

@@ -1,0 +1,138 @@
+"""x402 protocol types: price parsing, atomic amounts, and challenge construction.
+
+The previous 402 response advertised `maxAmountRequired: "$0.25"`. The x402
+spec requires an atomic on-chain amount as a decimal string (USDC has 6
+decimals, so $0.25 is "250000"). A conforming client parsing "$0.25" as an
+integer fails outright, so the old challenge could not be paid by any real
+x402 buyer — the payment path was unreachable in principle, not just unwired.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, asdict
+from decimal import Decimal, InvalidOperation
+from typing import Any, Dict, Optional
+
+X402_VERSION = 1
+
+# Canonical USDC deployments per CAIP-2 network, with decimals.
+USDC_ASSETS: Dict[str, Dict[str, Any]] = {
+    # Mainnets
+    "eip155:1": {"address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "decimals": 6, "symbol": "USDC"},
+    "eip155:8453": {"address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6, "symbol": "USDC"},
+    "eip155:137": {"address": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "decimals": 6, "symbol": "USDC"},
+    "eip155:42161": {"address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "decimals": 6, "symbol": "USDC"},
+    "eip155:10": {"address": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", "decimals": 6, "symbol": "USDC"},
+    "eip155:43114": {"address": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", "decimals": 6, "symbol": "USDC"},
+    "eip155:480": {"address": "0x79A02482A880bCE3F13e09Da970dC34db4CD24d1", "decimals": 6, "symbol": "USDC"},
+    # Testnets
+    "eip155:84532": {"address": "0x036CbD53842c5426634e7929541eC2318f3dCF7e", "decimals": 6, "symbol": "USDC"},
+    "eip155:11155111": {"address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", "decimals": 6, "symbol": "USDC"},
+    "eip155:80002": {"address": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582", "decimals": 6, "symbol": "USDC"},
+    "eip155:421614": {"address": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d", "decimals": 6, "symbol": "USDC"},
+    "eip155:43113": {"address": "0x5425890298aed601595a70AB815c96711a31Bc65", "decimals": 6, "symbol": "USDC"},
+}
+
+# Networks recognised for alias resolution but NOT advertised as payable.
+# Solana settlement uses SPL token accounts and a different payload shape than
+# the EVM `exact` scheme implemented here; advertising it would publish an
+# offer no buyer could actually fulfil.
+UNSUPPORTED_SETTLEMENT = {
+    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana_spl_not_implemented",
+    "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": "solana_spl_not_implemented",
+}
+
+DEFAULT_DECIMALS = 6
+
+
+class PriceError(ValueError):
+    """Raised when a configured price cannot be converted to atomic units."""
+
+
+def parse_price(price: str) -> Decimal:
+    """Parse a human price string ('$0.25', '0.25', 'USD 0.25') to a Decimal."""
+    if price is None:
+        raise PriceError("price is required")
+    cleaned = str(price).strip().upper().replace("USDC", "").replace("USD", "").replace("$", "").strip()
+    if not cleaned:
+        raise PriceError(f"unparseable price: {price!r}")
+    try:
+        value = Decimal(cleaned)
+    except InvalidOperation as exc:
+        raise PriceError(f"unparseable price: {price!r}") from exc
+    if value <= 0:
+        raise PriceError(f"price must be positive: {price!r}")
+    return value
+
+
+def to_atomic_amount(price: str, network: str) -> str:
+    """Convert a human price to the atomic string x402 requires."""
+    asset = USDC_ASSETS.get(network)
+    decimals = asset["decimals"] if asset else DEFAULT_DECIMALS
+    value = parse_price(price)
+    atomic = int(value * (Decimal(10) ** decimals))
+    if atomic <= 0:
+        raise PriceError(f"price {price!r} rounds to zero atomic units on {network}")
+    return str(atomic)
+
+
+@dataclass
+class PaymentRequirements:
+    """One entry in the 402 `accepts` array."""
+    scheme: str
+    network: str
+    maxAmountRequired: str
+    resource: str
+    description: str
+    payTo: str
+    asset: str
+    mimeType: str = "application/json"
+    maxTimeoutSeconds: int = 60
+    extra: Optional[Dict[str, Any]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = asdict(self)
+        if data.get("extra") is None:
+            data.pop("extra")
+        return data
+
+
+def build_payment_requirements(
+    pay_to: str,
+    network: str,
+    price: str,
+    resource: str,
+    description: str = "High-assurance evidence-backed research via Veritas",
+) -> PaymentRequirements:
+    asset = USDC_ASSETS.get(network)
+    if asset is None:
+        raise PriceError(
+            f"no known settlement asset for network {network!r}; "
+            f"supported: {sorted(USDC_ASSETS)}"
+        )
+    return PaymentRequirements(
+        scheme="exact",
+        network=network,
+        maxAmountRequired=to_atomic_amount(price, network),
+        resource=resource,
+        description=description,
+        payTo=pay_to,
+        asset=asset["address"],
+        extra={"name": asset["symbol"], "version": "2"},
+    )
+
+
+def build_402_challenge(
+    pay_to: str,
+    network: str,
+    price: str,
+    resource: str,
+    error: str = "X-PAYMENT header is required",
+) -> Dict[str, Any]:
+    """Construct a spec-shaped 402 body."""
+    requirements = build_payment_requirements(pay_to, network, price, resource)
+    return {
+        "x402Version": X402_VERSION,
+        "error": error,
+        "accepts": [requirements.to_dict()],
+    }

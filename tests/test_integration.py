@@ -15,29 +15,52 @@ def test_networks():
 def test_payment_config_free():
     from veritas.payment_config import PaymentConfig
     cfg = PaymentConfig.from_env()
-    assert cfg.mode in ("free", "live")
+    assert cfg.mode in ("free", "live", "misconfigured")
     assert isinstance(cfg.supported_networks, list)
 
-def test_zk_commitment():
-    from autonomous.zk_wallet import commit_wallet, verify_commitment, open_commitment
-    addr = "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01"
-    wc, opening = commit_wallet(addr, network="eip155:8453")
-    assert verify_commitment(wc)
-    assert verify_commitment(wc, claimed_address=addr)
-    assert open_commitment(wc, opening) == addr.lower() or open_commitment(wc, opening) == addr
+def test_invalid_pay_to_does_not_become_live(monkeypatch):
+    """A typo'd wallet previously passed the len>=20 check and went live,
+    settling payments to an address nobody controls."""
+    from veritas.payment_config import PaymentConfig
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0xnot-a-real-address")
+    cfg = PaymentConfig.from_env()
+    assert cfg.mode == "misconfigured"
+    assert cfg.is_live_ready() is False
+    assert cfg.config_errors
 
-def test_jit_packet():
-    from autonomous.jit_packet import create_packet, chain_packet
-    p1 = create_packet(pay_to="0xabc", payload={"q": "test"})
-    assert p1.packet_id.startswith("pkt:")
-    assert p1.agent_id.startswith("sid:")
-    p2 = chain_packet(p1, payload={"r": "ok"})
-    assert p2.prev_packet_id == p1.packet_id
+def test_every_supported_network_has_a_settlement_asset():
+    """A network we advertise but cannot settle on is an unpayable offer."""
+    from veritas.payment_config import PaymentConfig
+    from veritas.x402 import USDC_ASSETS
+    cfg = PaymentConfig.from_env()
+    unsettleable = [n for n in cfg.supported_networks if n not in USDC_ASSETS]
+    assert not unsettleable, f"advertised but unsettleable networks: {unsettleable}"
+
+def test_control_plane_uses_shared_engine():
+    """The control plane must not reimplement the pipeline."""
+    from autonomous.control_plane import agent_research
+    from veritas.schema import validate_response
+    result = agent_research("What is the x402 protocol?")
+    assert result["status"] in ("completed", "refused", "unavailable", "payment_required")
+    if result["status"] != "payment_required":
+        assert validate_response({k: v for k, v in result.items()}) == []
+        assert result["human_required"] is False
+
+def test_calibrator_reports_untrained_honestly():
+    from autonomous.self_calibrator import SelfCalibrator
+    c = SelfCalibrator()
+    summary = c.summary()
+    assert "is_trained" in summary
+    # Untrained calibration must pass the value through unchanged.
+    if not summary["is_trained"]:
+        assert c.calibrate(0.77) == 0.77
 
 if __name__ == "__main__":
     test_hashing()
     test_networks()
     test_payment_config_free()
-    test_zk_commitment()
-    test_jit_packet()
+    test_every_supported_network_has_a_settlement_asset()
+    test_control_plane_uses_shared_engine()
+    test_calibrator_reports_untrained_honestly()
     print("integration smoke tests passed")

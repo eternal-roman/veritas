@@ -1,142 +1,172 @@
-"""Zero-knowledge style privacy for JIT wallets.
+"""Hiding wallet commitments for JIT packets.
 
-Provides:
-1. Hash-based commitment to a receiving address (hides the address in the public packet)
-2. Simple non-interactive proof of knowledge of the opening (Fiat-Shamir style)
-3. Stealth / one-time address derivation helper for ephemeral receive addresses
+WHAT THIS IS: a hiding, binding commitment to a payout address, so a publicly
+broadcast offer does not leak the address that will receive funds, plus a
+keyed proof of knowledge of the opening.
 
-This is a practical privacy layer for the JIT Disposable Packet protocol.
-It is not a full zkSNARK; it is a commitment + proof-of-knowledge construction
-that can be upgraded to real circuits later while keeping the same interface.
+WHAT THIS IS NOT: a zero-knowledge proof system. The previous version claimed
+"ZK-style" privacy and had two fatal flaws that this module fixes:
+
+1. It published the blinding `salt` alongside the commitment. A commitment
+   H(salt || address || network) with a public salt is trivially brute-forced
+   by enumerating candidate addresses — it provided no hiding whatsoever
+   against the only adversary that matters (someone with a list of addresses).
+   The salt is now private and never leaves the holder until opening.
+
+2. Its "proof" verified only that c == H(commitment || R), which a forger can
+   satisfy from the commitment alone by picking any R; the response `s` was
+   never checked. It proved nothing. Proof of knowledge is now a keyed MAC
+   over a caller-supplied challenge, which cannot be produced without the
+   secret salt.
+
+A true zero-knowledge preimage proof requires a circuit (Groth16/PLONK) and is
+out of scope; the interface below is designed so such a backend can replace
+`prove`/`verify_proof` without changing callers.
 """
 
 from __future__ import annotations
+
 import hashlib
+import hmac
 import secrets
-import json
 from dataclasses import dataclass, asdict
-from typing import Optional, Tuple, Dict, Any
+from typing import Any, Dict, Optional, Tuple
 
-def _sha256(data: bytes) -> bytes:
-    return hashlib.sha256(data).digest()
+SCHEME = "hiding-commit-hmac-v2"
+SALT_BYTES = 32
 
-def _hex(b: bytes) -> str:
-    return b.hex()
 
-def _from_hex(h: str) -> bytes:
-    return bytes.fromhex(h)
+def _mac(key: bytes, message: bytes) -> bytes:
+    return hmac.new(key, message, hashlib.sha256).digest()
+
+
+def _commitment_bytes(salt: bytes, address: str, network: str) -> bytes:
+    """C = HMAC(salt, address || network). Hiding while salt is secret; binding by MAC."""
+    return _mac(salt, address.lower().encode() + b"|" + network.encode())
+
 
 @dataclass
 class WalletCommitment:
-    """Public commitment to a private wallet address."""
-    commitment: str          # hex
-    network: str             # CAIP-2
-    salt: str                # public blinding salt (hex)
-    proof: str               # simple NIZK-style proof (hex)
-    scheme: str = "commit-pok-v1"
+    """The PUBLIC half. Safe to broadcast: contains no salt and no address."""
+    commitment: str
+    network: str
+    scheme: str = SCHEME
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
-def commit_wallet(address: str, network: str = "eip155:8453", salt: Optional[bytes] = None) -> Tuple[WalletCommitment, bytes]:
-    """
-    Create a commitment to `address` and a proof of knowledge of the opening.
 
-    Returns (public_commitment, private_opening_secret)
-    The private_opening_secret must be kept by the seller until settlement reveal (if needed).
-    """
+@dataclass
+class WalletOpening:
+    """The PRIVATE half. Never transmit until settlement requires disclosure."""
+    salt: bytes
+    address: str
+    network: str
+
+    def reveal(self) -> Dict[str, str]:
+        return {"salt": self.salt.hex(), "address": self.address, "network": self.network}
+
+
+def commit_wallet(
+    address: str,
+    network: str = "eip155:8453",
+    salt: Optional[bytes] = None,
+) -> Tuple[WalletCommitment, WalletOpening]:
+    """Commit to a payout address. Returns (public commitment, private opening)."""
+    if not address:
+        raise ValueError("address is required")
     if salt is None:
-        salt = secrets.token_bytes(32)
-    addr_bytes = address.lower().encode()
-    # Commitment = H(salt || address || network)
-    commit_input = salt + addr_bytes + network.encode()
-    commitment = _sha256(commit_input)
+        salt = secrets.token_bytes(SALT_BYTES)
+    if len(salt) < SALT_BYTES:
+        raise ValueError(f"salt must be at least {SALT_BYTES} bytes to be hiding")
 
-    # Simple Fiat-Shamir style proof of knowledge of (salt, address):
-    # Prover picks blinding r, publishes R = H(r || address), challenge c = H(commitment || R),
-    # response s = H(r || c || salt). Verifier checks structure.
-    # This is a lightweight PoK demonstration, not a full discrete-log SNARK.
-    r = secrets.token_bytes(32)
-    R = _sha256(r + addr_bytes)
-    c = _sha256(commitment + R)
-    s = _sha256(r + c + salt)
-
-    proof = R + c + s  # 96 bytes
-
-    wc = WalletCommitment(
-        commitment=_hex(commitment),
-        network=network,
-        salt=_hex(salt),
-        proof=_hex(proof),
-        scheme="commit-pok-v1",
+    commitment = _commitment_bytes(salt, address, network)
+    return (
+        WalletCommitment(commitment=commitment.hex(), network=network),
+        WalletOpening(salt=salt, address=address, network=network),
     )
-    # Private material the seller retains
-    opening = salt + addr_bytes  # enough to open later if required
-    return wc, opening
 
-def verify_commitment(wc: WalletCommitment, claimed_address: Optional[str] = None) -> bool:
+
+def prove(opening: WalletOpening, challenge: bytes) -> str:
+    """Prove knowledge of the opening against a verifier-supplied challenge.
+
+    The challenge must be fresh and chosen by the verifier (or bound to unique
+    packet context) — a replayed challenge admits a replayed proof.
     """
-    Verify the proof of knowledge structure.
-    If claimed_address is provided, also check that it opens the commitment.
+    if not challenge:
+        raise ValueError("challenge is required; a static challenge permits replay")
+    return _mac(opening.salt, b"pok|" + challenge).hex()
+
+
+def verify_proof(
+    commitment: WalletCommitment,
+    challenge: bytes,
+    proof: str,
+    opening: WalletOpening,
+) -> bool:
+    """Verify a proof. Requires the opening, so this is holder-side or post-reveal.
+
+    Honest limitation: without a real ZK circuit, a third party cannot verify
+    knowledge of the salt without learning it. Callers who need public
+    verifiability must wait for the reveal at settlement (`open_commitment`).
     """
     try:
-        commitment = _from_hex(wc.commitment)
-        salt = _from_hex(wc.salt)
-        proof = _from_hex(wc.proof)
-        if len(proof) != 96:
+        expected = _mac(opening.salt, b"pok|" + challenge).hex()
+        if not hmac.compare_digest(expected, proof):
             return False
-        R, c, s = proof[:32], proof[32:64], proof[64:]
-
-        # Recompute challenge binding
-        c2 = _sha256(commitment + R)
-        if c2 != c:
-            return False
-
-        if claimed_address is not None:
-            addr_bytes = claimed_address.lower().encode()
-            expected = _sha256(salt + addr_bytes + wc.network.encode())
-            if expected != commitment:
-                return False
-        return True
-    except Exception:
+        return verify_commitment(commitment, opening)
+    except (TypeError, ValueError):
         return False
 
-def open_commitment(wc: WalletCommitment, opening: bytes) -> Optional[str]:
-    """Open a commitment using the private opening material. Returns address or None."""
+
+def verify_commitment(commitment: WalletCommitment, opening: WalletOpening) -> bool:
+    """Check that an opening actually opens a commitment."""
     try:
-        salt = opening[:32]
-        addr_bytes = opening[32:]
-        if _hex(salt) != wc.salt:
-            return None
-        expected = _sha256(salt + addr_bytes + wc.network.encode())
-        if _hex(expected) != wc.commitment:
-            return None
-        return addr_bytes.decode()
-    except Exception:
+        expected = _commitment_bytes(opening.salt, opening.address, opening.network)
+        return hmac.compare_digest(expected.hex(), commitment.commitment)
+    except (TypeError, ValueError, AttributeError):
+        return False
+
+
+def open_commitment(commitment: WalletCommitment, opening: WalletOpening) -> Optional[str]:
+    """Reveal the address at settlement, returning it only if it opens correctly."""
+    if not verify_commitment(commitment, opening):
         return None
+    return opening.address
 
-def derive_stealth_address(view_secret: bytes, ephemeral_pub: bytes, network: str = "eip155:8453") -> str:
-    """
-    Simplified stealth / one-time address derivation.
-    Shared secret = H(view_secret || ephemeral_pub)
-    Address-like token = 0x + H(shared || network)[:20]
-    (For illustration; real EVM stealth addresses need proper ECC.)
-    """
-    shared = _sha256(view_secret + ephemeral_pub)
-    raw = _sha256(shared + network.encode())[:20]
-    return "0x" + raw.hex()
 
-def generate_ephemeral_keypair() -> Tuple[bytes, bytes]:
-    """Return (private, public) style ephemeral material for stealth derivation."""
-    priv = secrets.token_bytes(32)
-    pub = _sha256(priv)  # placeholder public
-    return priv, pub
+def verify_revealed(commitment: WalletCommitment, salt_hex: str, address: str) -> bool:
+    """Third-party check once the holder has revealed (salt, address)."""
+    try:
+        salt = bytes.fromhex(salt_hex)
+    except ValueError:
+        return False
+    expected = _commitment_bytes(salt, address, commitment.network)
+    return hmac.compare_digest(expected.hex(), commitment.commitment)
+
+
+def derive_stealth_address(*_args, **_kwargs):
+    """Removed: the previous implementation burned funds.
+
+    It derived an 'address' by hashing, so no private key existed for it. Any
+    payment sent there is permanently unrecoverable. Real EVM stealth addresses
+    (ERC-5564) require secp256k1 point arithmetic; use a library that
+    implements it rather than a hash.
+    """
+    raise NotImplementedError(
+        "derive_stealth_address was unsafe: hash-derived addresses have no "
+        "private key and burn any funds sent to them. Use an ERC-5564 "
+        "implementation with real secp256k1 arithmetic."
+    )
+
 
 if __name__ == "__main__":
     addr = "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01"
-    wc, opening = commit_wallet(addr, network="eip155:8453")
-    print("Commitment:", wc.commitment[:24] + "...")
-    print("Proof valid (no open):", verify_commitment(wc))
-    print("Proof valid (with open):", verify_commitment(wc, claimed_address=addr))
+    wc, opening = commit_wallet(addr)
+    print("Public commitment (safe to broadcast):", wc.to_dict())
+    challenge = secrets.token_bytes(16)
+    proof = prove(opening, challenge)
+    print("Proof verifies:", verify_proof(wc, challenge, proof, opening))
     print("Opened address:", open_commitment(wc, opening))
-    print("Wrong address rejected:", verify_commitment(wc, claimed_address="0x0000000000000000000000000000000000000001"))
+    print("Third-party check after reveal:", verify_revealed(wc, opening.salt.hex(), addr))
+    print("Wrong address rejected:", verify_revealed(wc, opening.salt.hex(), "0x" + "0" * 40))

@@ -1,78 +1,213 @@
-"""FastAPI surface with live/free payment configuration."""
+"""FastAPI surface: discovery, x402-gated research, and verification."""
 
-from fastapi import FastAPI, Request, HTTPException
+from __future__ import annotations
+
+import base64
+import binascii
+import json
+from typing import Any, Dict, Optional
+
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import Optional
-import os
+from pydantic import BaseModel, Field
 
-from veritas.pipeline import run_research
-from veritas.trust import score_service
+from veritas.custody import CustodyStore
+from veritas.facilitator import get_facilitator
+from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
 from veritas.payment_config import get_payment_config
+from veritas.pipeline import run_research
+from veritas.trust import OutcomeLog, score_service
+from veritas.x402 import PriceError, build_402_challenge, build_payment_requirements
 
-app = FastAPI(title="Veritas Research", version="0.4.0")
+app = FastAPI(title="Veritas Research", version="0.5.0")
+
+RESOURCE_PATH = "/v1/research"
+store = CustodyStore()
+outcomes = OutcomeLog()
+
 
 class ResearchRequest(BaseModel):
-    query: str
-    max_age_seconds: Optional[int] = 604800
+    query: str = Field(min_length=3, max_length=2000)
+    max_results: int = Field(default=5, ge=1, le=10)
+
+
+class VerifyRequest(BaseModel):
+    content: str
+    content_hash: str
+
+
+def _decode_payment_header(raw: str) -> Optional[Dict[str, Any]]:
+    """Decode the base64-JSON X-PAYMENT header, tolerating raw JSON.
+
+    Returns None when the header cannot be interpreted, which the caller
+    treats as an invalid payment (fail closed).
+    """
+    if not raw:
+        return None
+    try:
+        decoded = base64.b64decode(raw, validate=True).decode("utf-8")
+        payload = json.loads(decoded)
+        return payload if isinstance(payload, dict) else None
+    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        pass
+    try:
+        payload = json.loads(raw)
+        return payload if isinstance(payload, dict) else None
+    except json.JSONDecodeError:
+        return None
+
 
 @app.get("/health")
 def health():
     cfg = get_payment_config()
-    return {"status": "ok", "service": "veritas", "payment_mode": cfg.mode, "live_ready": cfg.is_live_ready()}
+    return {
+        "status": "ok",
+        "service": "veritas",
+        "version": app.version,
+        "payment_mode": cfg.mode,
+        "live_ready": cfg.is_live_ready(),
+    }
+
 
 @app.get("/v1/payment-config")
 def payment_config():
     return get_payment_config().as_dict()
 
-@app.post("/v1/research")
+
+@app.post(RESOURCE_PATH)
 def research(req: ResearchRequest, request: Request):
     cfg = get_payment_config()
+    payment_payload: Optional[Dict[str, Any]] = None
+    requirements_dict: Optional[Dict[str, Any]] = None
+    facilitator = None
 
-    # Live mode: require payment header (simplified gate; full x402 middleware can replace this)
+    # Payment was demanded but the configuration is invalid. Refuse to serve
+    # rather than silently falling back to giving the paid service away.
+    if cfg.mode == "misconfigured":
+        return JSONResponse(status_code=503, content={
+            "error": "payment_misconfigured",
+            "detail": cfg.config_errors,
+        })
+
     if cfg.require_payment:
-        payment_header = request.headers.get("X-PAYMENT") or request.headers.get("x-payment")
-        if not payment_header:
-            # Return 402-style challenge
+        try:
+            requirements = build_payment_requirements(
+                pay_to=cfg.pay_to,
+                network=cfg.network,
+                price=cfg.price,
+                resource=RESOURCE_PATH,
+            )
+        except PriceError as exc:
+            # Misconfiguration must not silently become free service.
+            return JSONResponse(status_code=500, content={
+                "error": "payment_misconfigured", "detail": str(exc),
+            })
+        requirements_dict = requirements.to_dict()
+
+        header = request.headers.get("X-PAYMENT")
+        if not header:
             return JSONResponse(
                 status_code=402,
-                content={
-                    "error": "Payment Required",
-                    "x402Version": 1,
-                    "accepts": [{
-                        "scheme": "exact",
-                        "network": cfg.network,
-                        "maxAmountRequired": cfg.price,
-                        "payTo": cfg.pay_to,
-                        "facilitator": cfg.facilitator,
-                    }],
-                    "description": "High-assurance research via Veritas",
-                },
+                content=build_402_challenge(cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH),
             )
 
-    result = run_research(req.query)
-    result["payment_mode"] = cfg.mode
+        payment_payload = _decode_payment_header(header)
+        if payment_payload is None:
+            return JSONResponse(status_code=402, content=build_402_challenge(
+                cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
+                error="X-PAYMENT header is not valid base64-encoded JSON",
+            ))
+
+        facilitator = get_facilitator(cfg.facilitator, live=True)
+        verification = facilitator.verify(payment_payload, requirements_dict)
+        if not verification.is_valid:
+            reason = verification.invalid_reason or "payment_invalid"
+            # Facilitator outages fail closed as 503 so buyers retry rather
+            # than treating the refusal as a permanent payment rejection.
+            if reason.startswith(("facilitator_unreachable", "facilitator_http", "facilitator_bad_response")):
+                return JSONResponse(status_code=503, content={
+                    "error": "payment_verification_unavailable", "detail": reason,
+                })
+            return JSONResponse(status_code=402, content=build_402_challenge(
+                cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH, error=reason,
+            ))
+
+    result = run_research(req.query, max_results=req.max_results)
+    record = store.save(result)
+    result["custody_receipt"] = record
+    outcomes.record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
+
+    # Retrieval failures are ours, not the buyer's: never settle for them.
+    if result["status"] == "unavailable":
+        result["payment"] = {"settled": False, "reason": "not_billable_retrieval_unavailable"}
+        return JSONResponse(status_code=503, content=result)
+
+    if cfg.require_payment and facilitator is not None:
+        settlement = facilitator.settle(payment_payload, requirements_dict)
+        result["payment"] = {"settled": settlement.success, **settlement.to_dict()}
+        if not settlement.success:
+            return JSONResponse(status_code=402, content={
+                "error": "settlement_failed",
+                "detail": settlement.error_reason,
+                "request_id": result["request_id"],
+            })
+        return JSONResponse(
+            status_code=200,
+            content=result,
+            headers={"X-PAYMENT-RESPONSE": base64.b64encode(
+                json.dumps(settlement.to_dict()).encode()
+            ).decode()},
+        )
+
+    result["payment"] = {"settled": False, "mode": cfg.mode, "reason": "free_mode"}
     return result
+
+
+@app.post("/v1/verify")
+def verify(req: VerifyRequest):
+    """Let any agent independently re-check an evidence hash we published."""
+    ok, detail = verify_content_hash(req.content, req.content_hash)
+    return {"valid": ok, **detail}
+
+
+@app.get("/v1/receipts/{request_id}")
+def receipt(request_id: str):
+    """Retrieve a stored custody record so results stay auditable after the call."""
+    record = store.load(request_id)
+    if record is None:
+        return JSONResponse(status_code=404, content={"error": "receipt_not_found",
+                                                      "request_id": request_id})
+    return record
+
 
 @app.get("/v1/trust")
 def trust():
     s = score_service()
-    return {"overall": s.overall, "recommendation": s.recommendation, "flags": s.flags}
+    return s.to_dict()
+
 
 @app.get("/v1/identity")
 def identity():
-    return build_identity()
+    cfg = get_payment_config()
+    return build_identity(pay_to=cfg.pay_to, network=cfg.network, price=cfg.price)
+
 
 @app.get("/.well-known/x402")
 def well_known():
     cfg = get_payment_config()
-    return {
-        "version": 1,
-        "resources": ["/v1/research"],
-        "payTo": cfg.pay_to if cfg.is_live_ready() else None,
+    body: Dict[str, Any] = {
+        "x402Version": 1,
+        "resources": [{"resource": RESOURCE_PATH, "method": "POST"}],
         "facilitator": cfg.facilitator,
         "network": cfg.network,
-        "price": cfg.price,
         "mode": cfg.mode,
     }
+    if cfg.is_live_ready():
+        try:
+            body["accepts"] = [build_payment_requirements(
+                cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
+            ).to_dict()]
+        except PriceError as exc:
+            body["error"] = f"payment_misconfigured: {exc}"
+    return body

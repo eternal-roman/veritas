@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest httpx
 
       - name: Compile all Python modules
         run: |
@@ -40,6 +40,29 @@ jobs:
       - name: Run unit / integration tests
         run: |
           python -m pytest tests/ -q --tb=short
+
+      - name: Evaluation harness must meet quality gates
+        run: |
+          python - <<'PY'
+          import sys
+          from evaluations.harness import run_full_harness
+
+          report = run_full_harness()
+          failures = []
+
+          if report["fidelity"]["citation_fidelity"] < 1.0:
+              failures.append(f"citation fidelity {report['fidelity']['citation_fidelity']} < 1.0")
+          if not report["fidelity"]["all_custody_valid"]:
+              failures.append("custody chain invalid on at least one query")
+          if report["refusal"]["discrimination"] <= 0.0:
+              failures.append("refusal does not discriminate supported from unsupported")
+          if not report["unavailability_honesty"]["correct"]:
+              failures.append("outage reported as no_evidence, or billed")
+
+          for f in failures:
+              print(f"QUALITY GATE FAILED: {f}")
+          sys.exit(1 if failures else 0)
+          PY
 
       - name: Basic secret pattern scan
         run: |

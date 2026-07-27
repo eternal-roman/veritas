@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from veritas import __version__
+from veritas.constitution import build_constitution
 from veritas.custody import CustodyStore
 from veritas.facilitator import get_facilitator
 from veritas.hashing import verify_content_hash
@@ -193,6 +194,12 @@ def receipt(request_id: str):
 def trust():
     s = score_service()
     return s.to_dict()
+
+
+@app.get("/v1/constitution")
+def constitution():
+    """The venue constitution: enforced-or-aspirational articles, free to read."""
+    return build_constitution()
 
 
 @app.get("/v1/identity")

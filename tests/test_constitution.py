@@ -13,6 +13,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+from fastapi.testclient import TestClient
+
 from veritas.constitution import (
     ARTICLES,
     CONSTITUTION_VERSION,
@@ -24,6 +27,17 @@ from veritas.constitution import (
 REPO = Path(__file__).resolve().parent.parent
 CI_WORKFLOW = REPO / ".github" / "workflows" / "ci.yml"
 SCHEMA_SOURCE = REPO / "veritas" / "schema.py"
+
+
+@pytest.fixture
+def free_client(tmp_path, monkeypatch):
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    import importlib
+
+    import veritas.server as main_module
+    importlib.reload(main_module)
+    return TestClient(main_module.app)
 
 
 def _resolve_test_pointer(pointer: str) -> bool:
@@ -126,6 +140,25 @@ def test_known_gap_simulator_accepts_any_header():
     assert local_facilitator.verify_payment(
         {"X-PAYMENT": "garbage-not-a-payment"}, require=True
     ) is True
+
+
+def test_constitution_endpoint(free_client):
+    """/v1/constitution serves the same document this module builds, unpaid
+    (discovery must be free to read, article A10)."""
+    body = free_client.get("/v1/constitution").json()
+    assert validate_constitution(body) == []
+    assert body["constitution_version"] == CONSTITUTION_VERSION
+    assert body["content_hash"] == build_constitution()["content_hash"]
+
+
+def test_identity_references_constitution(free_client):
+    """A buyer evaluating the service from its identity document alone must
+    learn that a constitution exists and where to fetch it."""
+    first = free_client.get("/v1/identity").json()
+    second = free_client.get("/v1/identity").json()
+    assert first["constitution"]["version"] == CONSTITUTION_VERSION
+    assert first["endpoints"]["constitution"].endswith("/v1/constitution")
+    assert first["content_hash"] == second["content_hash"]
 
 
 def test_constitution_version_is_declared():

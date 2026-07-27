@@ -109,11 +109,17 @@ def research(req: ResearchRequest, request: Request):
                 price=cfg.price,
                 resource=RESOURCE_PATH,
             )
-        except PriceError as exc:
-            # Misconfiguration must not silently become free service.
+        except PriceError:
+            # Misconfiguration must not silently become free service. The
+            # exception text describes server-side configuration, so it stays
+            # out of the response body (CodeQL: information exposure); the
+            # operator inspects config via /v1/payment-config, not this error.
             return JSONResponse(
                 status_code=500,
-                content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, str(exc)),
+                content=error_envelope(
+                    ErrorCode.PAYMENT_MISCONFIGURED,
+                    "price configuration rejected at challenge construction",
+                ),
             )
         requirements_dict = requirements.to_dict()
 

@@ -1,20 +1,10 @@
-"""Live / free payment configuration for Veritas.
-
-Environment variables (live mode):
-  VERITAS_PAY_TO          = 0xYourReceivingWallet
-  VERITAS_FACILITATOR     = https://pay.openfacilitator.io   (or CDP / self-hosted)
-  VERITAS_REQUIRE_PAYMENT = true
-  VERITAS_NETWORK         = eip155:8453          (Base mainnet)
-  VERITAS_PRICE           = $0.25
-
-If VERITAS_REQUIRE_PAYMENT is not true or PAY_TO is missing/zero,
-the service stays in free/simulated mode.
-"""
+"""Live / free payment configuration with full CAIP-2 support."""
 
 from __future__ import annotations
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
+from .networks import normalize_network, DEFAULT_NETWORK, supported_networks
 
 DEFAULT_FACILITATOR = "https://pay.openfacilitator.io"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -26,17 +16,18 @@ class PaymentConfig:
     require_payment: bool
     network: str
     price: str
-    mode: str  # "free" | "live"
+    mode: str
+    supported_networks: List[str]
 
     @classmethod
     def from_env(cls) -> "PaymentConfig":
         pay_to = os.getenv("VERITAS_PAY_TO", ZERO_ADDRESS).strip()
         facilitator = os.getenv("VERITAS_FACILITATOR", DEFAULT_FACILITATOR).strip()
         require = os.getenv("VERITAS_REQUIRE_PAYMENT", "false").lower() in ("1", "true", "yes")
-        network = os.getenv("VERITAS_NETWORK", "eip155:8453").strip()
+        network = normalize_network(os.getenv("VERITAS_NETWORK", DEFAULT_NETWORK))
         price = os.getenv("VERITAS_PRICE", "$0.25").strip()
 
-        is_live = require and pay_to and pay_to != ZERO_ADDRESS and len(pay_to) == 42
+        is_live = require and pay_to and pay_to != ZERO_ADDRESS and len(pay_to) >= 20
         mode = "live" if is_live else "free"
 
         return cls(
@@ -46,6 +37,7 @@ class PaymentConfig:
             network=network,
             price=price,
             mode=mode,
+            supported_networks=supported_networks(),
         )
 
     def is_live_ready(self) -> bool:
@@ -60,6 +52,7 @@ class PaymentConfig:
             "network": self.network,
             "price": self.price,
             "live_ready": self.is_live_ready(),
+            "supported_networks": self.supported_networks,
         }
 
 def get_payment_config() -> PaymentConfig:

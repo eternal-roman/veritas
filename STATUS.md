@@ -22,6 +22,7 @@ file described a system that did not import.
 | Evaluation harness + CI quality gates | Working |
 | Installable package (`pip install .`, single `veritas` namespace, `veritas-server` script) | Working; CI builds the wheel and installs it in a clean venv. Not yet on PyPI |
 | Keyed Serper retrieval tier (env-configured, key never serialised, degrades to zero-key tier) | Working against fixture-shaped responses; not yet exercised against the live API with a real key |
+| Buyer-side payment construction + spend policy (`veritas.payer`, key-free signer seam) | Working; L1 unit tests + L2 bounded model check (I1–I7, ~3,800 traces, CI-gated). No real signer or on-chain settlement yet |
 
 ## What is built but unproven
 

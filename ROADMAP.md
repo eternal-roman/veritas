@@ -334,6 +334,14 @@ This is the larger half of agent-to-agent commerce.
   base64 into `X-PAYMENT`. Validate the received `accepts` entry — asset,
   network, amount — before signing. *Acceptance:* a buyer completes
   402 → pay → 200 against our own service on testnet with no human step.
+  *Status:* the offline half is implemented and TDD'd (`veritas/payer.py`:
+  challenge validation → EIP-712 payload → policy gate → abstract signer →
+  `X-PAYMENT` header; no key material in-process). Evidence: L1 unit tests
+  plus an L2 bounded model check (`veritas/evaluations/payment_model.py`,
+  CI-gated) — invariants I1–I7 hold across an exhaustive ~3,800-trace bounded
+  space including signer-fault and restart variants. Remaining for
+  acceptance: a real signer integration and the unattended testnet run. No
+  signature has ever been produced by a real key through this path.
 - **3.2 Key custody — committed design (encoded 2026-07-27).**
 
   1. **The key never enters the agent process.** Key bytes live only in the
@@ -379,6 +387,12 @@ This is the larger half of agent-to-agent commerce.
   caps; network and asset allowlists. Enforce before signing; persist counters.
   *Acceptance:* a $1/day cap refuses the exceeding request, and counters survive
   restart.
+  *Status:* agent-side layer implemented (`veritas.payer.SpendPolicy`):
+  per-request / per-day / per-counterparty caps, network allowlist, persisted
+  counters that survive restart (tested, and exercised by the model's
+  restart variants). Remaining: per-hour granularity, asset allowlists, and —
+  per the 3.2 design — the independent signer-side policy layer, which no
+  local code can substitute for.
 
 ## Phase 4 — Discovery (2–3 weeks)
 

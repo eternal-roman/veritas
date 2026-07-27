@@ -176,6 +176,18 @@ jobs:
           PY
           test -x /tmp/venv/bin/veritas-server
 
+  docker:
+    name: Container build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build image
+        run: |
+          docker build -t veritas-research:ci .
+      # Build-only: pushing to a registry (GHCR) needs a permissions decision
+      # a maintainer must make; see ROADMAP P.7.
+
   lint-structure:
     name: Structure checks
     runs-on: ubuntu-latest

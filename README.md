@@ -33,14 +33,22 @@ network is not a research service. Veritas never bills for its own outage.
 ## Install
 
 ```bash
-pip install .                  # from a clone; not yet published to PyPI
+# Directly from the repository — no clone needed, works for an agent today:
+pip install "veritas-research[retrieval] @ git+https://github.com/eternal-roman/veritas"
+
+# From a clone (not yet published to PyPI; the release workflow exists but
+# needs a maintainer to configure the PyPI project first):
 pip install ".[retrieval]"     # + ddgs for full zero-key web search
-pip install -e ".[retrieval,dev]"   # development install with test/lint tooling
+pip install -e ".[retrieval,signing,dev]"   # development install
+
+# Container (binds 0.0.0.0 inside; the bare console script binds 127.0.0.1):
+docker build -t veritas-research . && docker run -p 8000:8000 veritas-research
 ```
 
+Requires Python >= 3.10 and pip >= 24.1 (the package uses Metadata 2.4).
 The wheel ships a single top-level package, `veritas` (engine, agent layer,
-HTTP server, and evaluation harness), plus a `veritas-server` console script.
-Python >= 3.10. Verify an install in one line:
+HTTP server, and evaluation harness), plus `veritas-server` and
+`veritas-agent` console scripts. Verify an install in one line:
 
 ```bash
 python -c "from veritas.pipeline import run_research; print(run_research('What is x402?', allow_network=False)['status'])"
@@ -49,7 +57,8 @@ python -c "from veritas.pipeline import run_research; print(run_research('What i
 ## Quick start (free mode)
 
 ```bash
-veritas-server                              # console script; VERITAS_HOST / VERITAS_PORT to bind
+veritas-agent up                            # zero-touch: config + wallet + serve
+veritas-server                              # server only; VERITAS_HOST / VERITAS_PORT to bind
 # or equivalently
 python -m uvicorn veritas.server:app --host 0.0.0.0 --port 8000
 

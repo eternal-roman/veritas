@@ -1,3 +1,6 @@
+# CI/dev environment pin file and pip-audit target. pyproject.toml is the
+# install contract; pins here may be stricter than its floors, never looser
+# (tests/test_packaging.py enforces the direction).
 pydantic>=2.13.4
 fastapi>=0.140.0
 uvicorn>=0.51.0

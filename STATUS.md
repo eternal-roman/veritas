@@ -1,26 +1,16 @@
-# Veritas Status — Integrated
+# Veritas Status
 
-## Integrated and committed
+## Security / CI (updated)
 
-- Epistemic core (custody, hashing, Bayesian, refusal)
-- Zero-key free retrieval + agent bootstrap
-- Full CAIP-2 network support
-- Live/free payment configuration + 402 gate
-- JIT Disposable Packet protocol
-- ZK-style wallet commitment privacy
-- Evaluation harness
-- Workflow, distributable, and analysis docs
+| Control | State |
+|---------|--------|
+| CI workflows | On `main` — tests must pass (no soft-fail) |
+| Security scan job | Bandit + pip-audit, fail on high |
+| Dependabot config | Present (weekly pip + Actions) |
+| CODEOWNERS | Present |
+| Branch protection | **Documented only** — admin must apply in Settings |
+| Dependabot alerts product | Enable in repo Settings → Code security |
 
-## Modes
+## Product core
 
-| Mode | human_required | Real money |
-|------|----------------|------------|
-| Free (default) | false | No |
-| Live | false (once running) | Yes (with PAY_TO + facilitator) |
-
-## Next operational steps for production revenue
-
-1. Deploy a public instance
-2. Set `VERITAS_PAY_TO` + facilitator + `VERITAS_REQUIRE_PAYMENT=true`
-3. Register discovery (Bazaar / well-known)
-4. Upgrade retrieval quality for general queries
+Agent-native free research path, custody/Bayesian core, x402 payment config, JIT packets, ZK wallet commitments — see README and ANALYSIS.md.

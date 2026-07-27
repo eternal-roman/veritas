@@ -1,48 +1,48 @@
 # Branch Protection (main)
 
-Apply these rules on GitHub for `main` to protect the public repository and end users.
+**Status:** Rules are documented here. They must be applied by a repository **admin** in GitHub Settings (or via API). Until applied, direct pushes to `main` remain possible.
 
-## Required settings (Settings → Branches → Add rule → Branch name pattern: `main`)
+## Required settings
+
+Settings → Branches → Add rule → Branch name pattern: `main`
 
 | Setting | Value |
 |---------|--------|
 | Require a pull request before merging | **On** |
-| Require approvals | **1** (or more) |
+| Require approvals | **1** |
 | Dismiss stale PR approvals when new commits are pushed | **On** |
+| Require review from Code Owners | **On** |
 | Require status checks to pass before merging | **On** |
-| Status checks that are required | `Tests & syntax`, `Structure checks`, `Analyze (Python)` |
+| Status checks (after first green CI run) | `Tests & syntax`, `Structure checks`, `Security scan`, `Analyze (Python)` |
 | Require branches to be up to date before merging | **On** |
 | Require conversation resolution before merging | **On** |
-| Do not allow bypassing the above settings | **On** (for admins too if possible) |
-| Restrict who can push to matching branches | Optional: limit to maintainers |
+| Do not allow bypassing the above settings | **On** |
 | Allow force pushes | **Off** |
 | Allow deletions | **Off** |
 
-## Why this protects users
+## Also enable (Settings → Code security and analysis)
 
-- No direct push of unreviewed code to `main`
-- CI must pass (tests, structure, CodeQL)
-- Dependency review blocks high-severity vulnerable deps on PRs
-- Dependabot keeps libraries and Actions patched
-- Secret pattern scan fails the build if obvious private keys are introduced
+- Dependabot alerts
+- Dependabot security updates
+- Secret scanning
+- Push protection for secrets
 
-## Apply via GitHub UI or API
-
-If you have admin rights on `eternal-roman/veritas`:
-
-1. Open **Settings → Branches**
-2. Add rule for `main`
-3. Enable the options above
-4. Save
-
-Alternatively use the GitHub API / `gh` CLI:
+## Apply via gh CLI (admin token required)
 
 ```bash
 gh api -X PUT repos/eternal-roman/veritas/branches/main/protection \
   -H "Accept: application/vnd.github+json" \
-  -f required_status_checks='{"strict":true,"contexts":["Tests & syntax","Structure checks","Analyze (Python)"]}' \
+  -f required_status_checks='{"strict":true,"contexts":["Tests & syntax","Structure checks","Security scan","Analyze (Python)"]}' \
   -F enforce_admins=true \
-  -f required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true}' \
+  -f required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":true}' \
   -F allow_force_pushes=false \
   -F allow_deletions=false
 ```
+
+## CI hardening already on main
+
+- Tests and compileall **fail the job** on error (no `|| true` soft-fail)
+- Bandit high severity fails CI
+- pip-audit fails on known vulnerable deps
+- Dependency review fails PRs on high severity
+- Secret pattern scan fails on obvious private keys

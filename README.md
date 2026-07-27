@@ -22,7 +22,9 @@ network is not a research service. Veritas never bills for its own outage.
 - **Bayesian belief updating** with correlated-source damping (repeat sources from
   one provider are not treated as independent observations)
 - **First-class refusal**, measured by discrimination rather than raw refusal rate
-- **Zero-key retrieval** (Wikipedia + DuckDuckGo), with provider errors surfaced
+- **Tiered retrieval**: keyed Serper (Google) when configured, zero-key
+  Wikipedia + DuckDuckGo always, with provider errors surfaced and outages
+  degrading tier by tier — never silently
 - **x402 payment** with real facilitator `verify` / `settle` and fail-closed gating
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
 - **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
@@ -60,6 +62,22 @@ Offline / no network:
 from veritas.pipeline import run_research
 run_research("What is x402?", allow_network=False)   # uses the labelled offline corpus
 ```
+
+## Retrieval configuration
+
+Zero-key retrieval (Wikipedia + DuckDuckGo) works with no configuration. To
+rank a keyed provider ahead of it:
+
+```bash
+export VERITAS_SERPER_API_KEY=...   # or the conventional SERPER_API_KEY
+```
+
+API keys are configuration, never payload: a key is read from the
+environment, sent only as a request header to its provider, and never
+serialised into responses, errors, custody events, or receipts (tested — see
+`tests/test_providers.py`). Without a key the provider is simply not
+registered; a configured provider's outage degrades to the next tier with the
+error reported in `retrieval.errors`.
 
 ## Live payments
 

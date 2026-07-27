@@ -21,6 +21,7 @@ file described a system that did not import.
 | Behaviour-derived trust score | Working, reports `UNPROVEN` until 10 samples |
 | Evaluation harness + CI quality gates | Working |
 | Installable package (`pip install .`, single `veritas` namespace, `veritas-server` script) | Working; CI builds the wheel and installs it in a clean venv. Not yet on PyPI |
+| Keyed Serper retrieval tier (env-configured, key never serialised, degrades to zero-key tier) | Working against fixture-shaped responses; not yet exercised against the live API with a real key |
 
 ## What is built but unproven
 

@@ -277,11 +277,15 @@ This is the product. Everything else is plumbing around it.
   (`trafilatura` or `readability-lxml`); hash the extracted passage, not the
   snippet. *Acceptance:* median evidence length > 1,500 chars on the eval set,
   extraction failures reported as provider errors.
-- **1.2 Paid retrieval backends.** Implement `Retriever` for Exa, Brave, Serper
-  behind env config. The protocol and `CompositeRetriever` already support this;
-  register paid providers ahead of keyless ones and keep zero-key as the free
-  tier. *Acceptance:* a provider outage degrades to the next tier and is
-  reported, with no pipeline change.
+- **1.2 Paid retrieval backends.** *Serper done* (`veritas/providers.py`):
+  registered ahead of the zero-key tier when `VERITAS_SERPER_API_KEY` /
+  `SERPER_API_KEY` is set; the acceptance criterion — a provider outage
+  degrades to the next tier and is reported, with no pipeline change — is a
+  test (`test_serper_outage_degrades_to_next_tier`), as is key non-leakage
+  into any serialised output. *Note:* exercised against a recorded fixture of
+  the Serper response shape, not yet against the live API with a real key —
+  that first live call is the remaining acceptance step. Exa and Brave remain,
+  following the same shape.
 - **1.3 Claim synthesis.** Replace grounded excerpts with assertions supported
   by one or more sources, each carrying the `content_hash` of its support. Gate
   with entailment scoring (NLI model or LLM judge); drop claims below threshold.

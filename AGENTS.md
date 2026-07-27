@@ -16,6 +16,11 @@ python -m build && twine check dist/*    # packaging — CI builds and installs 
 veritas-server                           # run the service (free mode by default)
 ```
 
+Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
+the keyed Serper provider ahead of the zero-key tier. Keys are configuration,
+never payload — read from env, sent only as a provider request header, never
+serialised into results, errors, custody events, or receipts (tested).
+
 Offline development: `run_research(query, allow_network=False)` uses the
 labelled offline corpus. The corpus is **not** a fallback for provider outages
 — an outage must propagate as `unavailable`, never be papered over with

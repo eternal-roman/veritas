@@ -239,6 +239,31 @@ def trust():
     return s.to_dict()
 
 
+@app.get("/v1/schema")
+def schema():
+    """The wire contract as JSON Schema, generated from veritas.schema."""
+    from veritas.schema import response_json_schema
+
+    return {
+        "response": response_json_schema(),
+        "error_envelope": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "VeritasErrorEnvelope",
+            "type": "object",
+            "required": ["error"],
+            "properties": {
+                "error": {"type": "string", "enum": sorted(ERROR_REGISTRY)},
+                "detail": {},
+            },
+            "description": (
+                "All non-402 error responses. 402s use the x402 challenge "
+                "shape instead; see /v1/errors."
+            ),
+        },
+        "openapi": "/openapi.json",
+    }
+
+
 @app.get("/v1/errors")
 def errors():
     """The registered failure surface, so an agent can learn it before paying."""

@@ -2,6 +2,23 @@
 
 Additive only. Does not change server payment gating.
 Signing requires optional dependency ``eth_account``.
+
+**Custody scope — read before using this in anything but a test.** This is the
+only module in the package that takes a private key in-process, and it exists
+for the Phase 0.1 testnet settlement proof, where an operator deliberately
+runs a throwaway funded key on a testnet. It is NOT the production custody
+model: ROADMAP 3.2 commits to the key never entering the agent process, with
+the payload travelling out to an external signer and only a signature coming
+back. That boundary is :class:`veritas.payer.Signer`.
+
+There is one payment path, not two. :func:`pay_via_policy` routes this
+module's signing through :mod:`veritas.payer`, so a testnet run gets the same
+challenge validation, spend caps, and pre-sign attempt journal as any other
+buyer. :class:`LocalAccountSigner` is the adapter that puts an in-process key
+behind the ``Signer`` protocol; swapping in a remote signer later changes that
+one class and nothing else. The lower-level :func:`build_exact_payment_payload`
+remains for tests and for reconstructing a payload for audit — it applies no
+caps and writes no journal, so prefer :func:`pay_via_policy`.
 """
 
 from __future__ import annotations
@@ -11,6 +28,13 @@ import json
 import os
 import time
 from typing import Any
+
+from veritas.payer import (
+    PaymentClient,
+    SpendPolicy,
+    build_authorization,  # noqa: F401 - re-exported for audit-time reconstruction
+    validate_accepts,
+)
 
 
 class BuyerPaymentError(ValueError):
@@ -159,3 +183,124 @@ def extract_settlement_proof(response_body: dict[str, Any]) -> dict[str, Any]:
         "payer": sett.get("payer"),
         "network": sett.get("network"),
     }
+
+
+# ---------------------------------------------------------------------------
+# The gated path: in-process signing behind veritas.payer's Signer seam, so a
+# testnet run inherits validation, spend caps, and the attempt journal.
+# ---------------------------------------------------------------------------
+
+# Default caps for an unattended testnet run, in atomic USDC units (6 dp).
+# A harness with no caps at all is how a loop drains a funded key overnight.
+DEFAULT_MAX_PER_REQUEST = 1_000_000   # 1.00 USDC
+DEFAULT_MAX_PER_DAY = 5_000_000       # 5.00 USDC
+
+
+def _typed_data_for_signing(payload: dict[str, Any]) -> dict[str, Any]:
+    """Coerce a wire-shaped EIP-712 payload into the types eth_account expects.
+
+    ``veritas.payer.build_authorization`` emits JSON wire types — uint256 as
+    decimal strings, bytes32 as a 0x hex string — because that is what goes
+    into the ``X-PAYMENT`` header. The encoder wants Python ints and bytes.
+    Converting here (rather than changing the wire shape) keeps the header
+    exactly as the x402 spec describes it.
+    """
+    message = dict(payload["message"])
+    for field in ("value", "validAfter", "validBefore"):
+        message[field] = int(message[field])
+    nonce = message["nonce"]
+    if isinstance(nonce, str):
+        message["nonce"] = bytes.fromhex(nonce[2:] if nonce.startswith("0x") else nonce)
+    domain = dict(payload["domain"])
+    domain["chainId"] = int(domain["chainId"])
+    return {
+        "types": payload["types"],
+        "primaryType": payload["primaryType"],
+        "domain": domain,
+        "message": message,
+    }
+
+
+class LocalAccountSigner:
+    """``Signer`` backed by an in-process eth_account key. TESTNET/DEV ONLY.
+
+    This is the one place a private key is held in this process, and it is
+    deliberately a thin adapter: it implements exactly the two members of
+    :class:`veritas.payer.Signer` (``address`` and ``sign_typed_data``), so a
+    remote or hardware signer can replace it without touching any caller.
+    The key is never logged, never returned, and never serialised.
+    """
+
+    def __init__(self, private_key: str) -> None:
+        if not private_key:
+            raise BuyerPaymentError("private_key is required")
+        try:
+            from eth_account import Account
+        except ImportError as exc:  # pragma: no cover - dependency-gated
+            raise BuyerPaymentError(
+                "eth_account is required for signing; pip install eth_account"
+            ) from exc
+        self._account = Account.from_key(private_key)
+
+    @property
+    def address(self) -> str:
+        return self._account.address
+
+    def sign_typed_data(self, payload: dict[str, Any]) -> str:
+        try:
+            from eth_account.messages import encode_typed_data
+        except ImportError as exc:  # pragma: no cover - dependency-gated
+            raise BuyerPaymentError("eth_account is required for signing") from exc
+        signable = encode_typed_data(full_message=_typed_data_for_signing(payload))
+        signature = self._account.sign_message(signable).signature
+        return "0x" + signature.hex().removeprefix("0x")
+
+
+def default_spend_policy(base_dir: str | None = None) -> SpendPolicy:
+    """Caps for an unattended run, overridable by environment."""
+    return SpendPolicy(
+        max_per_request=int(os.getenv("VERITAS_MAX_PER_REQUEST", DEFAULT_MAX_PER_REQUEST)),
+        max_per_day=int(os.getenv("VERITAS_MAX_PER_DAY", DEFAULT_MAX_PER_DAY)),
+        max_per_day_per_counterparty=(
+            int(os.environ["VERITAS_MAX_PER_COUNTERPARTY"])
+            if os.getenv("VERITAS_MAX_PER_COUNTERPARTY")
+            else None
+        ),
+        base_dir=base_dir,
+    )
+
+
+def pay_via_policy(
+    requirements: dict[str, Any],
+    private_key: str,
+    *,
+    policy: SpendPolicy | None = None,
+    now: int | None = None,
+    validity_seconds: int = 60,
+) -> tuple[str, dict[str, Any]]:
+    """Validate a 402 entry, apply spend caps, journal, sign, and encode.
+
+    Returns ``(x_payment_header, decoded_payload)`` where the payload is
+    exactly what the header decodes to — the envelope stays spec-shaped, with
+    no vendor fields added after signing. The payer address is
+    ``payload["payload"]["authorization"]["from"]``.
+
+    Raises :class:`BuyerPaymentError` naming the failed check when the
+    challenge is rejected or the policy refuses — a refusal is never a silent
+    no-op, and a refused payment never reaches the signer.
+    """
+    validated, problems = validate_accepts(requirements)
+    if validated is None:
+        raise BuyerPaymentError(f"402 accepts entry rejected: {problems}")
+
+    signer = LocalAccountSigner(private_key)
+    client = PaymentClient(signer, policy or default_spend_policy())
+    result = client.pay(
+        validated,
+        now=int(time.time()) if now is None else int(now),
+        validity_seconds=validity_seconds,
+    )
+    if not result.paid:
+        raise BuyerPaymentError(f"payment refused [{result.check}]: {result.denial}")
+
+    return result.header, decode_x_payment(result.header)

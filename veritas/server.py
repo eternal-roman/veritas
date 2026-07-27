@@ -15,12 +15,15 @@ import os
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from veritas import __version__
 from veritas.constitution import build_constitution
 from veritas.custody import CustodyStore
+from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import get_facilitator
 from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
@@ -36,6 +39,19 @@ RESOURCE_PATH = "/v1/research"
 store = CustodyStore()
 outcomes = OutcomeLog()
 nonces = SpentNonceStore()
+
+# 402 bodies are x402-spec-shaped, not registry envelopes; the header marks
+# the protocol so a client can recognise the challenge without parsing.
+PAYMENT_REQUIRED_HEADER = {"Payment-Required": "x402"}
+
+
+@app.exception_handler(RequestValidationError)
+def invalid_request_handler(request: Request, exc: RequestValidationError):
+    """422s previously leaked FastAPI's raw shape, unlike every other error."""
+    return JSONResponse(
+        status_code=422,
+        content=error_envelope(ErrorCode.INVALID_REQUEST, jsonable_encoder(exc.errors())),
+    )
 
 
 class ResearchRequest(BaseModel):
@@ -96,10 +112,10 @@ def research(req: ResearchRequest, request: Request):
     # Payment was demanded but the configuration is invalid. Refuse to serve
     # rather than silently falling back to giving the paid service away.
     if cfg.mode == "misconfigured":
-        return JSONResponse(status_code=503, content={
-            "error": "payment_misconfigured",
-            "detail": cfg.config_errors,
-        })
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, cfg.config_errors),
+        )
 
     if cfg.require_payment:
         try:
@@ -111,9 +127,10 @@ def research(req: ResearchRequest, request: Request):
             )
         except PriceError as exc:
             # Misconfiguration must not silently become free service.
-            return JSONResponse(status_code=500, content={
-                "error": "payment_misconfigured", "detail": str(exc),
-            })
+            return JSONResponse(
+                status_code=500,
+                content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, str(exc)),
+            )
         requirements_dict = requirements.to_dict()
 
         header = request.headers.get("X-PAYMENT")
@@ -121,6 +138,7 @@ def research(req: ResearchRequest, request: Request):
             return JSONResponse(
                 status_code=402,
                 content=build_402_challenge(cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH),
+                headers=PAYMENT_REQUIRED_HEADER,
             )
 
         payment_payload = _decode_payment_header(header)
@@ -128,7 +146,7 @@ def research(req: ResearchRequest, request: Request):
             return JSONResponse(status_code=402, content=build_402_challenge(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
                 error="X-PAYMENT header is not valid base64-encoded JSON",
-            ))
+            ), headers=PAYMENT_REQUIRED_HEADER)
 
         facilitator = get_facilitator(cfg.facilitator, live=True)
         verification = facilitator.verify(payment_payload, requirements_dict)
@@ -137,12 +155,12 @@ def research(req: ResearchRequest, request: Request):
             # Facilitator outages fail closed as 503 so buyers retry rather
             # than treating the refusal as a permanent payment rejection.
             if reason.startswith(("facilitator_unreachable", "facilitator_http", "facilitator_bad_response")):
-                return JSONResponse(status_code=503, content={
-                    "error": "payment_verification_unavailable", "detail": reason,
-                })
+                return JSONResponse(status_code=503, content=error_envelope(
+                    ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason,
+                ))
             return JSONResponse(status_code=402, content=build_402_challenge(
                 cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH, error=reason,
-            ))
+            ), headers=PAYMENT_REQUIRED_HEADER)
 
         # Replay protection (roadmap 0.4). The nonce is claimed after the
         # facilitator accepts the payment and BEFORE any retrieval pass, so a
@@ -154,16 +172,14 @@ def research(req: ResearchRequest, request: Request):
             reason = claim.reason or "payment_nonce_rejected"
             if reason.startswith("replay_store_unavailable"):
                 # Fail closed: an unusable guard must not become no guard.
-                return JSONResponse(status_code=503, content={
-                    "error": "replay_protection_unavailable", "detail": reason,
-                })
-            return JSONResponse(status_code=409, content={
-                "error": reason,
-                "detail": (
-                    "This payment authorization has already been used. Request a "
-                    "fresh 402 challenge and sign a new authorization."
-                ),
-            })
+                return JSONResponse(status_code=503, content=error_envelope(
+                    ErrorCode.REPLAY_PROTECTION_UNAVAILABLE, reason,
+                ))
+            return JSONResponse(status_code=409, content=error_envelope(
+                reason,
+                "This payment authorization cannot be admitted. Request a "
+                "fresh 402 challenge and sign a new authorization.",
+            ))
 
     result = run_research(req.query, max_results=req.max_results)
     record = store.save(result)
@@ -173,17 +189,20 @@ def research(req: ResearchRequest, request: Request):
     # Retrieval failures are ours, not the buyer's: never settle for them.
     if result["status"] == "unavailable":
         result["payment"] = {"settled": False, "reason": "not_billable_retrieval_unavailable"}
+        # The registry code is additive: the full research body stays because
+        # the unavailability report is itself the deliverable here.
+        result["error"] = ErrorCode.RETRIEVAL_UNAVAILABLE.value
         return JSONResponse(status_code=503, content=result)
 
     if cfg.require_payment and facilitator is not None:
         settlement = facilitator.settle(payment_payload, requirements_dict)
         result["payment"] = {"settled": settlement.success, **settlement.to_dict()}
         if not settlement.success:
-            return JSONResponse(status_code=402, content={
-                "error": "settlement_failed",
-                "detail": settlement.error_reason,
-                "request_id": result["request_id"],
-            })
+            return JSONResponse(status_code=402, content=error_envelope(
+                ErrorCode.SETTLEMENT_FAILED,
+                settlement.error_reason,
+                request_id=result["request_id"],
+            ))
         return JSONResponse(
             status_code=200,
             content=result,
@@ -208,8 +227,9 @@ def receipt(request_id: str):
     """Retrieve a stored custody record so results stay auditable after the call."""
     record = store.load(request_id)
     if record is None:
-        return JSONResponse(status_code=404, content={"error": "receipt_not_found",
-                                                      "request_id": request_id})
+        return JSONResponse(status_code=404, content=error_envelope(
+            ErrorCode.RECEIPT_NOT_FOUND, request_id=request_id,
+        ))
     return record
 
 
@@ -217,6 +237,20 @@ def receipt(request_id: str):
 def trust():
     s = score_service()
     return s.to_dict()
+
+
+@app.get("/v1/errors")
+def errors():
+    """The registered failure surface, so an agent can learn it before paying."""
+    return {
+        "errors": ERROR_REGISTRY,
+        "exceptions": {
+            "payment_challenge": (
+                "402 responses use the x402 challenge shape (x402Version, accepts, "
+                "free-text error), owned by the x402 spec rather than this registry."
+            ),
+        },
+    }
 
 
 @app.get("/v1/constitution")

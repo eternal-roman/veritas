@@ -77,9 +77,41 @@ charged for a request that produced nothing deliverable.
 
 # Part II — Evaluation
 
-## Verified working
+## Formal gate
 
-Each row is covered by a test or a CI gate.
+Per `skills/adversarial-code-truth.md`, which is a locked gate on all code work
+in this repository.
+
+```
+PROPERTY: The service never reports absent evidence when retrieval failed, never
+          bills for its own failure, and never serves paid research without a
+          facilitator-verified payment.
+EVIDENCE LEVEL: L1 (tests and adversarial examples)
+CHECKED ARTIFACT: veritas/pipeline.py, veritas/retrieval.py, veritas/facilitator.py,
+          app/main.py, autonomous/control_plane.py; 65 tests; CI harness gates
+ASSUMPTIONS: - Retrievers may raise and may ignore max_results (both now defended)
+             - The facilitator honours the documented x402 /verify and /settle contract
+             - Receipts are written to a filesystem that persists for the retention window
+             - Single-instance deployment (receipts and outcome log are local disk)
+NOT PROVEN:  - No payment has ever settled. Fail-closed is exercised; success is not.
+             - No conforming third-party x402 client has completed the path end to end.
+             - Retrieval quality is untested against any real benchmark; the harness
+               runs on a 3-document corpus and its perfect scores are structural.
+             - No replay protection: a resubmitted X-PAYMENT header repeats the work.
+             - Behaviour under concurrency, load, or a hostile caller is unmeasured.
+```
+
+**Structural vs application success.** Everything green below is structural: it
+proves the code does what its design says on the cases exercised. It does not
+prove the product works. A skeptical external agent cannot today discover this
+service, pay it, and receive research competitive with a direct search API —
+because nothing is deployed, nothing has settled, and retrieval is snippet-grade.
+Those are the product-killing gaps, and they are Phases 0, 1 and 4 below.
+
+## Verified working (structural, L1)
+
+Each row is covered by a test or a CI gate. "Holds on these cases" is the
+strongest claim these support.
 
 | Component | Evidence |
 |-----------|----------|
@@ -391,3 +423,9 @@ outage propagates as `unavailable` instead.
   pipeline output in tests. Extending the response means extending the contract.
 - **Never bill for our own failure.** `billable: false` on `unavailable` is
   load-bearing; the settle call is gated on it.
+- **`skills/adversarial-code-truth.md` is a locked gate.** Emit the PROPERTY /
+  EVIDENCE LEVEL block before any success claim. Tests are L1 — "holds on these
+  cases" — not proof the product works. Do not use "complete", "live-ready",
+  "ZK", or "revenue-ready" in this repository without evidence that carries
+  them; the payment path is spec-shaped but unsettled, and is therefore
+  incomplete rather than "wired".

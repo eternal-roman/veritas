@@ -1,21 +1,21 @@
 """Tests for the evaluation harness."""
 
-from evaluations.harness import evaluate_single, run_fidelity_suite, run_refusal_suite
-
-def test_evaluate_single_smoke():
-    r = evaluate_single("What is a hash chain?")
-    assert "status" in r
-    assert "custody_valid" in r
-    assert r["custody_valid"] is True
+from evaluations.harness import evaluate_fidelity, evaluate_refusal, run_full_harness
 
 def test_fidelity_suite():
-    report = run_fidelity_suite()
-    assert report["n"] > 0
-    assert report["all_custody_valid"] is True
+    report = evaluate_fidelity()
+    assert report["total_claims"] > 0
+    assert 0.0 <= report["citation_fidelity"] <= 1.0
+    assert len(report["details"]) > 0
 
-def test_refusal_suite():
-    report = run_refusal_suite()
-    assert report["n"] > 0
-    # We do not assert a specific refusal rate yet because retrieval is still conservative;
-    # we only assert the suite runs and returns structured data.
-    assert "refusal_rate" in report
+def test_refusal_report_structure():
+    report = evaluate_refusal()
+    # The current pipeline's static retrieval always falls back to at least one
+    # source, so refusal is not yet reachable here; assert structure only.
+    assert report["status"] in ("completed", "refused")
+    assert "posterior" in report
+    assert report["custody_valid"] is True
+
+def test_full_harness():
+    report = run_full_harness()
+    assert set(report) == {"fidelity", "refusal", "baseline_comparison"}

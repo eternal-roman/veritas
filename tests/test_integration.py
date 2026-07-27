@@ -1,9 +1,9 @@
 """Smoke integration tests for core + autonomous layers."""
 
 def test_hashing():
-    from veritas.hashing import compute_content_hash, verify_content_hash, content_hash
+    from veritas.hashing import compute_content_hash, verify_content_hash
     h = compute_content_hash("hello")
-    assert h == content_hash("hello")
+    assert h.startswith("sha256:")
     ok, _ = verify_content_hash("hello", h)
     assert ok
 

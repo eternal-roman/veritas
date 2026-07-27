@@ -6,8 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from .custody import CustodyLedger
-from .hashing import compute_content_hash, verify_content_hash, content_hash
-from .bayesian import bayesian_update  # assume available or inline
+from .hashing import compute_content_hash, verify_content_hash
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")

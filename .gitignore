@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.veritas_runtime/
+.veritas_agent/
+.venv/

@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 import json
-from .hashing import content_hash
+from .hashing import compute_content_hash
 
 def build_identity(pay_to: str = "0x0000000000000000000000000000000000000000") -> dict:
     doc = {
@@ -18,5 +18,5 @@ def build_identity(pay_to: str = "0x0000000000000000000000000000000000000000") -
         "version": "0.1.0",
         "registeredAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     }
-    doc["content_hash"] = content_hash(json.dumps(doc, sort_keys=True))
+    doc["content_hash"] = compute_content_hash(json.dumps(doc, sort_keys=True))
     return doc

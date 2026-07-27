@@ -31,11 +31,15 @@ jobs:
 
       - name: Compile all Python modules
         run: |
-          python -m compileall -q veritas autonomous app evaluations tests || true
+          python -m compileall -q veritas autonomous app evaluations tests
+
+      - name: Import all top-level modules
+        run: |
+          python -c "import app.main, autonomous.control_plane, evaluations.harness, veritas.pipeline, veritas.identity"
 
       - name: Run unit / integration tests
         run: |
-          python -m pytest tests/ -q --tb=short || python tests/test_integration.py || true
+          python -m pytest tests/ -q --tb=short
 
       - name: Basic secret pattern scan
         run: |

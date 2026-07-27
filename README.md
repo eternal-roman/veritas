@@ -1,38 +1,47 @@
 # Veritas Research
 
-High-assurance research service for AI agents.
+High-assurance, agent-native research service with evidence custody, Bayesian updating, x402 payments, and zero-setup JIT transmission.
 
-Every claim is backed by content-hashed evidence under an append-only chain of custody. Beliefs are updated only through Bayesian conditionalization on verified evidence. The service refuses when evidence is insufficient.
+## Core Capabilities
 
-## Core Guarantees
+- **Evidence-first research** with content hashing and append-only custody ledger
+- **Bayesian belief updating** and first-class refusal
+- **Zero-key free retrieval** (DuckDuckGo + Wikipedia) for agent-native mode
+- **x402 payment** with full CAIP-2 multi-network support (free/sim + live)
+- **JIT Disposable Packet (JDP)** protocol — self-describing, zero prior setup, disposable after use
+- **ZK-style wallet privacy** — commitments + proof-of-knowledge instead of cleartext pay_to in offers
+- **Agent bootstrap** with `human_required: false` free path
 
-- **Chain of Custody**: Every evidence item and claim is linked by cryptographic hash chain. Any break is detectable.
-- **Bayesian Updating**: Priors become posteriors only on verified evidence. No assertion is accepted as belief.
-- **Evidence-First**: Claims without attached, hashed evidence are not emitted.
-- **Refusal**: Explicit first-class outcome when support is weak.
-- **Discoverable & Payable**: x402 payments, MCP tool, ERC-8004 identity, trust scores.
+## Quick start (free / agent-native)
 
-## Package Structure
+```bash
+pip install -r requirements.txt
+python -c "from veritas.pipeline import run_research; print(run_research('What is x402?'))"
+# or
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+## Live payments
+
+```bash
+export VERITAS_PAY_TO=0xYourWallet
+export VERITAS_FACILITATOR=https://pay.openfacilitator.io
+export VERITAS_REQUIRE_PAYMENT=true
+export VERITAS_NETWORK=eip155:8453
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+See `LIVE_PAYMENTS.md`, `JIT_PACKET.md`, `ZK_WALLET.md`, `WORKFLOW.md`, `ANALYSIS.md`.
+
+## Layout
 
 ```
-veritas/
-  hashing.py      # Content hashing + normalization
-  custody.py      # Append-only hash-chain custody ledger
-  bayesian.py     # Bayesian belief updating
-  schema.py       # Claim, Evidence, Response models
-  pipeline.py     # Research pipeline
-  trust.py        # Trust scoring
-  identity.py     # ERC-8004 compatible identity
-app/
-  main.py         # FastAPI + payment middleware skeleton
+veritas/           # core engine (custody, hashing, Bayesian, pipeline, networks, payment)
+autonomous/        # agent-native layer (zero-key retrieval, JIT packet, ZK wallet, bootstrap, facilitator sim)
+app/               # FastAPI surface
+evaluations/       # harness
 tests/
-  test_core.py
 ```
-
-## Status
-
-This is a clean, high-skepticism re-implementation of the architecture developed in the design thread. Core custody, hashing, Bayesian updating, and schema are solid. Retrieval and claim generation are deliberately minimal and evidence-constrained so the contracts can be trusted. Production retrieval and calibrated likelihood models are the next layer.
 
 ## License
-
 Apache-2.0

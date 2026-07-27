@@ -1,26 +1,26 @@
-# Veritas Status — Live Payment Configuration
+# Veritas Status — Integrated
 
-## Payment Modes
+## Integrated and committed
 
-| Mode | How to activate | Real money? |
-|------|-----------------|-------------|
-| **Free / simulated** (default) | No special env vars | No |
-| **Live** | Set `VERITAS_PAY_TO` + `VERITAS_REQUIRE_PAYMENT=true` | Yes |
+- Epistemic core (custody, hashing, Bayesian, refusal)
+- Zero-key free retrieval + agent bootstrap
+- Full CAIP-2 network support
+- Live/free payment configuration + 402 gate
+- JIT Disposable Packet protocol
+- ZK-style wallet commitment privacy
+- Evaluation harness
+- Workflow, distributable, and analysis docs
 
-## Live configuration (copy-paste)
+## Modes
 
-```bash
-export VERITAS_PAY_TO=0xYourRealReceivingWallet
-export VERITAS_FACILITATOR=https://pay.openfacilitator.io
-export VERITAS_REQUIRE_PAYMENT=true
-export VERITAS_NETWORK=eip155:8453
-export VERITAS_PRICE=$0.25
+| Mode | human_required | Real money |
+|------|----------------|------------|
+| Free (default) | false | No |
+| Live | false (once running) | Yes (with PAY_TO + facilitator) |
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+## Next operational steps for production revenue
 
-See `LIVE_PAYMENTS.md` for full details and alternative facilitators (CDP, self-hosted).
-
-## Agent-native free path remains available
-
-When the live env vars are absent, the service continues to operate with zero-key retrieval and local settlement simulation (`human_required: false`).
+1. Deploy a public instance
+2. Set `VERITAS_PAY_TO` + facilitator + `VERITAS_REQUIRE_PAYMENT=true`
+3. Register discovery (Bazaar / well-known)
+4. Upgrade retrieval quality for general queries

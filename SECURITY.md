@@ -28,6 +28,7 @@ We will acknowledge reports as quickly as possible and work on a fix before any 
 - CI tests and structure checks on every PR
 - CodeQL analysis
 - Dependabot for dependency and Actions updates
-- Dependency review on pull requests (fails on high severity)
+- `pip-audit` on every push and pull request, over both runtime and dev
+  dependency trees (fails the build on a known vulnerability)
 - Basic secret pattern scanning in CI
 - Recommended branch protection on `main` (see `.github/BRANCH_PROTECTION.md`)

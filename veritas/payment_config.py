@@ -3,7 +3,7 @@
 from __future__ import annotations
 import os
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List
 import re
 
 from .networks import normalize_network, DEFAULT_NETWORK, supported_networks, is_settleable

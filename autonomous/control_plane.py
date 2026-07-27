@@ -13,6 +13,7 @@ zero-config bootstrap, local settlement recording, and calibration feedback.
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -42,8 +43,11 @@ def agent_research(
     cfg = load_config()
     require = bool(cfg.get("require_payment", False))
 
-    result = run_research(query, max_results=max_results)
-    request_id = result["request_id"]
+    # Verify before doing the work. The previous ordering ran the full
+    # retrieval and belief pass first and discarded the result if payment was
+    # missing, which let an unpaid caller consume the entire cost of a request
+    # and contradicted the verify-before-work ordering the HTTP surface uses.
+    request_id = str(uuid.uuid4())
     record_attempt(request_id, headers)
 
     if not verify_payment(headers, require=require):
@@ -57,6 +61,11 @@ def agent_research(
                 "mode": "local_autonomous",
             },
         }
+
+    result = run_research(query, max_results=max_results)
+    # The pipeline mints its own request_id; keep the one already recorded
+    # against the payment attempt so settlement and research reconcile.
+    result["request_id"] = request_id
 
     # Calibration is applied only as a reporting overlay: the raw posterior is
     # always returned alongside it so a buyer can see both.

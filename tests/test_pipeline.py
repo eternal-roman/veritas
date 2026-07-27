@@ -102,3 +102,40 @@ def test_correlated_sources_do_not_manufacture_certainty():
 
 def test_relevance_ignores_stopwords():
     assert relevance_score("what is the a of and", "completely unrelated text") == 0.0
+
+
+class OverproducingRetriever:
+    """Ignores max_results, as a third-party retriever may."""
+    name = "overproducer"
+
+    def retrieve(self, query, max_results=5):
+        return RetrievalResult(
+            sources=[{"url": f"u{i}", "title": "t", "text": "lorem ipsum dolor " * 30,
+                      "provenance": "live_fetch", "relevance": 0.9} for i in range(50)],
+            providers_attempted=["overproducer"], providers_succeeded=["overproducer"],
+        )
+
+
+class ExplodingRetriever:
+    name = "exploder"
+
+    def retrieve(self, query, max_results=5):
+        raise RuntimeError("provider blew up")
+
+
+def test_max_results_is_enforced_against_the_retriever():
+    """A retriever that ignores the cap must not drive unbounded work, an
+    unbounded response, or inflated confidence from 50 correlated sources."""
+    r = run_research("lorem ipsum", retriever=OverproducingRetriever(), max_results=5)
+    assert len(r["evidence"]) == 5
+    assert len(r["claims"]) <= 5
+
+
+def test_raising_retriever_becomes_unavailable_not_a_crash():
+    """A provider exception must convert to the unavailable outcome, not escape
+    as a 500 that bypasses the non-billable path."""
+    r = run_research("test", retriever=ExplodingRetriever())
+    assert r["status"] == "unavailable"
+    assert r["billable"] is False
+    assert validate_response(r) == []
+    assert r["retrieval"]["errors"][0]["error_type"] == "RuntimeError"

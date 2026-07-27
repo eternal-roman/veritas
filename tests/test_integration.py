@@ -47,6 +47,19 @@ def test_control_plane_uses_shared_engine():
         assert validate_response({k: v for k, v in result.items()}) == []
         assert result["human_required"] is False
 
+def test_payment_is_checked_before_work_is_done(monkeypatch):
+    """An unpaid caller must not consume a full retrieval pass. The earlier
+    ordering ran the research first and discarded the result."""
+    import autonomous.control_plane as cp
+
+    called = []
+    monkeypatch.setattr(cp, "run_research", lambda *a, **k: called.append(1) or {})
+    monkeypatch.setattr(cp, "load_config", lambda: {"require_payment": True})
+
+    result = cp.agent_research("anything", headers={})
+    assert result["status"] == "payment_required"
+    assert called == [], "research ran despite payment being required"
+
 def test_calibrator_reports_untrained_honestly():
     from autonomous.self_calibrator import SelfCalibrator
     c = SelfCalibrator()

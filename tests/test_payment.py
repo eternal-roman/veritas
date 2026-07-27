@@ -1,7 +1,5 @@
 """x402 payment: atomic amounts, spec-shaped challenges, and fail-closed gating."""
 
-import base64
-import json
 
 import pytest
 

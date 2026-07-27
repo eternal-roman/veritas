@@ -1,0 +1,5 @@
+# Dev / CI dependencies (cached separately from runtime)
+-r requirements.txt
+pytest>=8.0
+bandit>=1.7
+pip-audit>=2.7

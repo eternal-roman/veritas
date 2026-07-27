@@ -19,15 +19,16 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
+from veritas import __version__
 from veritas.retrieval import RetrievalError, RetrievalResult
 
-USER_AGENT = "VeritasAgent/0.5 (+https://github.com/eternal-roman/veritas)"
+USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
 TIMEOUT_SECONDS = 8
 
 
-def _classify(exc: Exception) -> Tuple[str, str]:
+def _classify(exc: Exception) -> tuple[str, str]:
     """Map an exception onto a stable (error_type, detail) pair."""
     if isinstance(exc, urllib.error.HTTPError):
         return "http_error", f"HTTP {exc.code}"
@@ -40,7 +41,7 @@ def _classify(exc: Exception) -> Tuple[str, str]:
     return type(exc).__name__, str(exc)[:200]
 
 
-def _get_json(url: str) -> Dict[str, Any]:
+def _get_json(url: str) -> dict[str, Any]:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode())
@@ -172,7 +173,7 @@ class ZeroKeyRetriever:
         return merged
 
 
-def free_retrieve(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+def free_retrieve(query: str, max_results: int = 5) -> list[dict[str, Any]]:
     """Backwards-compatible entry point returning bare source dicts.
 
     Prefer ZeroKeyRetriever.retrieve() — this helper discards the error

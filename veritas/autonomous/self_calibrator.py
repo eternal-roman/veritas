@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
-from typing import Dict, Any
 from collections import defaultdict
+from pathlib import Path
+from typing import Any
 
 RUNTIME = Path(os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
 STATE_PATH = RUNTIME / "calibrator_state.json"
@@ -23,7 +23,7 @@ class SelfCalibrator:
 
     def __init__(self, n_bins: int = 10):
         self.n_bins = n_bins
-        self.bins: Dict[int, Dict[str, float]] = defaultdict(lambda: {"sum": 0.0, "count": 0.0})
+        self.bins: dict[int, dict[str, float]] = defaultdict(lambda: {"sum": 0.0, "count": 0.0})
         self._load()
 
     def _bin(self, p: float) -> int:
@@ -68,7 +68,7 @@ class SelfCalibrator:
         except Exception:
             pass
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         return {
             "n_bins": self.n_bins,
             "populated_bins": len([b for b in self.bins.values() if b["count"] > 0]),

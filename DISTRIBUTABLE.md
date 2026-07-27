@@ -3,11 +3,11 @@
 ## Package Contents (agent-consumable)
 
 - Core research engine (`veritas/`)
-- Zero-key retrieval (`autonomous/zero_key_retrieval.py`)
+- Zero-key retrieval (`veritas/autonomous/zero_key_retrieval.py`)
 - Payment configuration + live/free switch (`veritas/payment_config.py`)
-- Local facilitator simulator (`autonomous/local_facilitator.py`)
+- Local facilitator simulator (`veritas/autonomous/local_facilitator.py`)
 - Self-calibrator, custody, hashing, identity, trust
-- FastAPI surface with discovery endpoints (`app/main.py`)
+- FastAPI surface with discovery endpoints (`veritas/server.py`)
 - Evaluation harness
 
 ## Minimum Agent-to-Agent Deployment

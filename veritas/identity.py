@@ -5,8 +5,9 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any
 
+from . import __version__
 from .hashing import compute_content_hash
 
 DEFAULT_BASE_URL = "https://api.veritas.example"
@@ -17,10 +18,10 @@ def build_identity(
     network: str = "eip155:8453",
     price: str = "$0.25",
     base_url: str | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     base = (base_url or os.getenv("VERITAS_PUBLIC_URL", DEFAULT_BASE_URL)).rstrip("/")
 
-    doc: Dict[str, Any] = {
+    doc: dict[str, Any] = {
         "name": "Veritas Research",
         "description": (
             "Evidence-grounded research with a hash-chained custody ledger, "
@@ -42,7 +43,7 @@ def build_identity(
             "wellKnown": f"{base}/.well-known/x402",
         },
         "x402": {"network": network, "price": price},
-        "version": "0.5.0",
+        "version": __version__,
     }
 
     # Hash the stable document only. The previous version folded `registeredAt`

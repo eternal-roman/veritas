@@ -7,9 +7,10 @@
 .github/workflows/ @eternal-roman
 veritas/payment_config.py @eternal-roman
 veritas/pipeline.py @eternal-roman
-autonomous/zk_wallet.py @eternal-roman
-autonomous/jit_packet.py @eternal-roman
-autonomous/local_facilitator.py @eternal-roman
-app/main.py @eternal-roman
+veritas/autonomous/zk_wallet.py @eternal-roman
+veritas/autonomous/jit_packet.py @eternal-roman
+veritas/autonomous/local_facilitator.py @eternal-roman
+veritas/server.py @eternal-roman
 SECURITY.md @eternal-roman
 requirements.txt @eternal-roman
+pyproject.toml @eternal-roman

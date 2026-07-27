@@ -29,8 +29,8 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from dataclasses import dataclass, asdict
-from typing import Any, Dict, Optional, Tuple
+from dataclasses import asdict, dataclass
+from typing import Any
 
 SCHEME = "hiding-commit-hmac-v2"
 SALT_BYTES = 32
@@ -52,7 +52,7 @@ class WalletCommitment:
     network: str
     scheme: str = SCHEME
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -63,15 +63,15 @@ class WalletOpening:
     address: str
     network: str
 
-    def reveal(self) -> Dict[str, str]:
+    def reveal(self) -> dict[str, str]:
         return {"salt": self.salt.hex(), "address": self.address, "network": self.network}
 
 
 def commit_wallet(
     address: str,
     network: str = "eip155:8453",
-    salt: Optional[bytes] = None,
-) -> Tuple[WalletCommitment, WalletOpening]:
+    salt: bytes | None = None,
+) -> tuple[WalletCommitment, WalletOpening]:
     """Commit to a payout address. Returns (public commitment, private opening)."""
     if not address:
         raise ValueError("address is required")
@@ -128,7 +128,7 @@ def verify_commitment(commitment: WalletCommitment, opening: WalletOpening) -> b
         return False
 
 
-def open_commitment(commitment: WalletCommitment, opening: WalletOpening) -> Optional[str]:
+def open_commitment(commitment: WalletCommitment, opening: WalletOpening) -> str | None:
     """Reveal the address at settlement, returning it only if it opens correctly."""
     if not verify_commitment(commitment, opening):
         return None

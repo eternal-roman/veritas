@@ -24,7 +24,7 @@ import json
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 DEFAULT_TIMEOUT = 15
 
@@ -32,24 +32,24 @@ DEFAULT_TIMEOUT = 15
 @dataclass
 class VerificationResult:
     is_valid: bool
-    payer: Optional[str] = None
-    invalid_reason: Optional[str] = None
-    raw: Dict[str, Any] = field(default_factory=dict)
+    payer: str | None = None
+    invalid_reason: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"is_valid": self.is_valid, "payer": self.payer, "invalid_reason": self.invalid_reason}
 
 
 @dataclass
 class SettlementResult:
     success: bool
-    transaction: Optional[str] = None
-    network: Optional[str] = None
-    payer: Optional[str] = None
-    error_reason: Optional[str] = None
-    raw: Dict[str, Any] = field(default_factory=dict)
+    transaction: str | None = None
+    network: str | None = None
+    payer: str | None = None
+    error_reason: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "transaction": self.transaction,
@@ -66,7 +66,7 @@ class FacilitatorClient:
         self.base_url = (base_url or "").rstrip("/")
         self.timeout = timeout
 
-    def _post(self, path: str, body: Dict[str, Any]) -> Dict[str, Any]:
+    def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         url = f"{self.base_url}{path}"
         payload = json.dumps(body).encode("utf-8")
         req = urllib.request.Request(
@@ -78,7 +78,7 @@ class FacilitatorClient:
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
             return json.loads(resp.read().decode())
 
-    def verify(self, payment_payload: Dict[str, Any], requirements: Dict[str, Any]) -> VerificationResult:
+    def verify(self, payment_payload: dict[str, Any], requirements: dict[str, Any]) -> VerificationResult:
         """Ask the facilitator whether this payment is valid. Fails closed."""
         if not self.base_url:
             return VerificationResult(False, invalid_reason="no_facilitator_configured")
@@ -103,7 +103,7 @@ class FacilitatorClient:
             raw=data,
         )
 
-    def settle(self, payment_payload: Dict[str, Any], requirements: Dict[str, Any]) -> SettlementResult:
+    def settle(self, payment_payload: dict[str, Any], requirements: dict[str, Any]) -> SettlementResult:
         """Capture funds. Only called once a billable result exists."""
         if not self.base_url:
             return SettlementResult(False, error_reason="no_facilitator_configured")
@@ -142,7 +142,7 @@ class SimulatedFacilitatorClient(FacilitatorClient):
     def __init__(self, *_args, **_kwargs):
         super().__init__(base_url="", timeout=1)
 
-    def verify(self, payment_payload: Dict[str, Any], requirements: Dict[str, Any]) -> VerificationResult:
+    def verify(self, payment_payload: dict[str, Any], requirements: dict[str, Any]) -> VerificationResult:
         if not isinstance(payment_payload, dict) or not payment_payload:
             return VerificationResult(False, invalid_reason="malformed_payload")
         if payment_payload.get("scheme") and payment_payload.get("scheme") != requirements.get("scheme"):
@@ -150,7 +150,7 @@ class SimulatedFacilitatorClient(FacilitatorClient):
         return VerificationResult(True, payer=payment_payload.get("payer") or "simulated-payer",
                                   raw={"mode": "simulated"})
 
-    def settle(self, payment_payload: Dict[str, Any], requirements: Dict[str, Any]) -> SettlementResult:
+    def settle(self, payment_payload: dict[str, Any], requirements: dict[str, Any]) -> SettlementResult:
         return SettlementResult(
             success=True,
             transaction="simulated:no-onchain-settlement",

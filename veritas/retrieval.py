@@ -14,7 +14,7 @@ means.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 # Tokens that carry no retrieval signal; matching on these made the previous
 # relevance filter accept essentially any query against any document.
@@ -29,7 +29,7 @@ _STOPWORDS = frozenset({
 MIN_RELEVANCE = 0.34
 
 
-def meaningful_tokens(text: str) -> List[str]:
+def meaningful_tokens(text: str) -> list[str]:
     """Lowercased content tokens with stopwords and 1-char noise removed."""
     tokens = []
     for raw in text.lower().replace("?", " ").replace(",", " ").split():
@@ -56,16 +56,16 @@ class RetrievalError:
     error_type: str
     detail: str
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         return {"provider": self.provider, "error_type": self.error_type, "detail": self.detail}
 
 
 @dataclass
 class RetrievalResult:
-    sources: List[Dict[str, Any]] = field(default_factory=list)
-    errors: List[RetrievalError] = field(default_factory=list)
-    providers_attempted: List[str] = field(default_factory=list)
-    providers_succeeded: List[str] = field(default_factory=list)
+    sources: list[dict[str, Any]] = field(default_factory=list)
+    errors: list[RetrievalError] = field(default_factory=list)
+    providers_attempted: list[str] = field(default_factory=list)
+    providers_succeeded: list[str] = field(default_factory=list)
 
     @property
     def degraded(self) -> bool:
@@ -81,7 +81,7 @@ class RetrievalResult:
         """
         return not self.sources and bool(self.providers_attempted) and not self.providers_succeeded
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "n_sources": len(self.sources),
             "providers_attempted": self.providers_attempted,
@@ -114,7 +114,7 @@ class StaticCorpusRetriever:
 
     name = "static_corpus"
 
-    DEFAULT_CORPUS: List[Dict[str, str]] = [
+    DEFAULT_CORPUS: list[dict[str, str]] = [
         {
             "url": "https://x402.org",
             "title": "x402 Protocol",
@@ -145,7 +145,7 @@ class StaticCorpusRetriever:
         },
     ]
 
-    def __init__(self, corpus: List[Dict[str, str]] | None = None):
+    def __init__(self, corpus: list[dict[str, str]] | None = None):
         self.corpus = corpus if corpus is not None else self.DEFAULT_CORPUS
 
     def retrieve(self, query: str, max_results: int = 5) -> RetrievalResult:
@@ -192,7 +192,7 @@ class CompositeRetriever:
 
     name = "composite"
 
-    def __init__(self, retrievers: List[Retriever], fallback: Retriever | None = None):
+    def __init__(self, retrievers: list[Retriever], fallback: Retriever | None = None):
         self.retrievers = retrievers
         self.fallback = fallback
 
@@ -227,8 +227,8 @@ def default_retriever(allow_network: bool = True) -> Retriever:
     corpus = StaticCorpusRetriever()
     if not allow_network:
         return corpus
-    # Imported lazily so the core package does not hard-depend on the
-    # autonomous layer's optional network stack.
-    from autonomous.zero_key_retrieval import ZeroKeyRetriever
+    # Imported lazily so importing the core engine never pulls in the
+    # agent layer's network stack unless live retrieval is actually wanted.
+    from .autonomous.zero_key_retrieval import ZeroKeyRetriever
 
     return CompositeRetriever([ZeroKeyRetriever()], fallback=corpus)

@@ -1,14 +1,40 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "veritas-research"
-version = "0.5.0"
-description = "Evidence-grounded research service for agents, with custody, Bayesian updating, refusal, and x402 payment."
+dynamic = ["version"]
+description = "Evidence-grounded research service for agents: hash-chained custody, Bayesian updating, explicit refusal, and x402 payment."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = [
+    "agents",
+    "x402",
+    "research",
+    "evidence",
+    "provenance",
+    "custody",
+    "bayesian",
+    "payments",
+    "usdc",
+    "mcp",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
 
 dependencies = [
     "fastapi>=0.110",
@@ -21,11 +47,43 @@ dependencies = [
 # Instant Answer fallback are available; the service reports the missing
 # provider rather than pretending it searched.
 retrieval = ["ddgs>=6.0"]
-test = ["pytest>=8.0", "httpx>=0.27"]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.4",
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+    "build>=1.2",
+    "twine>=5.0",
+]
 
-[tool.setuptools]
-packages = ["veritas", "autonomous", "evaluations", "app"]
+[project.scripts]
+veritas-server = "veritas.server:main"
+
+[project.urls]
+Homepage = "https://github.com/eternal-roman/veritas"
+Repository = "https://github.com/eternal-roman/veritas"
+Issues = "https://github.com/eternal-roman/veritas/issues"
+Roadmap = "https://github.com/eternal-roman/veritas/blob/main/ROADMAP.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "veritas.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["veritas*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# E501: long lines in docstrings/tables are accepted where they aid readability.
+ignore = ["E501"]
+
+[tool.setuptools.package-data]
+veritas = ["py.typed"]

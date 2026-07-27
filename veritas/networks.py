@@ -1,10 +1,9 @@
 """CAIP-2 network identifiers supported by Veritas / x402."""
 
 from __future__ import annotations
-from typing import Dict, List
 
 # Canonical CAIP-2 identifiers used by x402 v2
-CAIP2_NETWORKS: Dict[str, str] = {
+CAIP2_NETWORKS: dict[str, str] = {
     # EVM
     "ethereum": "eip155:1",
     "ethereum-sepolia": "eip155:11155111",
@@ -38,7 +37,7 @@ def normalize_network(network: str) -> str:
         return network
     return CAIP2_NETWORKS.get(network.lower(), network)
 
-def supported_networks() -> List[str]:
+def supported_networks() -> list[str]:
     """Networks we can actually settle on.
 
     Derived from the settlement asset table rather than the alias table, which

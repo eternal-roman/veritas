@@ -1,16 +1,24 @@
-"""FastAPI surface: discovery, x402-gated research, and verification."""
+"""FastAPI surface: discovery, x402-gated research, and verification.
+
+Run it with the installed console script or uvicorn directly:
+
+    veritas-server
+    python -m uvicorn veritas.server:app
+"""
 
 from __future__ import annotations
 
 import base64
 import binascii
 import json
-from typing import Any, Dict, Optional
+import os
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from veritas import __version__
 from veritas.custody import CustodyStore
 from veritas.facilitator import get_facilitator
 from veritas.hashing import verify_content_hash
@@ -20,7 +28,7 @@ from veritas.pipeline import run_research
 from veritas.trust import OutcomeLog, score_service
 from veritas.x402 import PriceError, build_402_challenge, build_payment_requirements
 
-app = FastAPI(title="Veritas Research", version="0.5.0")
+app = FastAPI(title="Veritas Research", version=__version__)
 
 RESOURCE_PATH = "/v1/research"
 store = CustodyStore()
@@ -37,7 +45,7 @@ class VerifyRequest(BaseModel):
     content_hash: str
 
 
-def _decode_payment_header(raw: str) -> Optional[Dict[str, Any]]:
+def _decode_payment_header(raw: str) -> dict[str, Any] | None:
     """Decode the base64-JSON X-PAYMENT header, tolerating raw JSON.
 
     Returns None when the header cannot be interpreted, which the caller
@@ -78,8 +86,8 @@ def payment_config():
 @app.post(RESOURCE_PATH)
 def research(req: ResearchRequest, request: Request):
     cfg = get_payment_config()
-    payment_payload: Optional[Dict[str, Any]] = None
-    requirements_dict: Optional[Dict[str, Any]] = None
+    payment_payload: dict[str, Any] | None = None
+    requirements_dict: dict[str, Any] | None = None
     facilitator = None
 
     # Payment was demanded but the configuration is invalid. Refuse to serve
@@ -196,7 +204,7 @@ def identity():
 @app.get("/.well-known/x402")
 def well_known():
     cfg = get_payment_config()
-    body: Dict[str, Any] = {
+    body: dict[str, Any] = {
         "x402Version": 1,
         "resources": [{"resource": RESOURCE_PATH, "method": "POST"}],
         "facilitator": cfg.facilitator,
@@ -211,3 +219,18 @@ def well_known():
         except PriceError as exc:
             body["error"] = f"payment_misconfigured: {exc}"
     return body
+
+
+def main() -> None:
+    """Console entry point (`veritas-server`)."""
+    import uvicorn
+
+    uvicorn.run(
+        "veritas.server:app",
+        host=os.getenv("VERITAS_HOST", "127.0.0.1"),
+        port=int(os.getenv("VERITAS_PORT", "8000")),
+    )
+
+
+if __name__ == "__main__":
+    main()

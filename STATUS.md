@@ -86,9 +86,17 @@ All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 
 ## Honest verdict
 
-The epistemic core is sound and the payment path is now real code rather than a
-header check. What remains between this and revenue is not architecture — it is
-retrieval quality, one funded settlement test, and a deployment.
+The payment path is real code rather than a header check, and after the
+2026-08-05 audit the served path no longer makes claims it cannot support.
+
+What remains between this and revenue **is** partly architecture, and saying
+otherwise (as this section previously did) was wrong. Specifically: there is no
+financial ledger, so a settled payment leaves no durable record; a buyer whose
+connection drops after settlement is charged and receives nothing, with no
+idempotent retry; every handler is synchronous with no request deadline; and
+nothing is deployed, nothing has settled on-chain, and the deliverable is still
+snippet-grade. The programme addressing these, in order, is tracked in
+`docs/program/STATE.md`.
 
 ## Security / CI
 
@@ -97,7 +105,7 @@ retrieval quality, one funded settlement test, and a deployment.
 | CI workflows | On `main` — tests must pass (no soft-fail) |
 | Import check | All top-level modules must import |
 | Harness quality gates | Fidelity, custody, refusal discrimination, unavailability handling |
-| Security scan job | Bandit + pip-audit, fail on high |
+| Security scan job | Bandit at `-ll` (medium and high) + pip-audit on runtime and dev |
 | Dependabot config | Present (weekly pip + Actions) |
 | CODEOWNERS | Present |
 | Branch protection | **Documented only** — admin must apply in Settings |

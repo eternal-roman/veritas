@@ -5,11 +5,17 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> Phase T, steps T9–T11: constitution 2.0 (re-level A12 to L0, add A22/A23, register
-> G3–G8, re-render CONSTITUTION.md), pointer resolution via pytest collection (T10),
-> and retract the now-false claims in README/ROADMAP/STATUS/ANALYSIS (T11).
-> README still advertises "Bayesian belief updating" and DuckDuckGo search — both
-> untrue after T4/T6. Fix before starting Phase N0.
+> Phase T, steps T9–T10 (the last of Phase T): constitution 2.0. Note A12 no
+> longer needs re-levelling to L0 — delivering the custody chain made it true for
+> chain integrity — so instead: repoint A12 at
+> `tests/test_truth_restoration.py::test_delivered_chain_is_verifiable_without_the_seller`,
+> add **A22** (records attest what we received, not what the origin served anyone
+> else) and **A23** (the engine named is the engine queried, pinned by
+> `tests/test_retrieval_honesty.py`), register G3–G5 as closed and G6 (R11
+> idempotency), G7 (T1 trust manipulable), G8 (R5 no ledger) as open, bump
+> CONSTITUTION_VERSION to 2.0 and re-render CONSTITUTION.md in the same commit
+> (the sync test requires it). Then T10: upgrade pointer resolution from string
+> grep to real pytest collection. Then Phase N0.
 
 ## Resume protocol
 
@@ -59,7 +65,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (commit SHA)
 - [x] T8 `payer.py` assert → explicit raise; SSRF/scheme guards + bandit gate at `-ll`
 - [ ] T9 Constitution 2.0: A12 → L0, add A22/A23, register G3–G8, re-render
 - [ ] T10 Pointer resolution via real pytest collection, not string grep
-- [ ] T11 Retract false claims in STATUS.md / ANALYSIS.md / ROADMAP.md
+- [x] T11 Retracted false claims in README / STATUS.md / ANALYSIS.md
 
 ### Phase N0 — Notary core
 - [ ] N0.1 `veritas/notary/fetch.py` with SSRF defence + local TLS origin fixture
@@ -178,4 +184,5 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-05 | Program bootstrapped; state file established | ece7e2a |
 | 2026-08-05 | T1–T3, T6: relevance gate on the served path, custody chain delivered, posterior removed | e5385bf |
 | 2026-08-05 | T4–T5: metasearch scraper removed, licences carried, corpus de-attributed | ba1ae33 |
-| 2026-08-05 | T7–T8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | this commit |
+| 2026-08-05 | T7–T8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | c8b87ee |
+| 2026-08-05 | T11: README/STATUS/ANALYSIS retractions; honest verdict corrected | this commit |

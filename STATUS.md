@@ -8,10 +8,10 @@ file described a system that did not import.
 | Component | State |
 |-----------|-------|
 | Content hashing + normalization | Working, tested |
-| Custody hash-chain + tamper detection | Working, tested |
+| Custody hash-chain, delivered with the response | Working, tested — the buyer re-runs `verify_chain_records` on delivered data |
 | Durable custody receipts (`/v1/receipts`) | Working, tested |
-| Bayesian updating with correlated-source damping | Working, tested |
-| Refusal taxonomy (`refused` vs `unavailable`) | Working, tested |
+| Relevance gate enforced on the served path | Working, tested — irrelevant evidence is refused, not billed as an answer |
+| Refusal taxonomy (`no_evidence`, `irrelevant_evidence`, `unavailable`) | Working, tested |
 | Retrieval error surfacing | Working, tested |
 | x402 402-challenge construction (atomic amounts) | Working, tested |
 | Facilitator verify/settle client, fail-closed | Working, tested against unreachable host |
@@ -31,6 +31,21 @@ file described a system that did not import.
 | `veritas-agent` CLI (init/serve/up/status) | Working, tested: provisioned config now reaches the env the HTTP server reads |
 | MCP tools (`veritas-mcp`: research/verify/trust/constitution) | Working, tested against the SDK; local free-mode engine only, no payment path over MCP |
 | Container + release workflow (`Dockerfile`, `release.yml`) | Dockerfile CI-built; release workflow inert until a maintainer configures PyPI Trusted Publishing |
+
+## What was found false and fixed (2026-08-05 audit)
+
+Three published claims did not hold on the served code path. They are listed
+here rather than quietly corrected:
+
+- The relevance gate ran only inside one retriever, so in production any source
+  of 40+ characters became a billable `completed` answer however unrelated —
+  and the CI quality gate certified a filter production never applied.
+- The custody chain was computed and discarded, so `custody_valid: true` was an
+  unverifiable self-assertion.
+- The keyless retrieval tier scraped multiple search engines through an
+  aggregator while labelling every result `duckduckgo`.
+
+All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 
 ## What is built but unproven
 

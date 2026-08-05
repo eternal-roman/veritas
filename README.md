@@ -1,7 +1,7 @@
 # Veritas Research
 
-Evidence-grounded research service for agents: hash-chained custody, Bayesian
-belief updating, explicit refusal, and x402 payment.
+Evidence-grounded research service for agents: hash-chained custody delivered
+with every response, explicit refusal, per-source licensing, and x402 payment.
 
 ## Core guarantee
 
@@ -18,13 +18,18 @@ network is not a research service. Veritas never bills for its own outage.
 
 ## Capabilities
 
-- **Evidence-first research** with content hashing and an append-only custody ledger
-- **Bayesian belief updating** with correlated-source damping (repeat sources from
-  one provider are not treated as independent observations)
-- **First-class refusal**, measured by discrimination rather than raw refusal rate
-- **Tiered retrieval**: keyed Serper (Google) when configured, zero-key
-  Wikipedia + DuckDuckGo always, with provider errors surfaced and outages
-  degrading tier by tier — never silently
+- **Evidence-first research** with content hashing and an append-only custody
+  ledger **delivered with the response**, so a buyer re-runs
+  `veritas.custody.verify_chain_records` on what they received
+- **A countable support report** — independent registrable domains, distinct
+  providers, verdict — instead of a confidence score. See "What we removed"
+- **First-class refusal** enforced in the pipeline: evidence below the relevance
+  threshold is refused (`irrelevant_evidence`), not dressed up as an answer
+- **Per-source licence and attribution** on every excerpt, so an agent knows what
+  it may reuse; unknown licences are labelled unknown, never assumed permissive
+- **Tiered retrieval**: keyed Serper (Google) when configured, plus keyless
+  Wikipedia and the DuckDuckGo Instant Answer API, each labelled with the engine
+  that actually served it, with provider errors surfaced — never silently
 - **x402 payment** with real facilitator `verify` / `settle`, fail-closed gating,
   and replay protection (a resubmitted authorization never buys a second pass)
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
@@ -92,7 +97,7 @@ error reported in `retrieval.errors`.
 
 ```bash
 export VERITAS_PAY_TO=0xYourWallet          # validated as a real EVM address
-export VERITAS_FACILITATOR=https://pay.openfacilitator.io
+export VERITAS_FACILITATOR=https://pay.openfacilitator.io   # unverified by us; see ROADMAP
 export VERITAS_REQUIRE_PAYMENT=true
 export VERITAS_NETWORK=eip155:8453
 veritas-server
@@ -115,7 +120,7 @@ If any of these is invalid the service reports `mode: misconfigured` and returns
 ## Testing
 
 ```bash
-pip install -e ".[retrieval,dev]"
+pip install -e ".[signing,dev]"
 python -m pytest tests/ -q
 python -m veritas.evaluations.harness
 ruff check veritas tests
@@ -125,18 +130,40 @@ ruff check veritas tests
 
 Stated plainly, because a truth-telling service should not overstate itself:
 
-- **Retrieval quality is thin.** Wikipedia + DuckDuckGo snippets are not
+- **Retrieval quality is thin.** Wikipedia and Instant Answer snippets are not
   competitive with a paid search/extraction stack for general queries.
+- **Nothing has ever settled on-chain.** Fail-closed payment paths are
+  exercised; a successful settlement is not.
 - **Claims are extractive, not synthesised.** A "claim" is a grounded excerpt,
   not an answer composed across sources.
-- **The calibrator is untrained.** It reports `passthrough_untrained` and needs
-  labelled outcomes via `record_feedback` before it adjusts anything.
+- **The calibrator is untrained and unused.** It reports `passthrough_untrained`,
+  needs labelled outcomes via `record_feedback`, and is applied to no response.
 - **The harness runs on a 3-document offline corpus.** Its perfect scores
   demonstrate the invariants hold; they are not a quality benchmark.
 - **Solana is not payable.** It is recognised for alias resolution but excluded
   from advertised networks because SPL settlement is not implemented.
 - **Wallet commitments are hiding, not zero-knowledge.** Public verification of
   the opening requires the reveal at settlement.
+
+## What we removed, and why
+
+An audit found the service was making claims its served code path did not
+support. Rather than soften the wording, the claims and the code behind them
+were removed:
+
+- **The Bayesian posterior and per-claim confidence.** The posterior's
+  hypothesis was the raw query string (a question has no truth value), its
+  constants were typed rather than derived, it could only increase — so the
+  `low_confidence` refusal it gated was unreachable — and two contradictory
+  sources both pushed it up. Per-claim confidence was decided by list position.
+  `veritas/support.py` publishes counts a buyer can recompute instead.
+- **The metasearch retrieval tier.** It scraped Google, Bing, Yandex and others
+  through a shuffling aggregator while labelling every result `duckduckgo`.
+  That is a redistribution problem and, in a provenance product, a falsified
+  provenance label.
+- **The offline corpus from the live path.** Its fixture text carried real
+  third-party URLs and a content hash, which reads as "this text appears at
+  this URL". It did not. The corpus is now `veritas://fixture/*` and offline-only.
 
 See `LIVE_PAYMENTS.md`, `JIT_PACKET.md`, `ZK_WALLET.md`, `WORKFLOW.md`,
 `ANALYSIS.md`, and `AGENTS.md` (repo guide for agents and contributors).
@@ -145,10 +172,10 @@ See `LIVE_PAYMENTS.md`, `JIT_PACKET.md`, `ZK_WALLET.md`, `WORKFLOW.md`,
 
 ```
 veritas/               # the installable package (everything below ships in the wheel)
-  pipeline.py          #   single research engine: retrieval -> hashing -> custody -> Bayes
+  pipeline.py          #   single research engine: retrieval -> relevance -> hashing -> custody
   retrieval.py         #   retriever protocol, offline corpus, composite merging
   custody.py           #   hash-chained ledger + durable receipts
-  hashing.py bayesian.py schema.py trust.py identity.py
+  hashing.py support.py schema.py trust.py identity.py safeurl.py
   x402.py facilitator.py payment_config.py networks.py
   server.py            #   FastAPI surface (`veritas-server` console script)
   autonomous/          #   agent-native layer: zero-key retrieval, control plane,

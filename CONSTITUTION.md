@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 1.1.** This file
+**The normative source is `veritas/constitution.py`, version 2.0.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -167,6 +167,22 @@ An agent can provision this service — configuration, receiving keypair, and ru
 Enforced by `tests/test_wallet.py::test_wallet_key_material_stays_on_disk`
 and `tests/test_agent_cli.py::test_up_configures_server_from_bootstrap_config`.
 
+### A22 — Observation limits (L1)
+
+A record attests what this service received from a source at a time, not what that source served to any other party.
+
+Enforced by `tests/test_truth_restoration.py::test_responses_state_what_they_attest`.
+Proving what an origin served to *someone else* would need something like
+TLSNotary, zkTLS, or a trusted execution environment. We have none of those, so
+the limit is published in every response rather than left for a buyer to find.
+
+### A23 — Provenance truthfulness (L1)
+
+The provider named in a piece of evidence is the provider that was actually queried, and evidence carries the licence under which it may be reused.
+
+Enforced by `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used`
+and `tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response`.
+
 ---
 
 ## Aspirational articles
@@ -225,6 +241,57 @@ plane must not be exposed as a paid network surface while this gap is open.
 
 Witness: `tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures`.
 If that test fails, the gap has been fixed — close G2 and delete the witness.
+
+### G3 — Relevance gate absent from the served path (closed, article A2)
+
+The gate was enforced only inside `StaticCorpusRetriever`, so on the served path
+any source of 40 or more characters produced a billable `completed` answer
+however unrelated to the query — and the evaluation harness certified a filter
+production never applied.
+
+Closed in constitution 2.0: the gate runs in the pipeline evidence loop and an
+all-irrelevant result is an `irrelevant_evidence` refusal.
+
+### G4 — Falsified provenance in the keyless tier (closed, article A23)
+
+The keyless tier called a metasearch library that shuffles across Google, Bing,
+Yandex, Brave and others, then labelled every result `duckduckgo`.
+
+Closed in constitution 2.0: the dependency is removed and each provider is named
+as the engine actually queried.
+
+### G5 — Custody chain never delivered (closed, article A12)
+
+Only the root hash and a self-asserted `custody_valid` were published, so a buyer
+had nothing to check and A12 was false as written.
+
+Closed in constitution 2.0: the chain ships in the response and the buyer re-runs
+`verify_chain_records` over delivered data.
+
+### G6 — A paid request is not idempotent (open, article A13)
+
+The nonce is burned before the work, so a buyer whose connection drops after
+settlement is charged and receives nothing: retrying the same authorization
+returns 409 rather than the deliverable already paid for. Settlement fairness
+does not hold on this path.
+
+Witness: `tests/test_known_gaps.py::test_known_gap_completed_paid_request_is_not_replayable`.
+
+### G7 — The trust score is movable with free traffic (open, article A11)
+
+`/v1/trust` derives from an outcome log that records every request including
+unpaid ones, and the endpoint is unauthenticated, so anyone can move the
+service's own reputation signal at no cost.
+
+Witness: `tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score`.
+
+### G8 — No financial ledger (open, article A13)
+
+The settlement result, including the on-chain transaction hash, is returned in a
+response header and then discarded. An operator cannot say how much was earned,
+from whom, or for what, and no settlement can be reconciled.
+
+Witness: `tests/test_known_gaps.py::test_known_gap_no_settlement_record_is_written`.
 
 ---
 

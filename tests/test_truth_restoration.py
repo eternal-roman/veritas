@@ -225,3 +225,10 @@ def test_payment_validation_does_not_rely_on_assert(monkeypatch):
 
     source = inspect.getsource(payer.validate_accepts)
     assert "assert " not in source, "payment validation still relies on assert"
+
+
+def test_responses_state_what_they_attest():
+    """A22. We can prove what we received, not what the origin served anyone
+    else. That limit is published rather than left for a buyer to discover."""
+    r = run_research("What is the x402 payment protocol?", allow_network=False)
+    assert "not what those sources served to any other party" in r["attests"]

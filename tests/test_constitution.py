@@ -3,14 +3,21 @@
 These tests are the constitution's own enforcement mechanism. An article
 claiming evidence level L1 must point at an artifact that exists (a test, a CI
 gate string, or a schema invariant string); an L0 article must carry no
-enforcement and is rendered as aspirational. Pointer resolution here is
-string-level: it proves the named artifact exists, not that it fully covers
-the article's meaning.
+enforcement and is rendered as aspirational.
+
+Test pointers are resolved by **real pytest collection**: the pointer must name
+a test pytest actually collects. Grepping for `def <name>(` — what this used to
+do — would accept a commented-out or uncollectable test, letting an article
+claim enforcement from something that never runs. Collection still does not
+prove the test covers the article's meaning; that remains an L1 limit.
 """
 
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
+from functools import lru_cache
 from pathlib import Path
 
 import pytest
@@ -40,12 +47,37 @@ def free_client(tmp_path, monkeypatch):
     return TestClient(main_module.app)
 
 
+@lru_cache(maxsize=1)
+def _collected_node_ids() -> frozenset[str]:
+    """Every test id pytest actually collects, as `path::name`.
+
+    Pointer resolution used to grep for `def <name>(` in the file. That accepted
+    a commented-out test, one skipped at collection, or a name that pytest never
+    reaches — so an article could claim enforcement from a test that never runs.
+    Collecting for real closes that hole.
+    """
+    completed = subprocess.run(  # nosec B603 - fixed argv, no shell, repo-local
+        [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q",
+         "-p", "no:cacheprovider"],
+        cwd=REPO, capture_output=True, text=True, timeout=300,
+    )
+    ids: set[str] = set()
+    for line in completed.stdout.splitlines():
+        line = line.strip()
+        if "::" not in line:
+            continue
+        path, _, rest = line.partition("::")
+        # Drop parametrisation so `test_x[case]` resolves a pointer to `test_x`.
+        ids.add(f"{path}::{rest.split('[', 1)[0]}")
+    if not ids:
+        raise AssertionError(
+            f"pytest collected nothing; cannot verify pointers.\n{completed.stdout[-2000:]}"
+        )
+    return frozenset(ids)
+
+
 def _resolve_test_pointer(pointer: str) -> bool:
-    path, _, name = pointer.partition("::")
-    source_file = REPO / path
-    if not source_file.is_file() or not name:
-        return False
-    return f"def {name}(" in source_file.read_text()
+    return pointer in _collected_node_ids()
 
 
 def test_constitution_validates():
@@ -102,6 +134,7 @@ def test_articles_do_not_contradict_wire_contract():
         "query": "anything",
         "support": {"n_evidence": 0, "verdict": "unsupported"},
         "custody_chain": [],
+        "attests": "test fixture",
         "claims": [],
         "evidence": [],
         "custody_root": None,

@@ -46,6 +46,15 @@ from .support import support_report
 # Minimum usable evidence length; shorter excerpts cannot ground a claim.
 MIN_EVIDENCE_CHARS = 40
 
+# What a response is and is not evidence of. Without something like TLSNotary or
+# a trusted execution environment we can attest only to what we received; we
+# cannot prove what the origin served to anyone else. Publishing that limit is
+# constitution article A22.
+ATTESTS = (
+    "what this service received from these sources at this time; "
+    "not what those sources served to any other party"
+)
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -77,6 +86,7 @@ def _envelope(
         "custody_root": ledger.root_hash(),
         "custody_valid": ledger.verify_chain() and evidence_hashes_valid,
         "custody_chain": ledger.to_list(),
+        "attests": ATTESTS,
         "retrieval": retrieval_meta,
         "refusal_reason": refusal_reason,
         "billable": billable,

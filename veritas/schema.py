@@ -72,8 +72,8 @@ class VeritasResponse:
 
 REQUIRED_FIELDS = (
     "request_id", "status", "query", "claims", "evidence",
-    "custody_root", "custody_valid", "custody_chain", "support", "retrieval",
-    "refusal_reason", "billable", "timestamp",
+    "custody_root", "custody_valid", "custody_chain", "support", "attests",
+    "retrieval", "refusal_reason", "billable", "timestamp",
 )
 
 REQUIRED_CLAIM_FIELDS = ("id", "statement", "evidence_hash", "source_url")
@@ -115,6 +115,7 @@ def response_json_schema() -> dict[str, Any]:
             "status": {"type": "string", "enum": [s.value for s in Status]},
             "query": {"type": "string"},
             "support": {"type": "object"},
+            "attests": {"type": "string"},
             "custody_chain": {"type": "array", "items": {"type": "object"}},
             "claims": {
                 "type": "array",

@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "1.1"
+CONSTITUTION_VERSION = "2.0"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -171,7 +171,7 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_pipeline.py::test_genuine_emptiness_is_billable_refusal"},
-            {"kind": "test", "pointer": "tests/test_api.py::test_verify_endpoint_checks_hashes"},
+            {"kind": "test", "pointer": "tests/test_truth_restoration.py::test_delivered_chain_is_verifiable_without_the_seller"},
             {"kind": "test", "pointer": "tests/test_custody.py::test_ledger_detects_tampering"},
         ],
     ),
@@ -236,6 +236,27 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         [
             {"kind": "test", "pointer": "tests/test_wallet.py::test_wallet_key_material_stays_on_disk"},
             {"kind": "test", "pointer": "tests/test_agent_cli.py::test_up_configures_server_from_bootstrap_config"},
+        ],
+    ),
+    _article(
+        "A22",
+        "Observation limits",
+        "A record attests what this service received from a source at a time, not what that source served to any other party.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_truth_restoration.py::test_responses_state_what_they_attest"},
+        ],
+    ),
+    _article(
+        "A23",
+        "Provenance truthfulness",
+        "The provider named in a piece of evidence is the provider that was actually queried, and evidence carries the licence under which it may be reused.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used"},
+            {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response"},
         ],
     ),
     # Aspirational articles: named norms with no enforcement yet. Each cites
@@ -306,6 +327,91 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "this gap is open."
         ),
         "witness_test": "tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures",
+    },
+    {
+        "id": "G3",
+        "article": "A2",
+        "status": "closed",
+        "description": (
+            "The relevance gate was enforced only inside StaticCorpusRetriever, never in "
+            "the pipeline, so on the served path any source of 40 or more characters "
+            "produced a billable 'completed' answer however unrelated to the query. The "
+            "evaluation harness certified a filter production never applied."
+        ),
+        "resolution": (
+            "Closed in constitution 2.0: the gate runs in the pipeline evidence loop and "
+            "an all-irrelevant result is an 'irrelevant_evidence' refusal "
+            "(tests/test_truth_restoration.py::"
+            "test_irrelevant_evidence_is_refused_on_the_production_path)."
+        ),
+    },
+    {
+        "id": "G4",
+        "article": "A23",
+        "status": "closed",
+        "description": (
+            "The keyless retrieval tier called a metasearch library that shuffles across "
+            "Google, Bing, Yandex, Brave and others, then labelled every result "
+            "provider: 'duckduckgo' — reselling scraped result pages under a falsified "
+            "provenance label, inside a product selling provenance."
+        ),
+        "resolution": (
+            "Closed in constitution 2.0: the metasearch dependency is removed and each "
+            "provider is named as the engine actually queried "
+            "(tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used)."
+        ),
+    },
+    {
+        "id": "G5",
+        "article": "A12",
+        "status": "closed",
+        "description": (
+            "The custody chain was computed and then discarded: only the root hash and a "
+            "self-asserted custody_valid were published, so a buyer had nothing to check "
+            "and A12 was false as written."
+        ),
+        "resolution": (
+            "Closed in constitution 2.0: the chain ships in the response and a buyer "
+            "re-runs verify_chain_records over delivered data "
+            "(tests/test_truth_restoration.py::"
+            "test_delivered_chain_is_verifiable_without_the_seller)."
+        ),
+    },
+    {
+        "id": "G6",
+        "article": "A13",
+        "status": "open",
+        "description": (
+            "A paid request is not idempotent. The nonce is burned before the work, and "
+            "a buyer whose connection drops after settlement is charged and receives "
+            "nothing: retrying the same authorization returns 409 rather than the "
+            "deliverable already paid for. Settlement fairness (A13) does not hold on "
+            "this path."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_completed_paid_request_is_not_replayable",
+    },
+    {
+        "id": "G7",
+        "article": "A11",
+        "status": "open",
+        "description": (
+            "The trust score is derived from an outcome log that records every request "
+            "including unpaid ones, and the endpoint is unauthenticated, so anyone can "
+            "move the service's own reputation signal with free traffic."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score",
+    },
+    {
+        "id": "G8",
+        "article": "A13",
+        "status": "open",
+        "description": (
+            "No financial ledger exists. The settlement result, including the on-chain "
+            "transaction hash, is returned in a response header and then discarded, so "
+            "an operator cannot say how much was earned, from whom, or for what, and no "
+            "settlement can be reconciled."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_no_settlement_record_is_written",
     },
 )
 

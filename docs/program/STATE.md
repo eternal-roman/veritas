@@ -5,17 +5,19 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> Phase T, steps T9–T10 (the last of Phase T): constitution 2.0. Note A12 no
-> longer needs re-levelling to L0 — delivering the custody chain made it true for
-> chain integrity — so instead: repoint A12 at
-> `tests/test_truth_restoration.py::test_delivered_chain_is_verifiable_without_the_seller`,
-> add **A22** (records attest what we received, not what the origin served anyone
-> else) and **A23** (the engine named is the engine queried, pinned by
-> `tests/test_retrieval_honesty.py`), register G3–G5 as closed and G6 (R11
-> idempotency), G7 (T1 trust manipulable), G8 (R5 no ledger) as open, bump
-> CONSTITUTION_VERSION to 2.0 and re-render CONSTITUTION.md in the same commit
-> (the sync test requires it). Then T10: upgrade pointer resolution from string
-> grep to real pytest collection. Then Phase N0.
+> **Phase T is complete.** Next: Phase X (x402 correctness), starting with X2 —
+> replace the guessed EIP-712 domain (`extra={"name": asset["symbol"]}` in
+> `veritas/x402.py`) with a pinned per-network table carrying `verified_at` and
+> `verification_source`, and refuse to advertise any network without a verified
+> entry. Then X5 (default network → Base Sepolia, mainnet explicit opt-in), X3
+> (`/supported` preflight, fail-closed), X4 (absolute `resource` URL), X7
+> (`veritas/deadline.py`), X1 (adopt the official `x402` SDK behind the seam),
+> X6 (Bazaar discovery extension). Tests first in `tests/test_x402_protocol.py`.
+>
+> Note the execution order was deliberately inverted from the original plan:
+> substrate (X → M → O) before new product surface (N0/N1). Rationale in the
+> approved plan — building a paid notary on a payment path that charges
+> disconnected buyers (G6/R11) and keeps no ledger (G8/R5) multiplies the defect.
 
 ## Resume protocol
 
@@ -63,9 +65,12 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (commit SHA)
 - [x] T6 Deleted `posterior` and per-claim `confidence`; `support` report replaces them (P4, P5)
 - [x] T7 Price default `$0.25` → `$0.01`; price validated by the misconfig guard (R9)
 - [x] T8 `payer.py` assert → explicit raise; SSRF/scheme guards + bandit gate at `-ll`
-- [ ] T9 Constitution 2.0: A12 → L0, add A22/A23, register G3–G8, re-render
-- [ ] T10 Pointer resolution via real pytest collection, not string grep
+- [x] T9 Constitution 2.0: A12 **promoted** (chain now delivered), A22/A23 added, G3–G8 registered, re-rendered
+- [x] T10 Pointer resolution via real pytest collection, not string grep
 - [x] T11 Retracted false claims in README / STATUS.md / ANALYSIS.md
+
+### Phase X — x402 correctness (NEXT)
+See the checklist further down; execution order is X → M → O → N0 → N1 → L → G.
 
 ### Phase N0 — Notary core
 - [ ] N0.1 `veritas/notary/fetch.py` with SSRF defence + local TLS origin fixture
@@ -145,12 +150,12 @@ Ids from the three audits. `open` until a test pins the fix.
 | L6 | high | Buyer queries persisted forever, served unauthenticated | open |
 | R1 | critical | EIP-712 domain guessed from symbol; would void every signature | open |
 | R4 | critical | No deadline; authorization can expire during paid work | open |
-| R5 | critical | No financial ledger; settlement tx hash discarded | open |
+| R5 | critical | No financial ledger; settlement tx hash discarded | open — **witnessed** by `::test_known_gap_no_settlement_record_is_written` (gap G8) |
 | R6 | high | `request_id` never recorded against the nonce claim | open |
 | R7 | high | Indeterminate settlement coded as definite failure | open |
 | R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | **closed** — `::test_price_is_validated_by_the_misconfiguration_guard` |
 | R10 | high | Paid Serper provider called in free mode | open |
-| R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | open |
+| R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | open — **witnessed** by `::test_known_gap_completed_paid_request_is_not_replayable` (gap G6) |
 | O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | open |
 | O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | open |
 | O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | open |
@@ -163,7 +168,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | open |
 | O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
-| T1 | high | Trust score manipulable by free traffic; refusal_health perverse | open |
+| T1 | high | Trust score manipulable by free traffic; refusal_health perverse | open — now **witnessed** by `tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score` (constitution gap G7) |
 
 ## Measured numbers
 
@@ -171,7 +176,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 287 | Phase T (T1–T8) |
+| Tests passing | 291 | Phase T complete (T1–T11) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |
@@ -185,4 +190,5 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-05 | T1–T3, T6: relevance gate on the served path, custody chain delivered, posterior removed | e5385bf |
 | 2026-08-05 | T4–T5: metasearch scraper removed, licences carried, corpus de-attributed | ba1ae33 |
 | 2026-08-05 | T7–T8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | c8b87ee |
-| 2026-08-05 | T11: README/STATUS/ANALYSIS retractions; honest verdict corrected | this commit |
+| 2026-08-05 | T11: README/STATUS/ANALYSIS retractions; honest verdict corrected | 3e48378, 96ac66b |
+| 2026-08-05 | T9–T10: constitution 2.0, three open gaps witnessed, pointers resolved by pytest collection | this commit |

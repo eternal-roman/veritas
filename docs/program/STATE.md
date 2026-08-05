@@ -5,8 +5,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> Phase T, step T1: enforce `MIN_RELEVANCE` in the pipeline evidence loop (defect P1).
-> Tests first in `tests/test_pipeline.py`.
+> Phase T, step T4: remove `ddgs`/metasearch and the static corpus from the live
+> retrieval path (defects L1, L2, L4). Tests first in `tests/test_retrieval_honesty.py`.
 
 ## Resume protocol
 
@@ -46,12 +46,12 @@ No claim of on-chain success may be made until an operator produces a transactio
 Legend: `[ ]` not started · `[~]` in progress · `[x]` done (commit SHA)
 
 ### Phase T — Truth restoration (blocking; stops shipping false claims)
-- [ ] T1 Enforce `MIN_RELEVANCE` in `pipeline.py` evidence loop (P1)
-- [ ] T2 Deliver `custody_chain` in the response envelope (P2)
-- [ ] T3 Remove unreachable `low_confidence` branch or make it reachable (P3)
+- [x] T1 Enforce `MIN_RELEVANCE` in `pipeline.py` evidence loop (P1)
+- [x] T2 Deliver `custody_chain` in the response envelope (P2)
+- [x] T3 Removed the unreachable `low_confidence` branch with the posterior (P3)
 - [ ] T4 Remove `ddgs`/metasearch entirely; truthful `provider` labels (L1, L2)
 - [ ] T5 Remove `StaticCorpusRetriever` from the live path; `veritas://fixture/*` URLs (L4)
-- [ ] T6 Delete `posterior` and per-claim `confidence` from the wire (P4, P5)
+- [x] T6 Deleted `posterior` and per-claim `confidence`; `support` report replaces them (P4, P5)
 - [ ] T7 Price default `$0.25` → `$0.01`; validate price in the misconfig guard (R9)
 - [ ] T8 `payer.py` assert → explicit raise (survives `python -O`)
 - [ ] T9 Constitution 2.0: A12 → L0, add A22/A23, register G3–G8, re-render
@@ -124,10 +124,10 @@ Ids from the three audits. `open` until a test pins the fix.
 
 | Id | Severity | Summary | Status |
 |----|----------|---------|--------|
-| P1 | critical | Relevance gate absent from production path; irrelevant evidence billed as `completed` | open |
-| P2 | critical | Custody chain never delivered; `to_list`/`verify_chain_records` unused; A12 false | open |
-| P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | open |
-| P4/P5 | high | Posterior cosmetic; claim confidence positional | open |
+| P1 | critical | Relevance gate absent from production path; irrelevant evidence billed as `completed` | **closed** — `tests/test_truth_restoration.py::test_irrelevant_evidence_is_refused_on_the_production_path` |
+| P2 | critical | Custody chain never delivered; `to_list`/`verify_chain_records` unused; A12 false | **closed** — `::test_response_delivers_the_custody_chain` |
+| P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** — branch removed with the posterior |
+| P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
 | P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | open |
 | P13 | med | Evidence text never stored; hashes only | open |
 | L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | open |
@@ -162,7 +162,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 243 | 4f2321c (pre-program baseline) |
+| Tests passing | 257 | Phase T (T1–T3, T6) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |

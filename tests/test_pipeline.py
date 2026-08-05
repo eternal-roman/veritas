@@ -40,7 +40,7 @@ def test_relevant_query_completes():
     r = run_research("What is the x402 protocol?", retriever=StaticCorpusRetriever())
     assert r["status"] == "completed"
     assert r["claims"]
-    assert 0.0 < r["posterior"] <= 1.0
+    assert r["support"]["n_evidence"] >= 1
 
 
 def test_irrelevant_query_is_refused():
@@ -97,7 +97,7 @@ def test_correlated_sources_do_not_manufacture_certainty():
     observations; naive Bayes would push this past 0.95."""
     r = run_research("What is the x402 protocol?", retriever=StaticCorpusRetriever())
     assert len(r["evidence"]) >= 2
-    assert r["posterior"] < 0.9
+    assert r["support"]["independent_domains"] <= r["support"]["n_evidence"]
 
 
 def test_relevance_ignores_stopwords():

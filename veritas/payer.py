@@ -189,7 +189,11 @@ def validate_accepts(entry: object) -> tuple[ValidatedAccepts | None, list[str]]
 
     if problems:
         return None, problems
-    assert chain_id is not None and amount is not None  # narrowed by the checks above
+    if chain_id is None or amount is None:
+        # Defence in depth: the checks above should have caught this. An
+        # `assert` here would be removed by `python -O`, silencing the guard in
+        # exactly the deployment most likely to run optimised.
+        return None, problems + ["internal: chain_id or amount unresolved"]
     validated = ValidatedAccepts(
         scheme="exact",
         network=network,

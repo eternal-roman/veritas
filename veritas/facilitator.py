@@ -26,6 +26,8 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Any
 
+from .safeurl import UnsafeUrlError, require_http_url
+
 DEFAULT_TIMEOUT = 15
 
 
@@ -67,7 +69,10 @@ class FacilitatorClient:
         self.timeout = timeout
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
-        url = f"{self.base_url}{path}"
+        # The facilitator URL is operator configuration, but urlopen honours
+        # file: and other schemes, so the allowlist is applied here rather than
+        # trusted upstream.
+        url = require_http_url(f"{self.base_url}{path}")
         payload = json.dumps(body).encode("utf-8")
         req = urllib.request.Request(
             url,
@@ -75,7 +80,8 @@ class FacilitatorClient:
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+        with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=self.timeout) as resp:
             return json.loads(resp.read().decode())
 
     def verify(self, payment_payload: dict[str, Any], requirements: dict[str, Any]) -> VerificationResult:
@@ -97,6 +103,8 @@ class FacilitatorClient:
             return VerificationResult(False, invalid_reason="facilitator_unreachable")
         except (json.JSONDecodeError, TimeoutError):
             return VerificationResult(False, invalid_reason="facilitator_bad_response")
+        except UnsafeUrlError:
+            return VerificationResult(False, invalid_reason="facilitator_url_rejected")
 
         return VerificationResult(
             is_valid=bool(data.get("isValid")),
@@ -122,6 +130,8 @@ class FacilitatorClient:
             return SettlementResult(False, error_reason="facilitator_unreachable")
         except (json.JSONDecodeError, TimeoutError):
             return SettlementResult(False, error_reason="facilitator_bad_response")
+        except UnsafeUrlError:
+            return SettlementResult(False, error_reason="facilitator_url_rejected")
 
         return SettlementResult(
             success=bool(data.get("success")),

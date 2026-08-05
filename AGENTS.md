@@ -12,7 +12,7 @@ python -m pytest tests/ -q               # test suite — must stay green
 python -m veritas.evaluations.harness    # quality report (JSON to stdout)
 python -m veritas.evaluations.payment_model  # bounded payment-invariant check — CI gates on this
 ruff check veritas tests                 # lint — CI gates on this
-bandit -r veritas -lll -q                # security scan — CI gates on high severity
+bandit -r veritas -ll -q                 # security scan — CI gates on medium and high
 python -m build && twine check dist/*    # packaging — CI builds and installs the wheel
 veritas-server                           # run the service (free mode by default)
 veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve

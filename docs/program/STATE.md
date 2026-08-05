@@ -5,8 +5,11 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> Phase T, steps T7–T11: price default to $0.01 + validate price (R9), payer assert
-> to explicit raise (T8), constitution 2.0 (T9/T10), retract false doc claims (T11).
+> Phase T, steps T9–T11: constitution 2.0 (re-level A12 to L0, add A22/A23, register
+> G3–G8, re-render CONSTITUTION.md), pointer resolution via pytest collection (T10),
+> and retract the now-false claims in README/ROADMAP/STATUS/ANALYSIS (T11).
+> README still advertises "Bayesian belief updating" and DuckDuckGo search — both
+> untrue after T4/T6. Fix before starting Phase N0.
 
 ## Resume protocol
 
@@ -52,8 +55,8 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (commit SHA)
 - [x] T4 Removed `ddgs`/metasearch; DDG Instant Answer named truthfully (L1, L2)
 - [x] T5 Corpus off the live path; `veritas://fixture/*` URLs (L4)
 - [x] T6 Deleted `posterior` and per-claim `confidence`; `support` report replaces them (P4, P5)
-- [ ] T7 Price default `$0.25` → `$0.01`; validate price in the misconfig guard (R9)
-- [ ] T8 `payer.py` assert → explicit raise (survives `python -O`)
+- [x] T7 Price default `$0.25` → `$0.01`; price validated by the misconfig guard (R9)
+- [x] T8 `payer.py` assert → explicit raise; SSRF/scheme guards + bandit gate at `-ll`
 - [ ] T9 Constitution 2.0: A12 → L0, add A22/A23, register G3–G8, re-render
 - [ ] T10 Pointer resolution via real pytest collection, not string grep
 - [ ] T11 Retract false claims in STATUS.md / ANALYSIS.md / ROADMAP.md
@@ -139,7 +142,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | R5 | critical | No financial ledger; settlement tx hash discarded | open |
 | R6 | high | `request_id` never recorded against the nonce claim | open |
 | R7 | high | Indeterminate settlement coded as definite failure | open |
-| R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | open |
+| R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | **closed** — `::test_price_is_validated_by_the_misconfiguration_guard` |
 | R10 | high | Paid Serper provider called in free mode | open |
 | R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | open |
 | O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | open |
@@ -153,7 +156,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | open |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | open |
-| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | open |
+| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
 | T1 | high | Trust score manipulable by free traffic; refusal_health perverse | open |
 
 ## Measured numbers
@@ -162,7 +165,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 267 | Phase T (T1–T6) |
+| Tests passing | 287 | Phase T (T1–T8) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |
@@ -172,4 +175,7 @@ Updated as they are measured, never estimated in this table.
 
 | Date | Landed | Commits |
 |------|--------|---------|
-| 2026-08-05 | Program bootstrapped; state file established | this commit |
+| 2026-08-05 | Program bootstrapped; state file established | ece7e2a |
+| 2026-08-05 | T1–T3, T6: relevance gate on the served path, custody chain delivered, posterior removed | e5385bf |
+| 2026-08-05 | T4–T5: metasearch scraper removed, licences carried, corpus de-attributed | ba1ae33 |
+| 2026-08-05 | T7–T8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | this commit |

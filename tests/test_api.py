@@ -71,7 +71,9 @@ def test_missing_payment_returns_spec_shaped_402(paid_client):
     body = r.json()
     assert body["x402Version"] == 1
     accepts = body["accepts"][0]
-    assert accepts["maxAmountRequired"] == "250000"
+    # $0.01 at USDC's 6 decimals. The default was $0.25 (25x comparable
+    # x402 endpoints) until the repricing in Phase T.
+    assert accepts["maxAmountRequired"] == "10000"
     assert accepts["scheme"] == "exact"
 
 

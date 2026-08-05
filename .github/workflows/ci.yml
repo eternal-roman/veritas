@@ -44,7 +44,7 @@ jobs:
 
       - name: Import all modules
         run: |
-          python -c "import veritas.server, veritas.autonomous.control_plane, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution, veritas.payer, veritas.replay, veritas.providers, veritas.buyer_payment"
+          python -c "import veritas.server, veritas.autonomous.control_plane, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution, veritas.support, veritas.safeurl, veritas.payer, veritas.replay, veritas.providers, veritas.buyer_payment"
 
       - name: Lint (ruff)
         run: |
@@ -117,9 +117,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Bandit (high severity must fail)
+      - name: Bandit (medium and high severity must fail)
         run: |
-          bandit -r veritas -lll -q
+          bandit -r veritas -ll -q
 
       # Covers runtime AND dev/optional dependencies. This replaces the
       # dependency-review action, which could never run here (it requires the

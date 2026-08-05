@@ -193,3 +193,35 @@ def test_responses_still_conform_to_the_wire_contract():
         run_research(ZEPHYRCORP, retriever=_Fixed([_source(BANANA)])),
     ):
         assert validate_response(r) == []
+
+
+def test_price_is_validated_by_the_misconfiguration_guard(monkeypatch):
+    """R9. `price` was the one live-mode field the guard never checked, so a
+    typo produced mode=='live', a green /health, and a 500 on every request."""
+    from veritas.payment_config import PaymentConfig
+
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
+    monkeypatch.setenv("VERITAS_PRICE", "0.25 USD each")
+    cfg = PaymentConfig.from_env()
+    assert cfg.mode == "misconfigured"
+    assert any("PRICE" in e or "price" in e for e in cfg.config_errors)
+
+
+def test_default_price_is_the_market_facing_one(monkeypatch):
+    """$0.25 was 25x comparable x402 endpoints for a worse deliverable."""
+    from veritas.payment_config import PaymentConfig
+
+    for var in ("VERITAS_PRICE", "VERITAS_REQUIRE_PAYMENT", "VERITAS_PAY_TO"):
+        monkeypatch.delenv(var, raising=False)
+    assert PaymentConfig.from_env().price == "$0.01"
+
+
+def test_payment_validation_does_not_rely_on_assert(monkeypatch):
+    """T8. `assert` in the payment path vanishes under `python -O`."""
+    import inspect
+
+    from veritas import payer
+
+    source = inspect.getsource(payer.validate_accepts)
+    assert "assert " not in source, "payment validation still relies on assert"

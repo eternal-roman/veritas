@@ -28,6 +28,7 @@ from veritas.retrieval import (
     RetrievalResult,
     classify_transport_error,
 )
+from veritas.safeurl import require_http_url
 
 USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
 TIMEOUT_SECONDS = 8
@@ -39,8 +40,11 @@ def _classify(exc: Exception) -> tuple[str, str]:
 
 
 def _get_json(url: str) -> dict[str, Any]:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
+    # Hardcoded provider hosts today, but urlopen honours file: and custom
+    # schemes, so the allowlist is enforced at the call rather than assumed.
+    req = urllib.request.Request(require_http_url(url), headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode())
 
 

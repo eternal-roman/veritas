@@ -21,7 +21,7 @@
 ## Minimum Agent-to-Agent Deployment
 
 ```bash
-pip install "veritas-research[retrieval,signing] @ git+https://github.com/eternal-roman/veritas"
+pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
 veritas-agent up            # config + wallet + serve, free mode
 veritas-agent up --paid     # same, requiring payment to the agent's wallet
 ```

@@ -9,7 +9,7 @@ WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./
 COPY veritas ./veritas
 
-RUN pip install --no-cache-dir ".[retrieval]"
+RUN pip install --no-cache-dir "."
 
 USER veritas
 ENV VERITAS_HOST=0.0.0.0 \

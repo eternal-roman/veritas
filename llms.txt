@@ -21,7 +21,7 @@ failure.
 
 ## Install and run
 
-pip install "veritas-research[retrieval] @ git+https://github.com/eternal-roman/veritas"
+pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
 veritas-server
 
 ## Source and norms

@@ -7,7 +7,7 @@ are load-bearing.
 ## Setup and commands
 
 ```bash
-pip install -e ".[retrieval,signing,dev]"  # everything needed to develop
+pip install -e ".[signing,dev]"  # everything needed to develop
 python -m pytest tests/ -q               # test suite — must stay green
 python -m veritas.evaluations.harness    # quality report (JSON to stdout)
 python -m veritas.evaluations.payment_model  # bounded payment-invariant check — CI gates on this

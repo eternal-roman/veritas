@@ -5,8 +5,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> Phase T, step T4: remove `ddgs`/metasearch and the static corpus from the live
-> retrieval path (defects L1, L2, L4). Tests first in `tests/test_retrieval_honesty.py`.
+> Phase T, steps T7–T11: price default to $0.01 + validate price (R9), payer assert
+> to explicit raise (T8), constitution 2.0 (T9/T10), retract false doc claims (T11).
 
 ## Resume protocol
 
@@ -49,8 +49,8 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done (commit SHA)
 - [x] T1 Enforce `MIN_RELEVANCE` in `pipeline.py` evidence loop (P1)
 - [x] T2 Deliver `custody_chain` in the response envelope (P2)
 - [x] T3 Removed the unreachable `low_confidence` branch with the posterior (P3)
-- [ ] T4 Remove `ddgs`/metasearch entirely; truthful `provider` labels (L1, L2)
-- [ ] T5 Remove `StaticCorpusRetriever` from the live path; `veritas://fixture/*` URLs (L4)
+- [x] T4 Removed `ddgs`/metasearch; DDG Instant Answer named truthfully (L1, L2)
+- [x] T5 Corpus off the live path; `veritas://fixture/*` URLs (L4)
 - [x] T6 Deleted `posterior` and per-claim `confidence`; `support` report replaces them (P4, P5)
 - [ ] T7 Price default `$0.25` → `$0.01`; validate price in the misconfig guard (R9)
 - [ ] T8 `payer.py` assert → explicit raise (survives `python -O`)
@@ -130,9 +130,9 @@ Ids from the three audits. `open` until a test pins the fix.
 | P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
 | P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | open |
 | P13 | med | Evidence text never stored; hashes only | open |
-| L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | open |
-| L3 | high | Wikipedia CC BY-SA reused without licence notice | open |
-| L4 | high | Repo-authored corpus text published under third-party URLs | open |
+| L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** — `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
+| L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
+| L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |
 | L6 | high | Buyer queries persisted forever, served unauthenticated | open |
 | R1 | critical | EIP-712 domain guessed from symbol; would void every signature | open |
 | R4 | critical | No deadline; authorization can expire during paid work | open |
@@ -162,7 +162,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 257 | Phase T (T1–T3, T6) |
+| Tests passing | 267 | Phase T (T1–T6) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |

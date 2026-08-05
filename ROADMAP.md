@@ -250,7 +250,7 @@ research, and asserts no stray top-level packages):**
   user-agent all derive from it).
 - **P.3 Entry point.** `veritas-server` console script; `VERITAS_HOST` /
   `VERITAS_PORT` control binding.
-- **P.4 Install paths.** `pip install .`, `.[retrieval]` (ddgs), `.[dev]`
+- **P.4 Install paths.** `pip install .`, `.[signing]`, `.[dev]`
   (test/lint/build tooling). Lint (ruff) added to CI with zero findings.
 
 **Remaining:**
@@ -261,7 +261,7 @@ research, and asserts no stray top-level packages):**
   `veritas-research` project on PyPI and configures the trusted publisher —
   the name is still unreserved. *Acceptance:* `pip install veritas-research`
   from a clean machine serves `/health`. Until then, install works directly
-  from the repository: `pip install "veritas-research[retrieval] @
+  from the repository: `pip install "veritas-research @
   git+https://github.com/eternal-roman/veritas"`.
 - **P.6 Release discipline.** The tag↔version check ships in release.yml;
   remaining: a CHANGELOG.
@@ -590,7 +590,7 @@ runs alongside from the start.
 ## Commands
 
 ```bash
-pip install -e ".[retrieval,signing,dev]"
+pip install -e ".[signing,dev]"
 python -m pytest tests/ -q               # 240 tests
 python -m veritas.evaluations.harness    # quality report
 veritas-server                           # free mode (or: python -m uvicorn veritas.server:app)

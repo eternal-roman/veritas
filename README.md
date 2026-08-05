@@ -34,12 +34,11 @@ network is not a research service. Veritas never bills for its own outage.
 
 ```bash
 # Directly from the repository — no clone needed, works for an agent today:
-pip install "veritas-research[retrieval] @ git+https://github.com/eternal-roman/veritas"
+pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
 
 # From a clone (not yet published to PyPI; the release workflow exists but
 # needs a maintainer to configure the PyPI project first):
-pip install ".[retrieval]"     # + ddgs for full zero-key web search
-pip install -e ".[retrieval,signing,dev]"   # development install
+pip install -e ".[signing,dev]"   # development install
 
 # Container (binds 0.0.0.0 inside; the bare console script binds 127.0.0.1):
 docker build -t veritas-research . && docker run -p 8000:8000 veritas-research

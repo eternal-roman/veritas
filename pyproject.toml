@@ -43,10 +43,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Zero-key web retrieval. Without it, only Wikipedia and the DuckDuckGo
-# Instant Answer fallback are available; the service reports the missing
-# provider rather than pretending it searched.
-retrieval = ["ddgs>=6.0"]
 # Buyer-side signing for the Phase 0.1 testnet harness. Optional: the engine
 # and server never sign anything, and production custody keeps keys out of
 # this process entirely (ROADMAP 3.2).

@@ -30,6 +30,14 @@ _STOPWORDS = frozenset({
 # tokens before the document counts as relevant evidence.
 MIN_RELEVANCE = 0.34
 
+# What we say about a source whose licence we have not established. Silence
+# would let a buyer assume reuse is safe; "unknown" makes the gap explicit.
+UNKNOWN_LICENSE: dict[str, object] = {
+    "id": "unknown",
+    "url": None,
+    "note": "licence not established; check the source before redistributing",
+}
+
 
 def meaningful_tokens(text: str) -> list[str]:
     """Lowercased content tokens with stopwords and 1-char noise removed."""
@@ -135,7 +143,7 @@ class StaticCorpusRetriever:
 
     DEFAULT_CORPUS: list[dict[str, str]] = [
         {
-            "url": "https://x402.org",
+            "url": "veritas://fixture/x402",
             "title": "x402 Protocol",
             "text": (
                 "x402 is an open standard for internet-native payments over HTTP. "
@@ -145,7 +153,7 @@ class StaticCorpusRetriever:
             ),
         },
         {
-            "url": "https://docs.cdp.coinbase.com/x402/bazaar",
+            "url": "veritas://fixture/bazaar",
             "title": "CDP x402 Bazaar",
             "text": (
                 "The CDP x402 Bazaar is a discovery layer that indexes paid resources. "
@@ -154,7 +162,7 @@ class StaticCorpusRetriever:
             ),
         },
         {
-            "url": "https://modelcontextprotocol.io",
+            "url": "veritas://fixture/mcp",
             "title": "Model Context Protocol",
             "text": (
                 "MCP is an open protocol for connecting LLM applications to external "
@@ -180,9 +188,11 @@ class StaticCorpusRetriever:
                 "url": item["url"],
                 "title": item["title"],
                 "text": item["text"],
-                "provider": self.name,
+                "provider": "offline_corpus",
                 "provenance": "offline_corpus",
                 "relevance": round(score, 3),
+                "license": dict(UNKNOWN_LICENSE),
+                "attribution": {"required": False, "text": "Veritas offline fixture"},
             }
             for score, item in scored[:max_results]
         ]
@@ -259,4 +269,8 @@ def default_retriever(allow_network: bool = True) -> Retriever:
     if serper_api_key():
         retrievers.append(SerperRetriever())
     retrievers.append(ZeroKeyRetriever())
-    return CompositeRetriever(retrievers, fallback=corpus)
+    # No offline-corpus fallback on the live path. The corpus is repo-authored
+    # fixture text; serving it to a live caller was fabricated attribution
+    # (it used to carry real third-party URLs). Offline mode still returns it,
+    # explicitly labelled, via allow_network=False above.
+    return CompositeRetriever(retrievers)

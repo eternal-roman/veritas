@@ -34,6 +34,7 @@ from .custody import CustodyLedger
 from .hashing import compute_content_hash, verify_content_hash
 from .retrieval import (
     MIN_RELEVANCE,
+    UNKNOWN_LICENSE,
     RetrievalError,
     RetrievalResult,
     Retriever,
@@ -168,6 +169,10 @@ def run_research(
             "provider": src.get("provider"),
             "provenance": src.get("provenance"),
             "relevance": round(score, 3),
+            # A buyer reusing an excerpt needs to know what licence attaches to
+            # it. Unknown is stated as unknown rather than left blank.
+            "license": src.get("license") or dict(UNKNOWN_LICENSE),
+            "attribution": src.get("attribution") or {"required": False, "text": None},
         })
 
     # Sources were reachable but nothing usable came back. Two different honest

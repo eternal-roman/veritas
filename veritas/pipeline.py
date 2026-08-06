@@ -99,14 +99,20 @@ def run_research(
     retriever: Retriever | None = None,
     max_results: int = 5,
     allow_network: bool = True,
+    request_id: str | None = None,
 ) -> dict[str, Any]:
     """Run one research request end to end.
 
     `retriever` is injectable so tests and offline deployments can pin a
     deterministic source set without monkeypatching.
+
+    `request_id` is accepted so a caller that has already allocated one — the
+    paid HTTP path claims a payment authorization against it before any work
+    starts — can have the custody chain, the receipt and the financial ledger
+    all name the same request. Callers that do not care get a fresh uuid4.
     """
     ledger = CustodyLedger()
-    request_id = str(uuid.uuid4())
+    request_id = request_id or str(uuid.uuid4())
     ledger.append("created", "pipeline", {"query": query, "request_id": request_id})
 
     if retriever is None:

@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import re
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
 from enum import Enum
@@ -267,3 +268,35 @@ def payment_authorization(payload: dict[str, Any]) -> dict[str, Any] | None:
             return auth
     auth = payload.get("authorization")
     return auth if isinstance(auth, dict) else None
+
+
+#: An EIP-3009 authorization nonce: 32 bytes, hex, 0x-prefixed.
+NONCE_RE = re.compile(r"0x[0-9a-fA-F]{64}")
+
+
+def extract_nonce(payment_payload: Any) -> str | None:
+    """Pull the authorization nonce out of a decoded X-PAYMENT payload.
+
+    Tolerates the shapes seen in the wild: nested under
+    ``payload.authorization`` (the x402 exact scheme) or hoisted to the top of
+    the payload. Returns None when no well-formed nonce is present — the
+    caller decides what that means, because a missing nonce is a malformed
+    payment, not a replay.
+
+    The nonce identifies one single-use payment authorization, which is why
+    `veritas.ledger` keys the whole delivery/settlement state machine on it.
+    """
+    if not isinstance(payment_payload, dict):
+        return None
+    candidates: list[Any] = []
+    authorization = payment_authorization(payment_payload)
+    if authorization is not None:
+        candidates.append(authorization.get("nonce"))
+    inner = payment_payload.get("payload")
+    if isinstance(inner, dict):
+        candidates.append(inner.get("nonce"))
+    candidates.append(payment_payload.get("nonce"))
+    for candidate in candidates:
+        if isinstance(candidate, str) and NONCE_RE.fullmatch(candidate):
+            return candidate.lower()
+    return None

@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.0"
+CONSTITUTION_VERSION = "2.1"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -183,6 +183,7 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_pipeline.py::test_outage_is_not_billable"},
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_retrieval_failure_abandons_the_authorization_and_never_settles"},
             {"kind": "ci-gate", "pointer": "unavailability_honesty"},
         ],
     ),
@@ -207,13 +208,14 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     ),
     _article(
         "A19",
-        "Replay refusal",
-        "A resubmitted payment authorization is refused before a second retrieval pass is consumed, and an unusable replay guard refuses rather than waves through.",
+        "Replay safety",
+        "A resubmitted payment authorization never consumes a second retrieval pass; where the work was already delivered it is re-delivered rather than refused, and an unusable replay guard refuses rather than waves through.",
         "venue",
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_replay.py::test_resubmitted_header_does_the_work_once"},
-            {"kind": "test", "pointer": "tests/test_replay.py::test_unusable_store_fails_closed"},
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_replayed_authorization_returns_the_deliverable_it_paid_for"},
+            {"kind": "test", "pointer": "tests/test_replay.py::test_an_unusable_ledger_refuses_rather_than_waving_through"},
         ],
     ),
     _article(
@@ -257,6 +259,28 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         [
             {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used"},
             {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response"},
+        ],
+    ),
+    _article(
+        "A24",
+        "Delivery is recorded before payment is captured",
+        "What was produced for a buyer is written durably before settlement is attempted, so a failure between the two leaves a record of what is owed rather than silence.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_delivery_is_durable_before_settlement_is_attempted"},
+            {"kind": "test", "pointer": "tests/test_ledger.py::test_settlement_before_delivery_is_refused"},
+        ],
+    ),
+    _article(
+        "A25",
+        "An unknown settlement is not reported as a failed one",
+        "A settlement whose facilitator never answered is recorded and reported as indeterminate, not as failure, and the buyer receives the work rather than having it withheld on an outcome we did not observe.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_indeterminate_settlement_delivers_and_says_so"},
+            {"kind": "test", "pointer": "tests/test_ledger.py::test_indeterminate_settlement_is_not_recorded_as_failure"},
         ],
     ),
     # Aspirational articles: named norms with no enforcement yet. Each cites
@@ -380,15 +404,27 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G6",
         "article": "A13",
-        "status": "open",
+        "status": "closed",
         "description": (
-            "A paid request is not idempotent. The nonce is burned before the work, and "
-            "a buyer whose connection drops after settlement is charged and receives "
-            "nothing: retrying the same authorization returns 409 rather than the "
-            "deliverable already paid for. Settlement fairness (A13) does not hold on "
+            "A paid request was not idempotent. The nonce was burned before the work, and "
+            "a buyer whose connection dropped after settlement was charged and received "
+            "nothing: retrying the same authorization returned 409 rather than the "
+            "deliverable already paid for. Settlement fairness (A13) did not hold on "
             "this path."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_completed_paid_request_is_not_replayable",
+        "resolution": (
+            "Closed in constitution 2.1: veritas/ledger.py records the delivery before "
+            "settlement is attempted and keys a state machine on the authorization "
+            "nonce, so resubmitting it returns the stored deliverable "
+            "(tests/test_money_path.py::"
+            "test_replayed_authorization_returns_the_deliverable_it_paid_for). "
+            "The retrieval pass still runs exactly once "
+            "(tests/test_money_path.py::test_a_replay_does_not_run_the_work_again). "
+            "Bounded: single-instance scope — two instances behind a balancer do not "
+            "share the ledger, so a replay routed to the other one still fails; and a "
+            "settlement whose facilitator never answers stays indeterminate until "
+            "reconciliation, which G9 tracks."
+        ),
     },
     {
         "id": "G7",
@@ -404,14 +440,35 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G8",
         "article": "A13",
+        "status": "closed",
+        "description": (
+            "No financial ledger existed. The settlement result, including the on-chain "
+            "transaction hash, was returned in a response header and then discarded, so "
+            "an operator could not say how much was earned, from whom, or for what, and "
+            "no settlement could be reconciled."
+        ),
+        "resolution": (
+            "Closed in constitution 2.1: veritas/ledger.py durably records every "
+            "authorization, delivery and settlement attempt, and revenue is answerable "
+            "from the ledger alone "
+            "(tests/test_money_path.py::test_revenue_is_answerable_from_the_ledger_alone). "
+            "Bounded: it records what this instance did, which is not proof the chain "
+            "agrees — reconciling recorded settlements against on-chain state needs an "
+            "RPC endpoint and is tracked as G9."
+        ),
+    },
+    {
+        "id": "G9",
+        "article": "A13",
         "status": "open",
         "description": (
-            "No financial ledger exists. The settlement result, including the on-chain "
-            "transaction hash, is returned in a response header and then discarded, so "
-            "an operator cannot say how much was earned, from whom, or for what, and no "
-            "settlement can be reconciled."
+            "Recorded settlements are never reconciled against the chain. The ledger "
+            "stores what the facilitator told us, including 'indeterminate' entries "
+            "where it told us nothing, and no code re-checks any of it against an RPC "
+            "endpoint. An operator can therefore say what this instance believes it "
+            "earned, but not what it actually holds."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_no_settlement_record_is_written",
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_settlements_are_never_checked_against_the_chain",
     },
 )
 

@@ -31,7 +31,12 @@ network is not a research service. Veritas never bills for its own outage.
   Wikipedia and the DuckDuckGo Instant Answer API, each labelled with the engine
   that actually served it, with provider errors surfaced — never silently
 - **x402 payment** with real facilitator `verify` / `settle`, fail-closed gating,
-  and replay protection (a resubmitted authorization never buys a second pass)
+  and an idempotent paid path: a resubmitted authorization never buys a second
+  retrieval pass, and returns the deliverable it already paid for
+- **A durable financial ledger** (`veritas/ledger.py`) recording every
+  authorization, delivery and settlement attempt, with delivery written before
+  settlement is attempted and "we never heard back" recorded as indeterminate
+  rather than as failure
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
 - **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
 

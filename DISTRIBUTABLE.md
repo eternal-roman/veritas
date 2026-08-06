@@ -7,7 +7,9 @@
   Serper tier (`veritas/providers.py`)
 - Payment configuration + live/free switch (`veritas/payment_config.py`)
 - Buyer payment path with spend caps (`veritas/payer.py`,
-  `veritas/buyer_payment.py`), replay protection (`veritas/replay.py`)
+  `veritas/buyer_payment.py`)
+- Seller-side financial ledger and replay state machine (`veritas/ledger.py`) —
+  authorizations, deliveries and settlement attempts, on SQLite
 - Wallet self-provisioning (`veritas/autonomous/wallet.py`) and the
   `veritas-agent` CLI (`veritas/agent_cli.py`)
 - Local facilitator simulator (`veritas/autonomous/local_facilitator.py`) —
@@ -40,7 +42,9 @@ plainly: funding the wallet, TLS/public deployment, and publishing the URL
   controls — `veritas-agent up --paid` uses the self-provisioned wallet.
 - **Buyer agent**: discovers the endpoint, receives 402, pays via x402 within
   its spend policy (`veritas.buyer_payment.pay_via_policy`), retries with
-  payment proof. A resubmitted authorization is refused (replay protection).
+  payment proof. Resubmitting an authorization never buys a second retrieval
+  pass; if the work was already delivered it is returned again from the
+  ledger, so a dropped connection does not cost the buyer their payment.
 - **Facilitator**: public (OpenFacilitator / CDP) or self-hosted; settles
   on-chain. No settlement has yet been proven end-to-end (ROADMAP 0.1).
 

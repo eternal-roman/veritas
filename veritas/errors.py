@@ -27,6 +27,8 @@ class ErrorCode(str, Enum):
     PAYMENT_NONCE_MISSING = "payment_nonce_missing"
     PAYMENT_NONCE_MALFORMED = "payment_nonce_malformed"
     PAYMENT_NONCE_ALREADY_SPENT = "payment_nonce_already_spent"
+    PAYMENT_REQUEST_ID_ALREADY_CLAIMED = "payment_request_id_already_claimed"
+    PAYMENT_AUTHORIZATION_IN_PROGRESS = "payment_authorization_in_progress"
     REPLAY_PROTECTION_UNAVAILABLE = "replay_protection_unavailable"
     SETTLEMENT_FAILED = "settlement_failed"
     RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
@@ -58,8 +60,18 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.PAYMENT_NONCE_ALREADY_SPENT.value: {
         "status": 409,
-        "meaning": "This payment authorization was already used; request a fresh 402 challenge and sign a new authorization.",
+        "meaning": "This payment authorization was used for a request that cannot be re-delivered; request a fresh 402 challenge and sign a new authorization. A request that was delivered is replayed with its deliverable instead of this error.",
         "retriable": False,
+    },
+    ErrorCode.PAYMENT_REQUEST_ID_ALREADY_CLAIMED.value: {
+        "status": 409,
+        "meaning": "A different authorization is already recorded against this request id. Retry with a fresh request.",
+        "retriable": True,
+    },
+    ErrorCode.PAYMENT_AUTHORIZATION_IN_PROGRESS.value: {
+        "status": 409,
+        "meaning": "A request against this payment authorization is still running. Wait for it to finish and resubmit the same authorization to collect the deliverable; do not sign a new one.",
+        "retriable": True,
     },
     ErrorCode.REPLAY_PROTECTION_UNAVAILABLE.value: {
         "status": 503,
@@ -68,7 +80,7 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.SETTLEMENT_FAILED.value: {
         "status": 402,
-        "meaning": "The payment verified but settlement failed; the work was done and not delivered, and the buyer was not charged.",
+        "meaning": "The facilitator answered and refused settlement; the work was done, is held, and was not delivered. Nothing was charged. Resubmitting the same authorization once the cause is fixed returns the held deliverable without re-running the work. A settlement we simply never heard back about is NOT this error: it returns 200 with payment.state == 'indeterminate', because the funds may have moved.",
         "retriable": True,
     },
     ErrorCode.RETRIEVAL_UNAVAILABLE.value: {

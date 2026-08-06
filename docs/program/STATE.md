@@ -5,15 +5,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **X2, X4, X5, X7 landed.** Next: **Phase M**, which closes the two most
-> damaging open gaps — G6 (a buyer whose connection drops after settlement is
-> charged and gets a 409 on retry) and G8 (no settlement is ever recorded).
-> Start with M1+M3: a SQLite ledger under `veritas/ledger/`, `DeliveryEntry`
-> fsynced before settle and `SettlementEntry` after, joined by `request_id`
-> (which `SpentNonceStore.claim` already accepts but `server.py` never passes).
-> Then M2 (nonce state machine so a replay returns the stored deliverable) and
-> M4 (indeterminate settlement ≠ failure). Deleting the G6/G8 witnesses in
-> `tests/test_known_gaps.py` is part of closing them.
+> **M1–M4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite
+> (WAL, `synchronous=FULL`) record of authorizations, deliveries and settlement
+> attempts. The paid path now runs verify → deadline → claim(nonce,
+> request_id) → work → **record delivery (fsynced)** → settle → record
+> settlement → respond, and a resubmitted authorization returns the stored
+> deliverable instead of a 409. `veritas/replay.py` is gone: its nonce parsing
+> moved to `veritas/x402.py` beside the other payload parsing, and its store is
+> superseded — two nonce stores would have been two sources of truth about
+> whether a payment was used.
+>
+> Next: **M5** (`veritas-ops` CLI over `Ledger.summary()`/`awaiting_settlement()`
+> — the reporting surface exists, the CLI does not) and **M6** (metering: COGS
+> per request, versioned pricing table with `effective_from` recorded per ledger
+> entry). Then **M7** or straight to **Phase O**. Note the ledger deliberately
+> records the paid path only; free traffic is not revenue.
+>
+> New gap opened while closing G8: **G9** — recorded settlements are never
+> re-checked against the chain. `settled` currently means "the facilitator told
+> us so". Closing it needs RPC access this sandbox does not have.
 >
 > Deferred within X, deliberately: X3 (`/supported` preflight) and X1 (SDK
 > adoption) need facilitator egress this sandbox blocks; X6 (Bazaar) follows X1.
@@ -101,10 +111,10 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] X7 `veritas/deadline.py` — budget checked before the nonce claim and again before settle (R4)
 
 ### Phase M — Money infrastructure
-- [ ] M1 SQLite ledger: delivery + settlement entries, fsync before responding (R5)
-- [ ] M2 Nonce state machine; idempotent replay of a completed paid request (R11)
-- [ ] M3 `request_id` recorded against the nonce claim (R6)
-- [ ] M4 Indeterminate settlement distinguished from failure (R7)
+- [x] M1 SQLite ledger: authorization/delivery/settlement entries, delivery fsynced before settle (R5)
+- [x] M2 Nonce state machine; idempotent replay of a completed paid request (R11)
+- [x] M3 `request_id` allocated in the handler and recorded against the claim (R6)
+- [x] M4 Indeterminate settlement distinguished from failure (R7)
 - [ ] M5 Reconciliation + revenue/COGS/margin reports; `veritas-ops` CLI
 - [ ] M6 Metering (COGS per request); versioned pricing table
 - [ ] M7 Credits via SIWx; refunds as credits, documented
@@ -154,19 +164,19 @@ Ids from the three audits. `open` until a test pins the fix.
 | L6 | high | Buyer queries persisted forever, served unauthenticated | open |
 | R1 | critical | EIP-712 domain guessed from symbol; would void every signature | **closed** — pinned table with provenance; unverified networks refused (`tests/test_x402_protocol.py`). Only Base/Base Sepolia are advertisable, from the reference implementation; **none is yet confirmed on-chain** — run `scripts/verify_eip712_domains.py` |
 | R4 | critical | No deadline; authorization can expire during paid work | **closed** — `veritas/deadline.py`; too-short windows refused before work, expiry before settle returns non-billable `deadline_exceeded` (`tests/test_x402_protocol.py`) |
-| R5 | critical | No financial ledger; settlement tx hash discarded | open — **witnessed** by `::test_known_gap_no_settlement_record_is_written` (gap G8) |
-| R6 | high | `request_id` never recorded against the nonce claim | open |
-| R7 | high | Indeterminate settlement coded as definite failure | open |
+| R5 | critical | No financial ledger; settlement tx hash discarded | **closed** — `veritas/ledger.py`; `tests/test_money_path.py::test_settlement_is_recorded_durably` and `::test_revenue_is_answerable_from_the_ledger_alone`. Gap G8 closed, G9 opened (nothing is reconciled against the chain) |
+| R6 | high | `request_id` never recorded against the nonce claim | **closed** — allocated in the handler, threaded through `run_research`, claim and receipt (`::test_the_nonce_is_joined_to_the_request_it_burned_for`) |
+| R7 | high | Indeterminate settlement coded as definite failure | **closed** — `SettlementResult.outcome`; a facilitator that never answered records `indeterminate` and the buyer still receives the work (`::test_indeterminate_settlement_delivers_and_says_so`) |
 | R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | **closed** — `::test_price_is_validated_by_the_misconfiguration_guard` |
 | R10 | high | Paid Serper provider called in free mode | open |
-| R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | open — **witnessed** by `::test_known_gap_completed_paid_request_is_not_replayable` (gap G6) |
+| R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | **closed** — `::test_replayed_authorization_returns_the_deliverable_it_paid_for`; the work still runs once (`::test_a_replay_does_not_run_the_work_again`). Bounded: single-instance ledger |
 | O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | open |
 | O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | open |
 | O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | open |
-| O4 | high | Nonce store rescanned under global lock per paid request | open |
+| O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
 | O5 | high | Relative runtime dir + cwd dependence → silent 503s | open |
 | O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
-| O7 | high | Receipt writes neither atomic nor fsynced | open |
+| O7 | high | Receipt writes neither atomic nor fsynced | partial — the *financial* record is now transactional and fsynced (`synchronous=FULL`); `veritas/custody.py` receipt writes are still plain `write_text` (Phase O.3) |
 | O9 | high | No logging, metrics, tracing or alerting | open |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |

@@ -12,6 +12,7 @@ import base64
 import json
 import os
 import time
+import uuid
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -26,18 +27,19 @@ from veritas.custody import CustodyStore
 from veritas.deadline import Deadline, DeadlineTooShort
 from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
-from veritas.facilitator import get_facilitator
+from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
+from veritas.ledger import REDELIVERABLE_STATES, Ledger, NonceState
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
-from veritas.replay import SpentNonceStore, extract_nonce
 from veritas.trust import OutcomeLog, score_service
 from veritas.x402 import (
     PriceError,
     build_402_challenge,
     build_payment_requirements,
     decode_payment_header,
+    extract_nonce,
     payment_authorization,
 )
 
@@ -81,7 +83,7 @@ def resource_url() -> str:
 
 store = CustodyStore()
 outcomes = OutcomeLog()
-nonces = SpentNonceStore()
+ledger = Ledger()
 
 # 402 bodies are x402-spec-shaped, not registry envelopes; the header marks
 # the protocol so a client can recognise the challenge without parsing.
@@ -124,6 +126,142 @@ def payment_config():
     return get_payment_config().as_dict()
 
 
+def _challenge(cfg, error: str | None = None) -> JSONResponse:
+    kwargs = {"error": error} if error else {}
+    return JSONResponse(
+        status_code=402,
+        content=build_402_challenge(
+            cfg.pay_to, cfg.network, cfg.price, resource_url(), **kwargs,
+        ),
+        headers=PAYMENT_REQUIRED_HEADER,
+    )
+
+
+def _payment_response_header(payment: dict[str, Any]) -> dict[str, str]:
+    return {"X-PAYMENT-RESPONSE": base64.b64encode(
+        json.dumps(payment).encode()
+    ).decode()}
+
+
+def _settle_and_respond(
+    result: dict[str, Any], request_id: str, facilitator, payment_payload,
+    requirements_dict, *, replayed: bool = False,
+):
+    """Attempt settlement for delivered work and answer accordingly.
+
+    Three outcomes, and the middle one is why this is not a boolean:
+
+    * settled — 200 with the deliverable.
+    * indeterminate — the facilitator never answered, so the funds may have
+      moved. The buyer gets the work and is told the settlement is unresolved;
+      withholding it is the one outcome that is certainly wrong, because we may
+      already hold their money.
+    * failed — the facilitator answered no. 402, no delivery, nothing owed.
+    """
+    settlement = facilitator.settle(payment_payload, requirements_dict)
+    outcome = settlement.outcome
+    ledger.record_settlement(
+        request_id,
+        outcome=outcome,
+        transaction=settlement.transaction,
+        network=settlement.network,
+        payer=settlement.payer,
+        reason=settlement.error_reason,
+    )
+    payment = {"settled": settlement.success, **settlement.to_dict()}
+    if replayed:
+        payment["replayed"] = True
+
+    if outcome == "failed":
+        return JSONResponse(status_code=402, content=error_envelope(
+            ErrorCode.SETTLEMENT_FAILED,
+            settlement.error_reason,
+            request_id=request_id,
+        ))
+
+    result = dict(result, payment=payment)
+    return JSONResponse(
+        status_code=200, content=result,
+        headers=_payment_response_header(settlement.to_dict()),
+    )
+
+
+def _resubmitted_authorization(claim, cfg, facilitator, payment_payload, requirements_dict):
+    """Answer a payment authorization this instance has already admitted.
+
+    Burning the nonce and returning 409 — the previous behaviour — charged a
+    buyer whose connection dropped after settlement and left them with an
+    authorization that is single-use on chain, so they could not even re-sign
+    it. What they get now depends on what state their request reached.
+    """
+    reason = claim.reason or "payment_nonce_rejected"
+    if reason == "replay_store_unavailable":
+        # Fail closed: an unusable guard must not become no guard.
+        return JSONResponse(status_code=503, content=error_envelope(
+            ErrorCode.REPLAY_PROTECTION_UNAVAILABLE, reason,
+        ))
+    existing = claim.existing
+    if existing is None:
+        return JSONResponse(status_code=409, content=error_envelope(
+            reason,
+            "This payment authorization cannot be admitted. Request a "
+            "fresh 402 challenge and sign a new authorization.",
+        ))
+
+    if existing.state == NonceState.CLAIMED:
+        # The first request is still in flight (or died mid-work). Doing the
+        # work again is exactly what the claim exists to prevent.
+        return JSONResponse(status_code=409, content=error_envelope(
+            ErrorCode.PAYMENT_AUTHORIZATION_IN_PROGRESS,
+            "A request against this authorization is already in progress.",
+            request_id=existing.request_id,
+        ))
+
+    if existing.state == NonceState.ABANDONED:
+        return JSONResponse(status_code=409, content=error_envelope(
+            ErrorCode.PAYMENT_NONCE_ALREADY_SPENT,
+            "The earlier request against this authorization failed on our "
+            "side and was not billed. Request a fresh 402 challenge and sign "
+            "a new authorization.",
+            request_id=existing.request_id,
+        ))
+
+    stored = ledger.deliverable(existing.request_id)
+    if stored is None:
+        return JSONResponse(status_code=409, content=error_envelope(
+            ErrorCode.PAYMENT_NONCE_ALREADY_SPENT,
+            "This authorization was admitted but its deliverable is no longer "
+            "retrievable. Request a fresh 402 challenge.",
+            request_id=existing.request_id,
+        ))
+
+    if existing.state in REDELIVERABLE_STATES:
+        # Already settled, or settled-unknown. Re-settling would present an
+        # authorization the chain has burned; deliver what was bought instead.
+        attempts = ledger.settlements(existing.request_id)
+        last = attempts[-1] if attempts else {}
+        payment = {
+            "settled": existing.state == NonceState.SETTLED,
+            "state": existing.state,
+            "transaction": last.get("transaction"),
+            "network": last.get("network"),
+            "payer": last.get("payer"),
+            "error_reason": last.get("reason"),
+            "replayed": True,
+        }
+        return JSONResponse(
+            status_code=200, content=dict(stored, payment=payment),
+            headers=_payment_response_header(payment),
+        )
+
+    # delivered (settlement never recorded) or settlement_failed: the work is
+    # done and unpaid, so retry settlement rather than redo the retrieval.
+    return _settle_and_respond(
+        stored, existing.request_id, facilitator, payment_payload,
+        requirements_dict, replayed=True,
+    )
+
+
 @app.post(RESOURCE_PATH)
 def research(req: ResearchRequest, request: Request):
     cfg = get_payment_config()
@@ -131,6 +269,10 @@ def research(req: ResearchRequest, request: Request):
     requirements_dict: dict[str, Any] | None = None
     facilitator = None
     deadline: Deadline | None = None
+    # Allocated here, not inside the pipeline, so the authorization claim, the
+    # custody receipt, the ledger and the response all name the same request
+    # (defect R6: `claim` accepted a request_id no caller ever passed).
+    request_id = str(uuid.uuid4())
 
     # Payment was demanded but the configuration is invalid. Refuse to serve
     # rather than silently falling back to giving the paid service away.
@@ -164,18 +306,11 @@ def research(req: ResearchRequest, request: Request):
 
         header = request.headers.get("X-PAYMENT")
         if not header:
-            return JSONResponse(
-                status_code=402,
-                content=build_402_challenge(cfg.pay_to, cfg.network, cfg.price, resource_url()),
-                headers=PAYMENT_REQUIRED_HEADER,
-            )
+            return _challenge(cfg)
 
         payment_payload = decode_payment_header(header)
         if payment_payload is None:
-            return JSONResponse(status_code=402, content=build_402_challenge(
-                cfg.pay_to, cfg.network, cfg.price, resource_url(),
-                error="X-PAYMENT header is not valid base64-encoded JSON",
-            ), headers=PAYMENT_REQUIRED_HEADER)
+            return _challenge(cfg, "X-PAYMENT header is not valid base64-encoded JSON")
 
         facilitator = get_facilitator(cfg.facilitator, live=True)
         verification = facilitator.verify(payment_payload, requirements_dict)
@@ -183,48 +318,43 @@ def research(req: ResearchRequest, request: Request):
             reason = verification.invalid_reason or "payment_invalid"
             # Facilitator outages fail closed as 503 so buyers retry rather
             # than treating the refusal as a permanent payment rejection.
-            if reason.startswith(("facilitator_unreachable", "facilitator_http", "facilitator_bad_response")):
+            if reason.startswith(VERIFICATION_OUTAGE_PREFIXES):
                 return JSONResponse(status_code=503, content=error_envelope(
                     ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason,
                 ))
-            return JSONResponse(status_code=402, content=build_402_challenge(
-                cfg.pay_to, cfg.network, cfg.price, resource_url(), error=reason,
-            ), headers=PAYMENT_REQUIRED_HEADER)
+            return _challenge(cfg, reason)
 
-        # Replay protection (roadmap 0.4). The nonce is claimed after the
-        # facilitator accepts the payment and BEFORE any retrieval pass, so a
-        # resubmitted header cannot make us do the work a second time. The
-        # claim is never released: the authorization stays live on chain, so
-        # re-admitting it would restore the double-work this prevents.
         # Budget the work against the authorization that pays for it. Doing
-        # this before the nonce claim means an authorization too short to
-        # finish costs the buyer nothing: no work, no burned nonce.
+        # this before the claim means an authorization too short to finish
+        # costs the buyer nothing: no work, no burned nonce.
         try:
             deadline = Deadline.for_authorization(
                 valid_before=_authorization_valid_before(payment_payload),
                 max_work_seconds=MAX_WORK_SECONDS,
             )
         except DeadlineTooShort as exc:
-            return JSONResponse(status_code=402, content=build_402_challenge(
-                cfg.pay_to, cfg.network, cfg.price, resource_url(),
-                error=f"authorization window too short: {exc}",
-            ), headers=PAYMENT_REQUIRED_HEADER)
+            return _challenge(cfg, f"authorization window too short: {exc}")
 
-        claim = nonces.claim(extract_nonce(payment_payload))
+        # Claim the authorization after the facilitator accepts it and BEFORE
+        # any retrieval pass, so a resubmitted header cannot make us do the
+        # work a second time. The claim is never released — the authorization
+        # stays live on chain — but it is no longer a dead end: see
+        # `_resubmitted_authorization` for what a replay is answered with.
+        claim = ledger.claim(
+            extract_nonce(payment_payload), request_id,
+            network=requirements_dict.get("network"),
+            asset=requirements_dict.get("asset"),
+            amount=requirements_dict.get("maxAmountRequired"),
+            pay_to=requirements_dict.get("payTo"),
+            payer=verification.payer,
+            price=cfg.price,
+        )
         if not claim.claimed:
-            reason = claim.reason or "payment_nonce_rejected"
-            if reason.startswith("replay_store_unavailable"):
-                # Fail closed: an unusable guard must not become no guard.
-                return JSONResponse(status_code=503, content=error_envelope(
-                    ErrorCode.REPLAY_PROTECTION_UNAVAILABLE, reason,
-                ))
-            return JSONResponse(status_code=409, content=error_envelope(
-                reason,
-                "This payment authorization cannot be admitted. Request a "
-                "fresh 402 challenge and sign a new authorization.",
-            ))
+            return _resubmitted_authorization(
+                claim, cfg, facilitator, payment_payload, requirements_dict,
+            )
 
-    result = run_research(req.query, max_results=req.max_results)
+    result = run_research(req.query, max_results=req.max_results, request_id=request_id)
 
     # The window may have closed while we worked. Settling now would present an
     # expired authorization; the buyer is not charged and is told to retry with
@@ -235,12 +365,27 @@ def research(req: ResearchRequest, request: Request):
         result["refusal_reason"] = "retrieval_unavailable"
         result["error"] = ErrorCode.DEADLINE_EXCEEDED.value
         result["payment"] = {"settled": False, "reason": "deadline_exceeded_before_settlement"}
+        ledger.record_delivery(
+            request_id, status=result["status"], billable=False,
+            custody_root=result.get("custody_root"), query=req.query, response=result,
+        )
         outcomes.record(result["status"], bool(result["custody_valid"]), False)
         return JSONResponse(status_code=503, content=result)
 
     record = store.save(result)
     result["custody_receipt"] = record
     outcomes.record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
+
+    # Record what we produced BEFORE settlement is attempted, and fsync it. A
+    # crash between the two then leaves a durable statement that we owe this
+    # buyer a deliverable and may or may not have been paid — which is
+    # reconcilable — rather than silence, which is not. Non-billable work
+    # abandons the authorization, so the ledger refuses to settle it.
+    if cfg.require_payment:
+        ledger.record_delivery(
+            request_id, status=result["status"], billable=bool(result["billable"]),
+            custody_root=result.get("custody_root"), query=req.query, response=result,
+        )
 
     # Retrieval failures are ours, not the buyer's: never settle for them.
     if result["status"] == "unavailable":
@@ -251,20 +396,8 @@ def research(req: ResearchRequest, request: Request):
         return JSONResponse(status_code=503, content=result)
 
     if cfg.require_payment and facilitator is not None:
-        settlement = facilitator.settle(payment_payload, requirements_dict)
-        result["payment"] = {"settled": settlement.success, **settlement.to_dict()}
-        if not settlement.success:
-            return JSONResponse(status_code=402, content=error_envelope(
-                ErrorCode.SETTLEMENT_FAILED,
-                settlement.error_reason,
-                request_id=result["request_id"],
-            ))
-        return JSONResponse(
-            status_code=200,
-            content=result,
-            headers={"X-PAYMENT-RESPONSE": base64.b64encode(
-                json.dumps(settlement.to_dict()).encode()
-            ).decode()},
+        return _settle_and_respond(
+            result, request_id, facilitator, payment_payload, requirements_dict,
         )
 
     result["payment"] = {"settled": False, "mode": cfg.mode, "reason": "free_mode"}

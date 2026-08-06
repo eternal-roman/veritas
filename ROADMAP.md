@@ -105,8 +105,12 @@ NOT PROVEN:  - No payment has ever settled. Fail-closed is exercised; success is
              - No conforming third-party x402 client has completed the path end to end.
              - Retrieval quality is untested against any real benchmark; the harness
                runs on a 3-document corpus and its perfect scores are structural.
-             - Replay protection guards ONE instance (local disk). Two instances
-               behind a balancer do not share spent nonces.
+             - The ledger guards ONE instance (local disk). Two instances behind
+               a balancer do not share authorization state, so a replay routed
+               to the other one still fails.
+             - Recorded settlements are never re-checked against the chain
+               (constitution gap G9): the ledger states what the facilitator
+               told us, not what we hold.
              - Behaviour under concurrency, load, or a hostile caller is unmeasured.
 ```
 
@@ -177,7 +181,7 @@ gaps a production deployment would hit.
 | 1 | Live settlement never exercised | High | Client matches the documented API and is tested against unreachable hosts. That verifies fail-closed, not that a payment completes. |
 | 2 | Retrieval is snippet-grade | High | Wikipedia + DuckDuckGo. Will not sustain a paid price against a buyer who can call a search API directly. |
 | 3 | Claims are extractive | High | A claim is a grounded excerpt, not an answer synthesised across sources. |
-| 4 | ~~No replay protection~~ | — | Fixed (0.4): nonces are claimed before work, single-instance scope. |
+| 4 | ~~No replay protection~~ | — | Fixed (0.4): nonces are claimed before work; a resubmission returns the stored deliverable rather than a 409. Single-instance scope. |
 | 5 | No rate limiting | Medium | No per-IP or per-payer caps, no request-size limit on the `X-PAYMENT` header. |
 | 6 | Receipts and outcome log are local disk | Medium | `/v1/receipts` is unreliable behind a load balancer. `OutcomeLog.stats()` re-reads the whole file per call. Both grow unbounded. |
 | 7 | Evidence content is not stored | Medium | Only hashes. A buyer can confirm what we published but cannot re-obtain the passage after a source URL rots. |
@@ -335,17 +339,25 @@ and it is cheap, so it goes first.
 - **0.2 Facilitator contract tests.** Record real `/verify` and `/settle`
   request/response bodies as fixtures. *Acceptance:* fixtures replay green;
   renaming a field fails a test.
-- **0.3 Reconciliation.** Extend receipts with `transaction`, `payer`,
-  `settled_at`; add a script comparing receipts to on-chain transfers.
-  *Acceptance:* zero unmatched settlements across a 50-request testnet run.
-- **0.4 Replay protection.** *Done* (`veritas/replay.py`). The authorization
+- **0.3 Reconciliation.** *Partly done* (`veritas/ledger.py`). Every
+  authorization, delivery and settlement attempt is now durable, joined by
+  `request_id`, with `transaction`, `payer`, `amount` and `asset` recorded and
+  `Ledger.summary()` answering revenue from the ledger alone. **Not done:**
+  nothing compares those records to on-chain transfers — that needs an RPC
+  endpoint and is registered as constitution gap G9. *Remaining acceptance:*
+  zero unmatched settlements across a 50-request testnet run.
+- **0.4 Replay safety.** *Done* (`veritas/ledger.py`). The authorization
   nonce is claimed after facilitator verification and **before** any retrieval
-  pass, durably and under an advisory lock; a claim is never released, since
-  the authorization it names stays live on chain. Acceptance — the same
+  pass, durably and under a SQLite write lock; the claim is never released,
+  since the authorization it names stays live on chain. Acceptance — the same
   `X-PAYMENT` header submitted twice does the work once — is a test
   (`tests/test_replay.py::test_resubmitted_header_does_the_work_once`, which
-  counts pipeline invocations). *Limit:* the store is local disk, so it guards
-  one instance; behind a load balancer this needs the shared state in 6.2.
+  counts pipeline invocations). The refusal that used to accompany it was
+  itself a defect (gap G6): a buyer whose connection dropped after settlement
+  was charged and could not re-sign a single-use authorization. A resubmission
+  now returns the stored deliverable. *Limit:* the store is local disk, so it
+  guards one instance; behind a load balancer this needs the shared state
+  in 6.2.
 - **0.5 Signature-scheme compatibility probe.** The Phase 3 custody endgame
   (smart account + session keys) requires the facilitator to verify ERC-1271
   contract-wallet signatures for the `exact` scheme, and the deployed USDC on

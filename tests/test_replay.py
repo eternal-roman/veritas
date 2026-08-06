@@ -2,7 +2,15 @@
 make us perform the paid work twice.
 
 The acceptance criterion is behavioural, not structural: the second submission
-of the same header must be refused *before* a retrieval pass is consumed.
+of the same header must not consume a second retrieval pass. It originally
+also returned a 409, which turned out to be a defect rather than the
+requirement — a buyer whose connection dropped after settlement had paid,
+received nothing, and could not re-sign a single-use authorization. Phase M
+replaced the refusal with re-delivery from the ledger; the "work runs once"
+criterion is unchanged and is still pinned here.
+
+The state machine that backs this lives in `veritas/ledger.py` and is tested
+in `tests/test_ledger.py`; the full paid path is in `tests/test_money_path.py`.
 """
 
 import base64
@@ -11,7 +19,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from veritas.replay import SpentNonceStore, extract_nonce
+from veritas.x402 import extract_nonce
 
 NONCE = "0x" + "ab" * 32
 OTHER_NONCE = "0x" + "cd" * 32
@@ -53,59 +61,6 @@ def test_extract_nonce_returns_none_when_absent_or_malformed(payload):
     assert extract_nonce(payload) is None
 
 
-# -- the store --------------------------------------------------------------
-
-
-def test_first_claim_succeeds_second_is_refused(tmp_path):
-    store = SpentNonceStore(tmp_path)
-    first = store.claim(NONCE)
-    assert first.claimed and first.nonce == NONCE
-    second = store.claim(NONCE)
-    assert not second.claimed
-    assert second.reason == "payment_nonce_already_spent"
-
-
-def test_distinct_nonces_both_claim(tmp_path):
-    store = SpentNonceStore(tmp_path)
-    assert store.claim(NONCE).claimed
-    assert store.claim(OTHER_NONCE).claimed
-
-
-def test_claims_survive_restart(tmp_path):
-    assert SpentNonceStore(tmp_path).claim(NONCE).claimed
-    # A restarted instance must still refuse the nonce, or a crash-loop
-    # becomes a way to replay paid work.
-    assert not SpentNonceStore(tmp_path).claim(NONCE).claimed
-
-
-def test_casing_cannot_evade_the_guard(tmp_path):
-    store = SpentNonceStore(tmp_path)
-    assert store.claim(NONCE).claimed
-    assert not store.claim("0x" + "AB" * 32).claimed
-
-
-def test_missing_and_malformed_nonces_are_named(tmp_path):
-    store = SpentNonceStore(tmp_path)
-    assert store.claim(None).reason == "payment_nonce_missing"
-    assert store.claim("0xzz").reason == "payment_nonce_malformed"
-
-
-def test_unusable_store_fails_closed(tmp_path):
-    blocked = tmp_path / "blocked"
-    blocked.write_text("a regular file where the store directory should be")
-    result = SpentNonceStore(blocked).claim(NONCE)
-    assert not result.claimed
-    assert result.reason.startswith("replay_store_unavailable")
-
-
-def test_torn_final_line_does_not_discard_earlier_nonces(tmp_path):
-    store = SpentNonceStore(tmp_path)
-    store.claim(NONCE)
-    with store.path.open("a") as fh:
-        fh.write('{"nonce": "0xdeadbeef')  # truncated write
-    assert not store.claim(NONCE).claimed, "earlier nonces must survive a torn line"
-
-
 # -- end to end through the HTTP surface ------------------------------------
 
 
@@ -119,7 +74,10 @@ def live_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_NETWORK", "eip155:8453")
     monkeypatch.setenv("VERITAS_FACILITATOR", "https://facilitator.test")
 
+    import importlib
+
     import veritas.server as server
+    importlib.reload(server)
     from veritas.facilitator import SettlementResult, VerificationResult
 
     class _AcceptingFacilitator:
@@ -130,7 +88,6 @@ def live_client(tmp_path, monkeypatch):
             return SettlementResult(True, transaction="0xtx", network="eip155:8453")
 
     monkeypatch.setattr(server, "get_facilitator", lambda *a, **k: _AcceptingFacilitator())
-    monkeypatch.setattr(server, "nonces", SpentNonceStore(tmp_path))
 
     calls = {"n": 0}
     real_run = server.run_research
@@ -144,7 +101,8 @@ def live_client(tmp_path, monkeypatch):
 
 
 def test_resubmitted_header_does_the_work_once(live_client):
-    """Roadmap 0.4 acceptance, stated exactly."""
+    """Roadmap 0.4 acceptance, stated exactly: the retrieval pass we are paid
+    for once must run once, however many times the header is submitted."""
     client, calls = live_client
     body = {"query": "What is the x402 protocol?"}
     headers = {"X-PAYMENT": _header()}
@@ -154,20 +112,20 @@ def test_resubmitted_header_does_the_work_once(live_client):
     assert calls["n"] == 1
 
     second = client.post("/v1/research", json=body, headers=headers)
-    assert second.status_code == 409
-    assert second.json()["error"] == "payment_nonce_already_spent"
     assert calls["n"] == 1, "the retrieval pass must not run a second time"
+    # The buyer paid; they get the deliverable rather than a 409 (gap G6).
+    assert second.status_code == 200
+    assert second.json()["payment"]["replayed"] is True
 
 
-def test_fresh_nonce_is_served_after_a_replay_attempt(live_client):
+def test_fresh_nonce_is_served_after_a_replay(live_client):
     client, calls = live_client
     body = {"query": "What is the x402 protocol?"}
 
     assert client.post("/v1/research", json=body,
                        headers={"X-PAYMENT": _header()}).status_code == 200
     assert client.post("/v1/research", json=body,
-                       headers={"X-PAYMENT": _header()}).status_code == 409
-    # The guard must reject replays without wedging the endpoint.
+                       headers={"X-PAYMENT": _header()}).status_code == 200
     third = client.post("/v1/research", json=body,
                         headers={"X-PAYMENT": _header(OTHER_NONCE)})
     assert third.status_code == 200
@@ -181,4 +139,21 @@ def test_payment_without_a_nonce_is_refused_before_work(live_client):
                            headers={"X-PAYMENT": naked})
     assert response.status_code == 409
     assert response.json()["error"] == "payment_nonce_missing"
+    assert calls["n"] == 0
+
+
+def test_an_unusable_ledger_refuses_rather_than_waving_through(live_client, monkeypatch):
+    """Fail closed: an unavailable guard must not silently become no guard."""
+    client, calls = live_client
+    import veritas.server as server
+    from veritas.ledger import ClaimResult
+
+    monkeypatch.setattr(
+        server.ledger, "claim",
+        lambda *a, **k: ClaimResult(False, "replay_store_unavailable"),
+    )
+    response = client.post("/v1/research", json={"query": "What is the x402 protocol?"},
+                           headers={"X-PAYMENT": _header()})
+    assert response.status_code == 503
+    assert response.json()["error"] == "replay_protection_unavailable"
     assert calls["n"] == 0

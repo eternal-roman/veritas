@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.1"
+CONSTITUTION_VERSION = "2.2"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -157,11 +157,15 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     ),
     _article(
         "A11",
-        "Reputation is not self-attested",
-        "Trust is derived from recorded behaviour only, and below the sample floor the service reports UNPROVEN rather than a manufactured score.",
+        "Reputation is earned, not manufactured",
+        "Trust is derived from recorded paid behaviour only; free traffic cannot move it, below the sample floor the service reports UNPROVEN rather than a manufactured score, and the score states that it is the seller's own report.",
         "venue",
         "L1",
-        [{"kind": "test", "pointer": "tests/test_api.py::test_trust_is_unproven_without_data"}],
+        [
+            {"kind": "test", "pointer": "tests/test_api.py::test_trust_is_unproven_without_data"},
+            {"kind": "test", "pointer": "tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score"},
+            {"kind": "test", "pointer": "tests/test_durability.py::test_the_score_states_that_it_counts_paid_requests_only"},
+        ],
     ),
     _article(
         "A12",
@@ -429,13 +433,33 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G7",
         "article": "A11",
-        "status": "open",
+        "status": "closed",
         "description": (
-            "The trust score is derived from an outcome log that records every request "
-            "including unpaid ones, and the endpoint is unauthenticated, so anyone can "
+            "The trust score was derived from an outcome log that recorded every request "
+            "including unpaid ones, and the endpoint is unauthenticated, so anyone could "
             "move the service's own reputation signal with free traffic."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score",
+        "resolution": (
+            "Closed in constitution 2.2: only paid requests are scored "
+            "(tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score). "
+            "Free outcomes are still counted and reported in the basis — they are real "
+            "behaviour — but cannot manufacture a reputation. An instance nobody has paid "
+            "reports UNPROVEN, which is the correct answer. This closes the manipulation "
+            "route only; the score remains self-reported, which is G10."
+        ),
+    },
+    {
+        "id": "G10",
+        "article": "A11",
+        "status": "open",
+        "description": (
+            "The trust score is computed by the graded party from its own records. "
+            "Nothing external attests to it, and a seller that simply logged favourable "
+            "outcomes would produce an identical document. Restricting scoring to paid "
+            "traffic (G7) raises the cost of manipulation; it does not make the number "
+            "verifiable by the buyer relying on it."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported",
     },
     {
         "id": "G8",

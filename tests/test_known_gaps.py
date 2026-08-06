@@ -11,10 +11,7 @@ the test.
 
 from __future__ import annotations
 
-import importlib
 from pathlib import Path
-
-from fastapi.testclient import TestClient
 
 
 def test_known_gap_settlements_are_never_checked_against_the_chain():
@@ -33,28 +30,22 @@ def test_known_gap_settlements_are_never_checked_against_the_chain():
     assert not hasattr(ledger_module.Ledger, "reconcile_against_chain")
 
 
-def test_known_gap_free_traffic_moves_the_trust_score(tmp_path, monkeypatch):
-    """G7 (defect T1). `/v1/trust` is derived from an outcome log that records
-    every request including unpaid ones, and the endpoint is unauthenticated,
-    so anyone can move the service's own reputation signal for free.
+def test_known_gap_the_trust_score_is_self_reported():
+    """G10. `/v1/trust` is computed by the graded party from its own records.
+    A seller that simply logged favourable outcomes would produce an identical
+    document, and nothing external attests to it. Restricting scoring to paid
+    traffic (G7) raised the cost of manipulation; it did not make the number
+    verifiable by the buyer relying on it.
 
-    If this test fails, the gap has been fixed — close G7 and delete this test.
+    If this test fails, the gap has been fixed — close G10 and delete this
+    test.
     """
-    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
-    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    from veritas import trust
 
-    import veritas.server as server
-    importlib.reload(server)
-    client = TestClient(server.app)
-
-    assert client.get("/v1/trust").json()["recommendation"] == "UNPROVEN"
-
-    from veritas.trust import MIN_SAMPLES_FOR_SCORE
-    for _ in range(MIN_SAMPLES_FOR_SCORE):
-        client.post("/v1/research", json={"query": "What is x402?"})
-
-    scored = client.get("/v1/trust").json()
-    assert scored["recommendation"] != "UNPROVEN", (
-        "free traffic no longer establishes a trust score"
-    )
-    assert scored["overall"] is not None
+    source = Path(trust.__file__).read_text()
+    # An externally attested score would have to carry a signature from
+    # someone other than us, or cite a third-party attestation it verified.
+    assert "verify_attestation" not in source
+    assert not hasattr(trust, "verify_external_attestation")
+    # And the served score says plainly that it is our own word.
+    assert "self_reported" in source

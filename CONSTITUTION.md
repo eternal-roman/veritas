@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.1.** This file
+**The normative source is `veritas/constitution.py`, version 2.2.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -111,11 +111,17 @@ The price is disclosed before any work as a spec-shaped 402 challenge with exact
 Enforced by `tests/test_payment.py::test_challenge_is_spec_shaped`
 and `tests/test_api.py::test_missing_payment_returns_spec_shaped_402`.
 
-### A11 — Reputation is not self-attested (L1)
+### A11 — Reputation is earned, not manufactured (L1)
 
-Trust is derived from recorded behaviour only, and below the sample floor the service reports UNPROVEN rather than a manufactured score.
+Trust is derived from recorded paid behaviour only; free traffic cannot move it, below the sample floor the service reports UNPROVEN rather than a manufactured score, and the score states that it is the seller's own report.
 
-Enforced by `tests/test_api.py::test_trust_is_unproven_without_data`.
+Enforced by `tests/test_api.py::test_trust_is_unproven_without_data`,
+`tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score`,
+and `tests/test_durability.py::test_the_score_states_that_it_counts_paid_requests_only`.
+`/v1/trust` is free and unauthenticated, so counting unpaid requests let anyone
+manufacture the service's reputation at no cost. Free outcomes are still
+recorded and reported in the basis — they are real behaviour — and simply do
+not score. The number remains the seller's own report: see G10.
 
 ### A12 — Refusal rights and independent verification (L1)
 
@@ -303,13 +309,27 @@ do not share the ledger, so a replay routed to the other one still fails; and a
 settlement whose facilitator never answers stays indeterminate until
 reconciliation, which G9 tracks.
 
-### G7 — The trust score is movable with free traffic (open, article A11)
+### G7 — The trust score is movable with free traffic (closed, article A11)
 
-`/v1/trust` derives from an outcome log that records every request including
-unpaid ones, and the endpoint is unauthenticated, so anyone can move the
+`/v1/trust` derived from an outcome log that recorded every request including
+unpaid ones, and the endpoint is unauthenticated, so anyone could move the
 service's own reputation signal at no cost.
 
-Witness: `tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score`.
+Closed in constitution 2.2: only paid requests are scored. Free outcomes are
+still counted and reported in the basis but cannot manufacture a reputation,
+and an instance nobody has paid reports UNPROVEN — the correct answer. This
+closes the manipulation route only; the score is still self-reported, which
+is G10.
+
+### G10 — The trust score is self-reported (open, article A11)
+
+The score is computed by the graded party from its own records. Nothing
+external attests to it, and a seller that simply logged favourable outcomes
+would produce an identical document. Restricting scoring to paid traffic (G7)
+raises the cost of manipulation; it does not make the number verifiable by the
+buyer relying on it.
+
+Witness: `tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported`.
 
 ### G8 — No financial ledger (closed, article A13)
 

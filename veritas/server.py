@@ -607,13 +607,18 @@ def _research(req: ResearchRequest, payment_header: str | None):
             request_id, status=result["status"], billable=False,
             custody_root=result.get("custody_root"), query=req.query, response=result,
         )
-        outcomes.record(result["status"], bool(result["custody_valid"]), False)
+        outcomes.record(result["status"], bool(result["custody_valid"]), False,
+                        paid=False)
         return JSONResponse(status_code=503, content=result)
 
     metrics.increment("veritas_research_total", {"status": result["status"]})
     record = store.save(result)
     result["custody_receipt"] = record
-    outcomes.record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
+    # Only paid traffic scores. /v1/trust is free and unauthenticated, so
+    # counting free requests would let anyone manufacture our reputation
+    # (constitution gap G7). Free outcomes are still recorded and reported.
+    outcomes.record(result["status"], bool(result["custody_valid"]),
+                    bool(result["billable"]), paid=cfg.require_payment)
 
     # Record what we produced BEFORE settlement is attempted, and fsync it. A
     # crash between the two then leaves a durable statement that we owe this

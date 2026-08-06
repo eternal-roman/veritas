@@ -105,6 +105,27 @@ def verify_chain_records(events: list[dict[str, Any]]) -> bool:
     return True
 
 
+def _atomic_write(path: Path, text: str) -> None:
+    """Write a receipt so a reader never sees a half-written one.
+
+    `write_text` truncates in place: a crash mid-write leaves a receipt that
+    parses as nothing, and the receipt is precisely the artifact a buyer
+    relies on once the response is gone. Write to a sibling temporary file,
+    fsync it, then rename — rename within a directory is atomic on POSIX, so
+    a reader sees the old complete file or the new complete file.
+    """
+    tmp = path.with_name(f".{path.name}.tmp")
+    try:
+        with tmp.open("w") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except OSError:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
 class CustodyStore:
     """Durable custody receipts.
 
@@ -130,7 +151,7 @@ class CustodyStore:
         try:
             self.base_dir.mkdir(parents=True, exist_ok=True)
             path = self.base_dir / f"{record['request_id']}.json"
-            path.write_text(json.dumps(record, indent=2))
+            _atomic_write(path, json.dumps(record, indent=2))
             record["persisted"] = True
         except OSError as exc:
             # Never fail a paid request because the disk is unavailable; report

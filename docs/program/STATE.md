@@ -48,12 +48,26 @@ committed and pushed survives. Update this file and push after every sub-step.
 > a caller-controlled path cannot forge metric lines. Tracing is still absent
 > and is not claimed.
 >
-> Next: **O.3** (store protocol — the `/v1/trust` O(n) rescan and non-atomic
-> receipt writes are the remaining O-criticals; the SQLite machinery already
-> exists in `veritas/ledger.py` to model it on), then **O.6** (retention;
-> 410 Gone ≠ 404), **O.7** (`.dockerignore` — the repo root can hold a
-> plaintext wallet passphrase — VOLUME, compose), **O.8** (supply chain).
-> **M7** (credits via SIWx) is still open and is the last of Phase M.
+> **O.3 landed in part** (O3, O7 closed; O10 retention still open). Trust is
+> now SQLite counters — one row however much the service has been used — and
+> custody receipts are written to a temp file, fsynced, and renamed, so a
+> reader never sees a truncated receipt.
+>
+> **Constitution 2.2 closes G7 and opens G10.** Only paid requests score:
+> `/v1/trust` is free and unauthenticated, so counting free traffic let anyone
+> manufacture our reputation. Free outcomes are still counted and reported in
+> the basis, and simply do not score; an instance nobody has paid reports
+> UNPROVEN, which is the right answer. G10 records what that does *not* fix —
+> the number is still computed by the graded party from its own records, and a
+> seller who logged only favourable outcomes would produce an identical
+> document.
+>
+> Next: **O.7** (`.dockerignore` — the repo root can hold a plaintext wallet
+> passphrase, so the container image is a live secret-leak risk; plus VOLUME
+> and compose), then **O.6** (retention; 410 Gone ≠ 404), **O.8** (supply
+> chain). **M7** (credits via SIWx) is the last of Phase M. After O, the
+> dogfooding cycles: Cycle 2 (paying buyer) is now runnable against a local
+> facilitator harness since the money path is complete.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -156,7 +170,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 ### Phase O — Operations
 - [x] O.1 Async handlers; research capped and shed rather than queued (O1)
 - [x] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
-- [ ] O.3 `veritas/store/` protocol with SQLite default (O3, O4, O7, O10)
+- [~] O.3 SQLite-backed trust counters and atomic receipt writes (O3, O4, O7). Retention/pruning (O10) still open — see O.6
 - [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
 - [ ] O.6 Retention/pruning; 410 Gone ≠ 404
@@ -206,17 +220,17 @@ Ids from the three audits. `open` until a test pins the fix.
 | R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | **closed** — `::test_replayed_authorization_returns_the_deliverable_it_paid_for`; the work still runs once (`::test_a_replay_does_not_run_the_work_again`). Bounded: single-instance ledger |
 | O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | **closed** — cheap handlers are `async def`; research runs in the threadpool behind a `BoundedSemaphore` that sheds with 503 `service_overloaded` (`tests/test_operations.py`) |
 | O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | **closed** — 256KB body cap, `max_length` on verify content, per-IP window limit that never touches `/health` or `/readyz` (`tests/test_operations.py`) |
-| O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | open |
+| O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | **closed** — SQLite counters, one row regardless of lifetime request count (`tests/test_durability.py::test_stats_are_counters_not_a_rescan`) |
 | O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
 | O5 | high | Relative runtime dir + cwd dependence → silent 503s | open |
 | O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
-| O7 | high | Receipt writes neither atomic nor fsynced | partial — the *financial* record is now transactional and fsynced (`synchronous=FULL`); `veritas/custody.py` receipt writes are still plain `write_text` (Phase O.3) |
+| O7 | high | Receipt writes neither atomic nor fsynced | **closed** — temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
 | O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
 | O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
-| T1 | high | Trust score manipulable by free traffic; refusal_health perverse | open — now **witnessed** by `tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score` (constitution gap G7) |
+| T1 | high | Trust score manipulable by free traffic; refusal_health perverse | **closed for manipulation** — only paid requests score; free outcomes are recorded and reported but never scored (gap G7 closed, G10 opened: the score is still self-reported) |
 
 ## Measured numbers
 

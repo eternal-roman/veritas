@@ -41,9 +41,13 @@ Design rules, and why:
   integer strings. Float accumulation is a rounding bug waiting for volume.
 - **Settlement attempts are append-only.** An indeterminate attempt later
   resolved is two facts, not one overwritten one.
-- **Paid path only.** Free-mode traffic writes nothing here; this is a
-  financial record, and unpaid requests are not revenue. Custody receipts
+- **The financial tables are paid-path only.** Free-mode traffic writes no
+  authorization, delivery or settlement row; those are a record of revenue,
+  and unpaid requests are not revenue. Custody receipts
   (`veritas/custody.py`) cover the audit trail for those.
+- **The `usage` table is not.** Cost is incurred whether or not anyone paid,
+  so metering covers every request. A COGS figure drawn only from paid
+  requests would understate what the operator spends.
 - **Single-instance scope, stated plainly.** SQLite on local disk guards one
   instance. Behind a load balancer two instances do not share it; that needs
   the shared state in roadmap 6.2. This is a real limit, not a closed problem.
@@ -58,11 +62,13 @@ import sqlite3
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from .x402 import NONCE_RE
+from .metering import UNPRICED, CostTable, Usage, cost_of
+from .x402 import NONCE_RE, USDC_ASSETS
 
 _DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DB_FILENAME = "ledger.sqlite3"
@@ -98,17 +104,18 @@ _OUTCOME_STATE = {
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS authorizations (
-    nonce       TEXT PRIMARY KEY,
-    request_id  TEXT NOT NULL UNIQUE,
-    state       TEXT NOT NULL,
-    network     TEXT,
-    asset       TEXT,
-    amount      TEXT,
-    pay_to      TEXT,
-    payer       TEXT,
-    price       TEXT,
-    claimed_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
+    nonce         TEXT PRIMARY KEY,
+    request_id    TEXT NOT NULL UNIQUE,
+    state         TEXT NOT NULL,
+    network       TEXT,
+    asset         TEXT,
+    amount        TEXT,
+    pay_to        TEXT,
+    payer         TEXT,
+    price         TEXT,
+    price_version TEXT,
+    claimed_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS deliveries (
     request_id   TEXT PRIMARY KEY,
@@ -134,6 +141,19 @@ CREATE TABLE IF NOT EXISTS settlements (
     recorded_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS settlements_by_request ON settlements(request_id);
+-- Usage is metered on EVERY request, paid or free: a retrieval pass costs the
+-- same whether or not anyone paid for it, so a COGS report drawn only from the
+-- paid tables above would understate what the operator spends.
+CREATE TABLE IF NOT EXISTS usage (
+    request_id     TEXT PRIMARY KEY,
+    status         TEXT NOT NULL,
+    billable       INTEGER NOT NULL,
+    paid           INTEGER NOT NULL,
+    provider_calls TEXT NOT NULL,
+    evidence_bytes INTEGER NOT NULL,
+    duration_ms    INTEGER NOT NULL,
+    recorded_at    TEXT NOT NULL
+);
 """
 
 
@@ -154,6 +174,7 @@ class Authorization:
     pay_to: str | None
     payer: str | None
     price: str | None
+    price_version: str | None
     claimed_at: str
     updated_at: str
 
@@ -226,6 +247,7 @@ class Ledger:
         pay_to: str | None = None,
         payer: str | None = None,
         price: str | None = None,
+        price_version: str | None = None,
     ) -> ClaimResult:
         """Claim an authorization for one request, before any work is done.
 
@@ -259,10 +281,10 @@ class Ledger:
                     )
                 conn.execute(
                     "INSERT INTO authorizations (nonce, request_id, state, network,"
-                    " asset, amount, pay_to, payer, price, claimed_at, updated_at)"
-                    " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    " asset, amount, pay_to, payer, price, price_version,"
+                    " claimed_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     (key, request_id, NonceState.CLAIMED.value, network, asset,
-                     amount, pay_to, payer, price, now, now),
+                     amount, pay_to, payer, price, price_version, now, now),
                 )
         except sqlite3.IntegrityError:
             # The nonce was free but the request_id was not. Server-generated
@@ -429,21 +451,118 @@ class Ledger:
             ).fetchall()
         finally:
             conn.close()
-        return [
-            {
-                "request_id": r["request_id"],
-                "nonce": r["nonce"],
-                "outcome": r["outcome"],
-                "transaction": r["transaction_hash"],
-                "network": r["network"],
-                "payer": r["payer"],
-                "amount": r["amount"],
-                "asset": r["asset"],
-                "reason": r["reason"],
-                "recorded_at": r["recorded_at"],
-            }
-            for r in rows
-        ]
+        return [_settlement_dict(r) for r in rows]
+
+    # -- metering -----------------------------------------------------------
+
+    def record_usage(self, usage: Usage) -> bool:
+        """Record what one request consumed. Never raises: a metering failure
+        must not fail a request the buyer paid for."""
+        try:
+            conn = self._connect()
+        except LedgerUnavailable:
+            return False
+        try:
+            with conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO usage (request_id, status, billable,"
+                    " paid, provider_calls, evidence_bytes, duration_ms, recorded_at)"
+                    " VALUES (?,?,?,?,?,?,?,?)",
+                    (usage.request_id, usage.status, int(bool(usage.billable)),
+                     int(bool(usage.paid)),
+                     json.dumps(usage.provider_calls, separators=(",", ":")),
+                     int(usage.evidence_bytes), int(usage.duration_ms), _now()),
+                )
+        except (sqlite3.Error, OSError):
+            return False
+        finally:
+            conn.close()
+        return True
+
+    def usage_summary(self, costs: CostTable | None = None) -> dict[str, Any]:
+        """What was consumed, and what it cost where a cost is configured.
+
+        `cost_micros` is UNPRICED when any provider that was called has no
+        configured price: charging only for the priced subset would understate
+        cost while looking like a complete figure.
+        """
+        costs = CostTable.from_env() if costs is None else costs
+        try:
+            conn = self._connect()
+        except LedgerUnavailable:
+            return {"error": "ledger_unavailable"}
+        try:
+            rows = conn.execute("SELECT * FROM usage").fetchall()
+        finally:
+            conn.close()
+
+        calls: Counter[str] = Counter()
+        evidence_bytes = duration_ms = paid = billable = 0
+        for row in rows:
+            try:
+                per_request = json.loads(row["provider_calls"])
+            except json.JSONDecodeError:
+                per_request = {}
+            calls.update({k: int(v) for k, v in per_request.items()})
+            evidence_bytes += row["evidence_bytes"]
+            duration_ms += row["duration_ms"]
+            paid += bool(row["paid"])
+            billable += bool(row["billable"])
+
+        cost_micros, unpriced = cost_of(dict(calls), costs)
+        return {
+            "requests": len(rows),
+            "paid_requests": paid,
+            "billable_requests": billable,
+            "provider_calls": dict(sorted(calls.items())),
+            "evidence_bytes": evidence_bytes,
+            "duration_ms_total": duration_ms,
+            "cost_micros": cost_micros,
+            "unpriced_providers": unpriced,
+            "cost_table_rejected": list(costs.rejected),
+        }
+
+    def economics(self, costs: CostTable | None = None) -> dict[str, Any]:
+        """Revenue, cost and margin in one report, in one unit.
+
+        Revenue is converted from per-asset atomic units to micro-USD only
+        where the asset's decimals are known and the conversion is exact; any
+        asset that fails either test is listed in `unconvertible_assets` and
+        left out of the total rather than rounded into it. Margin is withheld
+        entirely whenever either side is incomplete — a margin computed over a
+        partial cost base reads as a measurement and is not one.
+        """
+        costs = CostTable.from_env() if costs is None else costs
+        financial = self.summary()
+        usage = self.usage_summary(costs)
+
+        revenue_micros = 0
+        unconvertible: list[str] = []
+        for key, atomic in financial.get("settled_amounts", {}).items():
+            micros = _atomic_to_micros(key, atomic)
+            if micros is None:
+                unconvertible.append(key)
+                continue
+            revenue_micros += micros
+        revenue: int | None = UNPRICED if unconvertible else revenue_micros
+
+        cost_micros = usage["cost_micros"]
+        margin = (
+            revenue - cost_micros
+            if revenue is not UNPRICED and cost_micros is not UNPRICED
+            else UNPRICED
+        )
+        return {
+            "revenue_micros": revenue,
+            "cost_micros": cost_micros,
+            "margin_micros": margin,
+            "settled_amounts": financial.get("settled_amounts", {}),
+            "unconvertible_assets": unconvertible,
+            "unpriced_providers": usage["unpriced_providers"],
+            "cost_table_rejected": usage["cost_table_rejected"],
+            "financial": financial,
+            "usage": usage,
+        }
 
     # -- reconciliation -----------------------------------------------------
 
@@ -461,6 +580,48 @@ class Ledger:
         finally:
             conn.close()
         return [Authorization._from_row(r) for r in rows]
+
+    def indeterminate(self) -> list[dict[str, Any]]:
+        """Settlements we never got an answer about: exposure, not revenue.
+
+        The authorization is still in `indeterminate`, so this is the live set
+        — an attempt later resolved to `settled` drops out of it.
+        """
+        return self._query_settlements(
+            "SELECT s.* FROM settlements s"
+            " JOIN authorizations a ON a.request_id = s.request_id"
+            " WHERE a.state = ? AND s.outcome = 'indeterminate' ORDER BY s.id",
+            (NonceState.INDETERMINATE.value,),
+        )
+
+    def settled_without_transaction(self) -> list[dict[str, Any]]:
+        """Successes a facilitator reported with no transaction reference.
+
+        Such an entry proves nothing and must not be counted as revenue on the
+        facilitator's word alone.
+        """
+        return self._query_settlements(
+            "SELECT s.* FROM settlements s"
+            " JOIN authorizations a ON a.request_id = s.request_id"
+            " WHERE a.state = ? AND s.outcome = 'settled'"
+            " AND (s.transaction_hash IS NULL OR s.transaction_hash = '')"
+            " ORDER BY s.id",
+            (NonceState.SETTLED.value,),
+        )
+
+    def _query_settlements(self, sql: str, params: tuple) -> list[dict[str, Any]]:
+        """Run a complete, literal settlements query. Every caller passes a
+        whole statement — no fragment is ever concatenated — so there is no
+        path by which caller data reaches the SQL text."""
+        try:
+            conn = self._connect()
+        except LedgerUnavailable:
+            return []
+        try:
+            rows = conn.execute(sql, params).fetchall()
+        finally:
+            conn.close()
+        return [_settlement_dict(r) for r in rows]
 
     def summary(self) -> dict[str, Any]:
         """Revenue and exposure, answerable from the ledger alone.
@@ -506,6 +667,46 @@ class Ledger:
             "settled_amounts": {k: str(v) for k, v in sorted(amounts.items())},
             "states": dict(states),
         }
+
+
+def _settlement_dict(row: sqlite3.Row) -> dict[str, Any]:
+    """One settlement attempt as plain data. `transaction_hash` is renamed to
+    `transaction` because `transaction` is a SQL keyword in the column name
+    but the wire and the facilitator both call it that."""
+    return {
+        "request_id": row["request_id"],
+        "nonce": row["nonce"],
+        "outcome": row["outcome"],
+        "transaction": row["transaction_hash"],
+        "network": row["network"],
+        "payer": row["payer"],
+        "amount": row["amount"],
+        "asset": row["asset"],
+        "reason": row["reason"],
+        "recorded_at": row["recorded_at"],
+    }
+
+
+def _atomic_to_micros(network_and_asset: str, atomic: str) -> int | None:
+    """Convert `network/asset` atomic units to micro-USD, or None if we can't.
+
+    Atomic units are per-asset: summing them across assets produces a number
+    with no unit. Returns None — never an approximation — when the asset's
+    decimals are unknown or when the conversion would need rounding, so the
+    caller can report the asset as unconvertible instead of folding a guess
+    into a revenue total.
+    """
+    network, _, _asset = network_and_asset.partition("/")
+    entry = USDC_ASSETS.get(network)
+    if entry is None:
+        return None
+    try:
+        value = Decimal(atomic).scaleb(6 - int(entry["decimals"]))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+    if value != value.to_integral_value():
+        return None
+    return int(value)
 
 
 def _query_hash(query: str) -> str:

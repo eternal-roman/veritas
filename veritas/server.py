@@ -31,8 +31,10 @@ from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
 from veritas.ledger import REDELIVERABLE_STATES, Ledger, NonceState
+from veritas.metering import Usage
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
+from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
 from veritas.trust import OutcomeLog, score_service
 from veritas.x402 import (
     PriceError,
@@ -123,7 +125,11 @@ def health():
 
 @app.get("/v1/payment-config")
 def payment_config():
-    return get_payment_config().as_dict()
+    cfg = get_payment_config()
+    # The human price alone cannot be checked against a settlement; the atomic
+    # amount and the pricing version can, and the version is what a revenue
+    # report spanning a reprice needs.
+    return {**cfg.as_dict(), "pricing": current_price_point(cfg.price, cfg.network)}
 
 
 def _challenge(cfg, error: str | None = None) -> JSONResponse:
@@ -141,6 +147,30 @@ def _payment_response_header(payment: dict[str, Any]) -> dict[str, str]:
     return {"X-PAYMENT-RESPONSE": base64.b64encode(
         json.dumps(payment).encode()
     ).decode()}
+
+
+def _meter(result: dict[str, Any], request_id: str, started: float, *, paid: bool) -> None:
+    """Record what this request consumed, paid or not.
+
+    A retrieval pass costs the same whether or not anyone paid for it, so cost
+    is metered on every request while the financial tables stay paid-only.
+    Provider *attempts* are counted rather than successes: a search API bills
+    the request, not the result. Metering never raises — a bookkeeping failure
+    must not fail a request the buyer paid for.
+    """
+    retrieval = result.get("retrieval") or {}
+    calls: dict[str, int] = {}
+    for provider in retrieval.get("providers_attempted") or []:
+        calls[provider] = calls.get(provider, 0) + 1
+    ledger.record_usage(Usage(
+        request_id=request_id,
+        status=result.get("status", "unknown"),
+        billable=bool(result.get("billable")),
+        paid=paid,
+        provider_calls=calls,
+        evidence_bytes=sum(len(e.get("excerpt") or "") for e in result.get("evidence", [])),
+        duration_ms=int((time.monotonic() - started) * 1000),
+    ))
 
 
 def _settle_and_respond(
@@ -348,13 +378,16 @@ def research(req: ResearchRequest, request: Request):
             pay_to=requirements_dict.get("payTo"),
             payer=verification.payer,
             price=cfg.price,
+            price_version=PRICE_TABLE_VERSION,
         )
         if not claim.claimed:
             return _resubmitted_authorization(
                 claim, cfg, facilitator, payment_payload, requirements_dict,
             )
 
+    started = time.monotonic()
     result = run_research(req.query, max_results=req.max_results, request_id=request_id)
+    _meter(result, request_id, started, paid=cfg.require_payment)
 
     # The window may have closed while we worked. Settling now would present an
     # expired authorization; the buyer is not charged and is told to retry with

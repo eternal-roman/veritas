@@ -15,11 +15,24 @@ committed and pushed survives. Update this file and push after every sub-step.
 > superseded — two nonce stores would have been two sources of truth about
 > whether a payment was used.
 >
-> Next: **M5** (`veritas-ops` CLI over `Ledger.summary()`/`awaiting_settlement()`
-> — the reporting surface exists, the CLI does not) and **M6** (metering: COGS
-> per request, versioned pricing table with `effective_from` recorded per ledger
-> entry). Then **M7** or straight to **Phase O**. Note the ledger deliberately
-> records the paid path only; free traffic is not revenue.
+> **M5 and M6 also landed.** `veritas/metering.py` counts provider calls,
+> evidence bytes and wall time on every request (free ones included — cost is
+> incurred regardless of payment); `veritas/pricing.py` stamps
+> `PRICE_TABLE_VERSION` on every authorization so revenue across a reprice
+> stays explainable; `veritas/ops_cli.py` (`veritas-ops`) reports revenue,
+> owed, reconcile, usage, pricing and one authorization end-to-end, as JSON.
+>
+> **The default cost table is empty and that is deliberate.** No provider's
+> list price is verifiable from this sandbox, so `CostTable` ships with nothing
+> in it, an unpriced provider is reported as unpriced, and margin is withheld
+> rather than computed over a partial cost base. Operators supply real numbers
+> via `VERITAS_PROVIDER_COST_MICROS`.
+>
+> Next: **M7** (credits via SIWx; refunds as credits) or straight to
+> **Phase O**, which is the larger risk — sync handlers with 40 threadpool
+> slots and no rate limiting mean one slow retrieval stalls `/health`. My
+> recommendation is Phase O first: M7 adds a surface, O keeps the ones that
+> exist standing up.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -115,8 +128,8 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] M2 Nonce state machine; idempotent replay of a completed paid request (R11)
 - [x] M3 `request_id` allocated in the handler and recorded against the claim (R6)
 - [x] M4 Indeterminate settlement distinguished from failure (R7)
-- [ ] M5 Reconciliation + revenue/COGS/margin reports; `veritas-ops` CLI
-- [ ] M6 Metering (COGS per request); versioned pricing table
+- [x] M5 Reconciliation + revenue/COGS/margin reports; `veritas-ops` CLI
+- [x] M6 Metering (COGS per request, free traffic included); versioned pricing stamped per entry
 - [ ] M7 Credits via SIWx; refunds as credits, documented
 
 ### Phase O — Operations

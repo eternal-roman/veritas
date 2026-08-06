@@ -17,6 +17,8 @@ python -m build && twine check dist/*    # packaging — CI builds and installs 
 veritas-server                           # run the service (free mode by default)
 veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve
 veritas-mcp                              # serve the engine as local MCP tools (stdio)
+veritas-ops revenue                      # operator reports from the ledger (JSON)
+veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
 ```
 
 Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
@@ -63,6 +65,14 @@ package — CI's package job asserts this.
 9. **Version is single-sourced.** `veritas.__version__` feeds pyproject
    (dynamic), the server, the identity document, and the retrieval user-agent.
    Bump it in exactly one place: `veritas/__init__.py`.
+10. **The money path records itself before it acts.** `veritas.ledger` claims
+   the authorization before work, writes the delivery (fsynced) before
+   settlement is attempted, and appends every settlement attempt. A settlement
+   we never heard back about is `indeterminate`, never `failed`.
+11. **Costs are counted, never invented.** `veritas.metering` records provider
+   calls, bytes and wall time on every request; money is computed only for
+   providers an operator has priced, and an unpriced provider makes the report
+   say so instead of assuming zero.
 
 ## Conventions
 
@@ -101,6 +111,10 @@ package — CI's package job asserts this.
   tools over stdio (free-mode local engine; no payment path over MCP).
 - Self-provisioning: `veritas-agent up` bootstraps config and a local wallet
   and serves; funding the wallet and public TLS deployment remain external.
+- Operations: `veritas-ops` answers revenue, what is owed, what needs
+  attention, and what serving consumed — all from `veritas/ledger.py`, all as
+  JSON. `reconcile` compares this instance's records against each other only
+  and says so: nothing is checked against the chain (constitution gap G9).
 
 ## Current state, honestly
 

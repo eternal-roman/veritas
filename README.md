@@ -67,6 +67,8 @@ python -c "from veritas.pipeline import run_research; print(run_research('What i
 
 ```bash
 veritas-agent up                            # zero-touch: config + wallet + serve
+veritas-ops revenue                         # what was earned, cost and margin (JSON)
+veritas-ops reconcile                       # what needs attention (records only, not the chain)
 veritas-server                              # server only; VERITAS_HOST / VERITAS_PORT to bind
 # or equivalently
 python -m uvicorn veritas.server:app --host 0.0.0.0 --port 8000

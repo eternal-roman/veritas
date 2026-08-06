@@ -5,6 +5,27 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
+> **Do this next: O.6 — retention and `410 Gone`.** Receipts, ledger rows and
+> trust counters grow without bound and nothing prunes them, so disk is the
+> first thing that fails in production. A pruned receipt must return **410
+> Gone, not 404**: "we deleted this" and "this never existed" are different
+> answers, and only one of them lets a buyer trust the receipt endpoint.
+> Model it on `veritas/ledger.py` — the SQLite machinery is already there.
+>
+> Then, in order: **O.8** (supply chain — lockfile with hashes, SHA-pinned
+> actions, SBOM), **M7** (credits via SIWx; the last of Phase M), then
+> **Phase N0** (the notary product, now that the substrate under it is sound).
+>
+> Blocked on things this sandbox cannot provide, not on work: **G9**
+> (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
+> (official SDK, `/supported` preflight, Bazaar discovery) need facilitator
+> egress; **cycle 1** is gated on N0 and **cycle 5** on the standalone verifier.
+>
+> Nothing has settled on-chain. That is still the single largest unproven
+> claim in this repository, and no amount of local green changes it.
+
+## Progress log
+
 > **M1–M4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite
 > (WAL, `synchronous=FULL`) record of authorizations, deliveries and settlement
 > attempts. The paid path now runs verify → deadline → claim(nonce,

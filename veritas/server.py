@@ -9,6 +9,7 @@ Run it with the installed console script or uvicorn directly:
 from __future__ import annotations
 
 import base64
+import hmac
 import json
 import os
 import threading
@@ -35,6 +36,7 @@ from veritas.hashing import verify_content_hash
 from veritas.identity import build_identity
 from veritas.ledger import REDELIVERABLE_STATES, Ledger, NonceState
 from veritas.metering import Usage
+from veritas.observability import Metrics, configure_logging, log_request
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
@@ -129,6 +131,35 @@ UNMETERED_PATHS = frozenset({"/health", "/readyz"})
 _rate_lock = threading.Lock()
 _rate_buckets: dict[str, deque[float]] = {}
 
+# --- Observability ----------------------------------------------------------
+#
+# Counters are revenue-adjacent (`veritas_settlements_total`), so /metrics does
+# not exist until an operator sets a token. Access logs carry method, path,
+# status and duration — never the query, never the X-PAYMENT header.
+metrics = Metrics()
+METRICS_TOKEN = (os.getenv("VERITAS_METRICS_TOKEN") or "").strip()
+METRICS_ENABLED = bool(METRICS_TOKEN)
+
+
+def _presented_metrics_token(request: Request) -> str:
+    return (request.headers.get("Authorization") or "").removeprefix("Bearer ").strip()
+
+
+def _is_operator_scrape(request: Request) -> bool:
+    """An authenticated metrics scrape is not charged against the caller budget.
+
+    A scraper polling every few seconds shares a source address with nothing
+    else, but it would otherwise consume a slice of the same per-caller budget
+    real traffic uses, and lose visibility exactly when traffic is heaviest.
+    The exemption requires the token: an unauthenticated `/metrics` hammer is
+    still rate limited, so the 401 path is not a free endpoint.
+    """
+    return (
+        METRICS_ENABLED
+        and request.url.path == "/metrics"
+        and hmac.compare_digest(_presented_metrics_token(request), METRICS_TOKEN)
+    )
+
 
 def _rate_limited(caller: str) -> bool:
     if RATE_LIMIT_PER_MINUTE <= 0:
@@ -152,17 +183,28 @@ def _rate_limited(caller: str) -> bool:
 
 @app.middleware("http")
 async def enforce_limits(request: Request, call_next):
-    """Bound body size and caller rate before a handler ever runs."""
-    if request.url.path not in UNMETERED_PATHS:
+    """Bound body size and caller rate, then record the request.
+
+    The log line and the counters are deliberately built from the request
+    *envelope* only — method, path, status, duration. The body never reaches
+    them: a buyer's query is their business, it is already erasable from the
+    custody receipt, and a log file is the one place that erasure would not
+    reach.
+    """
+    started = time.monotonic()
+    path = request.url.path
+    if path not in UNMETERED_PATHS:
         declared = request.headers.get("content-length")
         if declared and declared.isdigit() and int(declared) > MAX_BODY_BYTES:
-            return JSONResponse(status_code=413, content=error_envelope(
+            metrics.increment("veritas_request_too_large_total")
+            return _observed(JSONResponse(status_code=413, content=error_envelope(
                 ErrorCode.REQUEST_TOO_LARGE,
                 f"body exceeds {MAX_BODY_BYTES} bytes",
-            ))
+            )), request, started)
         caller = request.client.host if request.client else "unknown"
-        if _rate_limited(caller):
-            return JSONResponse(
+        if not _is_operator_scrape(request) and _rate_limited(caller):
+            metrics.increment("veritas_rate_limited_total")
+            return _observed(JSONResponse(
                 status_code=429,
                 content=error_envelope(
                     ErrorCode.RATE_LIMITED,
@@ -170,8 +212,27 @@ async def enforce_limits(request: Request, call_next):
                     f"{RATE_LIMIT_WINDOW_SECONDS}s from this caller",
                 ),
                 headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
-            )
-    return await call_next(request)
+            ), request, started)
+    return _observed(await call_next(request), request, started)
+
+
+def _observed(response, request: Request, started: float):
+    """Count and log one request from its envelope. Never touches the body."""
+    duration_ms = int((time.monotonic() - started) * 1000)
+    path = request.url.path
+    metrics.increment("veritas_requests_total", {
+        "path": path, "status": str(response.status_code),
+    })
+    if path == RESOURCE_PATH:
+        metrics.increment("veritas_research_duration_ms_sum", by=duration_ms)
+        metrics.increment("veritas_research_duration_ms_count")
+    log_request(
+        method=request.method,
+        path=path,
+        status=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
 
 
 @app.exception_handler(RequestValidationError)
@@ -307,6 +368,7 @@ def _settle_and_respond(
     """
     settlement = facilitator.settle(payment_payload, requirements_dict)
     outcome = settlement.outcome
+    metrics.increment("veritas_settlements_total", {"outcome": outcome})
     ledger.record_settlement(
         request_id,
         outcome=outcome,
@@ -419,6 +481,7 @@ async def research(req: ResearchRequest, request: Request):
     object crosses into the worker thread.
     """
     if not research_slots.acquire(blocking=False):
+        metrics.increment("veritas_research_shed_total")
         return JSONResponse(
             status_code=503,
             content=error_envelope(
@@ -547,6 +610,7 @@ def _research(req: ResearchRequest, payment_header: str | None):
         outcomes.record(result["status"], bool(result["custody_valid"]), False)
         return JSONResponse(status_code=503, content=result)
 
+    metrics.increment("veritas_research_total", {"status": result["status"]})
     record = store.save(result)
     result["custody_receipt"] = record
     outcomes.record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
@@ -679,6 +743,9 @@ async def well_known():
             "schema": "/v1/schema",
             "openapi": "/openapi.json",
             "llms": "/llms.txt",
+            # Only advertised when it exists: absent, the endpoint 404s and
+            # its absence should not be a thing to probe for.
+            **({"metrics": "/metrics"} if METRICS_ENABLED else {}),
         },
     }
     if cfg.is_live_ready():
@@ -693,6 +760,29 @@ async def well_known():
     return body
 
 
+@app.get("/metrics")
+async def metrics_endpoint(request: Request):
+    """Prometheus counters, behind a token because they include revenue.
+
+    `veritas_settlements_total` is a revenue figure. Serving that unpaid and
+    unauthenticated would publish a competitor's view of the business, which
+    would be a strange default for a service whose product is carefulness
+    about what it discloses. Absent a configured token the endpoint does not
+    exist at all — 404, not 401, so its absence leaks nothing either.
+    """
+    if not METRICS_ENABLED:
+        return JSONResponse(status_code=404, content=error_envelope(
+            ErrorCode.RECEIPT_NOT_FOUND, "metrics are not enabled on this instance",
+        ))
+    if not hmac.compare_digest(_presented_metrics_token(request), METRICS_TOKEN):
+        return JSONResponse(status_code=401, content=error_envelope(
+            ErrorCode.INVALID_REQUEST, "metrics require the configured bearer token",
+        ))
+    return PlainTextResponse(
+        metrics.render(), media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
+
+
 @app.get("/llms.txt")
 async def llms_txt():
     """Agent-readable discovery index; the repo-root llms.txt mirrors this."""
@@ -703,6 +793,7 @@ def main() -> None:
     """Console entry point (`veritas-server`)."""
     import uvicorn
 
+    configure_logging()
     uvicorn.run(
         "veritas.server:app",
         host=os.getenv("VERITAS_HOST", "127.0.0.1"),

@@ -17,6 +17,7 @@ python -m build && twine check dist/*    # packaging — CI builds and installs 
 veritas-server                           # run the service (free mode by default)
 veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve
 veritas-mcp                              # serve the engine as local MCP tools (stdio)
+VERITAS_METRICS_TOKEN=... veritas-server # /metrics exists only when a token is set
 veritas-ops revenue                      # operator reports from the ledger (JSON)
 veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
 ```
@@ -111,6 +112,10 @@ package — CI's package job asserts this.
   tools over stdio (free-mode local engine; no payment path over MCP).
 - Self-provisioning: `veritas-agent up` bootstraps config and a local wallet
   and serves; funding the wallet and public TLS deployment remain external.
+- Observability: JSON access logs on stdout (`VERITAS_LOG_FORMAT=json|text`)
+  carrying method, path, status and duration — **never** the query or the
+  `X-PAYMENT` header. `/metrics` serves Prometheus counters and exists only
+  when `VERITAS_METRICS_TOKEN` is set, because settlement counters are revenue.
 - Operations: `veritas-ops` answers revenue, what is owed, what needs
   attention, and what serving consumed — all from `veritas/ledger.py`, all as
   JSON. `reconcile` compares this instance's records against each other only

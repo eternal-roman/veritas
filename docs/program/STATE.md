@@ -40,11 +40,20 @@ committed and pushed survives. Update this file and push after every sub-step.
 > budget. Tested for behaviour, not measured under load — no throughput or
 > latency figure in this repo is measured.
 >
-> Next: **O.5** (JSON logging + `/metrics`, ~100 lines, no new deps — the
-> service is now sheddable but silent, so an operator cannot see it shedding),
-> then **O.3** (store protocol: the `/v1/trust` O(n) rescan and non-atomic
-> receipt writes are the remaining O-criticals), then O.6–O.8. **M7** (credits
-> via SIWx) is still open and is the last of Phase M.
+> **O.5 landed too** (O9 closed): JSON access logs carrying method, path,
+> status and duration — never the query, never the `X-PAYMENT` header, both
+> asserted absent by test — plus Prometheus counters at `/metrics`, which
+> exists only when `VERITAS_METRICS_TOKEN` is set because
+> `veritas_settlements_total` is a revenue figure. Label values are escaped so
+> a caller-controlled path cannot forge metric lines. Tracing is still absent
+> and is not claimed.
+>
+> Next: **O.3** (store protocol — the `/v1/trust` O(n) rescan and non-atomic
+> receipt writes are the remaining O-criticals; the SQLite machinery already
+> exists in `veritas/ledger.py` to model it on), then **O.6** (retention;
+> 410 Gone ≠ 404), **O.7** (`.dockerignore` — the repo root can hold a
+> plaintext wallet passphrase — VOLUME, compose), **O.8** (supply chain).
+> **M7** (credits via SIWx) is still open and is the last of Phase M.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -149,7 +158,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
 - [ ] O.3 `veritas/store/` protocol with SQLite default (O3, O4, O7, O10)
 - [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
-- [ ] O.5 JSON logging + metrics endpoint (O9)
+- [x] O.5 JSON logging + token-gated `/metrics` (O9)
 - [ ] O.6 Retention/pruning; 410 Gone ≠ 404
 - [ ] O.7 `.dockerignore`, VOLUME, compose, deploy configs (O12, O13)
 - [ ] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15)
@@ -202,7 +211,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O5 | high | Relative runtime dir + cwd dependence → silent 503s | open |
 | O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
 | O7 | high | Receipt writes neither atomic nor fsynced | partial — the *financial* record is now transactional and fsynced (`synchronous=FULL`); `veritas/custody.py` receipt writes are still plain `write_text` (Phase O.3) |
-| O9 | high | No logging, metrics, tracing or alerting | open |
+| O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |

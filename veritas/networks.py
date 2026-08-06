@@ -25,7 +25,23 @@ CAIP2_NETWORKS: dict[str, str] = {
 # Reverse lookup
 CAIP2_TO_ALIAS = {v: k for k, v in CAIP2_NETWORKS.items()}
 
-DEFAULT_NETWORK = "eip155:8453"  # Base mainnet
+# CAIP-2 ids that carry real money. Used to require an explicit opt-in before a
+# deployment can reach one.
+MAINNET_NETWORKS = frozenset({
+    "eip155:1", "eip155:8453", "eip155:137", "eip155:42161",
+    "eip155:10", "eip155:43114", "eip155:480",
+    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+})
+
+
+def is_testnet(network: str) -> bool:
+    """True when the network is not one that moves real funds."""
+    return normalize_network(network) not in MAINNET_NETWORKS
+
+# Base Sepolia, deliberately. The default used to be Base mainnet, so
+# `veritas-agent up --paid` put a freshly generated, unfunded local keystore
+# straight into live mainnet operation with no confirmation step.
+DEFAULT_NETWORK = "eip155:84532"  # Base Sepolia
 DEFAULT_TESTNET = "eip155:84532"  # Base Sepolia
 
 def normalize_network(network: str) -> str:

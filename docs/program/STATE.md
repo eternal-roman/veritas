@@ -5,12 +5,9 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Phase T is complete.** Next: Phase X (x402 correctness), starting with X2 —
-> replace the guessed EIP-712 domain (`extra={"name": asset["symbol"]}` in
-> `veritas/x402.py`) with a pinned per-network table carrying `verified_at` and
-> `verification_source`, and refuse to advertise any network without a verified
-> entry. Then X5 (default network → Base Sepolia, mainnet explicit opt-in), X3
-> (`/supported` preflight, fail-closed), X4 (absolute `resource` URL), X7
+> **Phase T complete; X2 and the X5 default landed.** Next in Phase X: X3
+> (`/supported` preflight, fail-closed), X4 (absolute `resource` URL), the rest
+> of X5 (`veritas-agent up --paid` must refuse mainnet without an explicit flag), X7
 > (`veritas/deadline.py`), X1 (adopt the official `x402` SDK behind the seam),
 > X6 (Bazaar discovery extension). Tests first in `tests/test_x402_protocol.py`.
 >
@@ -89,10 +86,10 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 
 ### Phase X — x402 correctness + SDK adoption
 - [ ] X1 Adopt official `x402` SDK behind existing seams
-- [ ] X2 Pinned per-network EIP-712 domain table; refuse unverified networks (R1)
+- [x] X2 Pinned per-network EIP-712 domain table with provenance; unverified networks refused (R1)
 - [ ] X3 `/supported` preflight, fail-closed
 - [ ] X4 Absolute `resource` URL; require `VERITAS_PUBLIC_URL` in live mode (R2)
-- [ ] X5 Default network → Base Sepolia; mainnet explicit opt-in (O11)
+- [~] X5 Default network → Base Sepolia done; explicit mainnet opt-in in `veritas-agent` still to do (O11)
 - [ ] X6 Bazaar discovery extension, `discoverable: true`
 - [ ] X7 `veritas/deadline.py` — deadline budget before settle (R4)
 
@@ -148,7 +145,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
 | L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |
 | L6 | high | Buyer queries persisted forever, served unauthenticated | open |
-| R1 | critical | EIP-712 domain guessed from symbol; would void every signature | open |
+| R1 | critical | EIP-712 domain guessed from symbol; would void every signature | **closed** — pinned table with provenance; unverified networks refused (`tests/test_x402_protocol.py`). Only Base/Base Sepolia are advertisable, from the reference implementation; **none is yet confirmed on-chain** — run `scripts/verify_eip712_domains.py` |
 | R4 | critical | No deadline; authorization can expire during paid work | open |
 | R5 | critical | No financial ledger; settlement tx hash discarded | open — **witnessed** by `::test_known_gap_no_settlement_record_is_written` (gap G8) |
 | R6 | high | `request_id` never recorded against the nonce claim | open |
@@ -176,7 +173,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 291 | Phase T complete (T1–T11) |
+| Tests passing | 300 | Phase X (X2, X5 partial) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |

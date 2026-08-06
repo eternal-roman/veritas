@@ -173,7 +173,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 300 | Phase X (X2, X5 partial) |
+| Tests passing | 300 | Phase X (X2 done, X5 partial) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |
@@ -188,4 +188,6 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-05 | T4–T5: metasearch scraper removed, licences carried, corpus de-attributed | ba1ae33 |
 | 2026-08-05 | T7–T8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | c8b87ee |
 | 2026-08-05 | T11: README/STATUS/ANALYSIS retractions; honest verdict corrected | 3e48378, 96ac66b |
-| 2026-08-05 | T9–T10: constitution 2.0, three open gaps witnessed, pointers resolved by pytest collection | this commit |
+| 2026-08-05 | T9–T10: constitution 2.0, three open gaps witnessed, pointers resolved by pytest collection | 86ad917 |
+| 2026-08-06 | X2 + X5(part): EIP-712 domains pinned with provenance, unverified networks refused, default network → Base Sepolia | 6413382 |
+| 2026-08-06 | Bandit gate extended to scripts/; unguarded fetch in the settlement script fixed | 74dfb1b |

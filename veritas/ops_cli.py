@@ -48,6 +48,11 @@ def _reconcile(ledger: Ledger) -> dict[str, Any]:
     needs_attention: list[dict[str, Any]] = []
 
     for auth in ledger.awaiting_settlement():
+        if auth.state == NonceState.INDETERMINATE:
+            # Reported below instead, with the facilitator's own reason —
+            # listing it twice under two labels tells the operator there are
+            # two problems when there is one.
+            continue
         needs_attention.append({
             "reason": (
                 "delivered_not_settled" if auth.state == NonceState.DELIVERED
@@ -103,6 +108,41 @@ def _reconcile(ledger: Ledger) -> dict[str, Any]:
     }
 
 
+def _owed(ledger: Ledger) -> dict[str, Any]:
+    """Delivered work with nothing proving it was paid for.
+
+    Broken out by state because the three are owed in different senses and an
+    operator acts differently on each: `delivered` was never settled at all,
+    `settlement_failed` was refused, and `indeterminate` may already have paid
+    us. Totalled per asset in atomic units — the same units the challenge
+    quotes — so the figure can be checked against a settlement.
+    """
+    entries = [asdict(a) for a in ledger.awaiting_settlement()]
+    by_state: dict[str, int] = {}
+    at_risk: dict[str, int] = {}
+    for entry in entries:
+        by_state[entry["state"]] = by_state.get(entry["state"], 0) + 1
+        try:
+            amount = int(entry["amount"])
+        except (TypeError, ValueError):
+            continue
+        key = f"{entry['network']}/{entry['asset']}"
+        at_risk[key] = at_risk.get(key, 0) + amount
+    return {
+        "count": len(entries),
+        "by_state": by_state,
+        "amount_at_risk": {k: str(v) for k, v in sorted(at_risk.items())},
+        "awaiting_settlement": entries,
+        "note": (
+            "`indeterminate` entries may already have been paid: the "
+            "facilitator never answered. They are counted here because "
+            "delivered work is delivered either way, and an operator told "
+            "'you are owed nothing' while holding one has been told the "
+            "wrong thing."
+        ),
+    }
+
+
 def _authorization(ledger: Ledger, nonce: str) -> dict[str, Any] | None:
     auth = ledger.authorization(nonce)
     if auth is None:
@@ -147,8 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "revenue":
         payload: dict[str, Any] = ledger.economics(costs)
     elif args.command == "owed":
-        owed = [asdict(a) for a in ledger.awaiting_settlement()]
-        payload = {"count": len(owed), "awaiting_settlement": owed}
+        payload = _owed(ledger)
     elif args.command == "reconcile":
         payload = _reconcile(ledger)
     elif args.command == "usage":

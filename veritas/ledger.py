@@ -589,15 +589,24 @@ class Ledger:
     # -- reconciliation -----------------------------------------------------
 
     def awaiting_settlement(self) -> list[Authorization]:
-        """Delivered work with no terminal settlement: what we are owed."""
+        """Delivered work we cannot show we were paid for.
+
+        Three states, not one, and dogfood cycle 4 is why. `indeterminate` was
+        excluded at first, so an operator asking "what am I owed?" was told
+        zero while holding a settlement whose outcome nobody knew — the single
+        most important thing to be told about. Delivered work is delivered
+        whether the facilitator said no, said nothing, or was never asked.
+        """
         try:
             conn = self._connect()
         except LedgerUnavailable:
             return []
         try:
             rows = conn.execute(
-                "SELECT * FROM authorizations WHERE state IN (?, ?) ORDER BY claimed_at",
-                (NonceState.DELIVERED.value, NonceState.SETTLEMENT_FAILED.value),
+                "SELECT * FROM authorizations WHERE state IN (?, ?, ?)"
+                " ORDER BY claimed_at",
+                (NonceState.DELIVERED.value, NonceState.SETTLEMENT_FAILED.value,
+                 NonceState.INDETERMINATE.value),
             ).fetchall()
         finally:
             conn.close()

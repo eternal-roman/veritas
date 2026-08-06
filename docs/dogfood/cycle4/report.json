@@ -1,0 +1,81 @@
+{
+  "answers": [
+    {
+      "answer": 100000,
+      "measured": true,
+      "note": "Micro-USD, converted from settled atomic units only where the asset's decimals are known and the conversion is exact.",
+      "question": "What did I earn?",
+      "source": "veritas-ops revenue"
+    },
+    {
+      "answer": 2750,
+      "measured": false,
+      "note": "Provider calls are measured; the per-call price is operator input (static_corpus=250). With no cost table configured this is null and margin is withheld, by design.",
+      "question": "What did serving it cost?",
+      "source": "veritas-ops revenue"
+    },
+    {
+      "answer": 97250,
+      "measured": false,
+      "note": "Only as trustworthy as the cost input above.",
+      "question": "What is my margin?",
+      "source": "veritas-ops revenue"
+    },
+    {
+      "answer": {
+        "amount_at_risk": {
+          "eip155:84532/0x036CbD53842c5426634e7929541eC2318f3dCF7e": "10000"
+        },
+        "by_state": {
+          "indeterminate": 1
+        },
+        "count": 1
+      },
+      "measured": true,
+      "note": "First run of this cycle answered 0 here while `reconcile` flagged an unresolved settlement. Indeterminate settlements are now counted: delivered work is delivered whether the facilitator said no, said nothing, or was never asked.",
+      "question": "What am I owed?",
+      "source": "veritas-ops owed"
+    },
+    {
+      "answer": [
+        "settlement_indeterminate"
+      ],
+      "measured": true,
+      "note": "Records are compared only against each other. Nothing here has been checked against on-chain state: a 'settled' entry means the facilitator reported success, not that the transfer is confirmed. See constitution gap G9.",
+      "question": "What needs my attention?",
+      "source": "veritas-ops reconcile"
+    }
+  ],
+  "cycle": 4,
+  "owed_agrees_with_reconcile": true,
+  "pass": true,
+  "served": {
+    "paid_requests": 10,
+    "statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "title": "Operator economics, from the ledger alone",
+  "unanswerable": [],
+  "unit_economics": {
+    "break_even_price_micros": 250.0,
+    "caveat": "Retrieval ran against the offline corpus, so the wall times are a floor: a real provider call dominates them. The cost figure is arithmetic over an operator-supplied price, not a measured cost of goods.",
+    "gross_margin_micros_per_request": 9750.0,
+    "mean_handler_ms": 0.0,
+    "measured_cost_micros_per_request": 250.0,
+    "price_micros_per_request": 10000,
+    "provider_calls": {
+      "static_corpus": 11
+    }
+  }
+}

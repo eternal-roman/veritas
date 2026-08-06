@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts import dogfood_cycle2, dogfood_cycle3
+from scripts import dogfood_cycle2, dogfood_cycle3, dogfood_cycle4
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -32,6 +32,14 @@ def test_cycle3_hostile_caller_refuses_every_probe():
     got_through = [p for p in report["probes"] if not p["refused"]]
     assert not got_through, json.dumps(got_through, indent=2)
     assert report["total"] >= 8
+
+
+def test_cycle4_answers_every_operator_question_from_the_ledger():
+    report = dogfood_cycle4.run(count=4)
+    assert not report["unanswerable"], report["unanswerable"]
+    assert report["owed_agrees_with_reconcile"], (
+        "`veritas-ops owed` and `veritas-ops reconcile` tell different stories"
+    )
 
 
 def test_the_committed_reports_match_the_current_code():
@@ -57,7 +65,7 @@ def test_no_dogfood_script_performs_an_outbound_request():
     """Both cycles claim to make no network call. That claim is load-bearing:
     it is why their results describe the product rather than this sandbox's
     egress."""
-    for name in ("dogfood_cycle2.py", "dogfood_cycle3.py"):
+    for name in ("dogfood_cycle2.py", "dogfood_cycle3.py", "dogfood_cycle4.py"):
         source = (REPO / "scripts" / name).read_text()
         for forbidden in ("urlopen(", "requests.get", "requests.post", "httpx.get"):
             assert forbidden not in source, f"{name} may reach the network via {forbidden}"

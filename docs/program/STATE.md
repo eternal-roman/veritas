@@ -87,11 +87,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 >   An unpaid caller could spend our request budget one junk header at a time.
 >   The structural check now runs first: 8 doomed payloads, 0 facilitator calls.
 >
+> **Cycle 4 is done too** — operator economics, answered only from
+> `veritas-ops`. All five questions are answerable; it found two defects, both
+> fixed: `owed` reported **zero** while `reconcile` flagged an unresolved
+> settlement (an indeterminate settlement is exposure — delivered work is
+> delivered whether the facilitator said no, said nothing, or was never
+> asked), and fixing that made `reconcile` label one entry twice. The cycle now
+> cross-checks the two commands so they cannot drift apart silently.
+>
+> Measured unit economics, with the measured/supplied line drawn explicitly:
+> price **10,000 micro-USD** per request ($0.01, from the pricing table);
+> revenue **measured** from settled atomic units; cost **arithmetic over an
+> operator-supplied per-provider price**, since no list price is verifiable
+> from here; wall times are a floor because retrieval ran offline, and the
+> millisecond metering column is too coarse to resolve it at all (reads 0).
+>
 > Next: **O.6** (retention; 410 Gone ≠ 404), **O.8** (supply chain: lockfile
 > with hashes, SHA-pinned actions, SBOM). **M7** (credits via SIWx) is the last
-> of Phase M. Cycles 1, 4 and 5 remain: Cycle 4 (operator economics from the
-> ledger alone) is runnable now; Cycle 1 (cold install) is gated on N0; Cycle 5
-> (ecosystem) on the standalone verifier.
+> of Phase M. Cycles 1 (cold install, gated on N0) and 5 (ecosystem, gated on
+> the standalone verifier) remain.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -215,7 +229,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [ ] Cycle 1 — cold autonomous install (after N0)
 - [x] Cycle 2 — paying buyer, real buyer path, local facilitator. 7/7 scenarios; found 1 defect (replay with a different query returned the old answer), fixed. `docs/dogfood/cycle2/`
 - [x] Cycle 3 — hostile caller incl. SSRF. 8/8 probes refused; found 1 defect (doomed payment payloads each cost a facilitator round trip), fixed. `docs/dogfood/cycle3/`
-- [ ] Cycle 4 — operator economics from the ledger alone (after M)
+- [x] Cycle 4 — operator economics from the ledger alone. All 5 questions answerable; found 2 defects (`owed` excluded indeterminate exposure; `reconcile` double-labelled it), both fixed. `docs/dogfood/cycle4/`
 - [ ] Cycle 5 — ecosystem participant, independent verification (after G)
 
 ## Defect register

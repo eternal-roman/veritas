@@ -147,3 +147,56 @@ def test_pricing_reports_the_version_entries_are_stamped_with(tmp_path, capsys):
     report = _run(capsys, "--runtime-dir", str(tmp_path), "pricing")
     assert report["version"] == PRICE_TABLE_VERSION
     assert report["atomic_amount"]
+
+
+def test_owed_counts_an_indeterminate_settlement_as_exposure(tmp_path, capsys):
+    """Found by dogfood cycle 4. `owed` reported zero while `reconcile`
+    flagged an unresolved settlement — an operator told "you are owed nothing"
+    while holding delivered work nobody could show was paid for."""
+    ledger = Ledger(tmp_path)
+    ledger.claim(NONCE, "req-1", **OFFER)
+    ledger.record_delivery("req-1", status="completed", billable=True,
+                           custody_root="sha256:r", query="q", response={})
+    ledger.record_settlement("req-1", outcome="indeterminate",
+                             reason="facilitator_timeout")
+
+    report = _run(capsys, "--runtime-dir", str(tmp_path), "owed")
+    assert report["count"] == 1
+    assert report["by_state"] == {"indeterminate": 1}
+    assert report["amount_at_risk"] == {"eip155:84532/" + OFFER["asset"]: "10000"}
+
+
+def test_owed_separates_the_three_ways_work_goes_unpaid(tmp_path, capsys):
+    """They are owed in different senses and an operator acts differently on
+    each, so one undifferentiated count would hide the distinction."""
+    ledger = Ledger(tmp_path)
+    for i, (nonce, outcome) in enumerate((
+        (NONCE, None), (OTHER_NONCE, "failed"), ("0x" + "ef" * 32, "indeterminate"),
+    )):
+        rid = f"req-{i}"
+        ledger.claim(nonce, rid, **OFFER)
+        ledger.record_delivery(rid, status="completed", billable=True,
+                               custody_root="sha256:r", query="q", response={})
+        if outcome:
+            ledger.record_settlement(rid, outcome=outcome, reason="x")
+
+    report = _run(capsys, "--runtime-dir", str(tmp_path), "owed")
+    assert report["by_state"] == {
+        "delivered": 1, "settlement_failed": 1, "indeterminate": 1,
+    }
+    assert report["amount_at_risk"] == {"eip155:84532/" + OFFER["asset"]: "30000"}
+
+
+def test_reconcile_reports_one_problem_once(tmp_path, capsys):
+    """An indeterminate settlement is owed AND needs attention, but it is one
+    problem. Listing it under two labels tells an operator there are two."""
+    ledger = Ledger(tmp_path)
+    ledger.claim(NONCE, "req-1", **OFFER)
+    ledger.record_delivery("req-1", status="completed", billable=True,
+                           custody_root="sha256:r", query="q", response={})
+    ledger.record_settlement("req-1", outcome="indeterminate",
+                             reason="facilitator_timeout")
+
+    report = _run(capsys, "--runtime-dir", str(tmp_path), "reconcile")
+    reasons = [item["reason"] for item in report["needs_attention"]]
+    assert reasons == ["settlement_indeterminate"]

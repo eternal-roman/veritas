@@ -29,6 +29,7 @@ class ErrorCode(str, Enum):
     PAYMENT_NONCE_ALREADY_SPENT = "payment_nonce_already_spent"
     PAYMENT_REQUEST_ID_ALREADY_CLAIMED = "payment_request_id_already_claimed"
     PAYMENT_AUTHORIZATION_IN_PROGRESS = "payment_authorization_in_progress"
+    PAYMENT_AUTHORIZATION_BOUND_TO_ANOTHER_REQUEST = "payment_authorization_bound_to_another_request"
     REPLAY_PROTECTION_UNAVAILABLE = "replay_protection_unavailable"
     SETTLEMENT_FAILED = "settlement_failed"
     RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
@@ -72,6 +73,11 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "status": 409,
         "meaning": "A different authorization is already recorded against this request id. Retry with a fresh request.",
         "retriable": True,
+    },
+    ErrorCode.PAYMENT_AUTHORIZATION_BOUND_TO_ANOTHER_REQUEST.value: {
+        "status": 409,
+        "meaning": "This payment authorization already bought a different request. Resubmitting it returns that request's deliverable; it cannot buy a second, different one. Request a fresh 402 challenge for the new question. request_id names the request it did buy.",
+        "retriable": False,
     },
     ErrorCode.PAYMENT_AUTHORIZATION_IN_PROGRESS.value: {
         "status": 409,

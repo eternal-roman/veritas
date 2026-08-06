@@ -310,6 +310,22 @@ async def payment_config():
     return {**cfg.as_dict(), "pricing": current_price_point(cfg.price, cfg.network)}
 
 
+def _carries_a_nonce_field(payload: dict[str, Any]) -> bool:
+    """Did the caller attempt a nonce at all?
+
+    Separates "you sent no authorization" from "the one you sent is not a
+    32-byte hex value" — two different mistakes, and a buyer debugging their
+    client needs to know which one they made.
+    """
+    authorization = payment_authorization(payload) or {}
+    inner = payload.get("payload") if isinstance(payload.get("payload"), dict) else {}
+    return any(
+        "nonce" in candidate
+        for candidate in (authorization, inner, payload)
+        if isinstance(candidate, dict)
+    )
+
+
 def _challenge(cfg, error: str | None = None) -> JSONResponse:
     kwargs = {"error": error} if error else {}
     return JSONResponse(
@@ -395,7 +411,8 @@ def _settle_and_respond(
     )
 
 
-def _resubmitted_authorization(claim, cfg, facilitator, payment_payload, requirements_dict):
+def _resubmitted_authorization(claim, cfg, facilitator, payment_payload,
+                               requirements_dict, query):
     """Answer a payment authorization this instance has already admitted.
 
     Burning the nonce and returning 409 — the previous behaviour — charged a
@@ -432,6 +449,17 @@ def _resubmitted_authorization(claim, cfg, facilitator, payment_payload, require
             "The earlier request against this authorization failed on our "
             "side and was not billed. Request a fresh 402 challenge and sign "
             "a new authorization.",
+            request_id=existing.request_id,
+        ))
+
+    # An authorization buys one request. Returning its deliverable in answer
+    # to a *different* question would hand the buyer a 200 whose only sign of
+    # mismatch is the echoed `query` — found in dogfood cycle 2.
+    if not ledger.delivered_query_matches(existing.request_id, query):
+        return JSONResponse(status_code=409, content=error_envelope(
+            ErrorCode.PAYMENT_AUTHORIZATION_BOUND_TO_ANOTHER_REQUEST,
+            "This authorization already bought a different request. Request a "
+            "fresh 402 challenge for this one.",
             request_id=existing.request_id,
         ))
 
@@ -547,6 +575,26 @@ def _research(req: ResearchRequest, payment_header: str | None):
         if payment_payload is None:
             return _challenge(cfg, "X-PAYMENT header is not valid base64-encoded JSON")
 
+        # Structural admissibility first. A payload with no usable
+        # authorization nonce can never be admitted, and finding that out
+        # costs nothing — so it must not cost a facilitator round trip. Doing
+        # this after verification let an unpaid caller spend our outbound
+        # request budget one junk header at a time (dogfood cycle 3). It
+        # claims nothing and changes no state, so it does not weaken the
+        # verify-before-claim ordering below.
+        nonce = extract_nonce(payment_payload)
+        if nonce is None:
+            reason = (
+                ErrorCode.PAYMENT_NONCE_MALFORMED
+                if _carries_a_nonce_field(payment_payload)
+                else ErrorCode.PAYMENT_NONCE_MISSING
+            )
+            return JSONResponse(status_code=409, content=error_envelope(
+                reason,
+                "This payment authorization cannot be admitted. Request a "
+                "fresh 402 challenge and sign a new authorization.",
+            ))
+
         facilitator = get_facilitator(cfg.facilitator, live=True)
         verification = facilitator.verify(payment_payload, requirements_dict)
         if not verification.is_valid:
@@ -576,7 +624,7 @@ def _research(req: ResearchRequest, payment_header: str | None):
         # stays live on chain — but it is no longer a dead end: see
         # `_resubmitted_authorization` for what a replay is answered with.
         claim = ledger.claim(
-            extract_nonce(payment_payload), request_id,
+            nonce, request_id,
             network=requirements_dict.get("network"),
             asset=requirements_dict.get("asset"),
             amount=requirements_dict.get("maxAmountRequired"),
@@ -588,6 +636,7 @@ def _research(req: ResearchRequest, payment_header: str | None):
         if not claim.claimed:
             return _resubmitted_authorization(
                 claim, cfg, facilitator, payment_payload, requirements_dict,
+                req.query,
             )
 
     started = time.monotonic()

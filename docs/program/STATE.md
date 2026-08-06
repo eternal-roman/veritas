@@ -75,11 +75,23 @@ committed and pushed survives. Update this file and push after every sub-step.
 > tests read the shipped files; they prove the declarations are right, not that
 > a built image is clean — no Docker daemon is available here.
 >
+> **Dogfooding cycles 2 and 3 are done and wired into CI** (`tests/test_dogfood.py`,
+> reports under `docs/dogfood/`). Each found exactly one real defect, both
+> fixed in the same commit:
+>
+> * Cycle 2 — a resubmitted authorization carrying a **different question**
+>   returned 200 with the earlier deliverable. Now
+>   `409 payment_authorization_bound_to_another_request`.
+> * Cycle 3 — every structurally doomed `X-PAYMENT` payload cost an outbound
+>   **facilitator round trip**, because the nonce check ran after verification.
+>   An unpaid caller could spend our request budget one junk header at a time.
+>   The structural check now runs first: 8 doomed payloads, 0 facilitator calls.
+>
 > Next: **O.6** (retention; 410 Gone ≠ 404), **O.8** (supply chain: lockfile
 > with hashes, SHA-pinned actions, SBOM). **M7** (credits via SIWx) is the last
-> of Phase M. Then the dogfooding cycles: Cycle 2 (paying buyer) is runnable
-> now that the money path is complete, and Cycle 3 (hostile caller) is runnable
-> now that limits exist.
+> of Phase M. Cycles 1, 4 and 5 remain: Cycle 4 (operator economics from the
+> ledger alone) is runnable now; Cycle 1 (cold install) is gated on N0; Cycle 5
+> (ecosystem) on the standalone verifier.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -201,8 +213,8 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 
 ### Dogfooding cycles
 - [ ] Cycle 1 — cold autonomous install (after N0)
-- [ ] Cycle 2 — paying buyer, official SDK, local facilitator (after X)
-- [ ] Cycle 3 — hostile caller incl. SSRF (after O)
+- [x] Cycle 2 — paying buyer, real buyer path, local facilitator. 7/7 scenarios; found 1 defect (replay with a different query returned the old answer), fixed. `docs/dogfood/cycle2/`
+- [x] Cycle 3 — hostile caller incl. SSRF. 8/8 probes refused; found 1 defect (doomed payment payloads each cost a facilitator round trip), fixed. `docs/dogfood/cycle3/`
 - [ ] Cycle 4 — operator economics from the ledger alone (after M)
 - [ ] Cycle 5 — ecosystem participant, independent verification (after G)
 

@@ -49,9 +49,11 @@ class _Control:
         )
         self.work_calls = 0
         self.owed_at_settle_time: list[str] = []
+        self.verify_calls: list[dict] = []
         self.ledger = None
 
     def verify(self, payload, requirements):
+        self.verify_calls.append(payload)
         return VerificationResult(True, payer="0xbuyer")
 
     def settle(self, payload, requirements):
@@ -91,6 +93,43 @@ BODY = {"query": "What is the x402 payment protocol?"}
 
 
 # -- the happy path records itself ------------------------------------------
+
+
+def test_a_payload_with_no_usable_nonce_never_reaches_the_facilitator(money_client):
+    """Found by dogfood cycle 3. A payload we can already tell is
+    inadmissible — no nonce, or one that is not 32 bytes of hex — used to be
+    sent to the facilitator anyway. That let an unpaid caller spend our
+    outbound request budget at no cost to themselves, one round trip per junk
+    header. The structural check is free and changes no state, so it belongs
+    before the network call rather than after it."""
+    _server, client, control = money_client
+    calls_before = len(control.verify_calls)
+
+    for junk in ("", base64.b64encode(b"[1,2,3]").decode(),
+                 base64.b64encode(json.dumps({"payload": {}}).encode()).decode(),
+                 base64.b64encode(json.dumps(
+                     {"payload": {"authorization": {"nonce": "0xzz"}}}).encode()).decode()):
+        client.post("/v1/research", json=BODY, headers={"X-PAYMENT": junk})
+
+    assert len(control.verify_calls) == calls_before
+
+
+def test_a_missing_nonce_is_named_before_verification(money_client):
+    _server, client, _control = money_client
+    naked = base64.b64encode(json.dumps({"x402Version": 1, "scheme": "exact"}).encode()).decode()
+    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": naked})
+    assert response.status_code == 409
+    assert response.json()["error"] == "payment_nonce_missing"
+
+
+def test_a_malformed_nonce_is_named_before_verification(money_client):
+    _server, client, _control = money_client
+    header = base64.b64encode(json.dumps({
+        "payload": {"authorization": {"nonce": "0x' OR 1=1 --"}},
+    }).encode()).decode()
+    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": header})
+    assert response.status_code == 409
+    assert response.json()["error"] == "payment_nonce_malformed"
 
 
 def test_settlement_is_recorded_durably(money_client):
@@ -170,6 +209,33 @@ def test_a_replay_does_not_settle_again(money_client):
     request_id = client.post("/v1/research", json=BODY, headers=headers).json()["request_id"]
     client.post("/v1/research", json=BODY, headers=headers)
     assert len(server.ledger.settlements(request_id)) == 1
+
+
+def test_a_replay_asking_a_different_question_is_refused(money_client):
+    """Found by dogfood cycle 2. Re-delivering on replay is right when the
+    buyer is retrying the request they paid for. When the question is
+    different, handing back the earlier answer under a 200 answers a question
+    nobody asked — and the mismatch is only detectable by comparing the echoed
+    `query`, which a client has no reason to do on a success."""
+    _server, client, control = money_client
+    headers = {"X-PAYMENT": _header()}
+    client.post("/v1/research", json=BODY, headers=headers)
+
+    other = client.post("/v1/research", json={"query": "What is EIP-3009?"},
+                        headers=headers)
+    assert other.status_code == 409
+    assert other.json()["error"] == "payment_authorization_bound_to_another_request"
+    assert control.work_calls == 1, "and still no second retrieval pass"
+
+
+def test_the_mismatch_refusal_names_the_request_the_authorization_bought(money_client):
+    """So the buyer can retry with the right question rather than guess."""
+    _server, client, _control = money_client
+    headers = {"X-PAYMENT": _header()}
+    first = client.post("/v1/research", json=BODY, headers=headers)
+    other = client.post("/v1/research", json={"query": "What is EIP-3009?"},
+                        headers=headers)
+    assert other.json()["request_id"] == first.json()["request_id"]
 
 
 def test_a_fresh_nonce_still_works_after_a_replay(money_client):

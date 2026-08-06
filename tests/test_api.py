@@ -88,10 +88,17 @@ def test_junk_payment_header_is_rejected(paid_client):
 
 
 def test_unreachable_facilitator_fails_closed(paid_client):
-    """A well-formed payload must still be denied when the verifier is down."""
-    payload = base64.b64encode(
-        json.dumps({"scheme": "exact", "network": "eip155:8453", "payer": "0xabc"}).encode()
-    ).decode()
+    """A well-formed payload must still be denied when the verifier is down.
+
+    It carries a real nonce because structurally inadmissible payloads are now
+    refused before the facilitator is called at all (dogfood cycle 3), and the
+    behaviour under test here is the outage path, not that one.
+    """
+    payload = base64.b64encode(json.dumps({
+        "scheme": "exact", "network": "eip155:8453", "payer": "0xabc",
+        "payload": {"signature": "0x" + "cd" * 65,
+                    "authorization": {"nonce": "0x" + "ab" * 32}},
+    }).encode()).decode()
     r = paid_client.post(
         "/v1/research", json={"query": "What is x402?"}, headers={"X-PAYMENT": payload}
     )

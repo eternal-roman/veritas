@@ -54,6 +54,13 @@ jobs:
         run: |
           python -m pytest tests/ -q --tb=short
 
+      # The cycles also run as tests; this exercises the script entry point an
+      # operator would use against their own instance, including --out.
+      - name: Dogfooding cycles
+        run: |
+          python scripts/dogfood_cycle2.py --out /tmp/cycle2.json
+          python scripts/dogfood_cycle3.py --out /tmp/cycle3.json
+
       - name: Evaluation harness must meet quality gates
         run: |
           python - <<'PY'

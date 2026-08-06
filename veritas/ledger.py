@@ -364,6 +364,28 @@ class Ledger:
             conn.close()
         return True
 
+    def delivered_query_matches(self, request_id: str, query: str) -> bool:
+        """Was this delivery produced for this exact query?
+
+        A replayed authorization should return the deliverable the buyer paid
+        for. It should not return that deliverable in answer to a *different*
+        question — the buyer would receive a 200 whose only sign of mismatch
+        is the echoed `query`, which a client has no reason to inspect on a
+        success. Compared by hash so the ledger's index column is the single
+        definition of "the same request".
+        """
+        try:
+            conn = self._connect()
+        except LedgerUnavailable:
+            return False
+        try:
+            row = conn.execute(
+                "SELECT query_hash FROM deliveries WHERE request_id = ?", (request_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+        return row is not None and row["query_hash"] == _query_hash(query)
+
     def deliverable(self, request_id: str) -> dict[str, Any] | None:
         """The response body we produced for this request, if any."""
         try:

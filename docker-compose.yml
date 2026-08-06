@@ -1,0 +1,63 @@
+# Deployment shape for one instance. Free mode by default: paid mode needs a
+# funded wallet and a reachable facilitator, and starting a money path by
+# accident is not a default anyone should have.
+#
+# Nothing here carries a secret. Every credential is read from the environment
+# with an empty fallback, so a missing one produces the service's own
+# misconfiguration path (`mode: misconfigured` → 503 on /v1/research, 503 on
+# /readyz) rather than a silent free-service fallback or a baked-in default.
+
+services:
+  veritas:
+    build: .
+    image: veritas:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      # --- Payment. Leave REQUIRE_PAYMENT unset for free mode. ---
+      VERITAS_REQUIRE_PAYMENT: "${VERITAS_REQUIRE_PAYMENT:-false}"
+      VERITAS_PAY_TO: "${VERITAS_PAY_TO:-}"
+      # Required in live mode: the 402 challenge must name an absolute
+      # resource URL a counterparty can dial.
+      VERITAS_PUBLIC_URL: "${VERITAS_PUBLIC_URL:-}"
+      # Base Sepolia. Mainnet moves real money and is opt-in, never a default.
+      VERITAS_NETWORK: "${VERITAS_NETWORK:-eip155:84532}"
+      VERITAS_FACILITATOR: "${VERITAS_FACILITATOR:-}"
+      VERITAS_PRICE: "${VERITAS_PRICE:-$$0.01}"
+
+      # --- Retrieval. Absent key means the keyless tier, not a failure. ---
+      VERITAS_SERPER_API_KEY: "${VERITAS_SERPER_API_KEY:-}"
+
+      # --- Operations ---
+      # /metrics exists only when this is set: settlement counters are revenue.
+      VERITAS_METRICS_TOKEN: "${VERITAS_METRICS_TOKEN:-}"
+      VERITAS_LOG_FORMAT: "${VERITAS_LOG_FORMAT:-json}"
+      VERITAS_MAX_CONCURRENT_RESEARCH: "${VERITAS_MAX_CONCURRENT_RESEARCH:-8}"
+      VERITAS_RATE_LIMIT_PER_MINUTE: "${VERITAS_RATE_LIMIT_PER_MINUTE:-300}"
+      # Micro-USD per provider call. Empty means costs are reported as
+      # unpriced rather than assumed to be zero.
+      VERITAS_PROVIDER_COST_MICROS: "${VERITAS_PROVIDER_COST_MICROS:-}"
+
+    volumes:
+      # The ledger, receipts and trust counters. Losing this loses the record
+      # of what was earned.
+      - veritas-runtime:/home/veritas/runtime
+
+    # Readiness, not liveness: compose restarts on the container dying, and a
+    # misconfigured instance should stay up and out of rotation instead.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request,sys;
+          sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=4).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  veritas-runtime:

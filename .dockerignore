@@ -1,0 +1,19 @@
+# Everything is excluded, then the few things the image needs are allowed back
+# in. A denylist is the wrong default here: the repository root is where
+# `veritas-agent up` writes a wallet keystore *and its plaintext passphrase*
+# (see veritas/autonomous/wallet.py), so a forgotten pattern is a private key
+# in a published image, not a slow build.
+#
+# This also keeps the build context small: without it, `docker build` uploads
+# the runtime directory, the ledger database and every receipt to the daemon
+# before the first instruction runs.
+*
+
+!pyproject.toml
+!README.md
+!LICENSE
+!veritas/
+
+# Re-exclude things that live inside the allowed paths.
+veritas/**/__pycache__/
+veritas/**/*.py[cod]

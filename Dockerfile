@@ -16,8 +16,16 @@ ENV VERITAS_HOST=0.0.0.0 \
     VERITAS_PORT=8000 \
     VERITAS_RUNTIME_DIR=/home/veritas/runtime
 
+# The runtime directory holds the financial ledger, the custody receipts and
+# the trust counters. In the container's writable layer they vanish when it is
+# replaced, taking the record of what was earned with them.
+VOLUME ["/home/veritas/runtime"]
+
 EXPOSE 8000
 
+# Liveness, not readiness: a misconfigured instance is alive and should not be
+# restarted, it should be left out of rotation. Orchestrators read /readyz for
+# that (see veritas/server.py).
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"
 

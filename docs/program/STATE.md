@@ -62,12 +62,24 @@ committed and pushed survives. Update this file and push after every sub-step.
 > seller who logged only favourable outcomes would produce an identical
 > document.
 >
-> Next: **O.7** (`.dockerignore` — the repo root can hold a plaintext wallet
-> passphrase, so the container image is a live secret-leak risk; plus VOLUME
-> and compose), then **O.6** (retention; 410 Gone ≠ 404), **O.8** (supply
-> chain). **M7** (credits via SIWx) is the last of Phase M. After O, the
-> dogfooding cycles: Cycle 2 (paying buyer) is now runnable against a local
-> facilitator harness since the money path is complete.
+> **O.7 landed** (O12, O13 closed). `.dockerignore` is an allowlist — `*`
+> first, then the four paths the image needs — because the repository root is
+> where `veritas-agent up` writes a wallet keystore *and its plaintext
+> passphrase*, and a forgotten denylist pattern there is a private key in a
+> published image rather than a slow build. A test also asserts the Dockerfile
+> never `COPY . .`, so the allowlist is not the only thing standing between
+> that passphrase and an image. The runtime directory (ledger, receipts, trust
+> counters) is a declared VOLUME, and `docker-compose.yml` mounts it as a named
+> volume with every credential read from the environment with an empty default,
+> so a missing one reaches the service's own misconfiguration path. Limit: the
+> tests read the shipped files; they prove the declarations are right, not that
+> a built image is clean — no Docker daemon is available here.
+>
+> Next: **O.6** (retention; 410 Gone ≠ 404), **O.8** (supply chain: lockfile
+> with hashes, SHA-pinned actions, SBOM). **M7** (credits via SIWx) is the last
+> of Phase M. Then the dogfooding cycles: Cycle 2 (paying buyer) is runnable
+> now that the money path is complete, and Cycle 3 (hostile caller) is runnable
+> now that limits exist.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -174,7 +186,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
 - [ ] O.6 Retention/pruning; 410 Gone ≠ 404
-- [ ] O.7 `.dockerignore`, VOLUME, compose, deploy configs (O12, O13)
+- [x] O.7 `.dockerignore` allowlist, VOLUME, docker-compose.yml (O12, O13)
 - [ ] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15)
 
 ### Phase L — Legal
@@ -227,7 +239,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O7 | high | Receipt writes neither atomic nor fsynced | **closed** — temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
 | O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
-| O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
+| O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | **closed** — `.dockerignore` is an allowlist (`*` then `!`), the Dockerfile is asserted never to `COPY .`, the runtime dir is a declared VOLUME (`tests/test_container.py`). Verified by reading the shipped files, not by building an image |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
 | O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
 | T1 | high | Trust score manipulable by free traffic; refusal_health perverse | **closed for manipulation** — only paid requests score; free outcomes are recorded and reported but never scored (gap G7 closed, G10 opened: the score is still self-reported) |

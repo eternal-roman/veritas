@@ -119,7 +119,7 @@ jobs:
 
       - name: Bandit (medium and high severity must fail)
         run: |
-          bandit -r veritas -ll -q
+          bandit -r veritas scripts -ll -q
 
       # Covers runtime AND dev/optional dependencies. This replaces the
       # dependency-review action, which could never run here (it requires the

@@ -28,11 +28,23 @@ committed and pushed survives. Update this file and push after every sub-step.
 > rather than computed over a partial cost base. Operators supply real numbers
 > via `VERITAS_PROVIDER_COST_MICROS`.
 >
-> Next: **M7** (credits via SIWx; refunds as credits) or straight to
-> **Phase O**, which is the larger risk — sync handlers with 40 threadpool
-> slots and no rate limiting mean one slow retrieval stalls `/health`. My
-> recommendation is Phase O first: M7 adds a surface, O keeps the ones that
-> exist standing up.
+> **Phase O.1, O.2 and the O14 half of O.4 landed** (O1, O2, O14 closed).
+> Cheap handlers are `async def` so retrieval cannot starve `/health`;
+> `/v1/research` runs in the threadpool behind a `BoundedSemaphore` that sheds
+> with 503 rather than queueing; body size, verify content length and per-IP
+> rate are bounded; `/readyz` is split from `/health`; and an unhandled
+> exception now returns the registered `internal_error` envelope instead of
+> Starlette's plain-text 500.
+>
+> Every limit is **in-process**: behind a balancer each node has its own
+> budget. Tested for behaviour, not measured under load — no throughput or
+> latency figure in this repo is measured.
+>
+> Next: **O.5** (JSON logging + `/metrics`, ~100 lines, no new deps — the
+> service is now sheddable but silent, so an operator cannot see it shedding),
+> then **O.3** (store protocol: the `/v1/trust` O(n) rescan and non-atomic
+> receipt writes are the remaining O-criticals), then O.6–O.8. **M7** (credits
+> via SIWx) is still open and is the last of Phase M.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -133,10 +145,10 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [ ] M7 Credits via SIWx; refunds as credits, documented
 
 ### Phase O — Operations
-- [ ] O.1 Async handlers + request deadline + concurrency limit (O1)
-- [ ] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
+- [x] O.1 Async handlers; research capped and shed rather than queued (O1)
+- [x] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
 - [ ] O.3 `veritas/store/` protocol with SQLite default (O3, O4, O7, O10)
-- [ ] O.4 Lifespan state, readiness ≠ liveness, graceful drain (O5, O14)
+- [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
 - [ ] O.5 JSON logging + metrics endpoint (O9)
 - [ ] O.6 Retention/pruning; 410 Gone ≠ 404
 - [ ] O.7 `.dockerignore`, VOLUME, compose, deploy configs (O12, O13)
@@ -183,8 +195,8 @@ Ids from the three audits. `open` until a test pins the fix.
 | R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | **closed** — `::test_price_is_validated_by_the_misconfiguration_guard` |
 | R10 | high | Paid Serper provider called in free mode | open |
 | R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | **closed** — `::test_replayed_authorization_returns_the_deliverable_it_paid_for`; the work still runs once (`::test_a_replay_does_not_run_the_work_again`). Bounded: single-instance ledger |
-| O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | open |
-| O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | open |
+| O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | **closed** — cheap handlers are `async def`; research runs in the threadpool behind a `BoundedSemaphore` that sheds with 503 `service_overloaded` (`tests/test_operations.py`) |
+| O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | **closed** — 256KB body cap, `max_length` on verify content, per-IP window limit that never touches `/health` or `/readyz` (`tests/test_operations.py`) |
 | O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | open |
 | O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
 | O5 | high | Relative runtime dir + cwd dependence → silent 503s | open |
@@ -193,7 +205,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O9 | high | No logging, metrics, tracing or alerting | open |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
-| O14 | med | Unhandled exceptions escape the error envelope as text/plain | open |
+| O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
 | O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
 | T1 | high | Trust score manipulable by free traffic; refusal_health perverse | open — now **witnessed** by `tests/test_known_gaps.py::test_known_gap_free_traffic_moves_the_trust_score` (constitution gap G7) |
 

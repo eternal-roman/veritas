@@ -111,7 +111,9 @@ NOT PROVEN:  - No payment has ever settled. Fail-closed is exercised; success is
              - Recorded settlements are never re-checked against the chain
                (constitution gap G9): the ledger states what the facilitator
                told us, not what we hold.
-             - Behaviour under concurrency, load, or a hostile caller is unmeasured.
+             - Limits (concurrency cap, per-IP rate limit, body cap) are tested
+               for behaviour, not measured under load. No throughput or latency
+               figure in this repository is measured.
 ```
 
 **Structural vs application success.** Everything green below is structural: it
@@ -182,7 +184,7 @@ gaps a production deployment would hit.
 | 2 | Retrieval is snippet-grade | High | Wikipedia + DuckDuckGo. Will not sustain a paid price against a buyer who can call a search API directly. |
 | 3 | Claims are extractive | High | A claim is a grounded excerpt, not an answer synthesised across sources. |
 | 4 | ~~No replay protection~~ | — | Fixed (0.4): nonces are claimed before work; a resubmission returns the stored deliverable rather than a 409. Single-instance scope. |
-| 5 | No rate limiting | Medium | No per-IP or per-payer caps, no request-size limit on the `X-PAYMENT` header. |
+| 5 | ~~No rate limiting~~ | — | Fixed: per-IP window limit, 256KB body cap, and a concurrency cap that sheds rather than queues. In-process, so each node has its own budget. |
 | 6 | Receipts and outcome log are local disk | Medium | `/v1/receipts` is unreliable behind a load balancer. `OutcomeLog.stats()` re-reads the whole file per call. Both grow unbounded. |
 | 7 | Evidence content is not stored | Medium | Only hashes. A buyer can confirm what we published but cannot re-obtain the passage after a source URL rots. |
 | 8 | Calibrator is untrained | Medium | Machinery works and persists; reports `passthrough_untrained`. Needs labelled outcomes. |

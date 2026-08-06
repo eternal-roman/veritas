@@ -35,6 +35,11 @@ class ErrorCode(str, Enum):
     RECEIPT_NOT_FOUND = "receipt_not_found"
     DEADLINE_EXCEEDED = "deadline_exceeded"
     INVALID_REQUEST = "invalid_request"
+    REQUEST_TOO_LARGE = "request_too_large"
+    RATE_LIMITED = "rate_limited"
+    SERVICE_OVERLOADED = "service_overloaded"
+    NOT_READY = "not_ready"
+    INTERNAL_ERROR = "internal_error"
 
 
 ERROR_REGISTRY: dict[str, dict[str, Any]] = {
@@ -102,6 +107,31 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "status": 422,
         "meaning": "The request body failed validation; detail lists the failing fields.",
         "retriable": False,
+    },
+    ErrorCode.REQUEST_TOO_LARGE.value: {
+        "status": 413,
+        "meaning": "The request body exceeds the accepted size; it was refused rather than read. Send less content.",
+        "retriable": False,
+    },
+    ErrorCode.RATE_LIMITED.value: {
+        "status": 429,
+        "meaning": "Too many requests from this caller in the current window. Retry-After gives the wait in seconds. Liveness checks are never rate limited.",
+        "retriable": True,
+    },
+    ErrorCode.SERVICE_OVERLOADED.value: {
+        "status": 503,
+        "meaning": "Every concurrent research slot is in use. The request was shed immediately rather than queued, so no work was done, no payment authorization was claimed and nothing is owed. Retry-After gives a suggested wait.",
+        "retriable": True,
+    },
+    ErrorCode.NOT_READY.value: {
+        "status": 503,
+        "meaning": "The process is alive but cannot serve — typically invalid payment configuration. Returned by /readyz only; it is a signal for a load balancer, not for a buyer.",
+        "retriable": True,
+    },
+    ErrorCode.INTERNAL_ERROR.value: {
+        "status": 500,
+        "meaning": "An unhandled server-side error. The cause is deliberately not described: the exception text names internals. Nothing was billed. If it recurs, the service is broken, not the request.",
+        "retriable": True,
     },
 }
 

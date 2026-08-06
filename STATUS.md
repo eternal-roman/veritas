@@ -79,7 +79,7 @@ All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 | Real-facilitator settlement test | High | Needs testnet wallet + funded run |
 | Public deployment | High | No hosted instance |
 | Quality benchmark vs strong baselines | High | Harness proves invariants, not quality |
-| Rate limiting / abuse controls | Medium | Not implemented |
+| Rate limiting across instances | Medium | Per-IP limiting, body caps and a concurrency cap are in and tested, but all are in-process: each node behind a balancer has its own budget |
 | Shared ledger/spend state across instances | Medium | Both are local disk; a second instance does not see them, so a replay routed elsewhere still fails (roadmap 6.2) |
 | Reconciling recorded settlements against the chain | High | The ledger records what the facilitator said; no RPC check exists (gap G9) |
 | Bazaar / registry auto-registration | Medium | Manual |

@@ -11,8 +11,10 @@ from __future__ import annotations
 import base64
 import json
 import os
+import threading
 import time
 import uuid
+from collections import deque
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -20,6 +22,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from veritas import __version__
 from veritas.constitution import build_constitution
@@ -91,13 +94,110 @@ ledger = Ledger()
 # the protocol so a client can recognise the challenge without parsing.
 PAYMENT_REQUIRED_HEADER = {"Payment-Required": "x402"}
 
+# --- Limits -----------------------------------------------------------------
+#
+# Every handler used to be `def`, which in FastAPI means the shared 40-slot
+# threadpool. Forty slow retrievals therefore stopped `/health` answering, so a
+# load balancer would pull a node that was merely busy. The cheap endpoints are
+# now `async def` (served on the event loop and never blocked by retrieval) and
+# the one expensive endpoint runs in the threadpool behind an explicit cap.
+
+MAX_CONCURRENT_RESEARCH = max(1, int(os.getenv("VERITAS_MAX_CONCURRENT_RESEARCH", "8")))
+
+#: Shedding, not queueing. An unbounded queue turns a slow dependency into a
+#: total outage: every buyer waits behind work that will miss its authorization
+#: window anyway. Refusing immediately costs the shed caller one retry and
+#: costs them nothing — no work runs and no authorization is claimed.
+research_slots = threading.BoundedSemaphore(MAX_CONCURRENT_RESEARCH)
+OVERLOAD_RETRY_AFTER = "2"
+
+#: `/v1/verify` re-hashes whatever it is sent, so an unbounded body was an
+#: unbounded amount of work for an unpaid, unauthenticated caller.
+MAX_BODY_BYTES = int(os.getenv("VERITAS_MAX_BODY_BYTES", str(256 * 1024)))
+MAX_VERIFY_CONTENT_CHARS = 200_000
+
+#: Per-caller request budget. Local, in-process, single-instance — behind a
+#: balancer each node has its own, which is a real limit and not a closed
+#: problem (roadmap 6.2). Set to 0 to disable.
+RATE_LIMIT_PER_MINUTE = int(os.getenv("VERITAS_RATE_LIMIT_PER_MINUTE", "300"))
+RATE_LIMIT_WINDOW_SECONDS = 60
+
+#: Never rate limited. A limiter that can starve the liveness probe turns a
+#: busy node into a node the balancer believes is dead.
+UNMETERED_PATHS = frozenset({"/health", "/readyz"})
+
+_rate_lock = threading.Lock()
+_rate_buckets: dict[str, deque[float]] = {}
+
+
+def _rate_limited(caller: str) -> bool:
+    if RATE_LIMIT_PER_MINUTE <= 0:
+        return False
+    now = time.monotonic()
+    cutoff = now - RATE_LIMIT_WINDOW_SECONDS
+    with _rate_lock:
+        bucket = _rate_buckets.setdefault(caller, deque())
+        while bucket and bucket[0] < cutoff:
+            bucket.popleft()
+        if len(bucket) >= RATE_LIMIT_PER_MINUTE:
+            return True
+        bucket.append(now)
+        # Bound the map itself: an attacker cycling source addresses must not
+        # be able to grow it without limit.
+        if len(_rate_buckets) > 10_000:
+            for key in [k for k, v in _rate_buckets.items() if not v or v[-1] < cutoff]:
+                _rate_buckets.pop(key, None)
+    return False
+
+
+@app.middleware("http")
+async def enforce_limits(request: Request, call_next):
+    """Bound body size and caller rate before a handler ever runs."""
+    if request.url.path not in UNMETERED_PATHS:
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > MAX_BODY_BYTES:
+            return JSONResponse(status_code=413, content=error_envelope(
+                ErrorCode.REQUEST_TOO_LARGE,
+                f"body exceeds {MAX_BODY_BYTES} bytes",
+            ))
+        caller = request.client.host if request.client else "unknown"
+        if _rate_limited(caller):
+            return JSONResponse(
+                status_code=429,
+                content=error_envelope(
+                    ErrorCode.RATE_LIMITED,
+                    f"more than {RATE_LIMIT_PER_MINUTE} requests in "
+                    f"{RATE_LIMIT_WINDOW_SECONDS}s from this caller",
+                ),
+                headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
+            )
+    return await call_next(request)
+
 
 @app.exception_handler(RequestValidationError)
-def invalid_request_handler(request: Request, exc: RequestValidationError):
+async def invalid_request_handler(request: Request, exc: RequestValidationError):
     """422s previously leaked FastAPI's raw shape, unlike every other error."""
     return JSONResponse(
         status_code=422,
         content=error_envelope(ErrorCode.INVALID_REQUEST, jsonable_encoder(exc.errors())),
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_error_handler(request: Request, exc: Exception):
+    """The last response on the surface that was not a registered envelope.
+
+    An unhandled exception used to escape as Starlette's plain-text 500, so an
+    agent branching on `body["error"]` crashed on exactly the case it most
+    needed to handle. The cause is deliberately not described: the exception
+    text names server internals and this body goes to external callers.
+    """
+    return JSONResponse(
+        status_code=500,
+        content=error_envelope(
+            ErrorCode.INTERNAL_ERROR,
+            "the service failed to handle this request; nothing was billed",
+        ),
     )
 
 
@@ -107,12 +207,13 @@ class ResearchRequest(BaseModel):
 
 
 class VerifyRequest(BaseModel):
-    content: str
-    content_hash: str
+    content: str = Field(max_length=MAX_VERIFY_CONTENT_CHARS)
+    content_hash: str = Field(max_length=256)
 
 
 @app.get("/health")
-def health():
+async def health():
+    """Liveness: is this process running? Never rate limited, never blocked."""
     cfg = get_payment_config()
     return {
         "status": "ok",
@@ -123,8 +224,24 @@ def health():
     }
 
 
+@app.get("/readyz")
+async def readyz():
+    """Readiness: can this process serve? Distinct from liveness on purpose.
+
+    One endpoint conflating the two leaves an operator with a bad choice: a
+    misconfigured node that reports healthy and silently serves nothing, or a
+    busy node that gets restarted for being busy. A misconfigured service is
+    alive (do not restart it) and not ready (do not route to it).
+    """
+    cfg = get_payment_config()
+    reasons = list(cfg.config_errors) if cfg.mode == "misconfigured" else []
+    ready = not reasons
+    body = {"ready": ready, "payment_mode": cfg.mode, "reasons": reasons}
+    return body if ready else JSONResponse(status_code=503, content=body)
+
+
 @app.get("/v1/payment-config")
-def payment_config():
+async def payment_config():
     cfg = get_payment_config()
     # The human price alone cannot be checked against a settlement; the atomic
     # amount and the pricing version can, and the version is what a revenue
@@ -293,7 +410,33 @@ def _resubmitted_authorization(claim, cfg, facilitator, payment_payload, require
 
 
 @app.post(RESOURCE_PATH)
-def research(req: ResearchRequest, request: Request):
+async def research(req: ResearchRequest, request: Request):
+    """Bound the one expensive endpoint, then run it off the event loop.
+
+    The cap is taken *before* the thread hop, so a shed request costs nothing:
+    no retrieval pass, no facilitator call, no claimed payment authorization.
+    The payment header is read here rather than passed through, so no Request
+    object crosses into the worker thread.
+    """
+    if not research_slots.acquire(blocking=False):
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(
+                ErrorCode.SERVICE_OVERLOADED,
+                f"all {MAX_CONCURRENT_RESEARCH} research slots are in use; "
+                "nothing was done and nothing is owed",
+            ),
+            headers={"Retry-After": OVERLOAD_RETRY_AFTER},
+        )
+    try:
+        return await run_in_threadpool(
+            _research, req, request.headers.get("X-PAYMENT"),
+        )
+    finally:
+        research_slots.release()
+
+
+def _research(req: ResearchRequest, payment_header: str | None):
     cfg = get_payment_config()
     payment_payload: dict[str, Any] | None = None
     requirements_dict: dict[str, Any] | None = None
@@ -334,11 +477,10 @@ def research(req: ResearchRequest, request: Request):
             )
         requirements_dict = requirements.to_dict()
 
-        header = request.headers.get("X-PAYMENT")
-        if not header:
+        if not payment_header:
             return _challenge(cfg)
 
-        payment_payload = decode_payment_header(header)
+        payment_payload = decode_payment_header(payment_header)
         if payment_payload is None:
             return _challenge(cfg, "X-PAYMENT header is not valid base64-encoded JSON")
 
@@ -438,14 +580,14 @@ def research(req: ResearchRequest, request: Request):
 
 
 @app.post("/v1/verify")
-def verify(req: VerifyRequest):
+async def verify(req: VerifyRequest):
     """Let any agent independently re-check an evidence hash we published."""
     ok, detail = verify_content_hash(req.content, req.content_hash)
     return {"valid": ok, **detail}
 
 
 @app.get("/v1/receipts/{request_id}")
-def receipt(request_id: str):
+async def receipt(request_id: str):
     """Retrieve a stored custody record so results stay auditable after the call."""
     record = store.load(request_id)
     if record is None:
@@ -456,13 +598,13 @@ def receipt(request_id: str):
 
 
 @app.get("/v1/trust")
-def trust():
+async def trust():
     s = score_service()
     return s.to_dict()
 
 
 @app.get("/v1/schema")
-def schema():
+async def schema():
     """The wire contract as JSON Schema, generated from veritas.schema."""
     from veritas.schema import response_json_schema
 
@@ -487,7 +629,7 @@ def schema():
 
 
 @app.get("/v1/errors")
-def errors():
+async def errors():
     """The registered failure surface, so an agent can learn it before paying."""
     return {
         "errors": ERROR_REGISTRY,
@@ -501,19 +643,19 @@ def errors():
 
 
 @app.get("/v1/constitution")
-def constitution():
+async def constitution():
     """The venue constitution: enforced-or-aspirational articles, free to read."""
     return build_constitution()
 
 
 @app.get("/v1/identity")
-def identity():
+async def identity():
     cfg = get_payment_config()
     return build_identity(pay_to=cfg.pay_to, network=cfg.network, price=cfg.price)
 
 
 @app.get("/.well-known/x402")
-def well_known():
+async def well_known():
     cfg = get_payment_config()
     body: dict[str, Any] = {
         "x402Version": 1,
@@ -529,6 +671,8 @@ def well_known():
         # machine-readable surface. Relative paths, so no base URL is faked.
         "links": {
             "identity": "/v1/identity",
+            "health": "/health",
+            "readiness": "/readyz",
             "trust": "/v1/trust",
             "constitution": "/v1/constitution",
             "errors": "/v1/errors",
@@ -550,7 +694,7 @@ def well_known():
 
 
 @app.get("/llms.txt")
-def llms_txt():
+async def llms_txt():
     """Agent-readable discovery index; the repo-root llms.txt mirrors this."""
     return PlainTextResponse(LLMS_TXT)
 

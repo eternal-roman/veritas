@@ -5,11 +5,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Phase T complete; X2 and the X5 default landed.** Next in Phase X: X3
-> (`/supported` preflight, fail-closed), X4 (absolute `resource` URL), the rest
-> of X5 (`veritas-agent up --paid` must refuse mainnet without an explicit flag), X7
-> (`veritas/deadline.py`), X1 (adopt the official `x402` SDK behind the seam),
-> X6 (Bazaar discovery extension). Tests first in `tests/test_x402_protocol.py`.
+> **X2, X4, X5, X7 landed.** Next: **Phase M**, which closes the two most
+> damaging open gaps — G6 (a buyer whose connection drops after settlement is
+> charged and gets a 409 on retry) and G8 (no settlement is ever recorded).
+> Start with M1+M3: a SQLite ledger under `veritas/ledger/`, `DeliveryEntry`
+> fsynced before settle and `SettlementEntry` after, joined by `request_id`
+> (which `SpentNonceStore.claim` already accepts but `server.py` never passes).
+> Then M2 (nonce state machine so a replay returns the stored deliverable) and
+> M4 (indeterminate settlement ≠ failure). Deleting the G6/G8 witnesses in
+> `tests/test_known_gaps.py` is part of closing them.
+>
+> Deferred within X, deliberately: X3 (`/supported` preflight) and X1 (SDK
+> adoption) need facilitator egress this sandbox blocks; X6 (Bazaar) follows X1.
 >
 > Note the execution order was deliberately inverted from the original plan:
 > substrate (X → M → O) before new product surface (N0/N1). Rationale in the
@@ -88,10 +95,10 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [ ] X1 Adopt official `x402` SDK behind existing seams
 - [x] X2 Pinned per-network EIP-712 domain table with provenance; unverified networks refused (R1)
 - [ ] X3 `/supported` preflight, fail-closed
-- [ ] X4 Absolute `resource` URL; require `VERITAS_PUBLIC_URL` in live mode (R2)
-- [~] X5 Default network → Base Sepolia done; explicit mainnet opt-in in `veritas-agent` still to do (O11)
+- [x] X4 Absolute `resource` URL; `VERITAS_PUBLIC_URL` required in live mode (R2)
+- [x] X5 Base Sepolia default + `--network` and `--i-understand-this-is-real-money` opt-in (O11)
 - [ ] X6 Bazaar discovery extension, `discoverable: true`
-- [ ] X7 `veritas/deadline.py` — deadline budget before settle (R4)
+- [x] X7 `veritas/deadline.py` — budget checked before the nonce claim and again before settle (R4)
 
 ### Phase M — Money infrastructure
 - [ ] M1 SQLite ledger: delivery + settlement entries, fsync before responding (R5)
@@ -146,7 +153,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |
 | L6 | high | Buyer queries persisted forever, served unauthenticated | open |
 | R1 | critical | EIP-712 domain guessed from symbol; would void every signature | **closed** — pinned table with provenance; unverified networks refused (`tests/test_x402_protocol.py`). Only Base/Base Sepolia are advertisable, from the reference implementation; **none is yet confirmed on-chain** — run `scripts/verify_eip712_domains.py` |
-| R4 | critical | No deadline; authorization can expire during paid work | open |
+| R4 | critical | No deadline; authorization can expire during paid work | **closed** — `veritas/deadline.py`; too-short windows refused before work, expiry before settle returns non-billable `deadline_exceeded` (`tests/test_x402_protocol.py`) |
 | R5 | critical | No financial ledger; settlement tx hash discarded | open — **witnessed** by `::test_known_gap_no_settlement_record_is_written` (gap G8) |
 | R6 | high | `request_id` never recorded against the nonce claim | open |
 | R7 | high | Indeterminate settlement coded as definite failure | open |
@@ -161,7 +168,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
 | O7 | high | Receipt writes neither atomic nor fsynced | open |
 | O9 | high | No logging, metrics, tracing or alerting | open |
-| O11 | high | `veritas-agent up --paid` targets Base mainnet by default | open |
+| O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | open |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | open |
 | O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
@@ -173,7 +180,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 300 | Phase X (X2 done, X5 partial) |
+| Tests passing | 309 | Phase X (X2, X4, X5, X7 done) |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |

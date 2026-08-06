@@ -110,3 +110,103 @@ def test_mainnet_networks_are_identifiable_as_such():
 
     assert is_testnet("eip155:84532") is True
     assert is_testnet("eip155:8453") is False
+
+
+# --- X4: the resource a challenge names must be dialable ---------------------
+
+def test_resource_is_an_absolute_url_when_a_public_url_is_configured(monkeypatch):
+    """R2. x402 defines `resource` as the resource URL. We advertised the bare
+    path `/v1/research`, which a facilitator or buyer matching on absolute URLs
+    cannot resolve."""
+    import importlib
+
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.example.org")
+    import veritas.server as server
+    importlib.reload(server)
+
+    assert server.resource_url() == "https://veritas.example.org/v1/research"
+
+
+def test_live_mode_refuses_to_serve_without_a_public_url(monkeypatch, tmp_path):
+    """Without a public URL we cannot name the resource honestly, so live mode
+    is misconfiguration rather than a challenge nobody can match."""
+    from veritas.payment_config import PaymentConfig
+
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
+    monkeypatch.delenv("VERITAS_PUBLIC_URL", raising=False)
+    cfg = PaymentConfig.from_env()
+    assert cfg.mode == "misconfigured"
+    assert any("PUBLIC_URL" in e for e in cfg.config_errors)
+
+
+def test_free_mode_does_not_require_a_public_url(monkeypatch):
+    from veritas.payment_config import PaymentConfig
+
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    monkeypatch.delenv("VERITAS_PUBLIC_URL", raising=False)
+    assert PaymentConfig.from_env().mode == "free"
+
+
+# --- X7: the work must fit inside the authorization it is paid by ------------
+
+def test_deadline_budget_is_bounded_by_the_authorization_window():
+    from veritas.deadline import Deadline
+
+    d = Deadline.for_authorization(valid_before=1000, now=900, max_work_seconds=60)
+    # 100s of authorization left, minus the safety margin, not the full 60s cap.
+    assert 0 < d.seconds_remaining(now=900) <= 60
+
+
+def test_deadline_refuses_when_the_window_is_already_too_short():
+    """R4. Better to refuse before the work than to do it and settle against an
+    expired authorization."""
+    from veritas.deadline import Deadline, DeadlineTooShort
+
+    with pytest.raises(DeadlineTooShort):
+        Deadline.for_authorization(valid_before=1000, now=995, max_work_seconds=60)
+
+
+def test_deadline_expires():
+    from veritas.deadline import Deadline
+
+    d = Deadline.for_authorization(valid_before=1000, now=900, max_work_seconds=30)
+    assert d.expired(now=900) is False
+    assert d.expired(now=1000) is True
+
+
+def test_deadline_leaves_a_settlement_margin():
+    """Time must remain to actually call settle after the work finishes."""
+    from veritas.deadline import SETTLEMENT_MARGIN_SECONDS, Deadline
+
+    d = Deadline.for_authorization(valid_before=1000, now=900, max_work_seconds=600)
+    assert d.expires_at <= 1000 - SETTLEMENT_MARGIN_SECONDS
+
+
+# --- X5 remainder: mainnet needs saying out loud -----------------------------
+
+def test_agent_cli_refuses_mainnet_without_explicit_acknowledgement(tmp_path, monkeypatch):
+    """O11. `--paid` on a mainnet network moves real money; it must not be
+    reachable by a flag whose name does not say so."""
+    from veritas.agent_cli import main
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
+    monkeypatch.setattr("veritas.server.main", lambda: None)
+    with pytest.raises(SystemExit):
+        main(["up", "--paid", "--network", "eip155:8453"])
+
+
+def test_agent_cli_allows_mainnet_when_acknowledged(tmp_path, monkeypatch):
+    pytest.importorskip("eth_account")
+    from veritas.agent_cli import main
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.example.org")
+    monkeypatch.setattr("veritas.server.main", lambda: None)
+    assert main([
+        "up", "--paid", "--network", "eip155:8453",
+        "--i-understand-this-is-real-money",
+    ]) == 0

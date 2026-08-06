@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from veritas.autonomous.bootstrap import apply_to_env, bootstrap_free_mode, load_config
+from veritas.networks import DEFAULT_NETWORK, is_testnet, normalize_network
 
 CONFIG_NAME = "config.json"
 
@@ -29,7 +30,12 @@ def _write_config(base_dir: str, config: dict[str, Any]) -> None:
     (Path(base_dir) / CONFIG_NAME).write_text(json.dumps(config, indent=2))
 
 
-def _provision(base_dir: str, paid: bool) -> dict[str, Any]:
+def _provision(
+    base_dir: str,
+    paid: bool,
+    network: str | None = None,
+    acknowledged_real_money: bool = False,
+) -> dict[str, Any]:
     """Bootstrap config and, when signing support is installed, a wallet."""
     config_path = Path(base_dir) / CONFIG_NAME
     config = load_config(base_dir) if config_path.exists() else bootstrap_free_mode(base_dir=base_dir)
@@ -46,7 +52,20 @@ def _provision(base_dir: str, paid: bool) -> dict[str, Any]:
             raise
         wallet_note = f"wallet: not provisioned ({exc})"
 
+    if network:
+        config["network"] = normalize_network(network)
+
     if paid:
+        target = config.get("network") or DEFAULT_NETWORK
+        # Reaching mainnet moves real money. It used to be the default, so a
+        # single `--paid` put a freshly generated, unfunded keystore into live
+        # operation. Now it has to be said out loud.
+        if not is_testnet(target) and not acknowledged_real_money:
+            raise SystemExit(
+                f"refusing to enable payment on {target}, which settles real "
+                "funds. Re-run with --i-understand-this-is-real-money, or pass "
+                "--network eip155:84532 for Base Sepolia."
+            )
         config["require_payment"] = True
     config["notes_cli"] = (
         "Provisioned by veritas-agent. Funding the wallet and public TLS "
@@ -72,21 +91,35 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="veritas-agent", description=__doc__)
     parser.add_argument("--base-dir", default=".veritas_agent")
     sub = parser.add_subparsers(dest="command", required=True)
+    def _payment_flags(sub_parser):
+        sub_parser.add_argument("--paid", action="store_true")
+        sub_parser.add_argument(
+            "--network", default=None,
+            help="CAIP-2 network id (default: Base Sepolia testnet)",
+        )
+        sub_parser.add_argument(
+            "--i-understand-this-is-real-money", action="store_true",
+            dest="acknowledged_real_money",
+            help="required to enable payment on a mainnet network",
+        )
+
     init_p = sub.add_parser("init", help="provision config and wallet, do not serve")
-    init_p.add_argument("--paid", action="store_true")
+    _payment_flags(init_p)
     sub.add_parser("serve", help="apply provisioned config to env and run the server")
     up_p = sub.add_parser("up", help="init if missing, then serve (the zero-touch path)")
-    up_p.add_argument("--paid", action="store_true")
+    _payment_flags(up_p)
     sub.add_parser("status", help="print provisioned config and wallet state")
 
     args = parser.parse_args(argv)
 
     if args.command == "init":
-        _provision(args.base_dir, paid=args.paid)
+        _provision(args.base_dir, paid=args.paid, network=args.network,
+                   acknowledged_real_money=args.acknowledged_real_money)
         return 0
 
     if args.command == "up":
-        _provision(args.base_dir, paid=args.paid)
+        _provision(args.base_dir, paid=args.paid, network=args.network,
+                   acknowledged_real_money=args.acknowledged_real_money)
         _serve(args.base_dir)
         return 0
 

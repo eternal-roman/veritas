@@ -114,6 +114,7 @@ def live_client(tmp_path, monkeypatch):
     """A live-mode server whose facilitator always accepts."""
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "11" * 20)
     monkeypatch.setenv("VERITAS_NETWORK", "eip155:8453")
     monkeypatch.setenv("VERITAS_FACILITATOR", "https://facilitator.test")

@@ -31,6 +31,7 @@ class ErrorCode(str, Enum):
     SETTLEMENT_FAILED = "settlement_failed"
     RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
     RECEIPT_NOT_FOUND = "receipt_not_found"
+    DEADLINE_EXCEEDED = "deadline_exceeded"
     INVALID_REQUEST = "invalid_request"
 
 
@@ -79,6 +80,11 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "status": 404,
         "meaning": "No custody receipt is stored under the requested request_id.",
         "retriable": False,
+    },
+    ErrorCode.DEADLINE_EXCEEDED.value: {
+        "status": 503,
+        "meaning": "The work outran the payment authorization window, so nothing was settled and nothing is owed. Request a fresh challenge and sign a new authorization.",
+        "retriable": True,
     },
     ErrorCode.INVALID_REQUEST.value: {
         "status": 422,

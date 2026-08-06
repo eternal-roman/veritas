@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import time
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -22,6 +23,7 @@ from pydantic import BaseModel, Field
 from veritas import __version__
 from veritas.constitution import build_constitution
 from veritas.custody import CustodyStore
+from veritas.deadline import Deadline, DeadlineTooShort
 from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import get_facilitator
@@ -36,11 +38,47 @@ from veritas.x402 import (
     build_402_challenge,
     build_payment_requirements,
     decode_payment_header,
+    payment_authorization,
 )
 
 app = FastAPI(title="Veritas Research", version=__version__)
 
 RESOURCE_PATH = "/v1/research"
+
+# Ceiling on retrieval work for one paid request, independent of how long the
+# buyer's authorization happens to run.
+MAX_WORK_SECONDS = 25
+
+
+def _authorization_valid_before(payload: dict[str, Any]) -> float:
+    """The buyer's authorization expiry, or a conservative default.
+
+    A payload we cannot read a `validBefore` from is budgeted as if the window
+    were the protocol's advertised maximum, so a malformed value can shorten
+    the budget but never extend it.
+    """
+    authorization = payment_authorization(payload) or {}
+    raw = authorization.get("validBefore") or authorization.get("valid_before")
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return time.time() + DEFAULT_AUTHORIZATION_SECONDS
+
+
+DEFAULT_AUTHORIZATION_SECONDS = 60
+
+
+def resource_url() -> str:
+    """The absolute URL of the paid resource, as x402 expects in `resource`.
+
+    Falls back to the bare path only when no public URL is configured, which
+    live mode refuses (see veritas/payment_config.py) — so a published
+    challenge always names something a counterparty can dial.
+    """
+    base = (os.getenv("VERITAS_PUBLIC_URL") or "").strip().rstrip("/")
+    return f"{base}{RESOURCE_PATH}" if base else RESOURCE_PATH
+
+
 store = CustodyStore()
 outcomes = OutcomeLog()
 nonces = SpentNonceStore()
@@ -92,6 +130,7 @@ def research(req: ResearchRequest, request: Request):
     payment_payload: dict[str, Any] | None = None
     requirements_dict: dict[str, Any] | None = None
     facilitator = None
+    deadline: Deadline | None = None
 
     # Payment was demanded but the configuration is invalid. Refuse to serve
     # rather than silently falling back to giving the paid service away.
@@ -107,7 +146,7 @@ def research(req: ResearchRequest, request: Request):
                 pay_to=cfg.pay_to,
                 network=cfg.network,
                 price=cfg.price,
-                resource=RESOURCE_PATH,
+                resource=resource_url(),
             )
         except PriceError:
             # Misconfiguration must not silently become free service. The
@@ -127,14 +166,14 @@ def research(req: ResearchRequest, request: Request):
         if not header:
             return JSONResponse(
                 status_code=402,
-                content=build_402_challenge(cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH),
+                content=build_402_challenge(cfg.pay_to, cfg.network, cfg.price, resource_url()),
                 headers=PAYMENT_REQUIRED_HEADER,
             )
 
         payment_payload = decode_payment_header(header)
         if payment_payload is None:
             return JSONResponse(status_code=402, content=build_402_challenge(
-                cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
+                cfg.pay_to, cfg.network, cfg.price, resource_url(),
                 error="X-PAYMENT header is not valid base64-encoded JSON",
             ), headers=PAYMENT_REQUIRED_HEADER)
 
@@ -149,7 +188,7 @@ def research(req: ResearchRequest, request: Request):
                     ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason,
                 ))
             return JSONResponse(status_code=402, content=build_402_challenge(
-                cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH, error=reason,
+                cfg.pay_to, cfg.network, cfg.price, resource_url(), error=reason,
             ), headers=PAYMENT_REQUIRED_HEADER)
 
         # Replay protection (roadmap 0.4). The nonce is claimed after the
@@ -157,6 +196,20 @@ def research(req: ResearchRequest, request: Request):
         # resubmitted header cannot make us do the work a second time. The
         # claim is never released: the authorization stays live on chain, so
         # re-admitting it would restore the double-work this prevents.
+        # Budget the work against the authorization that pays for it. Doing
+        # this before the nonce claim means an authorization too short to
+        # finish costs the buyer nothing: no work, no burned nonce.
+        try:
+            deadline = Deadline.for_authorization(
+                valid_before=_authorization_valid_before(payment_payload),
+                max_work_seconds=MAX_WORK_SECONDS,
+            )
+        except DeadlineTooShort as exc:
+            return JSONResponse(status_code=402, content=build_402_challenge(
+                cfg.pay_to, cfg.network, cfg.price, resource_url(),
+                error=f"authorization window too short: {exc}",
+            ), headers=PAYMENT_REQUIRED_HEADER)
+
         claim = nonces.claim(extract_nonce(payment_payload))
         if not claim.claimed:
             reason = claim.reason or "payment_nonce_rejected"
@@ -172,6 +225,19 @@ def research(req: ResearchRequest, request: Request):
             ))
 
     result = run_research(req.query, max_results=req.max_results)
+
+    # The window may have closed while we worked. Settling now would present an
+    # expired authorization; the buyer is not charged and is told to retry with
+    # a fresh one, which is the honest outcome for our own slowness.
+    if deadline is not None and deadline.expired():
+        result["billable"] = False
+        result["status"] = "unavailable"
+        result["refusal_reason"] = "retrieval_unavailable"
+        result["error"] = ErrorCode.DEADLINE_EXCEEDED.value
+        result["payment"] = {"settled": False, "reason": "deadline_exceeded_before_settlement"}
+        outcomes.record(result["status"], bool(result["custody_valid"]), False)
+        return JSONResponse(status_code=503, content=result)
+
     record = store.save(result)
     result["custody_receipt"] = record
     outcomes.record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
@@ -285,7 +351,7 @@ def well_known():
     cfg = get_payment_config()
     body: dict[str, Any] = {
         "x402Version": 1,
-        "resources": [{"resource": RESOURCE_PATH, "method": "POST"}],
+        "resources": [{"resource": resource_url(), "method": "POST"}],
         "facilitator": cfg.facilitator,
         "network": cfg.network,
         "mode": cfg.mode,
@@ -308,7 +374,7 @@ def well_known():
     if cfg.is_live_ready():
         try:
             body["accepts"] = [build_payment_requirements(
-                cfg.pay_to, cfg.network, cfg.price, RESOURCE_PATH,
+                cfg.pay_to, cfg.network, cfg.price, resource_url(),
             ).to_dict()]
         except PriceError:
             # Category only, same as the /v1/research path: the exception

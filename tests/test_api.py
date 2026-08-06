@@ -22,6 +22,7 @@ def free_client(tmp_path, monkeypatch):
 def paid_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
     # Unroutable facilitator so verification cannot succeed.
     monkeypatch.setenv("VERITAS_FACILITATOR", "http://127.0.0.1:1")

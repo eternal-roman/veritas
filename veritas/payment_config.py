@@ -52,6 +52,15 @@ class PaymentConfig:
             # Price was the one live-mode field this guard never validated, so a
             # typo yielded mode=="live", a green /health, and a 500 on every
             # request — the exact class of failure the guard exists to catch.
+            # x402 defines `resource` as the resource URL. Without a public
+            # base URL we can only name the bare path, which a facilitator or
+            # buyer matching on absolute URLs cannot resolve — so live mode
+            # without one is misconfiguration, not a servable state.
+            if not (os.getenv("VERITAS_PUBLIC_URL") or "").strip():
+                errors.append(
+                    "VERITAS_PUBLIC_URL is required in live mode so the 402 "
+                    "challenge can name an absolute resource URL"
+                )
             try:
                 parse_price(price)
             except PriceError as exc:

@@ -23,6 +23,7 @@ def test_invalid_pay_to_does_not_become_live(monkeypatch):
     settling payments to an address nobody controls."""
     from veritas.payment_config import PaymentConfig
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0xnot-a-real-address")
     cfg = PaymentConfig.from_env()
     assert cfg.mode == "misconfigured"

@@ -201,6 +201,7 @@ def test_price_is_validated_by_the_misconfiguration_guard(monkeypatch):
     from veritas.payment_config import PaymentConfig
 
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
     monkeypatch.setenv("VERITAS_PRICE", "0.25 USD each")
     cfg = PaymentConfig.from_env()

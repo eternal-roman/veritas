@@ -43,6 +43,7 @@ def settling_client(tmp_path, monkeypatch):
     """A live-mode client whose facilitator always verifies and settles."""
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
     monkeypatch.setenv("VERITAS_FACILITATOR", "https://facilitator.test")
 

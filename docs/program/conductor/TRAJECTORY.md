@@ -1,7 +1,7 @@
 # Trajectory — agent commerce vision
 
-**Updated:** 2026-08-08T23:28:00Z (conductor stock / IDLE hold)
-**Main:** `827813a` (#94) · steward clear dual-NEXT · prior `f87a467` (#93) · product A26/A27 `ab728a6` (#75) · **version:** `0.8.1`
+**Updated:** 2026-08-08T23:36:00Z (post-#95 merge / IDLE hold)
+**Main:** `301f5b2` (#95) · prior `827813a` (#94) · product A26/A27 `ab728a6` (#75) · **version:** `0.8.1`
 
 ## Where we are
 
@@ -14,7 +14,7 @@
 | **N0 residue** | **On main** `1c56a0b` (#77) |
 | **A26/A27** | **On main** `ab728a6` (#75) |
 | G10 harvest docs | **On main** `458c36a` (#81) — gap **still open** |
-| Plane tip-align | **On main** through `#94` (`827813a`) |
+| Plane tip-align | **On main** through `#95` (`301f5b2`) |
 | On-chain settlements | **0** |
 | Claim | **free** |
 | Open product PRs | **none** |
@@ -22,14 +22,14 @@
 ## Primary trajectory
 
 ```
-… → A26/A27 DONE → free claim → tip-align #84–#94 DONE
+… → A26/A27 DONE → free claim → tip-align #84–#95 DONE
   → Overseer singular NEXT only
      candidates (blocked/external): live-RPC G9 | PyPI human ops | W1 after settle
 ```
 
 **This-cycle bet:** none
 
-**Refuse:** prefer_bet=N0 (dual-reopen N0–N1.3 banned; N0 already on main); prefer_bet=M7; re-open P7-C / A26-A27; invent settlement; implement×n while HOLD.
+**Refuse:** prefer_bet=N0; prefer_bet=M7; re-open P7-C / A26-A27; invent settlement; implement×n while HOLD.
 
 ## Parked
 

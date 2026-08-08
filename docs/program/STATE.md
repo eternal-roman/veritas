@@ -20,7 +20,7 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `398e2ac` (PR **#84** tip restock; continuous c8 boards). Prior: `#82` / `48d7703`; `#81` / `458c36a` G10 harvest; free closeout **`2876f0a`** (#78).
+> **Tip of `origin/main`:** `232efac` (PR **#85** conductor cycle-9 hold). Prior: `#84` / `398e2ac`; `#82` / `48d7703`; `#81` / `458c36a`; free closeout **`2876f0a`** (#78).
 > Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
 > Claim **free**. Settlements: **0**. Gap G9 open. Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.

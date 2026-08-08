@@ -4,8 +4,8 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-08T22:40:00Z
-- **last_merged:** docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
+- **updated:** 2026-08-08T22:34:00Z
+- **last_merged:** docs #85 @ `232efac`; docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
 - **next_micro:** Overseer singular NEXT only. Default hold unless live-RPC G9 egress. Parked: PyPI human ops. Do **not** re-open A26/A27 / N0-residue / P7-C / N1.5 / 0.8.1 / M7. prefer_bet=M7 refused. Settlements **0**. Gap G9 open.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
@@ -14,6 +14,7 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| Conductor cycle-9 hold board | `232efac` / #85 |
 | Conductor cycle-9 tip-align stock | `398e2ac` / #84 |
 | Conductor cycle-8 final board | `48d7703` / #82 |
 | G10 survival-reputation consensus docs | `458c36a` / #81 |

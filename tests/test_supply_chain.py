@@ -220,6 +220,52 @@ def test_lock_satisfies_the_declared_floors():
             )
 
 
+def test_lock_versions_satisfy_every_declared_bound():
+    """A floor is half a requirement; the ceiling is the other half.
+
+    `test_lock_satisfies_the_declared_floors` above strips upper bounds by
+    design, so nothing ever compared a locked version against a ceiling.
+    Narrowing one without regenerating leaves a lock that installs precisely
+    the version the ceiling was written to exclude, and the disagreement stays
+    invisible until someone regenerates — at which point versions move for
+    reasons unrelated to whatever they were changing.
+
+    Ceilings here are behavioural, not caution: `mcp<2` records that mcp 2.0.0
+    removed `mcp.server.fastmcp`, the surface `veritas-mcp` is built on. A lock
+    that ignores that bound ships an extra which cannot serve.
+    """
+    from packaging.requirements import Requirement
+    from packaging.version import Version
+
+    checked = 0
+    for source, lock_path in (
+        ("requirements.txt", RUNTIME_LOCK),
+        ("requirements-dev.txt", DEV_LOCK),
+    ):
+        locked = _lock_entries(lock_path)
+        for line in (REPO / source).read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if not line or line.startswith("-r"):
+                continue
+            requirement = Requirement(line)
+            key = requirement.name.lower().replace("_", "-")
+            assert key in locked, (
+                f"{key} is declared in {source} but absent from {lock_path.name}"
+            )
+            pinned = locked[key][0]
+            # prereleases=True: the resolver legitimately pins a prerelease when
+            # that is what satisfies the range, and rejecting them here would
+            # fail on a lock that is correct.
+            assert requirement.specifier.contains(Version(pinned), prereleases=True), (
+                f"{lock_path.name} pins {key}=={pinned}, which {source} excludes "
+                f"({requirement.specifier}). A bound changed without the lock being "
+                "regenerated — run: python scripts/lock_requirements.py"
+            )
+            checked += 1
+
+    assert checked, "no declared requirements were checked — the parser is wrong"
+
+
 def test_lock_declares_the_platform_its_markers_came_from():
     """The lock is only correct for the environment that resolved it."""
     for path in (RUNTIME_LOCK, DEV_LOCK):

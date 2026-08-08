@@ -23,7 +23,11 @@ failure.
 - /.well-known/x402: discovery document (payment requirements, links to every surface below)
 - /v1/identity: identity document with stable content hash
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
-- /v1/research: POST — the paid product; returns 402 with an accepts array in live mode, retry with an X-PAYMENT header
+- /v1/research: POST — the paid product; returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
+- /v1/siwx/challenge: POST — issue a SIWx challenge for credit-session establishment
+- /v1/siwx/verify: POST — verify SIWx signature and receive an X-VERITAS-SESSION token
+- /v1/credits: GET — prepaid credit balance for the SIWx session
+- /v1/credits/topup: POST — settle one x402 payment and grant credits (live mode only; free mode refuses)
 - /v1/verify: POST — independently re-check any published content_hash
 - /v1/receipts/{request_id}: durable custody receipt
 - /v1/trust: behaviour-derived trust score; reports UNPROVEN below 10 recorded outcomes

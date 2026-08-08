@@ -42,6 +42,10 @@ class ErrorCode(str, Enum):
     SERVICE_OVERLOADED = "service_overloaded"
     NOT_READY = "not_ready"
     INTERNAL_ERROR = "internal_error"
+    CREDITS_INSUFFICIENT = "credits_insufficient"
+    SIWX_INVALID = "siwx_invalid"
+    SESSION_INVALID = "session_invalid"
+    CREDITS_TOPUP_UNAVAILABLE = "credits_topup_unavailable"
 
 
 ERROR_REGISTRY: dict[str, dict[str, Any]] = {
@@ -143,6 +147,26 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     ErrorCode.INTERNAL_ERROR.value: {
         "status": 500,
         "meaning": "An unhandled server-side error. The cause is deliberately not described: the exception text names internals. Nothing was billed. If it recurs, the service is broken, not the request.",
+        "retriable": True,
+    },
+    ErrorCode.CREDITS_INSUFFICIENT.value: {
+        "status": 402,
+        "meaning": "SIWx session is valid but prepaid credit balance cannot cover this request. Top up via POST /v1/credits/topup (x402) or pay per request with X-PAYMENT.",
+        "retriable": False,
+    },
+    ErrorCode.SIWX_INVALID.value: {
+        "status": 401,
+        "meaning": "The SIWx message or signature did not verify (domain/uri/chain mismatch, expired challenge, or bad signature).",
+        "retriable": False,
+    },
+    ErrorCode.SESSION_INVALID.value: {
+        "status": 401,
+        "meaning": "X-VERITAS-SESSION is missing, unknown, or expired. Obtain a new session via POST /v1/siwx/verify.",
+        "retriable": False,
+    },
+    ErrorCode.CREDITS_TOPUP_UNAVAILABLE.value: {
+        "status": 503,
+        "meaning": "Credit top-up requires live payment configuration and a settled x402 authorization. Free/misconfigured modes cannot invent credits.",
         "retriable": True,
     },
 }

@@ -27,6 +27,7 @@ from starlette.concurrency import run_in_threadpool
 
 from veritas import __version__
 from veritas.constitution import build_constitution
+from veritas.credits import CreditLedger, InsufficientCredits, RefundNotAllowed
 from veritas.custody import CustodyStore, ReceiptPresence
 from veritas.deadline import (
     MIN_USABLE_SECONDS,
@@ -45,6 +46,7 @@ from veritas.observability import Metrics, configure_logging, log_request
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
+from veritas.siwx import SiwxError, SiwxSessionError, SiwxSessionStore, SiwxVerifyError
 from veritas.trust import OutcomeLog, score_service
 from veritas.x402 import (
     PriceError,
@@ -53,6 +55,7 @@ from veritas.x402 import (
     decode_payment_header,
     extract_nonce,
     payment_authorization,
+    to_atomic_amount,
 )
 
 app = FastAPI(title="Veritas Research", version=__version__)
@@ -96,6 +99,12 @@ def resource_url() -> str:
 store = CustodyStore()
 outcomes = OutcomeLog()
 ledger = Ledger()
+credit_ledger = CreditLedger()
+siwx_store = SiwxSessionStore()
+
+#: Header carrying a SIWx-issued session token for prepaid credit spend (M7).
+SESSION_HEADER = "X-VERITAS-SESSION"
+CREDITS_TOPUP_PATH = "/v1/credits/topup"
 
 # 402 bodies are x402-spec-shaped, not registry envelopes; the header marks
 # the protocol so a client can recognise the challenge without parsing.
@@ -526,18 +535,27 @@ async def research(req: ResearchRequest, request: Request):
         )
     try:
         return await run_in_threadpool(
-            _research, req, request.headers.get("X-PAYMENT"),
+            _research,
+            req,
+            request.headers.get("X-PAYMENT"),
+            request.headers.get(SESSION_HEADER),
         )
     finally:
         research_slots.release()
 
 
-def _research(req: ResearchRequest, payment_header: str | None):
+def _research(
+    req: ResearchRequest,
+    payment_header: str | None,
+    session_header: str | None = None,
+):
     cfg = get_payment_config()
     payment_payload: dict[str, Any] | None = None
     requirements_dict: dict[str, Any] | None = None
     facilitator = None
     deadline: Deadline | None = None
+    credit_account: str | None = None
+    paid_with_credits = False
     # Allocated here, not inside the pipeline, so the authorization claim, the
     # custody receipt, the ledger and the response all name the same request
     # (defect R6: `claim` accepted a request_id no caller ever passed).
@@ -551,7 +569,56 @@ def _research(req: ResearchRequest, payment_header: str | None):
             content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, cfg.config_errors),
         )
 
-    if cfg.require_payment:
+    # M7 credit path: live mode + SIWx session + no X-PAYMENT → debit prepaid
+    # credits (one payer path still owns signing; this is spend of already-
+    # settled top-up, not a second signing seam).
+    if cfg.require_payment and not payment_header and session_header:
+        try:
+            session = siwx_store.resolve(session_header)
+        except SiwxSessionError:
+            # Category only — exception text never reaches a buyer (4f2321c).
+            return JSONResponse(
+                status_code=401,
+                content=error_envelope(
+                    ErrorCode.SESSION_INVALID,
+                    "SIWx session missing, unknown, or expired",
+                ),
+            )
+        try:
+            atomic = int(to_atomic_amount(cfg.price, cfg.network))
+        except (PriceError, TypeError, ValueError):
+            return JSONResponse(
+                status_code=503,
+                content=error_envelope(
+                    ErrorCode.PAYMENT_MISCONFIGURED,
+                    "price configuration rejected at credit debit",
+                ),
+            )
+        try:
+            credit_ledger.debit(
+                session.address,
+                atomic,
+                request_id=request_id,
+                note="research_debit",
+            )
+        except InsufficientCredits:
+            # Balance/required are structured fields; do not echo exception text.
+            return JSONResponse(
+                status_code=402,
+                content=error_envelope(
+                    ErrorCode.CREDITS_INSUFFICIENT,
+                    "prepaid credits insufficient for this research debit",
+                    balance=credit_ledger.balance(session.address),
+                    required=atomic,
+                ),
+            )
+        credit_account = session.address
+        paid_with_credits = True
+        # Same work ceiling as x402-paid research; overruns refund the debit
+        # (no payment authorization window — credits are already prepaid).
+        deadline = Deadline.after(MAX_WORK_SECONDS)
+
+    if cfg.require_payment and not paid_with_credits:
         try:
             requirements = build_payment_requirements(
                 pay_to=cfg.pay_to,
@@ -657,6 +724,16 @@ def _research(req: ResearchRequest, payment_header: str | None):
     result = run_research(req.query, max_results=req.max_results, request_id=request_id)
     _meter(result, request_id, started, paid=cfg.require_payment)
 
+    def _refund_credits_if_needed(reason: str) -> None:
+        if not paid_with_credits or not credit_account:
+            return
+        try:
+            credit_ledger.refund(
+                credit_account, request_id=request_id, note=reason,
+            )
+        except RefundNotAllowed:
+            pass
+
     # The window may have closed while we worked. Settling now would present an
     # expired authorization; the buyer is not charged and is told to retry with
     # a fresh one, which is the honest outcome for our own slowness.
@@ -666,10 +743,18 @@ def _research(req: ResearchRequest, payment_header: str | None):
         result["refusal_reason"] = "retrieval_unavailable"
         result["error"] = ErrorCode.DEADLINE_EXCEEDED.value
         result["payment"] = {"settled": False, "reason": "deadline_exceeded_before_settlement"}
-        ledger.record_delivery(
-            request_id, status=result["status"], billable=False,
-            custody_root=result.get("custody_root"), query=req.query, response=result,
-        )
+        _refund_credits_if_needed("refund_deadline_exceeded")
+        if paid_with_credits:
+            result["payment"] = {
+                "settled": False,
+                "mode": "credits",
+                "reason": "deadline_exceeded_credits_refunded",
+            }
+        if not paid_with_credits and cfg.require_payment:
+            ledger.record_delivery(
+                request_id, status=result["status"], billable=False,
+                custody_root=result.get("custody_root"), query=req.query, response=result,
+            )
         outcomes.record(result["status"], bool(result["custody_valid"]), False,
                         paid=False)
         return JSONResponse(status_code=503, content=result)
@@ -680,27 +765,52 @@ def _research(req: ResearchRequest, payment_header: str | None):
     # Only paid traffic scores. /v1/trust is free and unauthenticated, so
     # counting free requests would let anyone manufacture our reputation
     # (constitution gap G7). Free outcomes are still recorded and reported.
-    outcomes.record(result["status"], bool(result["custody_valid"]),
-                    bool(result["billable"]), paid=cfg.require_payment)
+    outcomes.record(
+        result["status"],
+        bool(result["custody_valid"]),
+        bool(result["billable"]),
+        paid=cfg.require_payment and (not paid_with_credits or bool(result["billable"])),
+    )
 
     # Record what we produced BEFORE settlement is attempted, and fsync it. A
     # crash between the two then leaves a durable statement that we owe this
     # buyer a deliverable and may or may not have been paid — which is
     # reconcilable — rather than silence, which is not. Non-billable work
     # abandons the authorization, so the ledger refuses to settle it.
-    if cfg.require_payment:
+    # Credit-paid requests never claim an x402 nonce, so they skip this ledger.
+    if cfg.require_payment and not paid_with_credits:
         ledger.record_delivery(
             request_id, status=result["status"], billable=bool(result["billable"]),
             custody_root=result.get("custody_root"), query=req.query, response=result,
         )
 
     # Retrieval failures are ours, not the buyer's: never settle for them.
+    # Credit debits are refunded so the buyer is not charged for our outage.
     if result["status"] == "unavailable":
-        result["payment"] = {"settled": False, "reason": "not_billable_retrieval_unavailable"}
+        _refund_credits_if_needed("refund_retrieval_unavailable")
+        result["payment"] = {
+            "settled": False,
+            "reason": (
+                "not_billable_retrieval_unavailable_credits_refunded"
+                if paid_with_credits
+                else "not_billable_retrieval_unavailable"
+            ),
+            **({"mode": "credits"} if paid_with_credits else {}),
+        }
         # The registry code is additive: the full research body stays because
         # the unavailability report is itself the deliverable here.
         result["error"] = ErrorCode.RETRIEVAL_UNAVAILABLE.value
         return JSONResponse(status_code=503, content=result)
+
+    if paid_with_credits:
+        result["payment"] = {
+            "settled": True,
+            "mode": "credits",
+            "reason": "prepaid_credits",
+            "account": credit_account,
+            "balance": credit_ledger.balance(credit_account) if credit_account else None,
+        }
+        return result
 
     if cfg.require_payment and facilitator is not None:
         return _settle_and_respond(
@@ -799,6 +909,311 @@ async def identity():
     return build_identity(pay_to=cfg.pay_to, network=cfg.network, price=cfg.price)
 
 
+class SiwxChallengeRequest(BaseModel):
+    address: str | None = Field(
+        default=None,
+        description="Optional 0x address; when set the challenge includes a ready-to-sign message.",
+    )
+
+
+class SiwxVerifyRequest(BaseModel):
+    message: str = Field(..., min_length=1)
+    signature: str = Field(..., min_length=1)
+
+
+def _siwx_domain_and_uri() -> tuple[str, str]:
+    """Domain and URI advertised in SIWx challenges (from public URL)."""
+    base = (os.getenv("VERITAS_PUBLIC_URL") or "").strip().rstrip("/")
+    if base:
+        # hostname without scheme for EIP-4361 domain
+        without = base.split("://", 1)[-1]
+        domain = without.split("/", 1)[0]
+        uri = f"{base}/v1/siwx/verify"
+        return domain, uri
+    return "localhost", "http://localhost/v1/siwx/verify"
+
+
+@app.post("/v1/siwx/challenge")
+async def siwx_challenge(req: SiwxChallengeRequest):
+    """Issue a one-time SIWx challenge for credit-session establishment (M7)."""
+    cfg = get_payment_config()
+    domain, uri = _siwx_domain_and_uri()
+    chain_id = (cfg.network or "eip155:84532").split(":")[-1]
+    try:
+        challenge = siwx_store.create_challenge(
+            domain=domain,
+            uri=uri,
+            chain_id=chain_id,
+            address=req.address,
+        )
+    except SiwxError:
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(
+                ErrorCode.INVALID_REQUEST,
+                "SIWx challenge request rejected",
+            ),
+        )
+    return challenge
+
+
+@app.post("/v1/siwx/verify")
+async def siwx_verify(req: SiwxVerifyRequest):
+    """Verify a SIWx signature and issue an X-VERITAS-SESSION token (M7)."""
+    cfg = get_payment_config()
+    domain, uri = _siwx_domain_and_uri()
+    chain_id = (cfg.network or "eip155:84532").split(":")[-1]
+    try:
+        session = siwx_store.issue_session(
+            message=req.message,
+            signature=req.signature,
+            expected_domain=domain,
+            expected_uri=uri,
+            expected_chain_id=chain_id,
+        )
+    except SiwxVerifyError:
+        # Never surface recovery/parse exception detail to the caller.
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.SIWX_INVALID,
+                "SIWx signature or challenge verification failed",
+            ),
+        )
+    except SiwxError:
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(
+                ErrorCode.INVALID_REQUEST,
+                "SIWx verify request rejected",
+            ),
+        )
+    return session
+
+
+@app.get("/v1/credits")
+async def credits_balance(request: Request):
+    """Return prepaid credit balance for the SIWx session (M7)."""
+    token = request.headers.get(SESSION_HEADER)
+    if not token:
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.SESSION_INVALID,
+                f"{SESSION_HEADER} required",
+            ),
+        )
+    try:
+        session = siwx_store.resolve(token)
+    except SiwxSessionError:
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.SESSION_INVALID,
+                "SIWx session missing, unknown, or expired",
+            ),
+        )
+    return credit_ledger.summary(session.address)
+
+
+@app.post(CREDITS_TOPUP_PATH)
+async def credits_topup(request: Request):
+    """Top up prepaid credits by settling one x402 payment (M7).
+
+    Free/misconfigured modes refuse — credits are not invented. On settle
+    success the paid atomic amount is granted as a ``topup`` journal entry.
+    """
+    cfg = get_payment_config()
+    if cfg.mode == "misconfigured":
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, cfg.config_errors),
+        )
+    if not cfg.require_payment:
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(
+                ErrorCode.CREDITS_TOPUP_UNAVAILABLE,
+                "credit top-up requires live payment mode; free mode cannot invent credits",
+            ),
+        )
+    token = request.headers.get(SESSION_HEADER)
+    if not token:
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.SESSION_INVALID,
+                f"{SESSION_HEADER} required to attribute top-up credits",
+            ),
+        )
+    try:
+        session = siwx_store.resolve(token)
+    except SiwxSessionError:
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.SESSION_INVALID,
+                "SIWx session missing, unknown, or expired",
+            ),
+        )
+
+    payment_header = request.headers.get("X-PAYMENT")
+    base = (os.getenv("VERITAS_PUBLIC_URL") or "").strip().rstrip("/")
+    topup_resource = f"{base}{CREDITS_TOPUP_PATH}" if base else CREDITS_TOPUP_PATH
+    try:
+        requirements = build_payment_requirements(
+            pay_to=cfg.pay_to,
+            network=cfg.network,
+            price=cfg.price,
+            resource=topup_resource,
+        )
+    except PriceError:
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(
+                ErrorCode.PAYMENT_MISCONFIGURED,
+                "price configuration rejected at top-up challenge",
+            ),
+        )
+    requirements_dict = requirements.to_dict()
+    if not payment_header:
+        return JSONResponse(
+            status_code=402,
+            content=build_402_challenge(
+                cfg.pay_to, cfg.network, cfg.price, topup_resource,
+                error="X-PAYMENT required to top up credits",
+            ),
+            headers=PAYMENT_REQUIRED_HEADER,
+        )
+    payment_payload = decode_payment_header(payment_header)
+    if payment_payload is None:
+        return JSONResponse(
+            status_code=402,
+            content=build_402_challenge(
+                cfg.pay_to, cfg.network, cfg.price, topup_resource,
+                error="X-PAYMENT header is not valid base64-encoded JSON",
+            ),
+            headers=PAYMENT_REQUIRED_HEADER,
+        )
+    nonce = extract_nonce(payment_payload)
+    if nonce is None:
+        return JSONResponse(
+            status_code=409,
+            content=error_envelope(
+                ErrorCode.PAYMENT_NONCE_MISSING,
+                "top-up payment authorization has no usable nonce",
+            ),
+        )
+    facilitator = get_facilitator(cfg.facilitator, live=True)
+    verification = facilitator.verify(payment_payload, requirements_dict)
+    if not verification.is_valid:
+        reason = verification.invalid_reason or "payment_invalid"
+        if reason.startswith(VERIFICATION_OUTAGE_PREFIXES):
+            return JSONResponse(
+                status_code=503,
+                content=error_envelope(ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason),
+            )
+        return JSONResponse(
+            status_code=402,
+            content=build_402_challenge(
+                cfg.pay_to, cfg.network, cfg.price, topup_resource, error=reason,
+            ),
+            headers=PAYMENT_REQUIRED_HEADER,
+        )
+    request_id = str(uuid.uuid4())
+    claim = ledger.claim(
+        nonce, request_id,
+        network=requirements_dict.get("network"),
+        asset=requirements_dict.get("asset"),
+        amount=requirements_dict.get("maxAmountRequired"),
+        pay_to=requirements_dict.get("payTo"),
+        payer=verification.payer,
+        price=cfg.price,
+        price_version=PRICE_TABLE_VERSION,
+    )
+    if not claim.claimed:
+        return JSONResponse(
+            status_code=409,
+            content=error_envelope(
+                ErrorCode.PAYMENT_NONCE_ALREADY_SPENT,
+                "this top-up authorization was already used",
+            ),
+        )
+    # Top-up is the deliverable: record delivery then settle, then grant credits.
+    topup_body = {
+        "status": "completed",
+        "billable": True,
+        "kind": "credits_topup",
+        "account": session.address,
+        "request_id": request_id,
+    }
+    ledger.record_delivery(
+        request_id,
+        status="completed",
+        billable=True,
+        custody_root=None,
+        query="credits_topup",
+        response=topup_body,
+    )
+    settlement = facilitator.settle(payment_payload, requirements_dict)
+    ledger.record_settlement(
+        request_id,
+        outcome=settlement.outcome,
+        transaction=settlement.transaction,
+        network=settlement.network,
+        payer=settlement.payer,
+        reason=settlement.error_reason,
+    )
+    metrics.increment("veritas_settlements_total", {"outcome": settlement.outcome})
+    if settlement.outcome != "settled":
+        # Do not grant credits without settled payment. Indeterminate is not
+        # a grant: funds may have moved, but we do not invent balance on maybe.
+        return JSONResponse(
+            status_code=402 if settlement.outcome == "failed" else 200,
+            content={
+                "topped_up": False,
+                "reason": (
+                    "settlement_failed"
+                    if settlement.outcome == "failed"
+                    else "settlement_indeterminate_no_credit_grant"
+                ),
+                "payment": settlement.to_dict(),
+                "balance": credit_ledger.balance(session.address),
+            },
+            headers=_payment_response_header(settlement.to_dict()),
+        )
+    try:
+        atomic = int(requirements_dict.get("maxAmountRequired") or "0")
+    except (TypeError, ValueError):
+        atomic = 0
+    if atomic <= 0:
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(
+                ErrorCode.PAYMENT_MISCONFIGURED,
+                "top-up atomic amount unusable",
+            ),
+        )
+    entry = credit_ledger.topup(
+        session.address,
+        atomic,
+        request_id=request_id,
+        note="x402_topup_settled",
+    )
+    return JSONResponse(
+        status_code=200,
+        content={
+            "topped_up": True,
+            "account": session.address,
+            "granted": atomic,
+            "entry_id": entry.id,
+            "balance": credit_ledger.balance(session.address),
+            "payment": settlement.to_dict(),
+        },
+        headers=_payment_response_header(settlement.to_dict()),
+    )
+
+
 @app.get("/.well-known/x402")
 async def well_known():
     cfg = get_payment_config()
@@ -824,6 +1239,10 @@ async def well_known():
             "schema": "/v1/schema",
             "openapi": "/openapi.json",
             "llms": "/llms.txt",
+            "siwx_challenge": "/v1/siwx/challenge",
+            "siwx_verify": "/v1/siwx/verify",
+            "credits": "/v1/credits",
+            "credits_topup": CREDITS_TOPUP_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

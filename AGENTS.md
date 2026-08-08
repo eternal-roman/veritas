@@ -22,6 +22,7 @@ veritas-ops revenue                      # operator reports from the ledger (JSO
 veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
 veritas-diligence https://seller.example # vet a counterparty; exit 0 pass / 1 fail / 2 unverifiable
 veritas-verify receipt.json              # audit a receipt; one vendorable file, zero dependencies
+python scripts/lock_requirements.py --check  # hashed locks current — Linux/CPython 3.12 only
 ```
 
 Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
@@ -79,6 +80,13 @@ package — CI's package job asserts this.
    calls, bytes and wall time on every request; money is computed only for
    providers an operator has priced, and an unpriced provider makes the report
    say so instead of assuming zero.
+12. **What CI runs is pinned, not resolved at run time.** Every Action is a
+   commit SHA; every dependency CI installs comes from `requirements.lock` /
+   `requirements-dev.lock` under `--require-hashes`. The locks are generated
+   only on Linux/CPython 3.12 — `scripts/lock_requirements.py` refuses
+   elsewhere, because pip evaluates environment markers against the running
+   interpreter and an off-target lock fails only at install time. See
+   SECURITY.md for what this does and does not establish.
 
 ## Conventions
 

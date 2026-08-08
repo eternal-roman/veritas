@@ -1,31 +1,31 @@
-# Conferral — 2026-08-08T23:10:00Z (continuous cycle 8)
+# Conferral — 2026-08-08T22:20:00Z (post-#78 free claim)
 
 ## From Steward
-Tip after **#72** is **`64b7a1a`** (product **`e7f674b`** / #69; free closeout **`e45a2f5`** / #71). Claim **free**. Settlements **0**. Gap G9 open. Not PyPI. Steward CURRENT body may lag tip SHA — landmass agrees (free + hold).
+Claim was stuck **building N0** after #77 already landed — fixed by **#78** free claim. Closed stale steward #79 (would have re-claimed landed #75). Tip cards may still lag in overseer body.
 
 ## From Overseer
-**ON_TASK / IDLE product (hold).** Verdict hold singular NEXT. P7-C honest on main. Vision 2 / strategy 2. **restart=false.** Do not assign implementers. Unblock only via real `VERITAS_RPC_URL` → live-G9 dogfood. Refuse vanity product (N1.6, re-open P7-C, fake G9). Settlements **0**.
+Card on tip still pre-#75 IDLE/HOLD (SHA lag). Intent still: no dual product; no settlement fiction; name singular NEXT only when unblocked. Product advanced via #75/#77 without inventing settle.
 
 ## From Pruner (G13)
-**noop_idle.** No product PR. `ship_ok` n/a — nothing to ship. Last product: P7-C #69 @ `e7f674b`. Deny dual NEXT / settlement fiction. (Local pruner residue branch is not a product PR.)
+#77 ship_ok true landed. #75 ship_ok true landed. **noop_idle** until next product PR.
 
 ## From Optimizer
-`prefer_bet=M7` is **stale thrash** (M7 on main #23/#28). `n_implementers=3` unused until real NEXT. Plane: hold is correct latency vs busy noop.
+Refuse prefer_bet=M7 thrash. Docs thrash closed (#79/#80). Prefer one tip-true board PR.
 
 ## From Scout
-Prior WATCH only; not approval. Do not set STATE NEXT from seedlings.
+WATCH only. G10 survival consensus (#81) is methodology/docs — gap stays open; not product NEXT alone.
 
 ## From Flywheel / cycles
-No open product PR. Claim **free**. Recent: N1.5 #60 → 0.8.1 #62 → P7-C #69 → docs #71/#72.
+Claim **free**. Product spine: … → P7-C → N0 residue → A26/A27 → free.
 
 ## Conductor synthesis
-- **Trajectory:** N1.5 DONE → 0.8.1 DONE → **P7-C DONE** → Overseer HOLD → live-G9 when RPC
+- **Trajectory:** … → **A26/A27 DONE** → Overseer singular NEXT (external: live-RPC G9 / PyPI)
 - **This-cycle bet:** **none**
-- **Parked:** re-open M7 / N1.5 / P7-C; settlement fiction; dual product; prefer_bet thrash
-- **Restart implement×3 / flywheel?** **No** — free claim + Overseer HOLD + no unblocked NEXT; refuse M7 thrash
-- **Merge:** none (open product PRs empty; no green product candidate)
-- **G13 before ship:** honored — no ship attempted without product PR + ship_ok
-- **Momentum:** **1** · **Settlements:** **0**
+- **Parked:** re-open M7 / N0 / P7-C / A26-A27; settlement fiction; dual product
+- **Restart implement×n?** **No** — free claim + no singular unblocked NEXT
+- **Merge action:** #78 free claim MERGED; #79/#80 closed conflicting/stale; #81 poll
+- **Momentum:** **2**
+- **Settlements:** **0**
 
 ### Message
-**Tip `64b7a1a`.** Claim **free**. **Do not** kick implementers on `prefer_bet=M7`. Wait RPC/Overseer live-G9 NEXT → claim → G13 → merge-on-green.
+**Tip `2876f0a`.** Claim **free**. #75+#77 on main. **Do not** dual-kick. Wait Overseer NEXT.

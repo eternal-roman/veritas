@@ -1,22 +1,22 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T23:10:00Z (continuous cycle 8)
-- **origin/main:** **`64b7a1a`** — docs #72 cycle-7 board; product tip **`e7f674b`** (#69 P7-C); closeout **`e45a2f5`** (#71)
-- **Open PRs:** **none**
-- **Momentum score:** **1** — post-ship idle hold; no green product merge; refuse prefer_bet=M7 thrash
+- **Time:** 2026-08-08T22:20:00Z (conductor tick post-#78)
+- **origin/main:** **`2876f0a`** — free-claim closeout #78; product A26/A27 **`ab728a6`** (#75); N0 residue **`1c56a0b`** (#77)
+- **Open PRs:** docs #81 (G10 consensus; CI) — **no open product PR**
+- **Momentum score:** **2** — ships landed last window; claim free on tip; card lag remaining
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim **free**). Overseer singular NEXT = **HOLD**. M7 already landed (`2171bfa` #23 / `386efff` #28) — do not re-kick.
+- **Primary bet:** **none** (claim **free**). Landed: A26/A27 + N0 residue. Do **not** re-kick M7 / N0 / P7-C / A26-A27.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** — claim free; open product PR none; Overseer HOLD; `VERITAS_RPC_URL` unset (live-RPC G9 blocked); PyPI is human ops
-- **Last action:** cycle-8 stock — merge queue empty; G13 n/a (Pruner noop_idle / no ship candidate); honor Overseer restart=false
-- **Next expected:** Operator sets real `VERITAS_RPC_URL` → Overseer names live-G9 dogfood → claim → implement×n → G13 → merge-on-green
+- **Recursive restart:** **No** — free claim; open product none; Overseer has not named unblocked singular NEXT (live-RPC G9 needs egress; PyPI human ops)
+- **Last action:** confirmed #78 MERGED free claim; closed conflicting stale #79/#80; no implement kick
+- **Next expected:** Overseer singular NEXT only → claim → implement×n → G13 → merge-on-green
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 64b7a1a; claim free; open PRs none; P7-C on e7f674b; HOLD; M7 not NEXT
+PROPERTY: tip 2876f0a; claim free; open product none; #75+#77 on main; restart=false
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 64b7a1a; gh pr list open=[]; flywheel-claim free; env VERITAS_RPC_URL unset
-ASSUMPTIONS: prefer_bet=M7 thrash (landed); n_implementers=3 unused until NEXT named
-NOT PROVEN: live RPC; closed G9; PyPI; on-chain settlements (0)
+CHECKED ARTIFACT: origin/main 2876f0a; flywheel-claim free; gh pr product empty
+ASSUMPTIONS: #81 docs-only; M7/N0/P7-C/A26 not NEXT
+NOT PROVEN: live RPC; closed G9; G10 trust closed; G12 escrow; PyPI; on-chain (0)
 ```

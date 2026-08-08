@@ -62,10 +62,13 @@ jobs:
         run: |
           mkdir -p sbom
           python -m venv /tmp/relvenv
-          /tmp/relvenv/bin/pip install --quiet dist/*.whl
+          /tmp/relvenv/bin/pip install --require-hashes -r requirements.lock
+          /tmp/relvenv/bin/pip install --no-deps dist/*.whl
+          /tmp/relvenv/bin/pip check
           cyclonedx-py environment /tmp/relvenv \
-            --output-format json \
-            --outfile "sbom/veritas-research-${GITHUB_REF_NAME}.cdx.json"
+            --output-format JSON \
+            --output-reproducible \
+            --output-file "sbom/veritas-research-${GITHUB_REF_NAME}.cdx.json"
 
       # Uploaded as a workflow artifact, NOT attached to the GitHub release:
       # `gh release upload` needs `contents: write`, and this job already holds

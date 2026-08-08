@@ -216,8 +216,9 @@ jobs:
         run: |
           mkdir -p sbom
           cyclonedx-py environment /tmp/venv \
-            --output-format json \
-            --outfile sbom/veritas-artifact.cdx.json
+            --output-format JSON \
+            --output-reproducible \
+            --output-file sbom/veritas-artifact.cdx.json
 
       - name: SBOM must describe exactly the locked runtime closure
         run: |

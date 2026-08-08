@@ -33,6 +33,8 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -316,6 +318,40 @@ def test_sbom_generation_asserts_dev_tooling_is_absent():
     text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
     assert "SBOM subject is wrong" in text, (
         "ci.yml must fail the job if the generated SBOM names dev-only tooling"
+    )
+
+
+def test_workflow_sbom_flags_exist_in_the_installed_generator():
+    """Catch CLI drift locally instead of in CI.
+
+    The workflow invokes cyclonedx-py through a shell, so a flag that does not
+    exist is not a syntax error anywhere — it fails only when the job runs.
+    (`--outfile` is not a cyclonedx-py option; `--output-file` is. That cost a
+    CI round trip.) Upgrading the generator can rename a flag the same way, so
+    this checks the options the workflows actually pass against the help text
+    of the installed version.
+    """
+    generator = shutil.which("cyclonedx-py")
+    if generator is None:
+        pytest.skip("cyclonedx-py is not installed in this environment")
+
+    help_text = subprocess.run(
+        [generator, "environment", "--help"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    ).stdout
+
+    used: set[str] = set()
+    for path in _workflow_files():
+        text = path.read_text(encoding="utf-8")
+        for block in re.finditer(r"cyclonedx-py environment(.*?)(?:\n\s*\n|\n\s*-\s+name:)", text, re.S):
+            used.update(re.findall(r"(--[a-z][a-z-]+)", block.group(1)))
+
+    assert used, "no cyclonedx-py invocation found in the workflows"
+    missing = sorted(flag for flag in used if flag not in help_text)
+    assert not missing, (
+        f"the workflows pass options the installed cyclonedx-py does not accept: {missing}"
     )
 
 

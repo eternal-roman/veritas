@@ -24,6 +24,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## Progress log
 
 > **Tip of `origin/main`:** `a4cfc49` (PR #19). Open product PRs: **none**.
+> Docs-only PR **#21** (card hygiene) is open, CI green, awaiting human merge —
+> not a product bet and does not change NEXT.
 >
 > **O.6 landed on main @ `48194ab` (PR #18).** Retention window, custody
 > prune+tombstones, ledger prune for terminal states, `veritas-ops prune`,

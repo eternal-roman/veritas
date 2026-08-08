@@ -1,26 +1,25 @@
 # Steward CURRENT
 
-- **Time:** 2026-08-08T17:05:00Z
-- **origin/main:** `a4cfc49` — tip = PR #19 (diligence + verifier); ancestry includes `4a3d105` (#20), `48194ab` (#18 O.6)
-- **Open PRs:** **#21** docs card hygiene (this plane; not a product bet). Queue otherwise clear.
-- **Cohesion score:** 3 (after this tick: cards + STATE NEXT match git/gh)
+- **Time:** 2026-08-08T17:18:48Z
+- **origin/main:** `a4cfc49` — tip = PR #19 (diligence + verifier); ancestry includes `4a3d105` (#20), `48194ab` (#18 O.6). `veritas/retention.py` on main.
+- **Open PRs:** **#21** docs-only card hygiene (`docs/steward-card-hygiene-o8`) — **all CI green**, `MERGEABLE`/`CLEAN`, **awaiting human merge**. No open **product** PR.
+- **Cohesion score:** **2** (local plane coherent; **remote main still serves stale overseer** until #21 merges)
 - **Contradictions fixed this tick:**
-  1. origin overseer CURRENT claimed main lacks `retention.py` / O.6 unshipped / STATE NEXT=O.6 / direct `feat/o.6-retention-410-gone` — **false** (`48194ab` on tip path; tip `a4cfc49`)
-  2. local dirty STATE dual NEXT “O.8 **or** land PR #19” — **false** (#19 is tip); worse than origin’s single O.8 NEXT
-  3. STATE claimed standalone verifier “remains on PR #19” after merge — **false** (`veritas/verifier.py` on main)
-  4. cycles/README example still `prefer_bet: O.6` while program NEXT is O.8 — soft example drift fixed
-  5. steward/peer/scout plane was local-only while remote agents still read stale overseer card — plane prepared for main
-- **Cards rewritten:** `overseer/CURRENT.md`, `overseer/peer/CURRENT.md`, `steward/CURRENT.md`, `STATE.md` (claim hygiene only), `cycles/README.md`, `overseer/log/INDEX.md`, `scout/CURRENT.md` + IDEA_BUS stamp
-- **STATE claim hygiene:** single NEXT=**O.8**; SHAs `48194ab` / `4a3d105` / `a4cfc49` in progress + session log; N1.5 checked with #19 SHA (G.2 packaging still open); no ladder jump past O.8
-- **Also consistent (landed with plane):** conductor TRAJECTORY/CONFERRAL agree O.8 primary; open PRs []; settlements 0. O.8 product WIP lives in worktree `veritas-o8` (do not clobber).
-- **Momentum directive:** **All agents: stock `origin/main` @ `a4cfc49`; primary builder bet is O.8 supply chain only; continue mid-flight O.8 if present; do not re-litigate #18/#19/#20; on-chain settlements still 0.**
-- **noop_coherent?** no — material card rot vs origin overseer + local dual-NEXT regression
+  1. Live overseer/peer/conductor cards claimed open PRs `[]` / “queue clear” while **#21** is open and green
+  2. Re-stock confirmed: do **not** re-block on #18 — O.6 + `retention.py` on main
+  3. STATE product-open-PR line remains honest (none); add explicit docs-PR wait note
+  4. Peer stays **IDLE** (no parallel product branch PR; session diligence is on main)
+- **Cards rewritten:** `overseer/CURRENT.md`, `overseer/peer/CURRENT.md`, `steward/CURRENT.md`, `conductor/CURRENT.md` (open-PR line), `STATE.md` (claim hygiene only), this log `002`
+- **STATE claim hygiene:** single NEXT=**O.8**; tip SHA `a4cfc49`; landed SHAs `48194ab` / `4a3d105` / `a4cfc49`; no ladder jump; settlements **0**
+- **O.8 product status (not steward-owned):** mid-flight **uncommitted** WIP in worktree(s) `veritas-o8` / `veritas-o8b` on `feat/o.8-supply-chain*` — locks/actions/SBOM tests dirty; **0 commits** ahead of main; **no O.8 PR** yet
+- **Momentum directive:** **Human: merge green docs PR #21 so remote agents stop stocking pre-O.6 overseer. Builders: finish O.8 only (commit + PR from mid-flight WIP); do not re-litigate #18/#19/#20; on-chain settlements still 0.**
+- **noop_coherent?** no — open-PR list was wrong on multiple cards; remote main still stale until merge
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Control-plane cards and STATE NEXT match post-merge main; dual tracks removed
-EVIDENCE LEVEL: L1 (git log origin/main, gh pr list empty, path checks for retention.py/verifier.py)
-CHECKED ARTIFACT: origin/main a4cfc49; open PRs []; docs/program/* CURRENT + STATE
-ASSUMPTIONS: Conductor/local-only extras not required for this cohesion tick; push lands plane on remote
-NOT PROVEN: Multi-day cohesion; O.8 ship; on-chain settlement
+PROPERTY: Cards + STATE match git/gh stock; single product NEXT=O.8; #21 green docs PR flagged for human
+EVIDENCE LEVEL: L1 (git fetch, origin/main a4cfc49, gh pr view 21, path checks retention.py)
+CHECKED ARTIFACT: origin/main a4cfc49; PR #21 MERGEABLE+SUCCESS checks; veritas/retention.py on main; worktree O.8 dirty uncommitted
+ASSUMPTIONS: Human merges docs; flywheel owns O.8 commit/PR; steward does not implement O.8
+NOT PROVEN: Multi-day cohesion after #21 merge; O.8 ship; any on-chain settlement
 ```

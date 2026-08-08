@@ -172,13 +172,13 @@ class CustodyStore:
             "stored_at": _now(),
         }
         try:
-            if not is_safe_request_id(record["request_id"]):
-                # The write side takes the same guard as the read side: ids are
-                # server-minted today, but a store that only validates on read
-                # is one refactor away from writing outside its directory.
-                raise ValueError("unsafe request_id")
             self.base_dir.mkdir(parents=True, exist_ok=True)
-            path = self.base_dir / f"{record['request_id']}.json"
+            # The write side takes the same guard as the read side: ids are
+            # server-minted today, but a store that validates only on read is
+            # one refactor away from writing outside its directory.
+            path = self._receipt_path(record["request_id"])
+            if path is None:
+                raise ValueError("unsafe request_id")
             _atomic_write(path, json.dumps(record, indent=2))
             record["persisted"] = True
         except ValueError:
@@ -193,13 +193,31 @@ class CustodyStore:
             record["error"] = f"receipt_not_persisted_{type(exc).__name__}"
         return record
 
-    def load(self, request_id: str) -> dict[str, Any] | None:
-        # Validate before building the path, not after opening it: a check that
-        # runs after the read has already leaked the file, and one that merely
-        # resolves the path still follows a symlink planted in the directory.
+    def _receipt_path(self, request_id: object) -> Path | None:
+        """The path a receipt id names, or None if it does not name one.
+
+        Two independent guards, because they fail differently. The allowlist
+        rejects anything that is not a filename we would mint, and runs before
+        a path exists at all. The containment check then re-derives the name
+        with `basename` and requires the resolved result to sit directly in the
+        receipt directory — so even if the pattern were later loosened, or a
+        symlink were planted in the directory, the read still cannot leave it.
+        """
         if not is_safe_request_id(request_id):
             return None
-        path = self.base_dir / f"{request_id}.json"
+        name = os.path.basename(f"{request_id}.json")
+        base = Path(os.path.realpath(self.base_dir))
+        candidate = Path(os.path.realpath(base / name))
+        if candidate.parent != base or candidate.name != name:
+            return None
+        return candidate
+
+    def load(self, request_id: str) -> dict[str, Any] | None:
+        # Resolve before opening, never after: a check that runs after the read
+        # has already leaked the file.
+        path = self._receipt_path(request_id)
+        if path is None:
+            return None
         try:
             return json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):

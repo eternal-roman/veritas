@@ -20,6 +20,11 @@ ship this direction?) → builders execute.
 | Flywheel | 20m | One shippable bet under gates |
 | Scout (Idea) | 25m | Pattern fuel when vision is thin |
 | Steward | 15m | Card cohesion |
+| **Ecosystem tracks** | 20–30m | T4 research on money/trust/worth/discovery/tenant/identity/network — `ECOSYSTEM_ADVANCE.md` |
+
+**Ecosystem mesh:** skim `ecosystem/BUS.md` each tick; mark accept/hold/kill in
+`ecosystem/OVERSEER_CONFERRAL.md`. Tracks may improve plane substrate; they
+**never** dual product NEXT or invent x402 settlement (plane VAAT ≠ product money).
 
 ---
 

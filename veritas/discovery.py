@@ -29,7 +29,8 @@ failure.
 - /v1/siwx/verify: POST — verify SIWx signature and receive an X-VERITAS-SESSION token
 - /v1/credits: GET — prepaid credit balance for the SIWx session
 - /v1/credits/topup: POST — settle one x402 payment and grant credits (live mode only; free mode refuses)
-- /v1/verify: POST — independently re-check any published content_hash
+- /v1/verify: POST — re-check a published content_hash against content you supply (convenience; not origin re-fetch — see P7)
+- /v1/attestations/verify: POST — free check of an N1.1 EIP-191 EvidenceRecord attestation (bound fields + signature; not on-chain)
 - /v1/receipts/{request_id}: durable custody receipt
 - /v1/trust: behaviour-derived trust score; reports UNPROVEN below 10 recorded outcomes
 - /v1/schema: the wire contract as JSON Schema

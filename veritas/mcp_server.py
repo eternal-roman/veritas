@@ -38,6 +38,33 @@ def tool_verify(content: str, content_hash: str) -> dict[str, Any]:
     return {"valid": valid, "detail": details}
 
 
+def tool_verify_attestation(
+    evidence_record: dict[str, Any],
+    attestation: dict[str, Any],
+    expected_signer: str | None = None,
+) -> dict[str, Any]:
+    """Check an N1.1 EIP-191 EvidenceRecord attestation (local free mode).
+
+    Not an on-chain anchor and not a re-fetch of the origin URL.
+    """
+    from veritas.notary.sign import SCHEME, verify_attestation
+
+    ok, reason = verify_attestation(
+        evidence_record,
+        attestation,
+        expected_signer=expected_signer,
+    )
+    return {
+        "valid": ok,
+        "reason": reason,
+        "scheme": attestation.get("scheme") or SCHEME,
+        "note": (
+            "EIP-191 recovery over bound record fields; "
+            "not an on-chain anchor and not a re-fetch of the origin"
+        ),
+    }
+
+
 def tool_trust() -> dict[str, Any]:
     """Behaviour-derived trust score; UNPROVEN below the sample floor."""
     from veritas.trust import score_service
@@ -82,6 +109,7 @@ def build_server():
     )
     server.tool(name="research")(tool_research)
     server.tool(name="verify")(tool_verify)
+    server.tool(name="verify_attestation")(tool_verify_attestation)
     server.tool(name="trust")(tool_trust)
     server.tool(name="constitution")(tool_constitution)
     return server

@@ -1,24 +1,23 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T21:20:00Z (post-merge #58 release-0.8.0)
-- **origin/main:** **`58beccc`** — **release-0.8.0 prep #58**. Prior: cycle-5 closeout `bc0d663` (#57); cycle-5 product `bf09a99` (#54); N1.4 `b253532` (#49); G9-design `6777a92` (#46).
-- **Open PRs:** **none**
-- **Momentum score:** **3** — G9-design + N1.4 + cycle-5 + v0.8.0 prep shipped this window
+- **Time:** 2026-08-08T21:35:00Z (continuous cycle 6)
+- **origin/main:** **`17222c5`** — docs #63 free closeout after **v0.8.1** `070d4c4` (#62) + **N1.5** `e089f86` (#60).
+- **Open PRs:** this assign docs (claim **building P7-C**); **no product PR** yet
+- **Momentum score:** **3** — N1.5 + 0.8.1 + free closeout shipped; P7-C restart
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free). Await Overseer singular NEXT. Default parked: **live-RPC G9 dogfood** (needs egress — do not fake); PyPI publish is ops/not product dual. **prefer_bet=M7/N0 ignored** (landed).
+- **Primary bet:** **P7-C** — free origin re-fetch on `POST /v1/verify` takes `research_slots`; full pool → registered 503 shed; one engine (`refetch` → `notary.observe`). **prefer_bet=N0 ignored** (landed #30).
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** — queue clear but no shippable singular without Overseer re-order or external RPC; empty prefer_bet wait (CONTINUOUS rule 7)
-- **Last action:** observed #58 MERGED; free claim; tip-aligned STATE/conductor
-- **Next expected:** Overseer names singular NEXT (live-RPC G9 if egress, else alternate) → claim → G13 → green merge
+- **Recursive restart:** **Yes** — Overseer post-free NEXT=**P7-C**; claim building; n_implementers=**4**; no dual live-G9
+- **Last action:** observed #60+#62+#63 MERGED; assign P7-C claim; kick implement×4
+- **Next expected:** implement×4 → Pruner ship_ok (G13) → green product PR → squash-merge
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 58beccc (#58 MERGED); claim free; open product PRs none; restart=false
-          (no unblocked singular NEXT); settlements 0; not PyPI
+PROPERTY: tip 17222c5; N1.5+0.8.1 on main; claim building P7-C; restart=true;
+          prefer_bet=N0 ignored; open product PRs none; settlements 0
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 58beccc; #58 MERGED version 0.8.0; #54 MERGED;
-  open PR list empty
-ASSUMPTIONS: Overseer restocks NEXT; sandbox still lacks RPC/facilitator egress
-NOT PROVEN: G9 closed; live RPC; on-chain settlements (0); PyPI publish
+CHECKED ARTIFACT: origin/main 17222c5; #60/#62/#63 MERGED; Overseer 018 NEXT=P7-C
+ASSUMPTIONS: implementers hold one claim; sandbox no RPC
+NOT PROVEN: P7-C shipped; G9 closed; live RPC; on-chain (0); public CT; PyPI
 ```

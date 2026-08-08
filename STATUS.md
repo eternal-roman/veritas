@@ -34,6 +34,7 @@ file described a system that did not import.
 | `veritas-agent` CLI (init/serve/up/status) | Working, tested: provisioned config now reaches the env the HTTP server reads |
 | MCP tools (`veritas-mcp`: research/verify/trust/constitution) | Working, tested against the SDK; local free-mode engine only, no payment path over MCP |
 | Container + release workflow (`Dockerfile`, `release.yml`) | Dockerfile CI-built; release workflow inert until a maintainer configures PyPI Trusted Publishing |
+| Prepaid credits via SIWx (`veritas/credits.py`, `veritas/siwx.py`, HTTP wire) | Working, L1 tests: double-entry topup/grant/debit/refund in atomic units; SIWx challenge+session offline (EIP-4361 message, EIP-191 recover; no RPC); live research with `X-VERITAS-SESSION` and no `X-PAYMENT` debits before work and refunds on non-billable `unavailable` / deadline; insufficient balance returns registered `credits_insufficient`. **Top-up grants only after settled x402** — free/misconfigured refuse inventing credits; failed or indeterminate settlement does not grant. This is **not** on-chain refund of the buyer's original payment and **not** a second payer: credits are prepaid balance only; `X-PAYMENT` still uses the existing verify→claim→work→fsync→settle path when present. Single-instance SQLite; multi-instance credits are open |
 
 ## What was found false and fixed (2026-08-05 audit)
 
@@ -55,7 +56,15 @@ All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 - **Live settlement.** The verify/settle calls are implemented against the
   x402 facilitator API but have never run against a real facilitator with a
   funded wallet. Until that happens, "live mode works" is a code claim, not an
-  operational one.
+  operational one. On-chain settlements observed from this codebase: **0**.
+- **Credits top-up under a real facilitator.** Grant-on-settled and
+  refuse-on-failed/indeterminate are tested with a controlled facilitator
+  double. No real x402 top-up has funded a credit balance in production.
+- **Refunds-as-credits.** When credit-paid research is non-billable
+  (`unavailable`, deadline exceeded), the debit is reversed in the credit
+  journal so the buyer is not charged for our failure. That is a **ledger
+  credit**, not a chain refund of any prior top-up transaction, and not a
+  claim that money moved back on-chain.
 - **Calibration.** Machinery works and persists; no labelled outcomes exist, so
   it honestly reports `passthrough_untrained`.
 - **Aspirational constitution articles.** A16 (portable reputation), A17

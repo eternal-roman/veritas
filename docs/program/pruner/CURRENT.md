@@ -1,42 +1,32 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T20:30:00Z
-- **Branch / HEAD:** `origin/main` @ `be03dcd` (M7 product via #23 `2171bfa` + #28 `386efff`)
-- **Scope:** M7 surface — `veritas/credits.py`, `veritas/siwx.py`, server wire,
-  `tests/test_credits*.py`, `tests/test_siwx.py`; STATE/claim closeout only
-  (no new product code this ship)
+- **Time:** 2026-08-08T21:20:00Z
+- **Branch / HEAD:** `origin/main` @ **`32d1054`** (N1.2 #34; N1.1 #33; **N0 #30** `4cd2d0c`)
+- **Scope:** N0 Evidence Notary gate (G13) — `veritas/notary/*`, pipeline
+  `observe_urls` → one engine, `POST /v1/notarize` + inv.3 share of
+  `_refund_unfinished_charge`, discovery/llms, tests `test_notary_*` +
+  `test_notarize_api`. Post-merge confirmation on tip.
 - **Verdict:** LEAN
 - **ship_ok:** true
-- **Deleted / pruned:** none this tick (M7 already lean: one ledger, one SIWx
-  store, no second payer/engine; top-up refuses free/misconfigured invent)
-- **Refined:** n/a (verify-only)
+- **Deleted / pruned:** none (N0 remains one observe path; no second
+  engine/payer; N1.1/N1.2 are optional attestation, not a second money path)
+- **Refined:** notarize reuses research crash-refund helper
 - **Battery:**
-  - `pytest tests/test_credits.py tests/test_siwx.py tests/test_credits_api.py`
-    (+ discovery/errors): **68 passed**
-  - full suite excl. dogfood/payment_model: **602 passed, 2 skipped**
-  - dogfood: **5 passed**; payment_model tests: **7 passed**; module: **8720
-    traces, I1–I7 holds**
-  - `ruff check veritas tests`: **All checks passed**
-  - harness: **exit 0** (unavailability honesty correct)
-- **E2E exercised:** credit-paid research success debit; insufficient →
-  `credits_insufficient`; unavailable + deadline + unexpected raise refund;
-  top-up settled grants / failed+indeterminate refuse; SIWx challenge+verify
-  offline; `X-PAYMENT` still wins when present. Live facilitator top-up:
-  **NOT PROVEN**
-- **Denied (will not ship):** re-implementing M7; second payer; settlement
-  success claim without tx hash
-- **Directive:** Plane may advance NEXT to **N0**. Do not dual-track M7.
+  - PR #30 CI: Tests & syntax / Structure / Security / Package / Container /
+    CodeQL **SUCCESS** (merge commit `4cd2d0c`)
+  - Local N0 surface: **93 passed** (notary + notarize + sign)
+  - harness: **exit 0**; payment_model module: **I1–I7 holds**
+- **E2E exercised:** paid/free notarize; unavailable non-billable; credit
+  unexpected-failure refund (N0-J); SSRF/robots refuse. On-chain: **NOT PROVEN**
+- **Denied:** re-open N0 as NEXT; second scraper/payer; settlement without tx
+- **Directive:** N0 product ship gate passed. Claim free. Do not re-open N0/M7.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: M7 credits/SIWx path is on main, battery green on exercised cases,
-          refunds cover handled and unexpected failure; ship_ok for closeout
+PROPERTY: N0 notary core is lean and functioning on main; Pruner ship_ok
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main be03dcd; #23 2171bfa; #28 386efff;
-  tests/test_credits.py, test_siwx.py, test_credits_api.py; ruff; harness;
-  payment_model I1–I7
-ASSUMPTIONS: Single-instance SQLite credits/sessions; eth_account present for
-  SIWx verify; no multi-instance ledger
-NOT PROVEN: on-chain settlement (0); real facilitator top-up; multi-instance
-  credit balance; N0 notary product
+CHECKED ARTIFACT: 4cd2d0c (#30); tip 32d1054; veritas/notary/*;
+  server _notarize + _refund_unfinished_charge; CI SUCCESS on #30
+ASSUMPTIONS: single-instance ledger/credits; offline SSRF fixtures
+NOT PROVEN: on-chain settlement (0); cold install cycle-1
 ```

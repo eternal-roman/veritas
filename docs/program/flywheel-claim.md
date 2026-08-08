@@ -4,9 +4,9 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-08T20:20:00Z
-- **last_merged:** P7 #38 @ `4697c8d`; docs #37 @ `b7e4f34`; N1.2 #34 @ `32d1054`; N1.1 #33 @ `db04ae2`; N0 @ `4cd2d0c`
-- **next_micro:** Overseer names single NEXT (cycle-1 / G9 design / N1.3 Merkle). Do not dual. Settlements 0.
+- **updated:** 2026-08-08T20:30:00Z
+- **last_merged:** docs #39 @ `330bf68`; P7 #38 @ `4697c8d`; docs #37 @ `b7e4f34`; N1.2 #34 @ `32d1054`; N1.1 #33 @ `db04ae2`; N0 @ `4cd2d0c`
+- **next_micro:** Overseer names single NEXT (cycle-1 / G9 design / N1.3 Merkle). Do not dual. Do not invent NEXT from a missing log. Settlements 0.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -25,5 +25,6 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | N0 closeout docs | `a679b76` / #36 |
 | conductor cycle-4 cards | `b7e4f34` / #37 |
 | **P7 origin re-fetch verify** | **`4697c8d` / #38** |
+| P7 post-merge plane closeout | `330bf68` / #39 |
 
-**G10:** Claim **free** after P7 merge. Open product PRs: **none**. Settlements: **0**.
+**G10:** Claim **free** after tip-align to `330bf68`. Open product PRs: **none**. Settlements: **0**.

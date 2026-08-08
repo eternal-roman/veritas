@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 
 def test_known_gap_settlements_are_never_checked_against_the_chain():
     """G9. The ledger records what the facilitator told us — including the
@@ -49,6 +51,83 @@ def test_known_gap_the_trust_score_is_self_reported():
     assert not hasattr(trust, "verify_external_attestation")
     # And the served score says plainly that it is our own word.
     assert "self_reported" in source
+
+
+def test_known_gap_warranty_bonds_are_commitments_not_escrow():
+    """G12. A fired challenge indicates a forfeit, but no code escrows or
+    settles a bond — the stake is an EIP-191 commitment, stated on the wire
+    as bond_binding: signed_commitment_not_escrow. Until W1 (gated on Phase
+    0 settlement proof), the unomittable-negative-reputation property of
+    forfeits is designed, not real.
+
+    If this test fails, escrowed bonds exist — close G12 and delete this
+    test.
+    """
+    from veritas import warranty as warranty_module
+
+    source = Path(warranty_module.__file__).read_text(encoding="utf-8")
+    assert "signed_commitment_not_escrow" in source
+    assert "escrow_bond" not in source
+    assert not hasattr(warranty_module, "settle_forfeit")
+
+
+def test_known_gap_survival_reports_are_bounded_by_what_auditors_share():
+    """G11. A survival report is a pure function of the records handed to it,
+    and nothing forces an unfavourable record into the set: withholding the
+    divergence an auditor observed yields a clean report from a curated
+    subset. Divergence counts are a floor, never a ceiling.
+
+    If this test fails, auditor-side publication the seller cannot filter
+    exists — close G11 and delete this test.
+    """
+    pytest.importorskip("eth_account")
+    from eth_account import Account
+
+    from veritas.audit import perform_audit, survival_report
+    from veritas.hashing import compute_content_hash
+    from veritas.notary.fetch import FetchResult
+    from veritas.notary.pack import build_evidence_pack
+    from veritas.notary.sign import OperatorSigner, sign_evidence_record
+
+    def fetch(body):
+        def fake(request_url, **kwargs):
+            return FetchResult(
+                request_url=request_url, final_url=request_url, status=200,
+                headers={"content-type": "text/plain"}, body=body, truncated=False,
+            )
+        return fake
+
+    def signer():
+        return OperatorSigner("0x" + bytes(Account.create().key).hex())
+
+    body = "G11 witness body."
+    seller = signer()
+    fields = {
+        "url": "https://example.org/g11",
+        "content_hash": compute_content_hash(body),
+        "observed_at": "2026-08-08T12:00:00Z",
+        "extract_version": "extract.v1",
+        "request_id": "req-g11",
+    }
+    pack = build_evidence_pack(
+        **fields, attestation=sign_evidence_record(fields, seller)
+    )
+    robots = "User-agent: *\nAllow: /\n"
+    confirmed = perform_audit(
+        pack, signer=signer(), robots_body=robots,
+        fetch_fn=fetch(body.encode("utf-8")),
+    )
+    diverged = perform_audit(
+        pack, signer=signer(), robots_body=robots,
+        fetch_fn=fetch(b"a different body entirely"),
+    )
+
+    honest = survival_report([confirmed, diverged])
+    assert honest["verdict"] == "contested"
+    # The gap: drop the unfavourable record and the report cannot tell.
+    curated = survival_report([confirmed])
+    assert curated["verdict"] == "surviving"
+    assert curated["diverged_auditors"] == 0
 
 
 # P7 closed: POST /v1/verify binds origin re-fetch (url+content_hash) and

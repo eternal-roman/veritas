@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.2.** This file
+**The normative source is `veritas/constitution.py`, version 2.4.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -210,6 +210,33 @@ A facilitator that timed out may still have moved the funds. Recording that as
 a failure would understate revenue and would tell a buyer their payment did not
 go through when we do not know that.
 
+### A26 — Standing is what survives independent audit (L1)
+
+Counterparty standing is computed by the record holder from third-party-signed audit records, never by the audited party: an origin that could not be observed is never scored against a seller, a self-audit carries no independence, and any volume of records signed by one key counts as one auditor.
+
+Enforced by `tests/test_audit.py::test_unobserved_never_counts_for_or_against_a_seller`,
+`tests/test_audit.py::test_self_audit_is_excluded_from_independence_counts`, and
+`tests/test_audit.py::test_record_volume_from_one_key_counts_as_one_auditor`.
+This is the audit-layer form of the same three norms the service holds
+elsewhere: `unavailable` is not `no_evidence`, a self-report is not evidence,
+and independence is counted per witness, not per repetition (`veritas/audit.py`,
+`docs/program/FABLE_INSIGHTS.md`). What it does not establish: that the records
+a report was computed from are all the records that exist — that is G11.
+
+### A27 — Warranted claims are falsifiable or labeled (L1)
+
+A warranted deliverable carries seller-authored falsification predicates that any party evaluates deterministically — a challenge terminates in re-execution, never in an arbiter — a defective challenge context decides nothing and forfeits nothing either way, and content with no decidable refutation procedure is sold labeled unwarrantable rather than dressed in a warranty.
+
+Enforced by `tests/test_warranty.py::test_challenge_terminates_in_deterministic_reexecution`,
+`tests/test_warranty.py::test_unwarrantable_content_is_labeled_never_dressed_in_a_warranty`,
+and `tests/test_warranty.py::test_undecidable_context_forfeits_nothing_either_way`.
+This is the economic layer of the same honesty the status taxonomy holds:
+the seller writes the experiment that would refute itself and stakes on it
+(`veritas/warranty.py`, `docs/program/FALSIFIABLE_COMMERCE.md`), what cannot
+be decided is kept apart from both verdicts, and what cannot be refuted by
+any decidable procedure is priced as such instead of warranted. What it does
+not establish: that the bond behind a warranty is enforceable — that is G12.
+
 ---
 
 ## Aspirational articles
@@ -330,6 +357,28 @@ raises the cost of manipulation; it does not make the number verifiable by the
 buyer relying on it.
 
 Witness: `tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported`.
+
+### G11 — Survival reports are bounded by what auditors share (open, article A26)
+
+A survival report summarises the audit records provided to it, and nothing
+forces an unfavourable record into that set: whoever assembles the records can
+withhold divergence they observed. Divergence counts are therefore a floor,
+never a ceiling, and a clean report from a curated set is not proof of a clean
+history. Removing this requires auditor-side publication the seller cannot
+filter (the Merkle/anchor axis named in later N1 work).
+
+Witness: `tests/test_known_gaps.py::test_known_gap_survival_reports_are_bounded_by_what_auditors_share`.
+
+### G12 — Warranty bonds are commitments, not escrow (open, article A27)
+
+Warranty bonds are signed commitments, not escrowed value: no settlement has
+ever run from this codebase, so a fired challenge indicates a forfeit the
+payment rails cannot yet enforce, and the unomittable-negative-reputation
+property of forfeits is designed, not real. The wire says so on every warranty
+(`bond_binding: signed_commitment_not_escrow`). Removal requires escrowed
+bonds over proven settlement (W1, gated on ROADMAP Phase 0).
+
+Witness: `tests/test_known_gaps.py::test_known_gap_warranty_bonds_are_commitments_not_escrow`.
 
 ### G8 — No financial ledger (closed, article A13)
 

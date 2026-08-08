@@ -9,6 +9,7 @@ there was no way to ask any of them:
     veritas-ops usage                    what did serving actually consume?
     veritas-ops authorization <nonce>    one payment, end to end
     veritas-ops pricing                  what price are new entries stamped with?
+    veritas-ops prune                    drop expired receipts and ledger rows
 
 Every command prints JSON to stdout, because the first consumer of an
 operations CLI for an agent-native service is another agent.
@@ -20,6 +21,10 @@ Base". That limit is printed in the report itself and is registered as
 constitution gap G9 — closing it needs an RPC endpoint. A reconcile report
 that implied on-chain confirmation it had not performed would be the most
 damaging untruth this codebase could ship, so it says so every time.
+
+**What `prune` does not do.** It ages local custody receipts and settled or
+abandoned ledger rows against a shared cutoff. It does not invent settlement
+outcomes, does not touch open-exposure states, and does not contact any chain.
 """
 
 from __future__ import annotations
@@ -30,10 +35,12 @@ import os
 from dataclasses import asdict
 from typing import Any
 
+from veritas.custody import CustodyStore
 from veritas.ledger import Ledger, NonceState
 from veritas.metering import CostTable
 from veritas.payment_config import get_payment_config
 from veritas.pricing import current_price_point
+from veritas.retention import RetentionConfigError, retention_cutoff, retention_days_from_env
 
 CHAIN_LIMITATION = (
     "Records are compared only against each other. Nothing here has been "
@@ -155,6 +162,39 @@ def _authorization(ledger: Ledger, nonce: str) -> dict[str, Any] | None:
     }
 
 
+def _prune(runtime_dir: str | None, days: int | None) -> dict[str, Any]:
+    """Age custody receipts and terminal ledger rows against one cutoff."""
+    try:
+        window = days if days is not None else retention_days_from_env()
+        cutoff = retention_cutoff(days=window)
+    except RetentionConfigError as exc:
+        return {
+            "error": "retention_misconfigured",
+            "detail": str(exc),
+            "chain_checked": False,
+            "limitation": CHAIN_LIMITATION,
+        }
+    custody = CustodyStore(runtime_dir)
+    ledger = Ledger(runtime_dir)
+    custody_report = custody.prune(cutoff)
+    ledger_report = ledger.prune(cutoff)
+    return {
+        "retention_days": window,
+        "cutoff": cutoff.isoformat().replace("+00:00", "Z"),
+        "custody": custody_report,
+        "ledger": ledger_report,
+        "chain_checked": False,
+        "limitation": CHAIN_LIMITATION,
+        "note": (
+            "Pruned receipt bodies leave durable tombstones so GET "
+            "/v1/receipts/{id} returns 410 Gone, not 404. Open-exposure "
+            "ledger states (delivered, indeterminate, settlement_failed, "
+            "claimed) are never deleted. Settlement outcomes are never "
+            "rewritten."
+        ),
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="veritas-ops",
@@ -172,6 +212,16 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("pricing", help="The price new ledger entries are stamped with.")
     one = sub.add_parser("authorization", help="One payment authorization, end to end.")
     one.add_argument("nonce", help="The 0x-prefixed 32-byte authorization nonce.")
+    prune = sub.add_parser(
+        "prune",
+        help="Delete expired receipts and settled/abandoned ledger rows (local only).",
+    )
+    prune.add_argument(
+        "--days",
+        type=int,
+        default=None,
+        help="Retention window in days (default: VERITAS_RETENTION_DAYS or 30).",
+    )
     return parser
 
 
@@ -195,6 +245,11 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "pricing":
         cfg = get_payment_config()
         payload = current_price_point(cfg.price, cfg.network)
+    elif args.command == "prune":
+        payload = _prune(args.runtime_dir, args.days)
+        if payload.get("error"):
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return 1
     else:  # authorization
         found = _authorization(ledger, args.nonce)
         if found is None:

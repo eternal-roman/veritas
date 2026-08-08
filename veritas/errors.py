@@ -34,6 +34,7 @@ class ErrorCode(str, Enum):
     SETTLEMENT_FAILED = "settlement_failed"
     RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
     RECEIPT_NOT_FOUND = "receipt_not_found"
+    RECEIPT_GONE = "receipt_gone"
     DEADLINE_EXCEEDED = "deadline_exceeded"
     INVALID_REQUEST = "invalid_request"
     REQUEST_TOO_LARGE = "request_too_large"
@@ -101,7 +102,12 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.RECEIPT_NOT_FOUND.value: {
         "status": 404,
-        "meaning": "No custody receipt is stored under the requested request_id.",
+        "meaning": "No custody receipt was ever stored under the requested request_id. Distinct from receipt_gone: this id is not known to have existed.",
+        "retriable": False,
+    },
+    ErrorCode.RECEIPT_GONE.value: {
+        "status": 410,
+        "meaning": "A custody receipt for this request_id existed and was deleted by retention. The id is known; the body is not recoverable. Distinct from receipt_not_found (never seen).",
         "retriable": False,
     },
     ErrorCode.DEADLINE_EXCEEDED.value: {

@@ -81,7 +81,13 @@ def test_tools_register_with_mcp_sdk():
     server = mcp_server.build_server()
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}
-    assert names == {"research", "verify", "trust", "constitution"}
+    assert names == {
+        "research",
+        "verify",
+        "verify_attestation",
+        "trust",
+        "constitution",
+    }
 
 
 def test_declared_mcp_bound_excludes_versions_without_the_shipped_surface():

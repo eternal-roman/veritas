@@ -4,8 +4,8 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-08T21:50:00Z
-- **last_merged:** docs #71 @ `e45a2f5`; P7-C #69 @ `e7f674b`; v0.8.1 #62 @ `070d4c4`; N1.5 #60 @ `e089f86`
+- **updated:** 2026-08-08T21:58:00Z
+- **last_merged:** docs #72 @ `64b7a1a`; docs #71 @ `e45a2f5`; P7-C #69 @ `e7f674b`; v0.8.1 #62 @ `070d4c4`; N1.5 #60 @ `e089f86`
 - **next_micro:** Overseer singular NEXT only. Default hold unless live-RPC G9 egress. Parked: PyPI human ops. Do **not** re-open P7-C / N1.5 / 0.8.1 / cycle-5. Settlements **0**. Gap G9 open.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.

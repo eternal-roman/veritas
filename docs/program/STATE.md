@@ -5,33 +5,43 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. G9 chain-reconcile design, N1.4 Merkle inclusion, or cycle-5
-> ecosystem dogfood). **G10:** never dual-reopen **cycle-1**, **N1.3**,
-> **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: G9-design only (claim building on #46)** —
+> `feat/g9-chain-reconcile-design` / PR **#46**. Fail-closed chain reconcile
+> surface for operators; **does not close G9**. Fix bandit **B310**, rebase
+> after tip `#45` (`df1cc8f` — currently CONFLICTING), green CI, fresh Pruner
+> G13, merge-on-green only. **G10:** never dual-reopen **cycle-1**, **N1.3**,
+> **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**; no parallel Merkle /
+> cycle-5 while this claim holds.
 >
 > **cycle-1 is on main** — `#44` / `2cbed44`: `scripts/dogfood_cycle1.py` +
 > CI + `tests/test_dogfood.py` + `docs/dogfood/cycle1/report.json`. Free-mode
 > first-boot (discovery/notarize/attest/pack, offline research, offline
-> notary+pack verify). **Not** blank-machine PyPI install. Settlements **0**.
+> notary+pack verify). **Not** blank-machine PyPI install. Plane closeout
+> `#45` / `df1cc8f`. Settlements **0**.
 >
 > **Also on main (do not re-open):** N1.3 `#41` / `622429c`; P7 `#38` /
-> `4697c8d`; N1.2 `#34`; N1.1 `#33`; N0 `#30`; plane docs `#39` / `330bf68`;
-> integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
+> `4697c8d`; N1.2 `#34`; N1.1 `#33`; N0 `#30`; plane docs `#39` / `330bf68`
+> and `#45` / `df1cc8f`; integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b
+> `#22`/`#24`.
 >
 > Still deliberately not done: SBOM **unsigned**; no image registry; full
-> Merkle/anchors; G9 chain reconcile; cycle-5; settlements **0**.
+> Merkle/anchors; **G9 closed**; cycle-5; settlements **0**.
 >
-> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
-> egress.
+> Blocked on sandbox externals: **G9 close** needs RPC; **X1/X3/X6** need
+> facilitator egress. #46 without RPC stays fail-closed (`rpc_not_configured`).
 >
 > Nothing has settled on-chain. That is still the single largest unproven
 > claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `2cbed44` (PR **#44** cycle-1 cold install dogfood).
-> Claim **free**. Settlements: **0**. Prior N1.3 `#41` / `622429c`.
+> **Tip of `origin/main`:** `df1cc8f` (PR **#45** cycle-1 plane closeout).
+> Product cycle-1 `@2cbed44` (#44). Claim **building G9-design** (#46).
+> Settlements: **0**. Open product PR: **#46** (Security B310 fail;
+> CONFLICTING post-#45).
+>
+> **#45 docs closeout on main @ `df1cc8f`.** Post-cycle-1 plane; claim later
+> set building for #46 by steward claim hygiene.
 >
 > **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
 > (7 checks), committed report, CI wire-up. **Not proven:** blank-machine
@@ -228,25 +238,26 @@ committed and pushed survives. Update this file and push after every sub-step.
 | Steward 15m | Card hygiene |
 | Scout (Idea) 25m | Vision fuel · never sets NEXT |
 | **Pulse** | `/workflow agent-commerce-pulse` — support fan-out → Conductor |
-| **Implement×n** | `/workflow agent-commerce-implement {"n":3,"prefer_bet":"N0"}` — scale builders |
+| **Implement×n** | `/workflow agent-commerce-implement {"n":3}` — scale builders (prefer_bet empty → STATE/Overseer) |
 | **Pruner 10m** | [`PRUNER.md`](PRUNER.md) — bloat denial + battery/E2E ship veto |
 | **Optimizer** | [`OPTIMIZER.md`](OPTIMIZER.md) — continuous self-improvement every 5 cycles (no end state) |
-| Continuous forever | `/workflow agent-commerce-continuous {"max_cycles":5,"forever":true,"prefer_bet":"N0"}` |
+| Continuous forever | `/workflow agent-commerce-continuous {"max_cycles":5,"forever":true}` |
 | Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) · G13 Pruner |
 | Autonomous | [`AUTONOMOUS.md`](AUTONOMOUS.md) |
 | Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
 
 ```text
-/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "N0"}
+/workflow agent-commerce-continuous {"max_cycles": 5, "forever": true}
 /workflow agent-commerce-conductor {"continuous": true, "max_cycles": 2}
 /workflow agent-commerce-steward
-/workflow agent-commerce-flywheel {"prefer_bet": "N0"}
+/workflow agent-commerce-flywheel
 ```
 
 **Conductor** reviews all work, confers via `CONFERRAL.md`, holds trajectory,
 and **restarts** the builder when a cycle finishes or the plane is idle.
 **Steward** keeps cards honest. **Overseer** judges product quality.
-**Flywheel** ships one bet. Default bet: **NEXT ACTION** below.
+**Flywheel** ships one bet. Default bet: **NEXT ACTION** / Overseer singular
+(not a hard-coded era string).
 
 ## Resume protocol
 

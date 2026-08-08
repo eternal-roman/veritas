@@ -1,16 +1,16 @@
 # Peer CURRENT — IDLE
 
-- **Time:** 2026-08-08T18:16:00Z
-- **Role note:** Peer **session review** is **IDLE**. Session diligence on main via #19; O.8 on main via #22 → `96b9013`. Steward owns cohesion.
-- **Open PRs:** **#21** docs-only (dirty vs main) — not peer WATCH. No product PR.
+- **Time:** 2026-08-08T20:50:00Z
+- **Role note:** Peer **session review** is **IDLE**. Diligence on main via #19; product plane past cycle-1. Steward owns cohesion.
+- **Open PRs:** **#46** G9-design (product flywheel claim — not peer WATCH unless a foreign parallel branch appears).
 - **If a new parallel agent branch appears:** Steward or peer tick may set WATCH under GUARDIAN.
 - **Scrutiny verdict:** **IDLE**
-- **Action:** none; product NEXT is **M7** on main plane.
+- **Action:** none; sole product is **G9-design #46** under flywheel claim.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Peer idle; no peer product branch; #21 docs dirty not peer WATCH
+PROPERTY: Peer idle; no foreign peer product branch; #46 is claimed flywheel WIP not peer WATCH
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 96b9013; open PRs [#21]; #22 MERGED
-NOT PROVEN: Future peer branch quality; M7
+CHECKED ARTIFACT: origin/main df1cc8f; open PRs [#46]; flywheel-claim building G9-design
+NOT PROVEN: Future peer branch quality; G9 close; on-chain settlement
 ```

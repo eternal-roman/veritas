@@ -1,23 +1,23 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T22:05:00Z
-- **Path:** LIGHT / **noop_idle**
-- **Branch / HEAD:** product tip `2cbed44` (cycle-1 #44); plane closeout via docs PR
-- **Scope:** Stock only — no open product PR to prune; claim **free** after cycle-1
-- **Verdict:** LEAN (idle — nothing to prune this tick)
-- **ship_ok:** n/a (no active product surface). Last landed product: cycle-1 #44 @ `2cbed44`
+- **Time:** 2026-08-08T20:50:00Z
+- **Path:** STANDBY — product surface open; G13 **pending** green #46
+- **Branch / HEAD:** tip `df1cc8f` (#45); product cycle-1 `2cbed44` (#44); WIP **#46**
+- **Scope:** #46 G9-design (`feat/g9-chain-reconcile-design`) — claim **building**
+- **Verdict:** HOLD (do not ship_ok while Security red / CONFLICTING)
+- **ship_ok:** **not granted** this tick. Last landed product: cycle-1 #44 @ `2cbed44`
 - **Deleted / pruned:** none
 - **Refined:** none
-- **Battery:** **not run** (G13 light path — claim free + no product PR; do not burn full battery)
+- **Battery:** **not run** (wait for rebased green CI on #46 before heavy G13)
 - **E2E exercised:** none this tick
-- **Denied:** dual NEXT; re-open cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7; invent settlement
-- **Directive:** Claim free; tip-aligned STATE/conductor. Wait for Overseer single NEXT → G13 heavy on that ship.
+- **Denied:** dual NEXT; merge red #46; invent settlement; re-open cycle-1/N1.3/P7/N0/N1.1/N1.2/M7
+- **Directive:** After #46 is green + rebased onto `df1cc8f`, run full G13 battery before merge.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: No product work for Pruner this tick — claim free, no product PR open
+PROPERTY: Product PR #46 open under claim; no ship_ok while Security fail / CONFLICTING
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 2cbed44 (#44); open product PRs empty; flywheel-claim free
-ASSUMPTIONS: Overseer names one NEXT before next ship; G13 heavy only on claim/PR
-NOT PROVEN: on-chain settlement (0); blank-machine PyPI cold install (out of cycle-1)
+CHECKED ARTIFACT: origin/main df1cc8f; gh pr #46; flywheel-claim building
+ASSUMPTIONS: Flywheel fixes B310 + rebase before requesting G13
+NOT PROVEN: on-chain settlement (0); G9 closed
 ```

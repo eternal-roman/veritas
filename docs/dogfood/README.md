@@ -12,6 +12,7 @@ python scripts/dogfood_cycle1.py --out /tmp/cycle1.json   # cold install first-b
 python scripts/dogfood_cycle2.py --out /tmp/cycle2.json   # paying buyer
 python scripts/dogfood_cycle3.py --out /tmp/cycle3.json   # hostile caller
 python scripts/dogfood_cycle4.py --out /tmp/cycle4.json   # operator economics
+python scripts/dogfood_cycle5.py --out /tmp/cycle5.json   # ecosystem participant
 ```
 
 Both print JSON and exit non-zero on any failure. `tests/test_dogfood.py` runs
@@ -24,7 +25,7 @@ build rather than quietly invalidating a committed report.
 | 2 | Paying buyer | [`cycle2/report.json`](cycle2/report.json) | 1 |
 | 3 | Hostile caller | [`cycle3/report.json`](cycle3/report.json) | 1 |
 | 4 | Operator economics | [`cycle4/report.json`](cycle4/report.json) | 2 |
-| 5 | Ecosystem participant | not yet run | — |
+| 5 | Ecosystem participant | [`cycle5/report.json`](cycle5/report.json) | 0 (first green run) |
 
 
 ## Cycle 1 — cold autonomous install / first-boot
@@ -120,3 +121,14 @@ mixes them is how invented numbers get quoted back as facts.
   the wall times are a floor — a real provider call dominates them. The
   metering column is whole milliseconds, which is too coarse to resolve the
   offline path at all; it reads 0.
+
+## Cycle 5 — ecosystem participant
+
+A peer agent in the ecosystem: traverse discovery (incl. N0–N1.4 surfaces),
+read the constitution (G9 still disclosed open), verify offline research with
+the zero-dep standalone verifier, re-check EvidencePack + Merkle inclusion
+offline, and treat trust as self-reported not authorization.
+
+**Boundary:** no outbound network, no facilitator, no on-chain. Does not
+contact a foreign venue.
+

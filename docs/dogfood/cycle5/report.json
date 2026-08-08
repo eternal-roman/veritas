@@ -1,0 +1,54 @@
+{
+  "all_pass": true,
+  "boundary": "Does not contact a foreign venue or live facilitator. Measures discovery + independent verify of research/notary/Merkle surfaces a peer agent can use after installing the package.",
+  "checks": [
+    {
+      "check": "discovery_traversal",
+      "expected": "well-known links reach N0\u2013N1.4 ecosystem surfaces",
+      "observed": "missing=[]; dead=[]",
+      "pass": true
+    },
+    {
+      "check": "constitution_g9_disclosed",
+      "expected": "constitution served; G9 still open and disclosed to buyers",
+      "observed": "articles=25; g9={'id': 'G9', 'article': 'A13', 'status': 'open', 'description': \"Recorded settlements are never reconciled against the chain. The ledger stores what the facilitator told us, including 'indeterminate' entries where it told us nothing, and no code re-checks any of it against an RPC endpoint. An operator can therefore say what this instance believes it earned, but not what it actually holds.\", 'witness_test': 'tests/test_known_gaps.py::test_known_gap_settlements_are_never_checked_against_the_chain'}",
+      "pass": true
+    },
+    {
+      "check": "standalone_verifier",
+      "expected": "zero-dep verifier accepts offline research custody chain",
+      "observed": "status=completed; valid=True; failed=[]",
+      "pass": true
+    },
+    {
+      "check": "pack_and_merkle_offline",
+      "expected": "ecosystem peer verifies EvidencePack + Merkle inclusion offline",
+      "observed": "status=completed; pack_ok=True; merkle_ok=True; leaf_ok=True",
+      "pass": true
+    },
+    {
+      "check": "trust_not_authz",
+      "expected": "trust document discloses self-reported nature (not authorization)",
+      "observed": "keys=['basis', 'flags', 'overall', 'recommendation']; self_reported_marker=True",
+      "pass": true
+    },
+    {
+      "check": "diligence_surface",
+      "expected": "diligence/counterparty modules import for peer assessment",
+      "observed": "diligence_callables=['Any', 'CheckResult', 'DiligencePolicy', 'DiligenceReport', 'Verdict', 'assess', 'check_challenge_matches_discovery', 'check_gap_register_present']",
+      "pass": true
+    },
+    {
+      "check": "no_outbound_in_script",
+      "expected": "cycle-5 script performs no outbound network calls",
+      "observed": "hits=[]",
+      "pass": true
+    }
+  ],
+  "cycle": 5,
+  "network": "none \u2014 offline corpus, injected fetch, no facilitator",
+  "on_chain_settlements": 0,
+  "passed": 7,
+  "perspective": "ecosystem participant / peer agent",
+  "total": 7
+}

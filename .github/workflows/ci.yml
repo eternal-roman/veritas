@@ -69,6 +69,7 @@ jobs:
           python scripts/dogfood_cycle2.py --out /tmp/cycle2.json
           python scripts/dogfood_cycle3.py --out /tmp/cycle3.json
           python scripts/dogfood_cycle4.py --out /tmp/cycle4.json
+          python scripts/dogfood_cycle5.py --out /tmp/cycle5.json
 
       - name: Evaluation harness must meet quality gates
         run: |

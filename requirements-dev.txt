@@ -9,3 +9,7 @@ bandit>=1.7
 pip-audit>=2.7
 build>=1.2
 twine>=5.0
+# SBOM generator for the CI supply-chain gate (O.8). It lives in the hashed
+# lock so the generator is itself pinned, rather than a tool fetched at run
+# time by the job whose whole purpose is establishing what we shipped.
+cyclonedx-bom>=5.0

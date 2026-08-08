@@ -519,20 +519,26 @@ This is the larger half of agent-to-agent commerce.
 *Blocked by:* 0.1. Registry presence creates inbound traffic; inbound traffic
 against an unproven payment path produces failed settlements.
 
-## Phase 5 — Reputation (3 weeks)
+## Phase 5 — Reputation and falsifiable commerce (3+ weeks)
 
-- **5.1 Signed attestations.** Sign served results; let buyers publish outcome
-  attestations against `request_id`; aggregate into the trust basis, weighted
-  below local telemetry. Attestations should cite constitution article ids
-  (`CONSTITUTION.md`) so a dispute names the norm at issue; with 4.3 this is
-  the promotion path for articles A16 and A17.
-- **5.2 Counterparty checks.** Before paying, fetch the seller's identity and
-  trust document; require a minimum score and a settled history; cap first-time
-  exposure. *Acceptance:* a buyer refuses an unknown counterparty above the
-  first-time cap, naming the failed check.
+- **5.0 Survival records + standing (mechanism).** `veritas/audit.py`,
+  `veritas/standing.py`, `veritas-audit`: buyer-side pure functions over
+  third-party-signed audit records (A26). G10 remains open (`/v1/trust`
+  self-reported). Omission bound is G11. See `docs/program/FABLE_INSIGHTS.md`.
+- **5.0b Falsifiable commerce W0.** `veritas/warranty.py`: seller-authored
+  deterministic falsification predicates + signed bond commitment + challenge
+  window; evaluation is re-execution, not arbitration (A27). Bond **escrow**
+  is gap G12 (commitment only at W0). Methodology:
+  `docs/program/FALSIFIABLE_COMMERCE.md`.
+- **5.1 Signed attestations / publication.** Sign served results; publish
+  outcome and audit records. **Do not** let the seller aggregate into its own
+  trust basis (rebuilds G10). Prefer buyer `standing_report` / survival
+  counts. With 4.3: promotion path for A16/A17.
+- **5.2 Counterparty checks.** Spend policy consumes `standing_report` (or
+  refuses UNVERIFIABLE), not seller `/v1/trust` alone. Cap first-time exposure.
 
-*Risk:* self-reported reputation is gameable by construction. It is an input to
-a spend policy, not authorization.
+*Risk:* self-report is gameable; survival reports are bounded by the held
+record set (G11); forfeits are unomittable only once bonds escrow (G12).
 
 ## Phase 6 — Operations (3 weeks, parallel from Phase 1)
 

@@ -8,6 +8,7 @@ records the ones its first run found.
 They are runnable by anyone, against their own instance:
 
 ```bash
+python scripts/dogfood_cycle1.py --out /tmp/cycle1.json   # cold install first-boot
 python scripts/dogfood_cycle2.py --out /tmp/cycle2.json   # paying buyer
 python scripts/dogfood_cycle3.py --out /tmp/cycle3.json   # hostile caller
 python scripts/dogfood_cycle4.py --out /tmp/cycle4.json   # operator economics
@@ -19,11 +20,24 @@ build rather than quietly invalidating a committed report.
 
 | Cycle | Perspective | Report | Defects it found |
 |---|---|---|---|
-| 1 | Cold autonomous install | not yet run — gated on Phase N0 | — |
+| 1 | Cold autonomous install / first-boot | [`cycle1/report.json`](cycle1/report.json) | 0 (first green run) |
 | 2 | Paying buyer | [`cycle2/report.json`](cycle2/report.json) | 1 |
 | 3 | Hostile caller | [`cycle3/report.json`](cycle3/report.json) | 1 |
 | 4 | Operator economics | [`cycle4/report.json`](cycle4/report.json) | 2 |
 | 5 | Ecosystem participant | not yet run | — |
+
+
+## Cycle 1 — cold autonomous install / first-boot
+
+Was gated on Phase N0. Now that N0–N1.3 are on main, this cycle checks whether
+an autonomous agent can **first-boot** the free-mode product without a human
+editing config: console-script install contract, required modules, free-mode
+bootstrap, discovery (including notarize / attest / pack), offline research,
+offline notary with `evidence_pack`, and free pack verify.
+
+**Boundary:** does **not** re-run blank-machine `pip install` from PyPI (CI's
+package job owns wheel install + hash-pinned deps). Measures the agent
+first-boot path after the package is available. **No on-chain settlement.**
 
 ## Cycle 2 — paying buyer
 

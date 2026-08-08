@@ -6,12 +6,21 @@ Nothing in this repository could previously produce a receiving address —
 addresses have no private key and burn funds. This module provisions the
 real thing with zero human input: `eth_account.Account.create()` → an
 encrypted eth-keystore-v3 file plus a locally generated random passphrase,
-both written with owner-only permissions.
+both written owner-only **where the platform enforces POSIX mode bits**.
 
 Honest threat model: the passphrase sits beside the keystore, so this
 protects a single leaked or backed-up file, NOT an attacker who can read
 this host's filesystem. Production custody (managed signer, policy-bounded)
 remains ROADMAP 3.2. Creating an address requires no human; funding it does.
+
+Platform limit, stated rather than hidden: `os.open(..., 0o600)` is ignored
+on Windows and on filesystems that do not carry mode bits (FAT/exFAT, some
+bind-mounted volumes). There the keystore and its plaintext passphrase are
+left at whatever the filesystem grants — commonly world-readable. We do not
+silently pretend otherwise: the mode is read back after every write and a
+`WalletPermissionWarning` names the file that is unprotected. Deploy on a
+POSIX filesystem, or supply custody the operating system can actually
+enforce.
 
 Requires the ``signing`` extra (`pip install "veritas-research[signing]"`).
 """
@@ -21,6 +30,8 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import stat
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -31,6 +42,15 @@ PASSPHRASE_NAME = "wallet.passphrase"
 
 class WalletError(ValueError):
     """Raised when wallet provisioning or loading cannot proceed."""
+
+
+class WalletPermissionWarning(UserWarning):
+    """Key material was written where the OS will not restrict access to it.
+
+    A warning rather than an error: refusing outright would make the agent
+    unprovisionable on Windows, and a developer wallet there is legitimate.
+    Never ignore it for a wallet holding real funds.
+    """
 
 
 @dataclass(frozen=True)
@@ -57,15 +77,33 @@ def _require_eth_account() -> Any:
 
 
 def _write_owner_only(path: Path, content: str) -> None:
-    # Permissions set at creation via os.open, not chmod-after-write, so the
-    # file is never readable by others even for an instant.
+    """Write key material owner-only, and say so when that did not happen.
+
+    Permissions are set at creation via `os.open`, not chmod-after-write, so
+    on POSIX the file is never readable by others even for an instant. The
+    mode argument is advisory, though: Windows ignores it outright and
+    mode-less filesystems drop it. Reading the mode back is what separates
+    "protected" from "we asked politely" — without it this function's name is
+    a claim we never checked.
+    """
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w") as fh:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
         fh.write(content)
+
+    mode = stat.S_IMODE(path.stat().st_mode)
+    if mode & 0o077:
+        warnings.warn(
+            f"{path.name} holds wallet key material but its permissions are "
+            f"{oct(mode)}, not 0o600: this platform or filesystem does not "
+            "enforce POSIX mode bits, so the file is readable beyond its "
+            "owner. Treat this wallet as development-only.",
+            WalletPermissionWarning,
+            stacklevel=3,
+        )
 
 
 def _stored_address(keystore_path: Path) -> str:
-    keystore = json.loads(keystore_path.read_text())
+    keystore = json.loads(keystore_path.read_text(encoding="utf-8"))
     address = str(keystore.get("address", ""))
     if not address:
         raise WalletError(f"keystore at {keystore_path} carries no address")
@@ -125,7 +163,10 @@ def load_signer(base_dir: str | Path = ".veritas_agent"):
     if not keystore_path.exists() or not passphrase_path.exists():
         raise WalletError(f"no provisioned wallet under {base}; run ensure_wallet first")
 
-    key = Account.decrypt(json.loads(keystore_path.read_text()), passphrase_path.read_text())
+    key = Account.decrypt(
+        json.loads(keystore_path.read_text(encoding="utf-8")),
+        passphrase_path.read_text(encoding="utf-8"),
+    )
 
     from veritas.buyer_payment import LocalAccountSigner
 

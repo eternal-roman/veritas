@@ -33,7 +33,7 @@ def record_attempt(request_id: str, headers: dict[str, str], amount: str = "$0.2
         "has_signature": bool(headers.get("PAYMENT-SIGNATURE") or headers.get("X-PAYMENT")),
         "mode": "local_simulator",
     }
-    with ATTEMPTS.open("a") as f:
+    with ATTEMPTS.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
     return entry
 
@@ -48,7 +48,7 @@ def record_settlement(request_id: str, amount: str, status: str = "recorded", me
         "meta": meta or {},
         "mode": "local_simulator",
     }
-    with SETTLEMENTS.open("a") as f:
+    with SETTLEMENTS.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
     return entry
 

@@ -8,10 +8,10 @@ file described a system that did not import.
 | Component | State |
 |-----------|-------|
 | Content hashing + normalization | Working, tested |
-| Custody hash-chain + tamper detection | Working, tested |
+| Custody hash-chain, delivered with the response | Working, tested — the buyer re-runs `verify_chain_records` on delivered data |
 | Durable custody receipts (`/v1/receipts`) | Working, tested |
-| Bayesian updating with correlated-source damping | Working, tested |
-| Refusal taxonomy (`refused` vs `unavailable`) | Working, tested |
+| Relevance gate enforced on the served path | Working, tested — irrelevant evidence is refused, not billed as an answer |
+| Refusal taxonomy (`no_evidence`, `irrelevant_evidence`, `unavailable`) | Working, tested |
 | Retrieval error surfacing | Working, tested |
 | x402 402-challenge construction (atomic amounts) | Working, tested |
 | Facilitator verify/settle client, fail-closed | Working, tested against unreachable host |
@@ -23,7 +23,10 @@ file described a system that did not import.
 | Installable package (`pip install .`, single `veritas` namespace, `veritas-server` script) | Working; CI builds the wheel and installs it in a clean venv. Not yet on PyPI |
 | Keyed Serper retrieval tier (env-configured, key never serialised, degrades to zero-key tier) | Working against fixture-shaped responses; not yet exercised against the live API with a real key |
 | Buyer-side payment construction + spend policy (`veritas.payer`, key-free signer seam) | Working; L1 unit tests + L2 bounded model check (I1–I7, 8,720 traces, CI-gated). EIP-712 signature round-trip verified against `eth_account`. No on-chain settlement yet |
-| Replay protection (`veritas.replay`) | Working; a resubmitted `X-PAYMENT` does the work once (tested). Single-instance scope — local disk |
+| Container / deploy (`Dockerfile`, `.dockerignore`, `docker-compose.yml`) | Working, tested by reading the shipped files: allowlist build context, no `COPY . .`, non-root user, declared VOLUME for the runtime directory, compose with no baked-in credentials. Not verified against a built image — no Docker daemon in CI |
+| Observability (`veritas.observability`) | Working, tested: JSON access logs, Prometheus counters at `/metrics` behind a required token, label values escaped so a request path cannot forge metric lines. Buyer queries and payment headers are asserted absent from logs. In-process counters — each node counts only itself |
+| Unit economics (`veritas.metering`, `veritas.pricing`, `veritas-ops`) | Working, tested: provider calls, evidence bytes and wall time metered on every request including free ones; the pricing version is stamped on every authorization; `veritas-ops` reports revenue, what is owed and what needs attention as JSON. **The default cost table is empty on purpose** — no provider list price can be verified from this environment, so an unpriced provider is reported as unpriced and margin is withheld rather than guessed |
+| Replay safety + financial ledger (`veritas.ledger`) | Working, tested: a resubmitted `X-PAYMENT` does the work once and returns the stored deliverable; every authorization, delivery and settlement attempt is durable on SQLite and revenue is answerable from the ledger alone. Single-instance scope — local disk. Nothing is reconciled against the chain (gap G9) |
 | Venue constitution (`/v1/constitution`, `veritas/constitution.py`, v1.1) | Working, tested: every L1 article's enforcement pointer resolves; L0 articles carry none; `CONSTITUTION.md` sync-tested; gap G1 closed under the register's own discipline, G2 opened |
 | Unified error contract (`veritas/errors.py`, `/v1/errors`) | Working, tested: registered codes, one envelope on every non-402 error including 422 and the previously code-less 503 unavailable body |
 | Self-traversing discovery (`/.well-known/x402` links, `/llms.txt`, `/v1/schema`) | Working, tested; identity document no longer fabricates a base URL when none is configured |
@@ -31,6 +34,21 @@ file described a system that did not import.
 | `veritas-agent` CLI (init/serve/up/status) | Working, tested: provisioned config now reaches the env the HTTP server reads |
 | MCP tools (`veritas-mcp`: research/verify/trust/constitution) | Working, tested against the SDK; local free-mode engine only, no payment path over MCP |
 | Container + release workflow (`Dockerfile`, `release.yml`) | Dockerfile CI-built; release workflow inert until a maintainer configures PyPI Trusted Publishing |
+
+## What was found false and fixed (2026-08-05 audit)
+
+Three published claims did not hold on the served code path. They are listed
+here rather than quietly corrected:
+
+- The relevance gate ran only inside one retriever, so in production any source
+  of 40+ characters became a billable `completed` answer however unrelated —
+  and the CI quality gate certified a filter production never applied.
+- The custody chain was computed and discarded, so `custody_valid: true` was an
+  unverifiable self-assertion.
+- The keyless retrieval tier scraped multiple search engines through an
+  aggregator while labelling every result `duckduckgo`.
+
+All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 
 ## What is built but unproven
 
@@ -63,17 +81,26 @@ file described a system that did not import.
 | Real-facilitator settlement test | High | Needs testnet wallet + funded run |
 | Public deployment | High | No hosted instance |
 | Quality benchmark vs strong baselines | High | Harness proves invariants, not quality |
-| Rate limiting / abuse controls | Medium | Not implemented |
-| Shared replay/spend state across instances | Medium | Both are local disk; a second instance does not see them (roadmap 6.2) |
+| Rate limiting across instances | Medium | Per-IP limiting, body caps and a concurrency cap are in and tested, but all are in-process: each node behind a balancer has its own budget |
+| Shared ledger/spend state across instances | Medium | Both are local disk; a second instance does not see them, so a replay routed elsewhere still fails (roadmap 6.2) |
+| Reconciling recorded settlements against the chain | High | The ledger records what the facilitator said; no RPC check exists (gap G9) |
 | Bazaar / registry auto-registration | Medium | Manual |
 | Durable evidence re-fetch (IPFS pinning) | Medium | Receipts store hashes, not content |
 | Solana settlement | Low | Deliberately excluded from advertised networks |
 
 ## Honest verdict
 
-The epistemic core is sound and the payment path is now real code rather than a
-header check. What remains between this and revenue is not architecture — it is
-retrieval quality, one funded settlement test, and a deployment.
+The payment path is real code rather than a header check, and after the
+2026-08-05 audit the served path no longer makes claims it cannot support.
+
+What remains between this and revenue **is** partly architecture, and saying
+otherwise (as this section previously did) was wrong. Specifically: there is no
+financial ledger, so a settled payment leaves no durable record; a buyer whose
+connection drops after settlement is charged and receives nothing, with no
+idempotent retry; every handler is synchronous with no request deadline; and
+nothing is deployed, nothing has settled on-chain, and the deliverable is still
+snippet-grade. The programme addressing these, in order, is tracked in
+`docs/program/STATE.md`.
 
 ## Security / CI
 
@@ -82,7 +109,7 @@ retrieval quality, one funded settlement test, and a deployment.
 | CI workflows | On `main` — tests must pass (no soft-fail) |
 | Import check | All top-level modules must import |
 | Harness quality gates | Fidelity, custody, refusal discrimination, unavailability handling |
-| Security scan job | Bandit + pip-audit, fail on high |
+| Security scan job | Bandit at `-ll` (medium and high) + pip-audit on runtime and dev |
 | Dependabot config | Present (weekly pip + Actions) |
 | CODEOWNERS | Present |
 | Branch protection | **Documented only** — admin must apply in Settings |

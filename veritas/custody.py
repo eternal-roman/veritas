@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,6 +106,49 @@ def verify_chain_records(events: list[dict[str, Any]]) -> bool:
     return True
 
 
+def _atomic_write(path: Path, text: str) -> None:
+    """Write a receipt so a reader never sees a half-written one.
+
+    `write_text` truncates in place: a crash mid-write leaves a receipt that
+    parses as nothing, and the receipt is precisely the artifact a buyer
+    relies on once the response is gone. Write to a sibling temporary file,
+    fsync it, then rename — rename within a directory is atomic on POSIX, so
+    a reader sees the old complete file or the new complete file.
+    """
+    tmp = path.with_name(f".{path.name}.tmp")
+    try:
+        with tmp.open("w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except OSError:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+#: A request id we would actually mint: uuid4, or a caller-supplied id in the
+#: same shape. Deliberately an allowlist. The ids reaching `load` come from
+#: `GET /v1/receipts/{request_id}`, i.e. straight off the wire, and the old
+#: code interpolated them into a filesystem path. Starlette will not match a
+#: path parameter containing "/", which made the hole invisible on Linux — but
+#: "\" is a separator on Windows and is not a URL separator, so
+#: `GET /v1/receipts/..%5Csecrets` arrived intact and read a file one
+#: directory up. Any *.json the process could open was readable by an
+#: unauthenticated caller, and the agent's own `wallet.keystore.json` is one.
+_SAFE_REQUEST_ID = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
+
+
+def is_safe_request_id(request_id: object) -> bool:
+    """True when this id can be used as a filename with no further escaping.
+
+    Rejects separators of every flavour, drive letters, UNC prefixes, leading
+    dots and the empty string, so no input can name a file outside the receipt
+    directory. `..` cannot pass: the first character must be alphanumeric.
+    """
+    return isinstance(request_id, str) and _SAFE_REQUEST_ID.match(request_id) is not None
+
+
 class CustodyStore:
     """Durable custody receipts.
 
@@ -129,9 +173,17 @@ class CustodyStore:
         }
         try:
             self.base_dir.mkdir(parents=True, exist_ok=True)
-            path = self.base_dir / f"{record['request_id']}.json"
-            path.write_text(json.dumps(record, indent=2))
+            # The write side takes the same guard as the read side: ids are
+            # server-minted today, but a store that validates only on read is
+            # one refactor away from writing outside its directory.
+            path = self._receipt_path(record["request_id"])
+            if path is None:
+                raise ValueError("unsafe request_id")
+            _atomic_write(path, json.dumps(record, indent=2))
             record["persisted"] = True
+        except ValueError:
+            record["persisted"] = False
+            record["error"] = "receipt_not_persisted_unsafe_request_id"
         except OSError as exc:
             # Never fail a paid request because the disk is unavailable; report
             # honestly that the receipt is not durable. Exception type only:
@@ -141,9 +193,37 @@ class CustodyStore:
             record["error"] = f"receipt_not_persisted_{type(exc).__name__}"
         return record
 
+    def _receipt_path(self, request_id: object) -> Path | None:
+        """The path a receipt id names, or None if it does not name one.
+
+        Two independent guards, because they fail differently. The allowlist
+        rejects anything that is not a filename we would mint, and runs before
+        a path exists at all. The containment check then re-derives the name
+        with `basename` and requires the resolved result to sit directly in the
+        receipt directory — so even if the pattern were later loosened, or a
+        symlink were planted in the directory, the read still cannot leave it.
+        """
+        if not is_safe_request_id(request_id):
+            return None
+        name = os.path.basename(f"{request_id}.json")
+        base = os.path.realpath(self.base_dir)
+        candidate = os.path.realpath(os.path.join(base, name))
+        # Compare as normalised strings with the separator appended: a bare
+        # prefix test would accept a sibling directory whose name merely starts
+        # with ours (".../receipts_public").
+        if not candidate.startswith(base + os.sep):
+            return None
+        if os.path.dirname(candidate) != base or os.path.basename(candidate) != name:
+            return None
+        return Path(candidate)
+
     def load(self, request_id: str) -> dict[str, Any] | None:
-        path = self.base_dir / f"{request_id}.json"
+        # Resolve before opening, never after: a check that runs after the read
+        # has already leaked the file.
+        path = self._receipt_path(request_id)
+        if path is None:
+            return None
         try:
-            return json.loads(path.read_text())
+            return json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None

@@ -23,7 +23,6 @@ from veritas.trust import OutcomeLog
 
 from .bootstrap import bootstrap, load_config
 from .local_facilitator import record_attempt, record_settlement, verify_payment
-from .self_calibrator import SelfCalibrator
 
 
 def _now() -> str:
@@ -72,12 +71,12 @@ def agent_research(
     # against the payment attempt so settlement and research reconcile.
     result["request_id"] = request_id
 
-    # Calibration is applied only as a reporting overlay: the raw posterior is
-    # always returned alongside it so a buyer can see both.
-    calibrator = SelfCalibrator()
-    raw_posterior = result["posterior"]
-    calibrated = calibrator.calibrate(raw_posterior)
-
+    # The calibration overlay is gone with the posterior it calibrated. It read
+    # a number whose hypothesis was the query string, and reported it through an
+    # identity function because no labelled outcome has ever been recorded.
+    # `SelfCalibrator` stays in the tree for when labelled outcomes exist; it is
+    # no longer applied to a response, because there is nothing honest to apply
+    # it to. See veritas/support.py for what ships instead.
     OutcomeLog().record(result["status"], bool(result["custody_valid"]), bool(result["billable"]))
 
     # Never record settlement for work we could not perform.
@@ -87,9 +86,6 @@ def agent_research(
         record_settlement(request_id, "$0.00", status="not_billable")
 
     result.update({
-        "raw_posterior": raw_posterior,
-        "calibrated_posterior": round(calibrated, 3),
-        "calibration": calibrator.summary(),
         "human_required": False,
         "mode": "live" if require else "autonomous_free",
         "served_at": _now(),
@@ -105,6 +101,8 @@ def record_feedback(raw_posterior: float, was_correct: bool) -> dict[str, Any]:
     evaluation harness or by a consuming agent reporting back. Until it is,
     `calibrate()` is an honest identity function rather than a fake adjustment.
     """
+    from .self_calibrator import SelfCalibrator
+
     calibrator = SelfCalibrator()
     calibrator.update(raw_posterior, 1.0 if was_correct else 0.0)
     calibrator.save()

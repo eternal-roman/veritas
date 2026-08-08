@@ -31,6 +31,7 @@ from typing import Any
 from veritas import __version__
 
 from .retrieval import RetrievalError, RetrievalResult, classify_transport_error
+from .safeurl import require_http_url
 
 SERPER_ENDPOINT = "https://google.serper.dev/search"
 TIMEOUT_SECONDS = 8
@@ -66,7 +67,7 @@ class SerperRetriever:
     def _search(self, query: str, max_results: int) -> dict[str, Any]:
         payload = json.dumps({"q": query, "num": max_results}).encode("utf-8")
         req = urllib.request.Request(
-            self.endpoint,
+            require_http_url(self.endpoint),
             data=payload,
             headers={
                 "X-API-KEY": self.api_key,
@@ -75,7 +76,8 @@ class SerperRetriever:
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
+        with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=TIMEOUT_SECONDS) as resp:
             return json.loads(resp.read().decode())
 
     def retrieve(self, query: str, max_results: int = 5) -> RetrievalResult:

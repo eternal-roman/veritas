@@ -54,6 +54,21 @@ def test_identity_without_public_url_is_relative_and_flagged(free_client):
         assert "veritas.example" not in path
 
 
+def test_identity_does_not_advertise_removed_bayesian_surface(free_client):
+    """Phase T removed the posterior from the served path. Identity still
+    claimed 'Bayesian belief updating' / bayesian-updating after that retract,
+    which is a discovery-document lie. Capabilities must match pipeline +
+    support counts."""
+    body = free_client.get("/v1/identity").json()
+    caps = body["capabilities"]
+    assert "bayesian-updating" not in caps
+    assert "Bayesian" not in body["description"]
+    assert "bayesian" not in body["description"].lower()
+    assert "support-counts" in caps
+    assert "custody-chain" in caps
+    assert "refusal" in caps
+
+
 def test_identity_with_public_url_is_absolute(free_client, tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://research.example.org")
@@ -71,7 +86,7 @@ def test_llms_txt_served_and_in_sync_with_repo_root(free_client):
     way CONSTITUTION.md is."""
     served = free_client.get("/llms.txt")
     assert served.status_code == 200
-    assert served.text == (REPO / "llms.txt").read_text()
+    assert served.text == (REPO / "llms.txt").read_text(encoding="utf-8")
 
 
 def test_llms_txt_names_only_real_endpoints(free_client):

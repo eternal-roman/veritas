@@ -25,7 +25,7 @@ class Status(str, Enum):
 
 class RefusalReason(str, Enum):
     NO_EVIDENCE = "no_evidence"
-    LOW_CONFIDENCE = "low_confidence"
+    IRRELEVANT_EVIDENCE = "irrelevant_evidence"
     RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
 
 
@@ -49,10 +49,10 @@ class Evidence:
 class Claim:
     id: str
     statement: str
-    confidence: float
     evidence_hash: str
     source_url: str
     provenance: str | None = None
+    relevance: float = 0.0
 
 
 @dataclass
@@ -60,7 +60,6 @@ class VeritasResponse:
     request_id: str
     status: Status
     query: str
-    posterior: float
     claims: list[Claim] = field(default_factory=list)
     evidence: list[Evidence] = field(default_factory=list)
     custody_root: str | None = None
@@ -72,12 +71,12 @@ class VeritasResponse:
 
 
 REQUIRED_FIELDS = (
-    "request_id", "status", "query", "posterior", "claims", "evidence",
-    "custody_root", "custody_valid", "retrieval", "refusal_reason",
-    "billable", "timestamp",
+    "request_id", "status", "query", "claims", "evidence",
+    "custody_root", "custody_valid", "custody_chain", "support", "attests",
+    "retrieval", "refusal_reason", "billable", "timestamp",
 )
 
-REQUIRED_CLAIM_FIELDS = ("id", "statement", "confidence", "evidence_hash", "source_url")
+REQUIRED_CLAIM_FIELDS = ("id", "statement", "evidence_hash", "source_url")
 REQUIRED_EVIDENCE_FIELDS = ("url", "excerpt", "content_hash")
 
 
@@ -101,7 +100,7 @@ def response_json_schema() -> dict[str, Any]:
     claim_properties = {
         "id": {"type": "string"},
         "statement": {"type": "string"},
-        "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        "relevance": {"type": "number", "minimum": 0.0, "maximum": 1.0},
         "evidence_hash": {"type": "string", "pattern": "^sha256:"},
         "source_url": {"type": "string"},
         "provenance": {"type": ["string", "null"], "enum": [p.value for p in Provenance] + [None]},
@@ -115,7 +114,9 @@ def response_json_schema() -> dict[str, Any]:
             "request_id": {"type": "string"},
             "status": {"type": "string", "enum": [s.value for s in Status]},
             "query": {"type": "string"},
-            "posterior": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "support": {"type": "object"},
+            "attests": {"type": "string"},
+            "custody_chain": {"type": "array", "items": {"type": "object"}},
             "claims": {
                 "type": "array",
                 "items": {
@@ -163,8 +164,10 @@ def validate_response(payload: dict[str, Any]) -> list[str]:
     if reason is not None and reason not in {r.value for r in RefusalReason}:
         problems.append(f"invalid refusal_reason: {reason!r}")
 
-    if not isinstance(payload["posterior"], (int, float)) or not 0.0 <= payload["posterior"] <= 1.0:
-        problems.append(f"posterior out of range: {payload['posterior']!r}")
+    if not isinstance(payload.get("custody_chain"), list):
+        problems.append("custody_chain must be a list of custody events")
+    if not isinstance(payload.get("support"), dict):
+        problems.append("support must be an object")
 
     # Core invariants of the product's promise.
     if payload["status"] == Status.COMPLETED.value and not payload["claims"]:

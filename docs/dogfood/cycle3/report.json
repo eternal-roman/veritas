@@ -1,0 +1,60 @@
+{
+  "cycle": 3,
+  "limits_are": "in-process; behind a load balancer each node has its own",
+  "note": "No outbound request is made. The SSRF probes assert the guard refuses before a socket is opened, which is what the guard is for.",
+  "probes": [
+    {
+      "expected": "the limiter engages, and /health keeps answering through it",
+      "observed": "20/40 refused with 429; health=200",
+      "probe": "unpaid_flood",
+      "refused": true
+    },
+    {
+      "expected": "413 request_too_large, refused before the body is hashed",
+      "observed": "413, error=request_too_large",
+      "probe": "oversized_body",
+      "refused": true
+    },
+    {
+      "expected": "nothing served, nothing leaked, no 5xx, and no facilitator round trip for any of the 8 structurally doomed payloads",
+      "found_defect": "First run: all 8 doomed payloads caused an outbound facilitator call, so an unpaid caller could spend our request budget one junk header at a time. The structural nonce check now runs first; fixed in the same commit as this cycle. The remaining calls are for payloads carrying a well-formed nonce, which only the facilitator can judge.",
+      "observed": "served=[], leaked=[], facilitator_calls_for_doomed=0, facilitator_calls_total=2, statuses={'empty': 402, 'not_base64': 402, 'base64_not_json': 402, 'json_not_object': 402, 'null_nonce': 409, 'nonce_wrong_type': 409, 'huge_nonce': 409, 'sql_ish_nonce': 409, 'deeply_nested': 402, 'unicode_padding': 402}",
+      "probe": "payment_fuzzing",
+      "refused": true
+    },
+    {
+      "authorizations_recorded": 0,
+      "expected": "no retrieval pass consumed, nothing served",
+      "observed": "retrievals=0, statuses=[503]",
+      "probe": "nonce_flooding",
+      "refused": true
+    },
+    {
+      "expected": "every internal, loopback and metadata destination refused",
+      "observed": "all refused",
+      "probe": "ssrf_facilitator",
+      "refused": true
+    },
+    {
+      "expected": "every non-HTTP scheme refused",
+      "observed": "all refused",
+      "probe": "ssrf_scheme",
+      "refused": true
+    },
+    {
+      "expected": "no counter reaches an unauthenticated caller",
+      "observed": "served=[], leaked=[], statuses={'no_header': 401, 'wrong_token': 401, 'empty_bearer': 401, 'basic_auth': 401}",
+      "probe": "metrics_probe",
+      "refused": true
+    },
+    {
+      "expected": "every failure is JSON and names no server internals",
+      "observed": "leaking={}, non_json=[]",
+      "probe": "error_leakage",
+      "refused": true
+    }
+  ],
+  "refused": 8,
+  "title": "Hostile caller",
+  "total": 8
+}

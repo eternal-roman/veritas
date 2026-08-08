@@ -3,14 +3,21 @@
 These tests are the constitution's own enforcement mechanism. An article
 claiming evidence level L1 must point at an artifact that exists (a test, a CI
 gate string, or a schema invariant string); an L0 article must carry no
-enforcement and is rendered as aspirational. Pointer resolution here is
-string-level: it proves the named artifact exists, not that it fully covers
-the article's meaning.
+enforcement and is rendered as aspirational.
+
+Test pointers are resolved by **real pytest collection**: the pointer must name
+a test pytest actually collects. Grepping for `def <name>(` — what this used to
+do — would accept a commented-out or uncollectable test, letting an article
+claim enforcement from something that never runs. Collection still does not
+prove the test covers the article's meaning; that remains an L1 limit.
 """
 
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
+from functools import lru_cache
 from pathlib import Path
 
 import pytest
@@ -40,12 +47,37 @@ def free_client(tmp_path, monkeypatch):
     return TestClient(main_module.app)
 
 
+@lru_cache(maxsize=1)
+def _collected_node_ids() -> frozenset[str]:
+    """Every test id pytest actually collects, as `path::name`.
+
+    Pointer resolution used to grep for `def <name>(` in the file. That accepted
+    a commented-out test, one skipped at collection, or a name that pytest never
+    reaches — so an article could claim enforcement from a test that never runs.
+    Collecting for real closes that hole.
+    """
+    completed = subprocess.run(  # nosec B603 - fixed argv, no shell, repo-local
+        [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q",
+         "-p", "no:cacheprovider"],
+        cwd=REPO, capture_output=True, text=True, timeout=300,
+    )
+    ids: set[str] = set()
+    for line in completed.stdout.splitlines():
+        line = line.strip()
+        if "::" not in line:
+            continue
+        path, _, rest = line.partition("::")
+        # Drop parametrisation so `test_x[case]` resolves a pointer to `test_x`.
+        ids.add(f"{path}::{rest.split('[', 1)[0]}")
+    if not ids:
+        raise AssertionError(
+            f"pytest collected nothing; cannot verify pointers.\n{completed.stdout[-2000:]}"
+        )
+    return frozenset(ids)
+
+
 def _resolve_test_pointer(pointer: str) -> bool:
-    path, _, name = pointer.partition("::")
-    source_file = REPO / path
-    if not source_file.is_file() or not name:
-        return False
-    return f"def {name}(" in source_file.read_text()
+    return pointer in _collected_node_ids()
 
 
 def test_constitution_validates():
@@ -53,8 +85,8 @@ def test_constitution_validates():
 
 
 def test_every_enforcement_pointer_resolves():
-    ci_text = CI_WORKFLOW.read_text()
-    schema_text = SCHEMA_SOURCE.read_text()
+    ci_text = CI_WORKFLOW.read_text(encoding="utf-8")
+    schema_text = SCHEMA_SOURCE.read_text(encoding="utf-8")
     for article in ARTICLES:
         for enforcement in article["enforcement"]:
             kind, pointer = enforcement["kind"], enforcement["pointer"]
@@ -100,7 +132,9 @@ def test_articles_do_not_contradict_wire_contract():
         "request_id": "r1",
         "status": "unavailable",
         "query": "anything",
-        "posterior": 0.5,
+        "support": {"n_evidence": 0, "verdict": "unsupported"},
+        "custody_chain": [],
+        "attests": "test fixture",
         "claims": [],
         "evidence": [],
         "custody_root": None,
@@ -154,7 +188,7 @@ def test_constitution_md_in_sync():
     truth: every article id and verbatim statement must appear in it, and
     every aspirational article must be rendered as such. Rewording an article
     without updating both places breaks this test by design."""
-    text = (REPO / "CONSTITUTION.md").read_text()
+    text = (REPO / "CONSTITUTION.md").read_text(encoding="utf-8")
     assert f"version {CONSTITUTION_VERSION}" in text
     for article in ARTICLES:
         assert article["id"] in text, f"{article['id']} missing from CONSTITUTION.md"
@@ -176,8 +210,12 @@ def test_new_docs_keep_the_register():
     unambiguous in prose; 'complete' is only checked as a bare claim phrase
     because 'completed' is a legitimate status value."""
     banned = re.compile(r"\b(live-ready|revenue-ready|production-ready|ZK)\b|\bis complete\b")
-    for name in ("CONSTITUTION.md", "ECOSYSTEM.md"):
-        text = (REPO / name).read_text()
+    # README.md and STATUS.md are in the list because they are the sales
+    # surface: the place where a claim is most tempting and least checked.
+    # ROADMAP.md and AGENTS.md are deliberately excluded — they quote these
+    # very words to prohibit them.
+    for name in ("CONSTITUTION.md", "ECOSYSTEM.md", "README.md", "STATUS.md"):
+        text = (REPO / name).read_text(encoding="utf-8")
         match = banned.search(text)
         assert match is None, f"{name} contains banned bare claim: {match.group(0)!r}"
 

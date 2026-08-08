@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "1.1"
+CONSTITUTION_VERSION = "2.2"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -157,11 +157,15 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     ),
     _article(
         "A11",
-        "Reputation is not self-attested",
-        "Trust is derived from recorded behaviour only, and below the sample floor the service reports UNPROVEN rather than a manufactured score.",
+        "Reputation is earned, not manufactured",
+        "Trust is derived from recorded paid behaviour only; free traffic cannot move it, below the sample floor the service reports UNPROVEN rather than a manufactured score, and the score states that it is the seller's own report.",
         "venue",
         "L1",
-        [{"kind": "test", "pointer": "tests/test_api.py::test_trust_is_unproven_without_data"}],
+        [
+            {"kind": "test", "pointer": "tests/test_api.py::test_trust_is_unproven_without_data"},
+            {"kind": "test", "pointer": "tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score"},
+            {"kind": "test", "pointer": "tests/test_durability.py::test_the_score_states_that_it_counts_paid_requests_only"},
+        ],
     ),
     _article(
         "A12",
@@ -171,7 +175,7 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_pipeline.py::test_genuine_emptiness_is_billable_refusal"},
-            {"kind": "test", "pointer": "tests/test_api.py::test_verify_endpoint_checks_hashes"},
+            {"kind": "test", "pointer": "tests/test_truth_restoration.py::test_delivered_chain_is_verifiable_without_the_seller"},
             {"kind": "test", "pointer": "tests/test_custody.py::test_ledger_detects_tampering"},
         ],
     ),
@@ -183,6 +187,7 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_pipeline.py::test_outage_is_not_billable"},
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_retrieval_failure_abandons_the_authorization_and_never_settles"},
             {"kind": "ci-gate", "pointer": "unavailability_honesty"},
         ],
     ),
@@ -207,13 +212,14 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     ),
     _article(
         "A19",
-        "Replay refusal",
-        "A resubmitted payment authorization is refused before a second retrieval pass is consumed, and an unusable replay guard refuses rather than waves through.",
+        "Replay safety",
+        "A resubmitted payment authorization never consumes a second retrieval pass; where the work was already delivered it is re-delivered rather than refused, and an unusable replay guard refuses rather than waves through.",
         "venue",
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_replay.py::test_resubmitted_header_does_the_work_once"},
-            {"kind": "test", "pointer": "tests/test_replay.py::test_unusable_store_fails_closed"},
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_replayed_authorization_returns_the_deliverable_it_paid_for"},
+            {"kind": "test", "pointer": "tests/test_replay.py::test_an_unusable_ledger_refuses_rather_than_waving_through"},
         ],
     ),
     _article(
@@ -236,6 +242,49 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         [
             {"kind": "test", "pointer": "tests/test_wallet.py::test_wallet_key_material_stays_on_disk"},
             {"kind": "test", "pointer": "tests/test_agent_cli.py::test_up_configures_server_from_bootstrap_config"},
+        ],
+    ),
+    _article(
+        "A22",
+        "Observation limits",
+        "A record attests what this service received from a source at a time, not what that source served to any other party.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_truth_restoration.py::test_responses_state_what_they_attest"},
+        ],
+    ),
+    _article(
+        "A23",
+        "Provenance truthfulness",
+        "The provider named in a piece of evidence is the provider that was actually queried, and evidence carries the licence under which it may be reused.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used"},
+            {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response"},
+        ],
+    ),
+    _article(
+        "A24",
+        "Delivery is recorded before payment is captured",
+        "What was produced for a buyer is written durably before settlement is attempted, so a failure between the two leaves a record of what is owed rather than silence.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_delivery_is_durable_before_settlement_is_attempted"},
+            {"kind": "test", "pointer": "tests/test_ledger.py::test_settlement_before_delivery_is_refused"},
+        ],
+    ),
+    _article(
+        "A25",
+        "An unknown settlement is not reported as a failed one",
+        "A settlement whose facilitator never answered is recorded and reported as indeterminate, not as failure, and the buyer receives the work rather than having it withheld on an outcome we did not observe.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_indeterminate_settlement_delivers_and_says_so"},
+            {"kind": "test", "pointer": "tests/test_ledger.py::test_indeterminate_settlement_is_not_recorded_as_failure"},
         ],
     ),
     # Aspirational articles: named norms with no enforcement yet. Each cites
@@ -306,6 +355,144 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "this gap is open."
         ),
         "witness_test": "tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures",
+    },
+    {
+        "id": "G3",
+        "article": "A2",
+        "status": "closed",
+        "description": (
+            "The relevance gate was enforced only inside StaticCorpusRetriever, never in "
+            "the pipeline, so on the served path any source of 40 or more characters "
+            "produced a billable 'completed' answer however unrelated to the query. The "
+            "evaluation harness certified a filter production never applied."
+        ),
+        "resolution": (
+            "Closed in constitution 2.0: the gate runs in the pipeline evidence loop and "
+            "an all-irrelevant result is an 'irrelevant_evidence' refusal "
+            "(tests/test_truth_restoration.py::"
+            "test_irrelevant_evidence_is_refused_on_the_production_path)."
+        ),
+    },
+    {
+        "id": "G4",
+        "article": "A23",
+        "status": "closed",
+        "description": (
+            "The keyless retrieval tier called a metasearch library that shuffles across "
+            "Google, Bing, Yandex, Brave and others, then labelled every result "
+            "provider: 'duckduckgo' — reselling scraped result pages under a falsified "
+            "provenance label, inside a product selling provenance."
+        ),
+        "resolution": (
+            "Closed in constitution 2.0: the metasearch dependency is removed and each "
+            "provider is named as the engine actually queried "
+            "(tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used)."
+        ),
+    },
+    {
+        "id": "G5",
+        "article": "A12",
+        "status": "closed",
+        "description": (
+            "The custody chain was computed and then discarded: only the root hash and a "
+            "self-asserted custody_valid were published, so a buyer had nothing to check "
+            "and A12 was false as written."
+        ),
+        "resolution": (
+            "Closed in constitution 2.0: the chain ships in the response and a buyer "
+            "re-runs verify_chain_records over delivered data "
+            "(tests/test_truth_restoration.py::"
+            "test_delivered_chain_is_verifiable_without_the_seller)."
+        ),
+    },
+    {
+        "id": "G6",
+        "article": "A13",
+        "status": "closed",
+        "description": (
+            "A paid request was not idempotent. The nonce was burned before the work, and "
+            "a buyer whose connection dropped after settlement was charged and received "
+            "nothing: retrying the same authorization returned 409 rather than the "
+            "deliverable already paid for. Settlement fairness (A13) did not hold on "
+            "this path."
+        ),
+        "resolution": (
+            "Closed in constitution 2.1: veritas/ledger.py records the delivery before "
+            "settlement is attempted and keys a state machine on the authorization "
+            "nonce, so resubmitting it returns the stored deliverable "
+            "(tests/test_money_path.py::"
+            "test_replayed_authorization_returns_the_deliverable_it_paid_for). "
+            "The retrieval pass still runs exactly once "
+            "(tests/test_money_path.py::test_a_replay_does_not_run_the_work_again). "
+            "Bounded: single-instance scope — two instances behind a balancer do not "
+            "share the ledger, so a replay routed to the other one still fails; and a "
+            "settlement whose facilitator never answers stays indeterminate until "
+            "reconciliation, which G9 tracks."
+        ),
+    },
+    {
+        "id": "G7",
+        "article": "A11",
+        "status": "closed",
+        "description": (
+            "The trust score was derived from an outcome log that recorded every request "
+            "including unpaid ones, and the endpoint is unauthenticated, so anyone could "
+            "move the service's own reputation signal with free traffic."
+        ),
+        "resolution": (
+            "Closed in constitution 2.2: only paid requests are scored "
+            "(tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score). "
+            "Free outcomes are still counted and reported in the basis — they are real "
+            "behaviour — but cannot manufacture a reputation. An instance nobody has paid "
+            "reports UNPROVEN, which is the correct answer. This closes the manipulation "
+            "route only; the score remains self-reported, which is G10."
+        ),
+    },
+    {
+        "id": "G10",
+        "article": "A11",
+        "status": "open",
+        "description": (
+            "The trust score is computed by the graded party from its own records. "
+            "Nothing external attests to it, and a seller that simply logged favourable "
+            "outcomes would produce an identical document. Restricting scoring to paid "
+            "traffic (G7) raises the cost of manipulation; it does not make the number "
+            "verifiable by the buyer relying on it."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported",
+    },
+    {
+        "id": "G8",
+        "article": "A13",
+        "status": "closed",
+        "description": (
+            "No financial ledger existed. The settlement result, including the on-chain "
+            "transaction hash, was returned in a response header and then discarded, so "
+            "an operator could not say how much was earned, from whom, or for what, and "
+            "no settlement could be reconciled."
+        ),
+        "resolution": (
+            "Closed in constitution 2.1: veritas/ledger.py durably records every "
+            "authorization, delivery and settlement attempt, and revenue is answerable "
+            "from the ledger alone "
+            "(tests/test_money_path.py::test_revenue_is_answerable_from_the_ledger_alone). "
+            "Bounded: it records what this instance did, which is not proof the chain "
+            "agrees — reconciling recorded settlements against on-chain state needs an "
+            "RPC endpoint and is tracked as G9."
+        ),
+    },
+    {
+        "id": "G9",
+        "article": "A13",
+        "status": "open",
+        "description": (
+            "Recorded settlements are never reconciled against the chain. The ledger "
+            "stores what the facilitator told us, including 'indeterminate' entries "
+            "where it told us nothing, and no code re-checks any of it against an RPC "
+            "endpoint. An operator can therefore say what this instance believes it "
+            "earned, but not what it actually holds."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_settlements_are_never_checked_against_the_chain",
     },
 )
 

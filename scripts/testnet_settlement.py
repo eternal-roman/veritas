@@ -30,6 +30,7 @@ try:
         extract_settlement_proof,
         pay_via_policy,
     )
+    from veritas.safeurl import require_http_url
 except ModuleNotFoundError:  # running from a source checkout, package not installed
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from veritas.buyer_payment import (
@@ -38,6 +39,7 @@ except ModuleNotFoundError:  # running from a source checkout, package not insta
         extract_settlement_proof,
         pay_via_policy,
     )
+    from veritas.safeurl import require_http_url
 
 BASE_URL = os.environ.get("VERITAS_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 BUYER_KEY = os.environ.get("BUYER_PRIVATE_KEY", "")
@@ -60,9 +62,12 @@ def http_json(
     req_headers = {"Accept": "application/json", "Content-Type": "application/json"}
     if headers:
         req_headers.update(headers)
-    req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
+    req = urllib.request.Request(
+        require_http_url(url), data=data, headers=req_headers, method=method,
+    )
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+        with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=TIMEOUT) as resp:
             raw = resp.read().decode()
             payload = json.loads(raw) if raw else {}
             return resp.status, payload, {k: v for k, v in resp.headers.items()}

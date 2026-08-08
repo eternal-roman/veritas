@@ -48,7 +48,10 @@ def test_tool_constitution_serves_validated_document():
 
 
 def test_tools_register_with_mcp_sdk():
-    pytest.importorskip("mcp")
+    # Skip on the module actually needed, not on the distribution name: mcp
+    # 2.0 imports fine and has no `mcp.server.fastmcp`, so `importorskip("mcp")`
+    # let this run and fail against an SDK the code does not target.
+    pytest.importorskip("mcp.server.fastmcp")
     server = mcp_server.build_server()
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}

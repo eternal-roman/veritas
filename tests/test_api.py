@@ -22,6 +22,7 @@ def free_client(tmp_path, monkeypatch):
 def paid_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
     # Unroutable facilitator so verification cannot succeed.
     monkeypatch.setenv("VERITAS_FACILITATOR", "http://127.0.0.1:1")
@@ -71,7 +72,9 @@ def test_missing_payment_returns_spec_shaped_402(paid_client):
     body = r.json()
     assert body["x402Version"] == 1
     accepts = body["accepts"][0]
-    assert accepts["maxAmountRequired"] == "250000"
+    # $0.01 at USDC's 6 decimals. The default was $0.25 (25x comparable
+    # x402 endpoints) until the repricing in Phase T.
+    assert accepts["maxAmountRequired"] == "10000"
     assert accepts["scheme"] == "exact"
 
 
@@ -85,10 +88,17 @@ def test_junk_payment_header_is_rejected(paid_client):
 
 
 def test_unreachable_facilitator_fails_closed(paid_client):
-    """A well-formed payload must still be denied when the verifier is down."""
-    payload = base64.b64encode(
-        json.dumps({"scheme": "exact", "network": "eip155:8453", "payer": "0xabc"}).encode()
-    ).decode()
+    """A well-formed payload must still be denied when the verifier is down.
+
+    It carries a real nonce because structurally inadmissible payloads are now
+    refused before the facilitator is called at all (dogfood cycle 3), and the
+    behaviour under test here is the outage path, not that one.
+    """
+    payload = base64.b64encode(json.dumps({
+        "scheme": "exact", "network": "eip155:8453", "payer": "0xabc",
+        "payload": {"signature": "0x" + "cd" * 65,
+                    "authorization": {"nonce": "0x" + "ab" * 32}},
+    }).encode()).decode()
     r = paid_client.post(
         "/v1/research", json={"query": "What is x402?"}, headers={"X-PAYMENT": payload}
     )

@@ -30,6 +30,7 @@ def free_client(tmp_path, monkeypatch):
 def paid_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "1" * 40)
     monkeypatch.setenv("VERITAS_FACILITATOR", "http://127.0.0.1:1")
     import veritas.server as main_module
@@ -41,6 +42,7 @@ def paid_client(tmp_path, monkeypatch):
 def misconfigured_client(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
     monkeypatch.setenv("VERITAS_PAY_TO", "not-an-address")
     import veritas.server as main_module
     importlib.reload(main_module)
@@ -92,7 +94,7 @@ def test_unavailable_503_carries_error_code_and_full_body(free_client, monkeypat
 
     monkeypatch.setattr(
         main_module, "run_research",
-        lambda query, max_results=5: real_run(query, retriever=_Raising()),
+        lambda query, **kwargs: real_run(query, retriever=_Raising()),
     )
     r = free_client.post("/v1/research", json={"query": "What is x402?"})
     assert r.status_code == 503
@@ -137,12 +139,12 @@ def test_facilitator_failure_reasons_carry_no_exception_text():
 def test_replay_store_failure_reason_carries_no_exception_text(tmp_path):
     """The OSError message contains server filesystem paths; the wire gets
     the category only."""
-    from veritas.replay import SpentNonceStore
+    from veritas.ledger import Ledger
 
     blocker = tmp_path / "blocked"
     blocker.write_text("a file where the store wants a directory")
-    store = SpentNonceStore(base_dir=blocker / "nested")
-    result = store.claim("0x" + "a" * 64)
+    ledger = Ledger(base_dir=blocker / "nested")
+    result = ledger.claim("0x" + "a" * 64, "r1")
     assert result.claimed is False
     assert result.reason == "replay_store_unavailable"
 

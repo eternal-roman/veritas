@@ -1,23 +1,26 @@
-# Zero-Knowledge Wallet Privacy for JIT Packets
+# Hiding Wallet Commitments for JIT Packets
 
 ## Goal
 
-Keep the receiving wallet **private** in the public JIT Disposable Packet while still allowing the counterparty to verify that a valid payment target exists and that the seller knows the opening.
+Keep the receiving wallet **private** in the public JIT Disposable Packet while still allowing the holder to prove knowledge of the opening and to reveal the address only at settlement.
 
-## Construction (v1)
+This is **not** a zero-knowledge SNARK. The module name `zk_wallet` is historical; the implementation is a **hiding commitment + keyed MAC proof of knowledge** (`hiding-commit-hmac-v2`).
+
+## Construction (current)
 
 1. **Commitment**  
-   `C = H(salt || address || network)`  
-   Published in the packet instead of the raw `pay_to`.
+   `C = HMAC(salt, address || network)` with a **private** salt.  
+   Published in the packet instead of the raw `pay_to`. (Earlier code published the salt and was not hiding.)
 
-2. **Proof of Knowledge**  
-   A lightweight Fiat-Shamir-style proof binds the commitment and demonstrates knowledge of the opening without revealing the address in the public packet.
+2. **Proof of knowledge**  
+   `HMAC(salt, "pok|" || challenge)` with a verifier-chosen challenge.  
+   Cannot be forged without the salt; requires the opening for verification (not third-party ZK).
 
-3. **Optional stealth / one-time address**  
-   Helper to derive ephemeral receive addresses from a view secret + ephemeral key material so each packet can use a fresh address.
+3. **Stealth / one-time address**  
+   **Not implemented.** The old hash-derived "address" had no private key and would burn funds. `derive_stealth_address` raises `NotImplementedError` and points to ERC-5564.
 
 4. **Selective reveal**  
-   At settlement time the seller (or facilitator under policy) can open the commitment if required for on-chain settlement, while the original offer packet never contained the cleartext address.
+   At settlement the holder opens the commitment; third parties can check `verify_revealed` once salt and address are disclosed.
 
 ## Integration with JDP
 
@@ -38,23 +41,25 @@ When the buyer accepts and pays, settlement can use the opened address or a stea
 
 ## Limits of the current prototype
 
-- This is a **commitment + proof-of-knowledge** construction, not a full zkSNARK/circuit.
-- It hides the address from the public packet and from passive observers of the offer.
-- Real on-chain settlement still ultimately requires a concrete address; the privacy gain is in the offer/discovery phase and in unlinkability across packets when combined with stealth addresses.
-- For production-grade privacy (unlinkable payments, amount privacy, etc.) integrate with systems such as confidential x402 schemes (e.g. Merces / PRXVT-style) or full stealth-address ECC.
+- Commitment + keyed PoK only — **not** a zkSNARK/circuit and **not** third-party-verifiable without reveal.
+- Hides the address from the public offer packet while the salt stays private.
+- Real on-chain settlement still needs a concrete address; unlinkable stealth receives are **out of scope** until a real ERC-5564 implementation is wired.
+- For production-grade payment privacy, integrate a proper stealth or confidential-payment stack rather than extending the hash-address experiment.
 
 ## Files
 
-- `veritas/autonomous/zk_wallet.py` — commitment, verify, open, stealth helper
+- `veritas/autonomous/zk_wallet.py` — commit, prove, verify, open, reveal checks
 - This document — design notes
 
 ## Usage sketch
 
 ```python
-from veritas.autonomous.zk_wallet import commit_wallet, verify_commitment, open_commitment
+from veritas.autonomous.zk_wallet import (
+    commit_wallet, prove, verify_proof, open_commitment, verify_commitment,
+)
 
 wc, opening = commit_wallet("0xSellerAddress...", network="eip155:8453")
-assert verify_commitment(wc)
+assert verify_commitment(wc, opening)
 # put wc.to_dict() into the JIT packet instead of clear pay_to
 # later, for settlement:
 addr = open_commitment(wc, opening)

@@ -1,0 +1,56 @@
+{
+  "buyer_path": "veritas.buyer_payment.pay_via_policy (real EIP-712 signing)",
+  "cycle": 2,
+  "facilitator": "local stand-in \u2014 NO on-chain settlement was performed",
+  "passed": 7,
+  "retrieval": "offline corpus, so the money path is what is measured",
+  "scenarios": [
+    {
+      "expected": "200, one settlement recorded, authorization settled, one retrieval pass",
+      "observed": "200, settlements=1, state=settled, retrievals=1",
+      "pass": true,
+      "revenue_micros": 10000,
+      "scenario": "happy",
+      "transaction": "0xlocal-harness-not-onchain-0x99e39236"
+    },
+    {
+      "expected": "200 with the same deliverable, marked replayed, one retrieval pass",
+      "observed": "200, same_body=True, retrievals=1, replayed=True",
+      "pass": true,
+      "scenario": "replay"
+    },
+    {
+      "expected": "409 payment_authorization_bound_to_another_request; no second retrieval pass",
+      "found_defect": "First run returned 200 with the previous answer; fixed in the same commit as this cycle.",
+      "observed": "409, error=payment_authorization_bound_to_another_request, retrievals=1",
+      "pass": true,
+      "scenario": "double_spend"
+    },
+    {
+      "expected": "200 with the deliverable, payment.state=indeterminate, recorded as exposure",
+      "observed": "200, state=indeterminate, indeterminate=1, failed=0",
+      "pass": true,
+      "scenario": "settle_timeout"
+    },
+    {
+      "expected": "402 settlement_failed, nothing counted as revenue",
+      "observed": "402, error=settlement_failed, revenue={}",
+      "pass": true,
+      "scenario": "settle_refused"
+    },
+    {
+      "expected": "the published buyer helper reports NOT accepted on an unresolved settlement",
+      "observed": "acceptance_met=False, state=indeterminate",
+      "pass": true,
+      "scenario": "buyer_view_indeterminate"
+    },
+    {
+      "expected": "402 challenge, no work done, no authorization claimed",
+      "observed": "402, retrievals=0, authorizations={}",
+      "pass": true,
+      "scenario": "expired_window"
+    }
+  ],
+  "title": "Paying buyer, end to end",
+  "total": 7
+}

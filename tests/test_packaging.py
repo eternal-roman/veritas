@@ -19,7 +19,7 @@ _REQ_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)\s*>=\s*([0-9][0-9a-zA-Z.]*)\s*$")
 
 def _parse_requirements(path: Path) -> dict[str, tuple[int, ...]]:
     floors: dict[str, tuple[int, ...]] = {}
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
         if not line or line.startswith("-r"):
             continue
@@ -43,7 +43,7 @@ def _pyproject_runtime_deps(text: str) -> list[str]:
 
 
 def test_requirements_cover_pyproject_floors():
-    deps = _pyproject_runtime_deps((REPO / "pyproject.toml").read_text())
+    deps = _pyproject_runtime_deps((REPO / "pyproject.toml").read_text(encoding="utf-8"))
     assert deps, "no runtime dependencies parsed from pyproject.toml"
     contract: dict[str, tuple[int, ...]] = {}
     for dep in deps:

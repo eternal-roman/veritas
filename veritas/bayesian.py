@@ -1,4 +1,11 @@
-"""Bayesian belief updating. Belief changes only on verified evidence."""
+"""Bayesian belief updating — library utility, not a product surface.
+
+The served research path no longer publishes a posterior. Likelihoods here are
+hand-typed and the hypothesis is a free-form query string, so the module was
+removed from `pipeline.run_research` and from package-root exports / identity
+capabilities. Kept only for callers who import it explicitly and accept those
+limits. Prefer `veritas.support.support_report` for buyer-recomputable counts.
+"""
 
 from __future__ import annotations
 

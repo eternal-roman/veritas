@@ -84,7 +84,7 @@ def test_control_plane_price_follows_payment_config(tmp_path, monkeypatch):
 
     settlements = [
         json.loads(line)
-        for line in (tmp_path / "runtime" / "settlements.jsonl").read_text().splitlines()
+        for line in (tmp_path / "runtime" / "settlements.jsonl").read_text(encoding="utf-8").splitlines()
     ]
     assert settlements, "no settlement recorded"
     if result["billable"]:

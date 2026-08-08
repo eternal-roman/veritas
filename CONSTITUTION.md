@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 1.1.** This file
+**The normative source is `veritas/constitution.py`, version 2.2.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -111,11 +111,17 @@ The price is disclosed before any work as a spec-shaped 402 challenge with exact
 Enforced by `tests/test_payment.py::test_challenge_is_spec_shaped`
 and `tests/test_api.py::test_missing_payment_returns_spec_shaped_402`.
 
-### A11 — Reputation is not self-attested (L1)
+### A11 — Reputation is earned, not manufactured (L1)
 
-Trust is derived from recorded behaviour only, and below the sample floor the service reports UNPROVEN rather than a manufactured score.
+Trust is derived from recorded paid behaviour only; free traffic cannot move it, below the sample floor the service reports UNPROVEN rather than a manufactured score, and the score states that it is the seller's own report.
 
-Enforced by `tests/test_api.py::test_trust_is_unproven_without_data`.
+Enforced by `tests/test_api.py::test_trust_is_unproven_without_data`,
+`tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score`,
+and `tests/test_durability.py::test_the_score_states_that_it_counts_paid_requests_only`.
+`/v1/trust` is free and unauthenticated, so counting unpaid requests let anyone
+manufacture the service's reputation at no cost. Free outcomes are still
+recorded and reported in the basis — they are real behaviour — and simply do
+not score. The number remains the seller's own report: see G10.
 
 ### A12 — Refusal rights and independent verification (L1)
 
@@ -146,12 +152,16 @@ Every article in this constitution carries an evidence level, and any unenforced
 Enforced by `tests/test_constitution.py::test_article_ids_unique_and_levels_consistent`,
 which fails on any article that claims L1 without enforcement or L0 with it.
 
-### A19 — Replay refusal (L1)
+### A19 — Replay safety (L1)
 
-A resubmitted payment authorization is refused before a second retrieval pass is consumed, and an unusable replay guard refuses rather than waves through.
+A resubmitted payment authorization never consumes a second retrieval pass; where the work was already delivered it is re-delivered rather than refused, and an unusable replay guard refuses rather than waves through.
 
-Enforced by `tests/test_replay.py::test_resubmitted_header_does_the_work_once`
-and `tests/test_replay.py::test_unusable_store_fails_closed`.
+Enforced by `tests/test_replay.py::test_resubmitted_header_does_the_work_once`,
+`tests/test_money_path.py::test_replayed_authorization_returns_the_deliverable_it_paid_for`,
+and `tests/test_replay.py::test_an_unusable_ledger_refuses_rather_than_waving_through`.
+The earlier wording of this article — "is refused" — described a defect, not a
+norm: a single-use authorization the buyer cannot re-sign, refused after their
+money moved, leaves them with nothing. See G6.
 
 ### A20 — Bounded buyer spending (L1)
 
@@ -166,6 +176,39 @@ An agent can provision this service — configuration, receiving keypair, and ru
 
 Enforced by `tests/test_wallet.py::test_wallet_key_material_stays_on_disk`
 and `tests/test_agent_cli.py::test_up_configures_server_from_bootstrap_config`.
+
+### A22 — Observation limits (L1)
+
+A record attests what this service received from a source at a time, not what that source served to any other party.
+
+Enforced by `tests/test_truth_restoration.py::test_responses_state_what_they_attest`.
+Proving what an origin served to *someone else* would need something like
+TLSNotary, zkTLS, or a trusted execution environment. We have none of those, so
+the limit is published in every response rather than left for a buyer to find.
+
+### A23 — Provenance truthfulness (L1)
+
+The provider named in a piece of evidence is the provider that was actually queried, and evidence carries the licence under which it may be reused.
+
+Enforced by `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used`
+and `tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response`.
+
+### A24 — Delivery is recorded before payment is captured (L1)
+
+What was produced for a buyer is written durably before settlement is attempted, so a failure between the two leaves a record of what is owed rather than silence.
+
+Enforced by `tests/test_money_path.py::test_delivery_is_durable_before_settlement_is_attempted`
+and `tests/test_ledger.py::test_settlement_before_delivery_is_refused`.
+
+### A25 — An unknown settlement is not reported as a failed one (L1)
+
+A settlement whose facilitator never answered is recorded and reported as indeterminate, not as failure, and the buyer receives the work rather than having it withheld on an outcome we did not observe.
+
+Enforced by `tests/test_money_path.py::test_indeterminate_settlement_delivers_and_says_so`
+and `tests/test_ledger.py::test_indeterminate_settlement_is_not_recorded_as_failure`.
+A facilitator that timed out may still have moved the funds. Recording that as
+a failure would understate revenue and would tell a buyer their payment did not
+go through when we do not know that.
 
 ---
 
@@ -225,6 +268,88 @@ plane must not be exposed as a paid network surface while this gap is open.
 
 Witness: `tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures`.
 If that test fails, the gap has been fixed — close G2 and delete the witness.
+
+### G3 — Relevance gate absent from the served path (closed, article A2)
+
+The gate was enforced only inside `StaticCorpusRetriever`, so on the served path
+any source of 40 or more characters produced a billable `completed` answer
+however unrelated to the query — and the evaluation harness certified a filter
+production never applied.
+
+Closed in constitution 2.0: the gate runs in the pipeline evidence loop and an
+all-irrelevant result is an `irrelevant_evidence` refusal.
+
+### G4 — Falsified provenance in the keyless tier (closed, article A23)
+
+The keyless tier called a metasearch library that shuffles across Google, Bing,
+Yandex, Brave and others, then labelled every result `duckduckgo`.
+
+Closed in constitution 2.0: the dependency is removed and each provider is named
+as the engine actually queried.
+
+### G5 — Custody chain never delivered (closed, article A12)
+
+Only the root hash and a self-asserted `custody_valid` were published, so a buyer
+had nothing to check and A12 was false as written.
+
+Closed in constitution 2.0: the chain ships in the response and the buyer re-runs
+`verify_chain_records` over delivered data.
+
+### G6 — A paid request is not idempotent (closed, article A13)
+
+The nonce was burned before the work, so a buyer whose connection dropped after
+settlement was charged and received nothing: retrying the same authorization
+returned 409 rather than the deliverable already paid for.
+
+Closed in constitution 2.1: `veritas/ledger.py` records the delivery before
+settlement is attempted and keys a state machine on the authorization nonce, so
+resubmitting it returns the stored deliverable and the retrieval pass still runs
+exactly once. Bounded: single-instance scope — two instances behind a balancer
+do not share the ledger, so a replay routed to the other one still fails; and a
+settlement whose facilitator never answers stays indeterminate until
+reconciliation, which G9 tracks.
+
+### G7 — The trust score is movable with free traffic (closed, article A11)
+
+`/v1/trust` derived from an outcome log that recorded every request including
+unpaid ones, and the endpoint is unauthenticated, so anyone could move the
+service's own reputation signal at no cost.
+
+Closed in constitution 2.2: only paid requests are scored. Free outcomes are
+still counted and reported in the basis but cannot manufacture a reputation,
+and an instance nobody has paid reports UNPROVEN — the correct answer. This
+closes the manipulation route only; the score is still self-reported, which
+is G10.
+
+### G10 — The trust score is self-reported (open, article A11)
+
+The score is computed by the graded party from its own records. Nothing
+external attests to it, and a seller that simply logged favourable outcomes
+would produce an identical document. Restricting scoring to paid traffic (G7)
+raises the cost of manipulation; it does not make the number verifiable by the
+buyer relying on it.
+
+Witness: `tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported`.
+
+### G8 — No financial ledger (closed, article A13)
+
+The settlement result, including the on-chain transaction hash, was returned in a
+response header and then discarded. An operator could not say how much was earned,
+from whom, or for what, and no settlement could be reconciled.
+
+Closed in constitution 2.1: `veritas/ledger.py` durably records every
+authorization, delivery and settlement attempt, and revenue is answerable from
+the ledger alone. Bounded: it records what this instance did, which is not proof
+the chain agrees — see G9.
+
+### G9 — Recorded settlements are never checked against the chain (open, article A13)
+
+The ledger stores what the facilitator told us, including `indeterminate` entries
+where it told us nothing, and no code re-checks any of it against an RPC
+endpoint. An operator can say what this instance believes it earned, not what it
+actually holds.
+
+Witness: `tests/test_known_gaps.py::test_known_gap_settlements_are_never_checked_against_the_chain`.
 
 ---
 

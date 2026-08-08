@@ -64,7 +64,9 @@ charged for a request that produced nothing deliverable.
 
 1. Receive response with `evidence[].content_hash` and `custody_root`.
 2. Re-hash each excerpt locally, or `POST /v1/verify`.
-3. Re-run the custody chain with `veritas.custody.verify_chain_records`.
+3. Re-run the custody chain with `veritas.custody.verify_chain_records` over
+   the `custody_chain` delivered in the response. (This step was documented
+   before the chain was actually delivered; true as of 2026-08-05.)
 4. Re-fetch the receipt later at `GET /v1/receipts/{request_id}`.
 
 Step 4 was impossible before: ledgers were in-memory and died with the request.

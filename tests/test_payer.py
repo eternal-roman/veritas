@@ -330,7 +330,7 @@ def test_policy_state_file_shape(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     policy = SpendPolicy(max_per_request=2, max_per_day=4, max_per_day_per_counterparty=None)
     policy.record(1, PAY_TO)
-    state = json.loads((tmp_path / "spend_policy.json").read_text())
+    state = json.loads((tmp_path / "spend_policy.json").read_text(encoding="utf-8"))
     assert set(state) == {"date", "spent", "per_counterparty"}
     assert state["spent"] == 1
     assert state["per_counterparty"] == {PAY_TO: 1}
@@ -501,7 +501,7 @@ def test_payer_module_docstring_states_custody_inversion():
 def test_payer_source_contains_no_key_material():
     """Key-custody inversion is only real if no key bytes, private-key handling,
     or hardcoded 32-byte hex literals exist in the module source."""
-    source = Path(veritas.payer.__file__).read_text()
+    source = Path(veritas.payer.__file__).read_text(encoding="utf-8")
     assert not re.search(r"0x[0-9a-fA-F]{64}", source)
     lowered = source.lower()
     assert "privkey" not in lowered
@@ -624,7 +624,7 @@ def test_attempt_journal_written_ahead_of_signer(tmp_path):
     result = client.pay(_valid(), now=NOW)
     assert result.paid
     lines = [json.loads(x) for x in
-             (tmp_path / "authorization_attempts.jsonl").read_text().splitlines()]
+             (tmp_path / "authorization_attempts.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [x["stage"] for x in lines] == ["pre_sign", "signed"]
     assert lines[0]["nonce"] == result.nonce
     assert lines[0]["amount"] == 250000
@@ -643,7 +643,7 @@ def test_signer_error_leaves_pre_sign_journal_entry(tmp_path):
     result = client.pay(_valid(), now=NOW)
     assert not result.paid and result.check == "signer_error"
     lines = [json.loads(x) for x in
-             (tmp_path / "authorization_attempts.jsonl").read_text().splitlines()]
+             (tmp_path / "authorization_attempts.jsonl").read_text(encoding="utf-8").splitlines()]
     assert lines[0]["stage"] == "pre_sign"
     assert lines[1]["stage"].startswith("signer_error:")
 

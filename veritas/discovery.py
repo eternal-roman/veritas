@@ -30,11 +30,12 @@ failure.
 - /v1/schema: the wire contract as JSON Schema
 - /v1/errors: registered error codes with status and retriability
 - /openapi.json: OpenAPI description of this API
-- /health: liveness plus payment mode
+- /health: liveness plus payment mode (never rate limited)
+- /readyz: readiness — 503 when the process is alive but cannot serve
 
 ## Install and run
 
-pip install "veritas-research[retrieval] @ git+https://github.com/eternal-roman/veritas"
+pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
 veritas-server
 
 ## Source and norms

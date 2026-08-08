@@ -22,7 +22,13 @@ import urllib.request
 from typing import Any
 
 from veritas import __version__
-from veritas.retrieval import RetrievalError, RetrievalResult, classify_transport_error
+from veritas.retrieval import (
+    UNKNOWN_LICENSE,
+    RetrievalError,
+    RetrievalResult,
+    classify_transport_error,
+)
+from veritas.safeurl import require_http_url
 
 USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
 TIMEOUT_SECONDS = 8
@@ -34,8 +40,11 @@ def _classify(exc: Exception) -> tuple[str, str]:
 
 
 def _get_json(url: str) -> dict[str, Any]:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
+    # Hardcoded provider hosts today, but urlopen honours file: and custom
+    # schemes, so the allowlist is enforced at the call rather than assumed.
+    req = urllib.request.Request(require_http_url(url), headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode())
 
 
@@ -73,13 +82,7 @@ def wikipedia_summary(query: str, limit: int = 2) -> RetrievalResult:
             continue
 
         if extract:
-            result.sources.append({
-                "url": page_url,
-                "title": title,
-                "text": extract[:800],
-                "provider": "wikipedia",
-                "provenance": "live_fetch",
-            })
+            result.sources.append(_wikipedia_source(title, extract, page_url))
 
     # The search call itself succeeded, so the provider is reachable even if
     # individual page fetches failed or the topic genuinely has no article.
@@ -87,37 +90,42 @@ def wikipedia_summary(query: str, limit: int = 2) -> RetrievalResult:
     return result
 
 
-def duckduckgo_search(query: str, max_results: int = 4) -> RetrievalResult:
-    result = RetrievalResult(providers_attempted=["duckduckgo"])
+def _wikipedia_source(title: str, extract: str, page_url: str) -> dict:
+    """Build a Wikipedia source carrying the licence its text is under.
 
-    try:
-        from ddgs import DDGS
-    except ImportError:
-        result.errors.append(RetrievalError(
-            "duckduckgo", "dependency_missing",
-            "ddgs not installed; falling back to Instant Answer API",
-        ))
-    else:
-        try:
-            with DDGS() as ddgs:
-                for r in ddgs.text(query, max_results=max_results):
-                    text = (r.get("body") or r.get("snippet") or "")[:600]
-                    url = r.get("href") or r.get("link") or ""
-                    if text and url:
-                        result.sources.append({
-                            "url": url,
-                            "title": r.get("title") or "",
-                            "text": text,
-                            "provider": "duckduckgo",
-                            "provenance": "live_fetch",
-                        })
-            result.providers_succeeded.append("duckduckgo")
-            return result
-        except Exception as exc:  # noqa: BLE001
-            etype, detail = _classify(exc)
-            result.errors.append(RetrievalError("duckduckgo", etype, detail))
+    Wikipedia article text is CC BY-SA. Reusing it commercially is permitted;
+    reusing it *silently* is not. Shipping the licence with the excerpt lets a
+    buying agent know what obligations attach to text it is about to reuse.
+    """
+    return {
+        "url": page_url,
+        "title": title,
+        "text": extract[:800],
+        "provider": "wikipedia",
+        "provenance": "live_fetch",
+        "license": {
+            "id": "CC-BY-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        },
+        "attribution": {
+            "required": True,
+            "text": f"Wikipedia contributors, \"{title}\", {page_url}",
+        },
+    }
 
-    # Fallback: keyless Instant Answer endpoint.
+
+def duckduckgo_instant_answer(query: str, max_results: int = 4) -> RetrievalResult:
+    """DuckDuckGo's keyless Instant Answer API — one engine, named truthfully.
+
+    This replaces a `ddgs` call that ran on the library's `auto` backend, which
+    shuffles across google, bing, yandex, brave, yahoo, startpage and mojeek and
+    scrapes their result pages. Every result was then labelled
+    `provider: "duckduckgo"`. That is both a redistribution problem and, in a
+    product selling provenance, a falsified provenance label. The Instant Answer
+    API is a documented keyless endpoint, and the answers it returns credit the
+    publisher they came from.
+    """
+    result = RetrievalResult(providers_attempted=["duckduckgo_instant_answer"])
     try:
         url = "https://api.duckduckgo.com/?" + urllib.parse.urlencode({
             "q": query, "format": "json", "no_html": 1,
@@ -125,19 +133,28 @@ def duckduckgo_search(query: str, max_results: int = 4) -> RetrievalResult:
         data = _get_json(url)
     except Exception as exc:  # noqa: BLE001
         etype, detail = _classify(exc)
-        result.errors.append(RetrievalError("duckduckgo_ia", etype, detail))
+        result.errors.append(RetrievalError("duckduckgo_instant_answer", etype, detail))
         return result
 
     abstract = data.get("Abstract")
     if abstract:
+        # AbstractSource names the underlying publisher; dropping it (as the
+        # previous version did) discards the attribution the API asks us to keep.
+        publisher = data.get("AbstractSource") or "DuckDuckGo Instant Answer"
+        abstract_url = data.get("AbstractURL") or "https://duckduckgo.com"
         result.sources.append({
-            "url": data.get("AbstractURL") or "https://duckduckgo.com",
+            "url": abstract_url,
             "title": data.get("Heading") or query,
             "text": abstract[:600],
-            "provider": "duckduckgo_ia",
+            "provider": "duckduckgo_instant_answer",
             "provenance": "live_fetch",
+            "license": dict(UNKNOWN_LICENSE),
+            "attribution": {
+                "required": True,
+                "text": f"{publisher}, via DuckDuckGo Instant Answer, {abstract_url}",
+            },
         })
-    result.providers_succeeded.append("duckduckgo_ia")
+    result.providers_succeeded.append("duckduckgo_instant_answer")
     return result
 
 
@@ -151,7 +168,7 @@ class ZeroKeyRetriever:
         seen = set()
 
         for sub in (wikipedia_summary(query, limit=2),
-                    duckduckgo_search(query, max_results=max_results)):
+                    duckduckgo_instant_answer(query, max_results=max_results)):
             merged.providers_attempted.extend(sub.providers_attempted)
             merged.providers_succeeded.extend(sub.providers_succeeded)
             merged.errors.extend(sub.errors)

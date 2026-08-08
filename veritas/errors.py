@@ -27,11 +27,20 @@ class ErrorCode(str, Enum):
     PAYMENT_NONCE_MISSING = "payment_nonce_missing"
     PAYMENT_NONCE_MALFORMED = "payment_nonce_malformed"
     PAYMENT_NONCE_ALREADY_SPENT = "payment_nonce_already_spent"
+    PAYMENT_REQUEST_ID_ALREADY_CLAIMED = "payment_request_id_already_claimed"
+    PAYMENT_AUTHORIZATION_IN_PROGRESS = "payment_authorization_in_progress"
+    PAYMENT_AUTHORIZATION_BOUND_TO_ANOTHER_REQUEST = "payment_authorization_bound_to_another_request"
     REPLAY_PROTECTION_UNAVAILABLE = "replay_protection_unavailable"
     SETTLEMENT_FAILED = "settlement_failed"
     RETRIEVAL_UNAVAILABLE = "retrieval_unavailable"
     RECEIPT_NOT_FOUND = "receipt_not_found"
+    DEADLINE_EXCEEDED = "deadline_exceeded"
     INVALID_REQUEST = "invalid_request"
+    REQUEST_TOO_LARGE = "request_too_large"
+    RATE_LIMITED = "rate_limited"
+    SERVICE_OVERLOADED = "service_overloaded"
+    NOT_READY = "not_ready"
+    INTERNAL_ERROR = "internal_error"
 
 
 ERROR_REGISTRY: dict[str, dict[str, Any]] = {
@@ -57,8 +66,23 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.PAYMENT_NONCE_ALREADY_SPENT.value: {
         "status": 409,
-        "meaning": "This payment authorization was already used; request a fresh 402 challenge and sign a new authorization.",
+        "meaning": "This payment authorization was used for a request that cannot be re-delivered; request a fresh 402 challenge and sign a new authorization. A request that was delivered is replayed with its deliverable instead of this error.",
         "retriable": False,
+    },
+    ErrorCode.PAYMENT_REQUEST_ID_ALREADY_CLAIMED.value: {
+        "status": 409,
+        "meaning": "A different authorization is already recorded against this request id. Retry with a fresh request.",
+        "retriable": True,
+    },
+    ErrorCode.PAYMENT_AUTHORIZATION_BOUND_TO_ANOTHER_REQUEST.value: {
+        "status": 409,
+        "meaning": "This payment authorization already bought a different request. Resubmitting it returns that request's deliverable; it cannot buy a second, different one. Request a fresh 402 challenge for the new question. request_id names the request it did buy.",
+        "retriable": False,
+    },
+    ErrorCode.PAYMENT_AUTHORIZATION_IN_PROGRESS.value: {
+        "status": 409,
+        "meaning": "A request against this payment authorization is still running. Wait for it to finish and resubmit the same authorization to collect the deliverable; do not sign a new one.",
+        "retriable": True,
     },
     ErrorCode.REPLAY_PROTECTION_UNAVAILABLE.value: {
         "status": 503,
@@ -67,7 +91,7 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.SETTLEMENT_FAILED.value: {
         "status": 402,
-        "meaning": "The payment verified but settlement failed; the work was done and not delivered, and the buyer was not charged.",
+        "meaning": "The facilitator answered and refused settlement; the work was done, is held, and was not delivered. Nothing was charged. Resubmitting the same authorization once the cause is fixed returns the held deliverable without re-running the work. A settlement we simply never heard back about is NOT this error: it returns 200 with payment.state == 'indeterminate', because the funds may have moved.",
         "retriable": True,
     },
     ErrorCode.RETRIEVAL_UNAVAILABLE.value: {
@@ -80,10 +104,40 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "meaning": "No custody receipt is stored under the requested request_id.",
         "retriable": False,
     },
+    ErrorCode.DEADLINE_EXCEEDED.value: {
+        "status": 503,
+        "meaning": "The work outran the payment authorization window, so nothing was settled and nothing is owed. Request a fresh challenge and sign a new authorization.",
+        "retriable": True,
+    },
     ErrorCode.INVALID_REQUEST.value: {
         "status": 422,
         "meaning": "The request body failed validation; detail lists the failing fields.",
         "retriable": False,
+    },
+    ErrorCode.REQUEST_TOO_LARGE.value: {
+        "status": 413,
+        "meaning": "The request body exceeds the accepted size; it was refused rather than read. Send less content.",
+        "retriable": False,
+    },
+    ErrorCode.RATE_LIMITED.value: {
+        "status": 429,
+        "meaning": "Too many requests from this caller in the current window. Retry-After gives the wait in seconds. Liveness checks are never rate limited.",
+        "retriable": True,
+    },
+    ErrorCode.SERVICE_OVERLOADED.value: {
+        "status": 503,
+        "meaning": "Every concurrent research slot is in use. The request was shed immediately rather than queued, so no work was done, no payment authorization was claimed and nothing is owed. Retry-After gives a suggested wait.",
+        "retriable": True,
+    },
+    ErrorCode.NOT_READY.value: {
+        "status": 503,
+        "meaning": "The process is alive but cannot serve — typically invalid payment configuration. Returned by /readyz only; it is a signal for a load balancer, not for a buyer.",
+        "retriable": True,
+    },
+    ErrorCode.INTERNAL_ERROR.value: {
+        "status": 500,
+        "meaning": "An unhandled server-side error. The cause is deliberately not described: the exception text names internals. Nothing was billed. If it recurs, the service is broken, not the request.",
+        "retriable": True,
     },
 }
 

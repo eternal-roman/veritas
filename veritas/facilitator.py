@@ -26,7 +26,31 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Any
 
+from .safeurl import UnsafeUrlError, require_http_url
+
 DEFAULT_TIMEOUT = 15
+
+#: Settlement failures where the facilitator never gave us an answer. The
+#: request may have reached the chain, so the outcome is unknown — and "we do
+#: not know" is not "it did not happen". Recording these as failures
+#: understates revenue and asserts a fact about the chain we did not observe
+#: (defect R7). `facilitator_unreachable` is deliberately NOT here: a refused
+#: connection or a failed DNS lookup means the request never left, so nothing
+#: settled.
+INDETERMINATE_SETTLEMENT_REASONS = frozenset({
+    "facilitator_timeout",
+    "facilitator_bad_response",
+})
+
+#: Verification failures that are outages rather than rejections. The caller
+#: fails closed with a 503 so buyers retry, instead of telling them their
+#: payment was refused.
+VERIFICATION_OUTAGE_PREFIXES = (
+    "facilitator_unreachable",
+    "facilitator_timeout",
+    "facilitator_http",
+    "facilitator_bad_response",
+)
 
 
 @dataclass
@@ -49,14 +73,58 @@ class SettlementResult:
     error_reason: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def outcome(self) -> str:
+        """`settled`, `indeterminate` or `failed`.
+
+        The distinction is load-bearing: a facilitator that timed out or
+        answered unreadably may still have moved the funds, so recording that
+        as a failure would understate revenue and would tell the buyer their
+        payment did not go through when we do not know that.
+        """
+        if self.success:
+            return "settled"
+        reason = self.error_reason or ""
+        if reason in INDETERMINATE_SETTLEMENT_REASONS or reason.startswith("facilitator_http_5"):
+            return "indeterminate"
+        return "failed"
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
+            "state": self.outcome,
             "transaction": self.transaction,
             "network": self.network,
             "payer": self.payer,
             "error_reason": self.error_reason,
         }
+
+
+_TRANSPORT_ERRORS = (
+    urllib.error.HTTPError,   # checked first: it subclasses URLError
+    urllib.error.URLError,
+    TimeoutError,
+    json.JSONDecodeError,
+)
+
+
+def _transport_reason(exc: BaseException) -> str:
+    """Name a transport failure as a bare category.
+
+    Two jobs. It keeps exception text — resolver detail, socket paths — out of
+    bodies that reach external buyers (CodeQL: information exposure). And it
+    separates "the request never left" from "we never heard back", because
+    only the first proves nothing settled.
+    """
+    if isinstance(exc, urllib.error.HTTPError):
+        return f"facilitator_http_{exc.code}"
+    if isinstance(exc, TimeoutError):
+        return "facilitator_timeout"
+    if isinstance(exc, urllib.error.URLError):
+        if isinstance(exc.reason, TimeoutError):
+            return "facilitator_timeout"
+        return "facilitator_unreachable"
+    return "facilitator_bad_response"
 
 
 class FacilitatorClient:
@@ -67,7 +135,10 @@ class FacilitatorClient:
         self.timeout = timeout
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
-        url = f"{self.base_url}{path}"
+        # The facilitator URL is operator configuration, but urlopen honours
+        # file: and other schemes, so the allowlist is applied here rather than
+        # trusted upstream.
+        url = require_http_url(f"{self.base_url}{path}")
         payload = json.dumps(body).encode("utf-8")
         req = urllib.request.Request(
             url,
@@ -75,7 +146,8 @@ class FacilitatorClient:
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+        with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=self.timeout) as resp:
             return json.loads(resp.read().decode())
 
     def verify(self, payment_payload: dict[str, Any], requirements: dict[str, Any]) -> VerificationResult:
@@ -89,14 +161,10 @@ class FacilitatorClient:
         }
         try:
             data = self._post("/verify", body)
-        except urllib.error.HTTPError as exc:
-            return VerificationResult(False, invalid_reason=f"facilitator_http_{exc.code}")
-        except urllib.error.URLError:
-            # Category only: the exception text (resolver/socket detail) is
-            # server-side information and flows to external buyers.
-            return VerificationResult(False, invalid_reason="facilitator_unreachable")
-        except (json.JSONDecodeError, TimeoutError):
-            return VerificationResult(False, invalid_reason="facilitator_bad_response")
+        except UnsafeUrlError:
+            return VerificationResult(False, invalid_reason="facilitator_url_rejected")
+        except _TRANSPORT_ERRORS as exc:
+            return VerificationResult(False, invalid_reason=_transport_reason(exc))
 
         return VerificationResult(
             is_valid=bool(data.get("isValid")),
@@ -116,12 +184,10 @@ class FacilitatorClient:
         }
         try:
             data = self._post("/settle", body)
-        except urllib.error.HTTPError as exc:
-            return SettlementResult(False, error_reason=f"facilitator_http_{exc.code}")
-        except urllib.error.URLError:
-            return SettlementResult(False, error_reason="facilitator_unreachable")
-        except (json.JSONDecodeError, TimeoutError):
-            return SettlementResult(False, error_reason="facilitator_bad_response")
+        except UnsafeUrlError:
+            return SettlementResult(False, error_reason="facilitator_url_rejected")
+        except _TRANSPORT_ERRORS as exc:
+            return SettlementResult(False, error_reason=_transport_reason(exc))
 
         return SettlementResult(
             success=bool(data.get("success")),

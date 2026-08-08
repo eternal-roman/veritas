@@ -7,8 +7,13 @@ import re
 from dataclasses import dataclass, field
 
 from .networks import DEFAULT_NETWORK, is_settleable, normalize_network, supported_networks
+from .x402 import PriceError, parse_price
 
 DEFAULT_FACILITATOR = "https://pay.openfacilitator.io"
+
+# Comparable x402 endpoints sell data at about $0.01 per call. The previous
+# $0.25 default asked 25x that for truncated snippets.
+DEFAULT_PRICE = "$0.01"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 EVM_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
@@ -31,7 +36,7 @@ class PaymentConfig:
         facilitator = os.getenv("VERITAS_FACILITATOR", DEFAULT_FACILITATOR).strip()
         require = os.getenv("VERITAS_REQUIRE_PAYMENT", "false").lower() in ("1", "true", "yes")
         network = normalize_network(os.getenv("VERITAS_NETWORK", DEFAULT_NETWORK))
-        price = os.getenv("VERITAS_PRICE", "$0.25").strip()
+        price = os.getenv("VERITAS_PRICE", DEFAULT_PRICE).strip()
 
         # Validate before claiming live mode. The previous check accepted any
         # string of length >= 20 as a wallet, so a typo'd address would put the
@@ -44,6 +49,22 @@ class PaymentConfig:
                 errors.append(f"no settlement asset configured for network {network!r}")
             if not facilitator.startswith(("http://", "https://")):
                 errors.append(f"VERITAS_FACILITATOR is not a valid URL: {facilitator!r}")
+            # Price was the one live-mode field this guard never validated, so a
+            # typo yielded mode=="live", a green /health, and a 500 on every
+            # request — the exact class of failure the guard exists to catch.
+            # x402 defines `resource` as the resource URL. Without a public
+            # base URL we can only name the bare path, which a facilitator or
+            # buyer matching on absolute URLs cannot resolve — so live mode
+            # without one is misconfiguration, not a servable state.
+            if not (os.getenv("VERITAS_PUBLIC_URL") or "").strip():
+                errors.append(
+                    "VERITAS_PUBLIC_URL is required in live mode so the 402 "
+                    "challenge can name an absolute resource URL"
+                )
+            try:
+                parse_price(price)
+            except PriceError as exc:
+                errors.append(f"VERITAS_PRICE is not a valid price: {price!r} ({exc})")
 
         is_live = bool(require and not errors)
         mode = "live" if is_live else ("misconfigured" if require else "free")

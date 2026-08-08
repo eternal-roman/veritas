@@ -1,15 +1,15 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-08T21:20:00Z
-- **last_merged:** N1.2 #34 @ `32d1054`; N1.1 #33 @ `db04ae2`; N0 #30 @ `4cd2d0c`
+- **bet_id:** P7
+- **branch:** feat/p7-refetch-verify
+- **holder:** flywheel-session
+- **status:** building
+- **updated:** 2026-08-08T20:15:00Z
+- **last_merged:** docs #36 @ `a679b76`; N1.2 #34 @ `32d1054`; N1.1 #33 @ `db04ae2`; N0 @ `4cd2d0c`
+- **next_micro:** Land origin re-fetch on POST /v1/verify. No dual. Settlements 0.
 
-N0 product is on `main` (#30 / `4cd2d0c`). N1.1 (#33) and N1.2 (#34) also
-landed. Claim **free** — next builder takes **one** authorized NEXT only
-(G10). Never dual-reopen N0/M7. See `AUTONOMOUS.md` and GUARDIAN G10.
+When a flywheel/conductor cycle is building, set `status: building` and holder.
+Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
@@ -21,6 +21,7 @@ landed. Claim **free** — next builder takes **one** authorized NEXT only
 | dep-coupling fail-loud + mcp&lt;2 restore | `ac15b1b` / #29 |
 | lock satisfies declared ceilings | `23a0086` / #32 |
 | **N1.1 EIP-191 attestation** | **`db04ae2` / #33** |
-| **N1.2 free attestation verify API** | **`32d1054` / #34** |
+| **N1.2 free attestation verify** | **`32d1054` / #34** |
+| N0 closeout docs | `a679b76` / #36 |
 
-**G10:** Claim **free**. Single product NEXT when assigned. Settlements: **0**.
+**G10:** Claim **building P7**. Single product NEXT. Settlements: **0**.

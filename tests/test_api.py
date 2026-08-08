@@ -60,10 +60,13 @@ def test_verify_endpoint_checks_hashes(free_client):
 
     text = "some evidence text"
     h = compute_content_hash(text)
-    assert free_client.post("/v1/verify", json={"content": text, "content_hash": h}).json()["valid"]
-    assert not free_client.post(
+    ok = free_client.post("/v1/verify", json={"content": text, "content_hash": h}).json()
+    assert ok["valid"]
+    assert ok.get("binding") == "caller_supplied"
+    bad = free_client.post(
         "/v1/verify", json={"content": text + "!", "content_hash": h}
-    ).json()["valid"]
+    ).json()
+    assert not bad["valid"]
 
 
 def test_missing_payment_returns_spec_shaped_402(paid_client):

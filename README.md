@@ -47,13 +47,14 @@ hash-chained custody record. Run `veritas.custody.verify_chain_records` on what
 you received: that check runs entirely on your side, on bytes already in your
 hands, and does not route back through our goodwill.
 
-`POST /v1/verify` is **not** that check, and this file used to say it was. You
-send it both the content and the hash; it hashes the content and compares. That
-tells you nothing you could not compute yourself, and it routes through us
-completely — a dishonest server would simply answer `valid: true`. It is a
-convenience, not evidence, and treating it as evidence is strictly worse than
-doing the arithmetic locally. The defect register carries this as **P7**, open,
-with a witness test pinning the current behaviour.
+`POST /v1/verify` with **`url` + `content_hash`** (or a **`request_id`** from a
+custody receipt) re-fetches the origin through the same notary engine and
+compares the extracted body hash — that is the independent product path (P7
+closed for origin binding). The legacy **`content` + `content_hash`** body is
+still accepted as offline arithmetic convenience and is labeled
+`binding: caller_supplied`; it is not independent verification. Re-fetch at
+time T2 may diverge from notarization at T1 when the page changes; that is
+reported as mismatch, not fraud proof. Nothing here is an on-chain settlement.
 
 **We wrote down the rules we can be held to.** The
 [venue constitution](CONSTITUTION.md) states each norm this service commits to,
@@ -191,7 +192,7 @@ If any of these is invalid the service reports `mode: misconfigured` and returns
 | Endpoint | Purpose |
 |----------|---------|
 | `POST /v1/research` | Run research (402-gated in live mode) |
-| `POST /v1/verify` | Re-hash content you supply and compare (convenience; **not** independent verification — see P7) |
+| `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`); legacy content+hash is non-independent arithmetic |
 | `GET /v1/receipts/{id}` | Retrieve a stored custody receipt after the call |
 | `GET /v1/trust` | Behaviour-derived trust score (`UNPROVEN` until enough data) |
 | `GET /v1/identity` | ERC-8004 style identity document |

@@ -1,9 +1,9 @@
-# Overseer brief 017 — tip e5092ca free; no open PRs
+# Overseer brief 017 — tip e5092ca; claim N1.5 #60
 
-**Time:** 2026-08-08T21:24:00Z  
-**Tip:** `e5092ca` (#59) · release prep `58beccc` (#58) · cycle-5 `bf09a99` (#54)  
-**Open:** none  
-**Claim:** free  
+**Time:** 2026-08-08T21:25:00Z  
+**Tip:** `e5092ca` (#59) · release prep `58beccc` (#58)  
+**Open:** #60 N1.5 product; #61 docs hygiene  
+**Claim:** building N1.5  
 **Settlements:** 0 · Gap G9 open · Not PyPI  
 
-Landed spine honest offline. Await singular NEXT. Do not dual re-open cycle-5/N1.4/G9-design/M7.
+Sole product NEXT = N1.5 #60. Do not merge red. Do not dual.

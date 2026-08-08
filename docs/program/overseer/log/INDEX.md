@@ -6,7 +6,7 @@ main may carry a subset.
 | File | Note |
 |------|------|
 | historical | may be session-local |
-| **`017-brief.md`** | Tip **`e5092ca`** (#59); claim free; open PRs none (2026-08-08T21:24Z) |
+| **`017-brief.md`** | Tip **`e5092ca`**; claim N1.5 #60 (2026-08-08T21:25Z) |
 | **`../CURRENT.md`** | **Live steering** |
 
 **Rule:** CURRENT is source of truth for “now.” Prefer git/gh over stale claim theater.

@@ -5,14 +5,17 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, N1.5 anchors, PyPI publish, or other
-> singular). **G10:** never dual-reopen **release-0.8.0 prep**, **cycle-5**,
+> **Do this next: N1.5 only (claim building on #60)** —
+> `feat/n1.5-inclusion-proof-on-observe` / PR **#60**. Embed Merkle inclusion
+> proof on completed observe. Full green CI, fresh Pruner G13, merge-on-green
+> only. **G10:** never dual-reopen **release-0.8.0 prep**, **cycle-5**,
 > **N1.4**, **G9-design surface**, **cycle-1**, **N1.3**, **P7**, **N0**,
-> **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **N1.1**, **N1.2**, **M7**, or **O.8**; no parallel live-RPC G9 while this
+> claim holds.
 >
-> **v0.8.0 prep is on main** — `#58` / `58beccc`: version bump + CHANGELOG/
-> STATUS for A2A notary spine cut. **Not** PyPI publish. Settlements **0**.
+> **v0.8.0 prep is on main** — product `#58` / `58beccc` (version + CHANGELOG/
+> STATUS for A2A notary spine cut). Program plane tip-aligned by docs closeout
+> `#59` / `e5092ca`. **Not** PyPI publish. Settlements **0**.
 >
 > **Also on main:** cycle-5 `#54` / `bf09a99` (offline ecosystem dogfood);
 > N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap G9 **still open**);
@@ -26,8 +29,13 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `58beccc` (PR **#58** v0.8.0 release prep).
-> Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
+> **Tip of `origin/main`:** `e5092ca` (PR **#59** release-0.8.0 post-merge
+> closeout). Last release prep: `58beccc` (**#58**). Claim **building N1.5**
+> (#60). Settlements: **0**. Gap G9 **still open**. **Not** on PyPI. Open
+> product PR: **#60**.
+>
+> **release-0.8.0 docs closeout landed on main @ `e5092ca` (PR #59).** Tip-
+> align after `#58`. **Not proven:** PyPI; on-chain (0).
 >
 > **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;
 > CHANGELOG + STATUS for N0–N1.4 / P7 / G9-design / dogfood 1–5. **Not proven:**

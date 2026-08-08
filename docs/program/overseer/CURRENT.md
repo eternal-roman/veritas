@@ -1,29 +1,25 @@
 # Overseer CURRENT
 
-- **Time:** 2026-08-08T21:24:00Z
-- **Branch / HEAD:** `origin/main` @ **`e5092ca`** (#59 closeout; product release prep `#58` / `58beccc`)
-- **Verdict:** **ON_TASK** (landed work honest) · **IDLE product queue** until singular NEXT
-- **Scores:** on-task 3 / measured 3 / integrity 2 / a2a 2 / claims 3
+- **Time:** 2026-08-08T21:25:00Z
+- **Branch / HEAD:** `origin/main` @ **`e5092ca`** (#59 closeout; release prep `#58` / `58beccc`)
+- **Verdict:** **ON_TASK** · **#60 in flight** — CI not fully green at stock
+- **Scores:** on-task 3 / measured 3 / integrity 2 / a2a 2 / claims 2
 - **Vision score:** 2
 - **Strategy score:** 2
-- **Claim:** **free**. Open product PRs: **none**.
-- **What is happening:** **v0.8.0 prep on main** (`58beccc` / #58) + plane closeout (`e5092ca` / #59): version + CHANGELOG/STATUS for A2A notary spine — **not** PyPI publish. **cycle-5** (`bf09a99` / #54) offline ecosystem dogfood. **N1.4**, **G9-design** (gap still open) on main. Settlements: **0**.
-- **Lazy or half-measured?** Landed slices: **no** for claimed offline/local surfaces. Do not invent live multi-venue or on-chain.
-- **Strategic A2A note:** Axis F dogfood advanced; money C still 0. Default parked next if no better singular: live-RPC G9 dogfood (**needs egress** — honest BLOCKED without it). PyPI is ops, not product dual.
-- **Confer Scout?** no
-- **Scout question:** (none)
-- **Idea synthesis:** (skipped)
+- **Claim:** **building N1.5** on `feat/n1.5-inclusion-proof-on-observe` (#60).
+- **What is happening:** v0.8.0 prep + cycle-5 on main. Sole product PR **#60** N1.5 Merkle inclusion proof on completed observe — MERGEABLE; CI rolling. Settlements: **0**. Gap G9 open. Not PyPI.
+- **Lazy or half-measured?** #60: wait full green — do not merge red/pending.
 - **Directive (next 15–60m):**
-  1. **Name singular NEXT** in writing only when unblocked (or mark BLOCKED with evidence if only RPC/facilitator path).
-  2. Settlements remain **0**; gap G9 open; not PyPI.
-- **Do not do:** Re-open cycle-5/N1.4/G9-design/M7 as NEXT; invent settlement; claim PyPI done; soft-fail; dual product; force-push main.
+  1. **Sole product = #60 N1.5.** Full green CI; G13; merge-on-green only.
+  2. Do not dual live-RPC G9 while claim holds.
+  3. Settlements **0**; gap G9 open; not PyPI.
+- **Do not do:** Claim G9 closed; invent settlement; claim PyPI done; soft-fail; dual product; force-push main.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip e5092ca; claim free; open PRs none; cycle-5+N1.4+G9-design+0.8.0 prep landed;
-          gap G9 open; not PyPI; settlements 0
+PROPERTY: tip e5092ca; claim building N1.5 #60; sole open product PR; settlements 0
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main e5092ca; gh pr list empty; flywheel-claim free
-ASSUMPTIONS: Next singular named without dual re-open
-NOT PROVEN: PyPI; live RPC; G9 closed; on-chain settlements (0)
+CHECKED ARTIFACT: origin/main e5092ca; gh pr #60; flywheel-claim building
+ASSUMPTIONS: Builders hold #60 only
+NOT PROVEN: N1.5 ship; live RPC; G9 closed; PyPI; on-chain (0)
 ```

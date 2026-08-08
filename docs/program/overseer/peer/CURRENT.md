@@ -1,16 +1,15 @@
 # Peer CURRENT — IDLE
 
-- **Time:** 2026-08-08T21:24:00Z
-- **Role note:** Peer **session review** is **IDLE**. Product plane past cycle-5 + v0.8.0 prep. Steward owns cohesion.
-- **Open PRs:** **none**.
-- **If a new parallel agent branch appears:** Steward or peer tick may set WATCH under GUARDIAN.
+- **Time:** 2026-08-08T21:25:00Z
+- **Role note:** Peer **session review** is **IDLE**. Steward owns cohesion.
+- **Open PRs:** **#60** N1.5 (claimed flywheel WIP — not peer WATCH). **#61** docs.
 - **Scrutiny verdict:** **IDLE**
-- **Action:** none; claim free; await Overseer singular NEXT.
+- **Action:** none; sole product is **N1.5 #60** under flywheel claim.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Peer idle; no peer product branch; no open PRs
+PROPERTY: Peer idle; #60 is claimed flywheel WIP not peer WATCH
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main e5092ca; gh pr list empty; flywheel-claim free
-NOT PROVEN: Future peer branch quality; next product ship; on-chain settlement
+CHECKED ARTIFACT: origin/main e5092ca; open PRs [#60,#61]; flywheel-claim building N1.5
+NOT PROVEN: Future peer branch quality; N1.5 ship; on-chain settlement
 ```

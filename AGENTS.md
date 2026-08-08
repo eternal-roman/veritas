@@ -50,7 +50,12 @@ package — CI's package job asserts this.
 2. **Never report absent evidence when retrieval failed.** `unavailable` is
    not `no_evidence`. This distinction is the product.
 3. **Never bill for our own failure.** `billable: false` on `unavailable` is
-   load-bearing; settlement is gated on it.
+   load-bearing; settlement is gated on it. x402 satisfies this by ordering —
+   it charges last, so any failure before settlement leaves the buyer
+   uncharged. Credits invert that order (the debit precedes the work), so the
+   research handler reverses the debit when a request dies on an unexpected
+   exception. Refunds are idempotent, so the crash guard and the handled
+   refusals cannot double-pay.
 4. **Verify payment before work, settle after.** An unpaid caller must not
    consume a retrieval pass; a buyer must never be charged for undeliverable
    work. A payment nonce is claimed before the work too, so a resubmitted

@@ -269,6 +269,82 @@ def test_research_with_credits_and_refund_on_unavailable(paid_credits_client, mo
     assert bal["balance"] == 10_000  # refunded
 
 
+def test_unexpected_failure_after_the_debit_refunds_the_buyer(
+    paid_credits_client, monkeypatch
+):
+    """Invariant 3 must hold for crashes, not only for handled outcomes.
+
+    The x402 path fails safe by construction: it charges last, at settlement,
+    so an exception before that simply leaves the buyer uncharged. Credits
+    invert the order — the money moves before the work — so without an explicit
+    reversal an unexpected exception would charge a buyer for our crash and
+    hand them a 500.
+
+    No such raise site is known today: every call after the debit swallows its
+    own failures. This pins the structural guarantee, so the invariant stops
+    depending on every future downstream callee staying defensive.
+    """
+    client, main_module, _ = paid_credits_client
+    acct, token = _open_session(client)
+    main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("unexpected failure after the credit debit")
+
+    monkeypatch.setattr(main_module, "run_research", explode)
+
+    with pytest.raises(RuntimeError):
+        client.post(
+            "/v1/research",
+            json={"query": "What is x402?"},
+            headers={"X-VERITAS-SESSION": token},
+        )
+
+    # The buyer is whole: the debit was reversed even though no response was
+    # produced. Read the journal directly — there is no HTTP body to inspect
+    # for a request that died.
+    assert main_module.credit_ledger.balance(acct.address) == 10_000
+    kinds = [e.kind for e in main_module.credit_ledger.entries(acct.address)]
+    assert "debit" in kinds and "refund" in kinds, kinds
+
+
+def test_the_crash_guard_and_a_handled_refund_never_double_pay(
+    paid_credits_client, monkeypatch
+):
+    """Both reversal paths call the same idempotent refund, so a request that
+    refunds itself cannot also be reversed a second time on the way out."""
+    client, main_module, _ = paid_credits_client
+    acct, token = _open_session(client)
+    main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
+
+    from veritas.pipeline import run_research as real_run
+
+    def unavailable(*args, **kwargs):
+        out = dict(real_run(
+            *args,
+            allow_network=False,
+            **{k: v for k, v in kwargs.items() if k != "allow_network"},
+        ))
+        out["status"] = "unavailable"
+        out["billable"] = False
+        out["refusal_reason"] = "retrieval_unavailable"
+        return out
+
+    monkeypatch.setattr(main_module, "run_research", unavailable)
+    response = client.post(
+        "/v1/research",
+        json={"query": "What is x402?"},
+        headers={"X-VERITAS-SESSION": token},
+    )
+    assert response.status_code == 503
+
+    assert main_module.credit_ledger.balance(acct.address) == 10_000
+    refunds = [
+        e for e in main_module.credit_ledger.entries(acct.address) if e.kind == "refund"
+    ]
+    assert len(refunds) == 1, refunds
+
+
 def test_research_with_credits_success_debits(paid_credits_client, monkeypatch):
     client, main_module, _ = paid_credits_client
     acct, token = _open_session(client)

@@ -89,6 +89,27 @@ up` provisions its own config and wallet and starts serving.
   authorization, delivery and settlement attempt, with delivery written before
   settlement is attempted and "we never heard back" recorded as indeterminate
   rather than as failure
+- **Buyer-side counterparty diligence** (`veritas/diligence.py`,
+  `veritas-diligence <url>`) — a buyer agent decides whether a seller may be
+  paid at all, from documents that seller publishes, and the verdict gates the
+  signer rather than merely advising: the
+  402 must agree with advertised discovery on payee, network and asset and must
+  not exceed the advertised price; L1 articles must name enforcement; and a
+  seller declaring no open gaps is refused for claiming perfection.
+  `unverifiable` is reported apart from `fail`, because "I could not check this
+  seller" and "this seller failed" call for different action — the CLI carries
+  that into its exit code (`0` pass, `1` fail, `2` unverifiable), so an agent
+  that shells out cannot collapse the two. Fetching is SSRF-guarded on the
+  seller's own links, since a hostile discovery document would otherwise steer
+  the buyer's fetcher at the buyer's private network. Every check is
+  cross-document consistency — **none proves a seller will deliver**
+- **A standalone verifier** (`veritas/verifier.py`, `veritas-verify receipt.json`)
+  — one file, zero dependencies, importing nothing from `veritas`. Copy it out
+  and run it: a buyer should not have to install our web server to audit our
+  receipt, nor check our work with our own code. It re-implements the hash
+  chain, and a differential test pins it against the engine on real output and
+  on tampered variants. It reports what it does **not** attest: consistent
+  records do not mean we ever contacted the URLs we name
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
 - **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
 

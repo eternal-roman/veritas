@@ -20,6 +20,8 @@ veritas-mcp                              # serve the engine as local MCP tools (
 VERITAS_METRICS_TOKEN=... veritas-server # /metrics exists only when a token is set
 veritas-ops revenue                      # operator reports from the ledger (JSON)
 veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
+veritas-diligence https://seller.example # vet a counterparty; exit 0 pass / 1 fail / 2 unverifiable
+veritas-verify receipt.json              # audit a receipt; one vendorable file, zero dependencies
 ```
 
 Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
@@ -60,9 +62,12 @@ package — CI's package job asserts this.
 7. **Misconfiguration never silently becomes free service.** Invalid payment
    config → `mode: misconfigured` → 503.
 8. **One buyer payment path.** `veritas.payer` owns challenge validation,
-   spend caps, the attempt journal, and the `Signer` seam. Signing backends
-   adapt to that seam (`veritas.buyer_payment.LocalAccountSigner` is the
-   testnet one); never add a second path that signs without the gate.
+   counterparty diligence, spend caps, the attempt journal, and the `Signer`
+   seam. Signing backends adapt to that seam
+   (`veritas.buyer_payment.LocalAccountSigner` is the testnet one); never add a
+   second path that signs without the gate. Diligence verdicts come from
+   `veritas.diligence` and are opt-in per client (`require_diligence=True`);
+   with the gate off, a spend cap is the only bound on a hostile seller.
 9. **Version is single-sourced.** `veritas.__version__` feeds pyproject
    (dynamic), the server, the identity document, and the retrieval user-agent.
    Bump it in exactly one place: `veritas/__init__.py`.
@@ -110,6 +115,14 @@ package — CI's package job asserts this.
   recorded outcomes. Treat it as an input, not authorization.
 - Local tools: `veritas-mcp` exposes research/verify/trust/constitution as MCP
   tools over stdio (free-mode local engine; no payment path over MCP).
+- Vetting a seller: `veritas-diligence <url>` fetches a counterparty's
+  published surfaces and prints a JSON verdict with a reason per check. Exit
+  codes separate the two refusals — `1` fail (a contradiction was observed),
+  `2` unverifiable (the checks could not be run) — so an agent shelling out
+  cannot treat its own network trouble as the seller's misconduct. Fetching
+  follows discovery's `links` and SSRF-guards every one of them, because a
+  hostile discovery document is caller-controlled input into the buyer's
+  fetcher. A pass is not proof a seller will deliver.
 - Self-provisioning: `veritas-agent up` bootstraps config and a local wallet
   and serves; funding the wallet and public TLS deployment remain external.
 - Observability: JSON access logs on stdout (`VERITAS_LOG_FORMAT=json|text`)

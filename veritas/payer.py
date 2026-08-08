@@ -7,13 +7,16 @@ EIP-3009 ``transferWithAuthorization``; the payload travels OUT to a signer
 process) and only a hex signature comes back. Nothing here reads, stores, or
 derives a signing key, and the test suite greps this file to keep it that way.
 
-Two policy layers gate every payment:
+Three policy layers gate every payment:
 
 1. Validation — :func:`validate_accepts` is the only constructor of
    :class:`ValidatedAccepts`, so authorization parameters (network, asset,
    recipient, amount) can only come from a structurally validated 402
    challenge, never from raw caller input.
-2. Spend caps — :class:`SpendPolicy` enforces per-request, per-day, and
+2. Counterparty diligence — :mod:`veritas.diligence` decides whether this
+   seller may be paid at all, from documents it publishes. Opt-in per client
+   via ``require_diligence=True``; off by default.
+3. Spend caps — :class:`SpendPolicy` enforces per-request, per-day, and
    per-counterparty limits that persist across process restarts.
 
 Limits, stated plainly:
@@ -26,9 +29,13 @@ Limits, stated plainly:
   checker in ``veritas.evaluations.payment_model`` exercises the honest paths.
 - Pinning parameters to the validated challenge does NOT authenticate the
   seller. The 402 challenge is itself content from an untrusted counterparty
-  and is the sole source of ``payTo`` and ``amount``; a hostile seller can
-  name any recipient and any price, and only :class:`SpendPolicy` bounds the
-  loss. Counterparty vetting is roadmap 5.2, not this module.
+  and is the sole source of ``payTo`` and ``amount``, so a hostile seller can
+  name any recipient at any price. With ``require_diligence=False`` — the
+  default — :class:`SpendPolicy` remains the only bound on that, which is a
+  budget rather than a decision. With the gate on, a counterparty that fails
+  :func:`veritas.diligence.assess` is refused before the signer is reached.
+  What diligence checks is cross-document consistency and register integrity;
+  it does not prove a seller will deliver.
 - A signer exception after the payload has left the process is an
   *indeterminate* outcome: a signature may exist even though none was
   returned. The pre-sign attempt journal exists so reconciliation (roadmap
@@ -49,7 +56,14 @@ import secrets
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    # `veritas.diligence` imports validate_accepts from this module, so a
+    # module-level import here would close the cycle. Annotations are strings
+    # under `from __future__ import annotations`, and pay() imports Verdict
+    # lazily at the one point it is needed.
+    from .diligence import DiligenceReport
 
 try:  # advisory same-host file locking; absent on some platforms
     import fcntl
@@ -610,11 +624,15 @@ class PaymentClient:
         signer: Signer,
         policy: SpendPolicy,
         base_dir: Path | str | None = None,
+        require_diligence: bool = False,
     ) -> None:
         self._signer = signer
         self._policy = policy
         self._used_nonces: set[str] = set()
         self._base_dir = Path(base_dir) if base_dir is not None else policy._base_dir
+        # Off by default so every existing caller is unchanged. Turning it on
+        # is the buyer's risk decision, not ours to make for them.
+        self._require_diligence = require_diligence
 
     def _journal(self, entry: dict) -> bool:
         """Append one line to the attempt journal. Returns False on failure.
@@ -640,10 +658,16 @@ class PaymentClient:
         now: int,
         validity_seconds: int = 60,
         now_utc_date: str | None = None,
+        diligence: DiligenceReport | None = None,
     ) -> PaymentResult:
         """Attempt one payment. `now_utc_date` (YYYY-MM-DD) pins the policy
         day for deterministic callers (tests, the model checker); production
-        callers omit it and the policy uses the real UTC date."""
+        callers omit it and the policy uses the real UTC date.
+
+        `diligence` is a :class:`veritas.diligence.DiligenceReport` for the
+        counterparty. It is consulted only when this client was constructed
+        with ``require_diligence=True``, and a report that did not pass
+        refuses the payment before the signer is reached."""
         if not isinstance(validated, ValidatedAccepts):
             return _denied("unvalidated_input", None)
         if not _is_registered(validated):
@@ -657,6 +681,32 @@ class PaymentClient:
                 f"validity_seconds={validity_seconds} (allowed 1..{MAX_VALIDITY_SECONDS})",
                 "invalid_validity_window",
             )
+
+        # Counterparty diligence, deliberately placed BEFORE the spend policy.
+        # A seller refused here consumes no budget, is never journalled, and
+        # never reaches the signer — otherwise a hostile counterparty could
+        # burn a buyer's daily allowance with challenges destined to be
+        # refused, and every refusal would leave a phantom authorization in
+        # the journal that reconciliation would go looking for on-chain.
+        if self._require_diligence:
+            # Imported here, not at module scope: veritas.diligence imports
+            # validate_accepts from this module.
+            from .diligence import Verdict
+
+            if diligence is None:
+                return _denied(
+                    "counterparty diligence is required but none was supplied",
+                    "diligence",
+                )
+            if diligence.verdict != Verdict.PASS:
+                # The verdict is carried verbatim so a buyer can separate
+                # "this seller failed" from "I could not check this seller".
+                # They are different facts and they call for different action.
+                return _denied(
+                    f"counterparty diligence {diligence.verdict}: "
+                    + "; ".join(diligence.reasons),
+                    "diligence",
+                )
 
         decision = self._policy.authorize(
             validated.amount_atomic, validated.network, validated.pay_to,

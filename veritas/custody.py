@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -116,7 +117,7 @@ def _atomic_write(path: Path, text: str) -> None:
     """
     tmp = path.with_name(f".{path.name}.tmp")
     try:
-        with tmp.open("w") as fh:
+        with tmp.open("w", encoding="utf-8") as fh:
             fh.write(text)
             fh.flush()
             os.fsync(fh.fileno())
@@ -124,6 +125,28 @@ def _atomic_write(path: Path, text: str) -> None:
     except OSError:
         tmp.unlink(missing_ok=True)
         raise
+
+
+#: A request id we would actually mint: uuid4, or a caller-supplied id in the
+#: same shape. Deliberately an allowlist. The ids reaching `load` come from
+#: `GET /v1/receipts/{request_id}`, i.e. straight off the wire, and the old
+#: code interpolated them into a filesystem path. Starlette will not match a
+#: path parameter containing "/", which made the hole invisible on Linux — but
+#: "\" is a separator on Windows and is not a URL separator, so
+#: `GET /v1/receipts/..%5Csecrets` arrived intact and read a file one
+#: directory up. Any *.json the process could open was readable by an
+#: unauthenticated caller, and the agent's own `wallet.keystore.json` is one.
+_SAFE_REQUEST_ID = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
+
+
+def is_safe_request_id(request_id: object) -> bool:
+    """True when this id can be used as a filename with no further escaping.
+
+    Rejects separators of every flavour, drive letters, UNC prefixes, leading
+    dots and the empty string, so no input can name a file outside the receipt
+    directory. `..` cannot pass: the first character must be alphanumeric.
+    """
+    return isinstance(request_id, str) and _SAFE_REQUEST_ID.match(request_id) is not None
 
 
 class CustodyStore:
@@ -149,10 +172,18 @@ class CustodyStore:
             "stored_at": _now(),
         }
         try:
+            if not is_safe_request_id(record["request_id"]):
+                # The write side takes the same guard as the read side: ids are
+                # server-minted today, but a store that only validates on read
+                # is one refactor away from writing outside its directory.
+                raise ValueError("unsafe request_id")
             self.base_dir.mkdir(parents=True, exist_ok=True)
             path = self.base_dir / f"{record['request_id']}.json"
             _atomic_write(path, json.dumps(record, indent=2))
             record["persisted"] = True
+        except ValueError:
+            record["persisted"] = False
+            record["error"] = "receipt_not_persisted_unsafe_request_id"
         except OSError as exc:
             # Never fail a paid request because the disk is unavailable; report
             # honestly that the receipt is not durable. Exception type only:
@@ -163,8 +194,13 @@ class CustodyStore:
         return record
 
     def load(self, request_id: str) -> dict[str, Any] | None:
+        # Validate before building the path, not after opening it: a check that
+        # runs after the read has already leaked the file, and one that merely
+        # resolves the path still follows a symlink planted in the directory.
+        if not is_safe_request_id(request_id):
+            return None
         path = self.base_dir / f"{request_id}.json"
         try:
-            return json.loads(path.read_text())
+            return json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None

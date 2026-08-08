@@ -53,8 +53,22 @@ def tool_constitution() -> dict[str, Any]:
 
 
 def build_server():
-    """Wire the plain tool functions into a FastMCP stdio server."""
-    from mcp.server.fastmcp import FastMCP
+    """Wire the plain tool functions into a FastMCP stdio server.
+
+    Targets the MCP 1.x `FastMCP` API. mcp 2.0 removed `mcp.server.fastmcp`
+    outright (the package reorganised around `mcp.server.mcpserver`), so the
+    extra is pinned `mcp>=1.0,<2` and this raises something a caller can act
+    on rather than a bare ModuleNotFoundError from three frames down.
+    Migrating to the 2.x API is separate work; the HTTP surface is unaffected.
+    """
+    try:
+        from mcp.server.fastmcp import FastMCP
+    except ImportError as exc:
+        raise RuntimeError(
+            "veritas-mcp needs the MCP 1.x SDK: mcp 2.0 removed "
+            "mcp.server.fastmcp. Install with pip install "
+            "'veritas-research[mcp]', which pins mcp>=1.0,<2."
+        ) from exc
 
     server = FastMCP(
         "veritas-research",

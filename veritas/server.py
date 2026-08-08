@@ -28,7 +28,12 @@ from starlette.concurrency import run_in_threadpool
 from veritas import __version__
 from veritas.constitution import build_constitution
 from veritas.custody import CustodyStore
-from veritas.deadline import Deadline, DeadlineTooShort
+from veritas.deadline import (
+    MIN_USABLE_SECONDS,
+    SETTLEMENT_MARGIN_SECONDS,
+    Deadline,
+    DeadlineTooShort,
+)
 from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
@@ -615,8 +620,17 @@ def _research(req: ResearchRequest, payment_header: str | None):
                 valid_before=_authorization_valid_before(payment_payload),
                 max_work_seconds=MAX_WORK_SECONDS,
             )
-        except DeadlineTooShort as exc:
-            return _challenge(cfg, f"authorization window too short: {exc}")
+        except DeadlineTooShort:
+            # Built from our own constants, never from the exception. The
+            # current DeadlineTooShort message is only timings, but the rule
+            # here is that exception text does not reach a buyer (4f2321c) —
+            # a message that is safe today is a leak one refactor from now,
+            # and this body goes out to an unauthenticated caller.
+            return _challenge(cfg, (
+                "authorization window too short: it must leave at least "
+                f"{MIN_USABLE_SECONDS}s of work time plus a "
+                f"{SETTLEMENT_MARGIN_SECONDS}s settlement margin"
+            ))
 
         # Claim the authorization after the facilitator accepts it and BEFORE
         # any retrieval pass, so a resubmitted header cannot make us do the

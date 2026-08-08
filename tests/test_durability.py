@@ -15,6 +15,7 @@ Two audited defects and one constitution gap:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from veritas.custody import CustodyStore
 from veritas.trust import MIN_SAMPLES_FOR_SCORE, OutcomeLog, score_service
@@ -136,3 +137,81 @@ def test_an_unwritable_receipt_is_reported_not_raised(tmp_path):
     })
     assert record["persisted"] is False
     assert "/" not in record["error"]
+
+
+# --- O17: receipt lookup must not become an arbitrary-file read -------------
+#
+# `GET /v1/receipts/{request_id}` passed the caller's string straight into
+# `base_dir / f"{request_id}.json"`. Starlette's router refuses a path
+# parameter containing "/", which hid the defect on Linux — but "\" is a
+# separator on Windows and is *not* a URL separator, so it survives routing
+# intact. Observed against a running server before the fix:
+#
+#     GET /v1/receipts/..%5Ccanary  ->  200 {"SECRET":"canary-must-not-leak"}
+#
+# Any *.json file the service could read was readable by an unauthenticated
+# caller, and `.veritas_agent/wallet.keystore.json` is exactly such a file.
+
+TRAVERSAL_IDS = [
+    "../canary",
+    r"..\canary",
+    "../../canary",
+    r"..\..\canary",
+    "sub/../../canary",
+    r"sub\..\..\canary",
+    "/etc/passwd",
+    r"C:\Windows\win",
+    r"\\server\share\x",
+    "",
+    ".",
+    "..",
+    ".hidden",
+]
+
+
+def test_a_receipt_id_cannot_escape_the_receipt_directory(tmp_path):
+    """A traversing id reads nothing, on every platform."""
+    store = CustodyStore(str(tmp_path))
+    store.save({"request_id": "r1", "status": "completed", "query": "q",
+                "custody_root": "sha256:x", "custody_valid": True, "evidence": []})
+
+    # A real JSON file one level above the receipts directory: the exact shape
+    # the live exploit reached.
+    (tmp_path / "canary.json").write_text('{"SECRET":"canary"}', encoding="utf-8")
+
+    for bad in TRAVERSAL_IDS:
+        assert store.load(bad) is None, f"{bad!r} escaped the receipt directory"
+
+    # The legitimate id still works — the guard must not break the feature.
+    assert store.load("r1")["status"] == "completed"
+
+
+def test_a_traversing_id_is_refused_before_it_reaches_the_filesystem(tmp_path, monkeypatch):
+    """Rejection is by validation, not by the file happening to be absent.
+
+    If the guard were only a containment check after a read, a symlinked or
+    race-swapped path could still be opened. Nothing may touch the disk.
+    """
+    store = CustodyStore(str(tmp_path))
+    opened: list[str] = []
+    real = Path.read_text
+
+    def spy(self, *a, **kw):
+        opened.append(str(self))
+        return real(self, *a, **kw)
+
+    monkeypatch.setattr(Path, "read_text", spy)
+    for bad in TRAVERSAL_IDS:
+        store.load(bad)
+    assert opened == [], f"traversing ids reached the filesystem: {opened}"
+
+
+def test_a_receipt_is_never_written_outside_its_directory(tmp_path):
+    """The write side takes the same guard as the read side."""
+    store = CustodyStore(str(tmp_path))
+    record = store.save({"request_id": "../escaped", "status": "completed",
+                         "query": "q", "custody_root": "sha256:x",
+                         "custody_valid": True, "evidence": []})
+    assert record["persisted"] is False
+    assert not (tmp_path / "escaped.json").exists()
+    assert not (tmp_path.parent / "escaped.json").exists()

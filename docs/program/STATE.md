@@ -5,29 +5,44 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: P7 product — origin re-fetch on `POST /v1/verify`.**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. cycle-1 cold install dogfood, N1.3 Merkle/inclusion, or G9
+> design). **G10:** never dual-reopen **P7**, **N0**, **N1.1**, **N1.2**,
+> **M7**, or **O.8**.
 >
-> **On main (do not re-open):** N0 `#30` / `4cd2d0c`; N1.1 `#33` / `db04ae2`;
-> N1.2 `#34` / `32d1054`; tip docs `#36` / `a679b76`; M7; O.8/O.8b; integrity
-> `#29`/`#32`.
+> **P7 is on main** — `#38` / `4697c8d`: `POST /v1/verify` binds origin
+> re-fetch via `notary.observe` (`url`+`content_hash`) or custody receipt
+> (`request_id` then re-fetch). Legacy `content`+`content_hash` labeled
+> `binding: caller_supplied` only. One engine. **Not** on-chain; page may
+> diverge after notarization. Pins: `tests/test_refetch_verify.py`.
 >
-> **P7 scope:** bind verification to origin re-fetch via `notary.observe`
-> (`url`+`content_hash`) or custody receipt (`request_id` then re-fetch).
-> Legacy `content`+`content_hash` labeled `binding: caller_supplied` only.
-> One engine. Not on-chain. Page may diverge after notarization.
+> **Also on main (do not re-open):** N0 `#30` / `4cd2d0c`; N1.1 `#33` /
+> `db04ae2`; N1.2 `#34` / `32d1054`; plane docs `#37` / `b7e4f34`, `#36` /
+> `a679b76`; integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
 >
-> **Parked (not dual):** N1.3 Merkle/inclusion; G9 design (RPC); cycle-1 dogfood.
+> Still deliberately not done: SBOM **unsigned**; no image registry;
+> N1.3 Merkle/anchors; G9 chain reconcile; cycle-1 cold install; settlements
+> **0**.
 >
-> Still deliberately not done: SBOM **unsigned**; no image registry; settlements **0**.
+> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
+> egress.
 >
 > Nothing has settled on-chain. That is still the single largest unproven
 > claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `a679b76` (#36 docs). Product N1.2 @ `32d1054` (#34). Claim **P7 building**. Settlements: **0**.
-> Prior product: N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`; integrity
-> `#32`/`#29`; M7 `#23`/`#28`. Claim: **free**. Settlements: **0**.
+> **Tip of `origin/main`:** `4697c8d` (PR **#38** P7 origin re-fetch verify).
+> Claim **free**. Settlements: **0**. Prior plane `#37` / `b7e4f34`; N1.2
+> `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`.
+>
+> **P7 landed on main @ `4697c8d` (PR #38).** `veritas/notary/refetch.py`
+> re-fetches via `notary.observe` (one engine); `POST /v1/verify` accepts
+> `url`+`content_hash` or `request_id` for origin/receipt binding; legacy
+> pair is labeled `caller_supplied`. Defect P7 (circular verify) closed for
+> origin-bound paths. **Not proven:** live production re-fetch under load,
+> free re-fetch sharing `research_slots` under shed (architect P7-C note),
+> on-chain (still **0**).
 >
 > **N0 landed on main @ `4cd2d0c` (PR #30).** SSRF-safe fetch, extract/record
 > with full-body `content_hash`, license/robots, `observe` compose, pipeline
@@ -293,7 +308,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [ ] N1.1 EIP-191 signing with the payment secp256k1 key
 - [ ] N1.2 Append-only log + RFC-6962 Merkle batches + inclusion proofs
 - [ ] N1.3 Anchors (file backend default; on-chain behind config)
-- [ ] N1.4 Re-fetching `/v1/verify/{record_id}`; deprecate the circular verify (P7)
+- [x] N1.4 Origin re-fetch on `POST /v1/verify` (`url`+hash / `request_id`); legacy labeled `caller_supplied` (`4697c8d`, PR #38; P7 product)
 - [x] N1.5 `veritas/verifier.py` — zero-dependency standalone verification (`a4cfc49`, PR #19; packaging remains G.2)
 
 ### Phase X — x402 correctness + SDK adoption
@@ -351,7 +366,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | P2 | critical | Custody chain never delivered; `to_list`/`verify_chain_records` unused; A12 false | **closed** — `::test_response_delivers_the_custody_chain` |
 | P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** — branch removed with the posterior |
 | P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
-| P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | open |
+| P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | **closed** for origin-bound paths — `tests/test_refetch_verify.py`; legacy `content`+hash remains `binding: caller_supplied` only (`4697c8d` #38). Not multi-party origin proof; not on-chain |
 | P13 | med | Evidence text never stored; hashes only | open |
 | L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** — `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
 | L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
@@ -419,3 +434,6 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-08 | O.8b: container hash-lock + extras pin direction | 5d6492f (#24) |
 | 2026-08-08 | M7: credits via SIWx (ledger, session, debit/topup/refund) | 2171bfa (#23) |
 | 2026-08-08 | M7 follow-up: refund debit on unexpected research failure | 386efff (#28) |
+| 2026-08-08 | N0 notary core | 4cd2d0c (#30) |
+| 2026-08-08 | N1.1 EIP-191 attestation + N1.2 free attest verify | db04ae2 (#33); 32d1054 (#34) |
+| 2026-08-08 | P7 origin re-fetch on POST /v1/verify | 4697c8d (#38) |

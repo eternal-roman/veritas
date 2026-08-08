@@ -1,7 +1,7 @@
 # Cycle count (product passes)
 
-- **total_product_cycles:** 1
-- **since_last_optimize:** 1
+- **total_product_cycles:** 2
+- **since_last_optimize:** 2
 - **last_optimize_at:** never
 - **optimize_every:** 5
 

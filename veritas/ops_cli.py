@@ -6,6 +6,7 @@ there was no way to ask any of them:
     veritas-ops revenue                  how much did I earn, and what did it cost?
     veritas-ops owed                     what did I deliver and never get paid for?
     veritas-ops reconcile                what needs my attention?
+    veritas-ops reconcile-chain          G9 design: check settled tx hashes via RPC
     veritas-ops usage                    what did serving actually consume?
     veritas-ops authorization <nonce>    one payment, end to end
     veritas-ops pricing                  what price are new entries stamped with?
@@ -21,6 +22,12 @@ Base". That limit is printed in the report itself and is registered as
 constitution gap G9 — closing it needs an RPC endpoint. A reconcile report
 that implied on-chain confirmation it had not performed would be the most
 damaging untruth this codebase could ship, so it says so every time.
+
+**`reconcile-chain` (G9 design).** Optional: with ``VERITAS_RPC_URL``, classify
+facilitator-reported transaction hashes via ``eth_getTransactionReceipt``.
+Without RPC it returns ``rpc_not_configured`` / ``chain_checked: false``.
+Never rewrites the ledger or invents revenue. G9 stays open until operators
+configure RPC and the production path uses it.
 
 **What `prune` does not do.** It ages local custody receipts and settled or
 abandoned ledger rows against a shared cutoff. It does not invent settlement
@@ -208,6 +215,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("revenue", help="Revenue, cost and margin in micro-USD.")
     sub.add_parser("owed", help="Delivered work with no terminal settlement.")
     sub.add_parser("reconcile", help="What needs an operator's attention.")
+    sub.add_parser(
+        "reconcile-chain",
+        help="G9 design: classify settled tx hashes via VERITAS_RPC_URL (fail-closed).",
+    )
     sub.add_parser("usage", help="What serving consumed, priced where possible.")
     sub.add_parser("pricing", help="The price new ledger entries are stamped with.")
     one = sub.add_parser("authorization", help="One payment authorization, end to end.")
@@ -240,6 +251,15 @@ def main(argv: list[str] | None = None) -> int:
         payload = _owed(ledger)
     elif args.command == "reconcile":
         payload = _reconcile(ledger)
+    elif args.command == "reconcile-chain":
+        from veritas.chain_reconcile import reconcile_settlements
+
+        candidates = ledger.settled_with_transaction()
+        missing = ledger.settled_without_transaction()
+        payload = reconcile_settlements(candidates)
+        payload["candidates"] = len(candidates)
+        payload["settled_without_transaction"] = len(missing)
+        payload["chain_checked"] = bool(payload.get("chain_checked"))
     elif args.command == "usage":
         payload = ledger.usage_summary(costs)
     elif args.command == "pricing":

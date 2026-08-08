@@ -5,42 +5,33 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. G9 chain-reconcile design, N1.4 Merkle inclusion, or cycle-5
-> ecosystem dogfood). **G10:** never dual-reopen **cycle-1**, **N1.3**,
-> **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: G9 design — chain reconcile fail-closed surface (#46 only).**
 >
-> **cycle-1 is on main** — `#44` / `2cbed44`: `scripts/dogfood_cycle1.py` +
-> CI + `tests/test_dogfood.py` + `docs/dogfood/cycle1/report.json`. Free-mode
-> first-boot (discovery/notarize/attest/pack, offline research, offline
-> notary+pack verify). **Not** blank-machine PyPI install. Settlements **0**.
+> **On main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout `#45` /
+> `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
 >
-> **Also on main (do not re-open):** N1.3 `#41` / `622429c`; P7 `#38` /
-> `4697c8d`; N1.2 `#34`; N1.1 `#33`; N0 `#30`; plane docs `#39` / `330bf68`;
-> integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
+> **G9 scope:** design doc + `veritas/chain_reconcile.py` +
+> `veritas-ops reconcile-chain`. Without `VERITAS_RPC_URL` →
+> `rpc_not_configured`. Injectable transport for L1 tests. **Does not** close
+> constitution G9; **does not** rewrite ledger revenue. Settlements **0**.
 >
-> Still deliberately not done: SBOM **unsigned**; no image registry; full
-> Merkle/anchors; G9 chain reconcile; cycle-5; settlements **0**.
+> **G10:** never dual-reopen cycle-1, N1.3, P7, N0, N1.1, N1.2, M7, or O.8.
+> Do not dual Merkle/cycle-5 while G9 claim holds.
 >
-> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
-> egress.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository, and no amount of local green changes it.
+> **Parked:** live RPC dogfood; N1.4 Merkle log; cycle-5; settlements still **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `2cbed44` (PR **#44** cycle-1 cold install dogfood).
-> Claim **free**. Settlements: **0**. Prior N1.3 `#41` / `622429c`.
->
+> **Tip of `origin/main`:** `df1cc8f` (PR **#45** cycle-1 closeout). Product
+> cycle-1 @ `2cbed44` (#44). Claim **building G9-design** on #46. Settlements: **0**.
+
 > **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
 > (7 checks), committed report, CI wire-up. **Not proven:** blank-machine
 > PyPI cold install; on-chain (still **0**).
 >
 > **N1.3 landed on main @ `622429c` (PR #41).** Portable `EvidencePack`
-> (`veritas/notary/pack.py`) with `pack_hash` integrity, optional EIP-191
-> attestation re-check, free `POST /v1/packs/verify` + MCP `verify_pack`.
-> **Not proven:** Merkle inclusion, multi-party origin, on-chain (still **0**).
+> (`veritas/notary/pack.py`) with `pack_hash` integrity. **Not proven:**
+> Merkle inclusion; on-chain (still **0**).
 >
 > **P7 landed on main @ `4697c8d` (PR #38).** `veritas/notary/refetch.py`
 > re-fetches via `notary.observe` (one engine); `POST /v1/verify` accepts

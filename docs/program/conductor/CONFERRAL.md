@@ -1,31 +1,31 @@
-# Conferral — 2026-08-08T23:10:00Z (continuous cycle 8)
+# Conferral — 2026-08-08T23:25:00Z (continuous cycle 8 final)
 
 ## From Steward
-Tip after **#72** is **`64b7a1a`** (product **`e7f674b`** / #69; free closeout **`e45a2f5`** / #71). Claim **free**. Settlements **0**. Gap G9 open. Not PyPI. Steward CURRENT body may lag tip SHA — landmass agrees (free + hold).
+Tip **`2876f0a`** after #78 N0-residue closeout. Claim **free**. Last product **A26/A27 #75** @ `ab728a6`; prune #77 @ `1c56a0b`. Settlements **0**. Gap G9 open. G10 still open (self-report). Not PyPI.
 
 ## From Overseer
-**ON_TASK / IDLE product (hold).** Verdict hold singular NEXT. P7-C honest on main. Vision 2 / strategy 2. **restart=false.** Do not assign implementers. Unblock only via real `VERITAS_RPC_URL` → live-G9 dogfood. Refuse vanity product (N1.6, re-open P7-C, fake G9). Settlements **0**.
+Pre-ship card was **HOLD** (RPC unset). Mid-cycle external product **#75** (A26/A27) and **#77** (N0 residue) landed green with tests — mechanism, not settlement proof. Do **not** invent G9 closed / PyPI / on-chain. Integrity: refuse dual NEXT and prefer_bet thrash.
 
 ## From Pruner (G13)
-**noop_idle.** No product PR. `ship_ok` n/a — nothing to ship. Last product: P7-C #69 @ `e7f674b`. Deny dual NEXT / settlement fiction. (Local pruner residue branch is not a product PR.)
+**#77 ship_ok honored** — fail-closed pack/log; dead re-exports removed; battery green before merge. Post-merge claim cleared free via #78. New product surfaces (audit/warranty/standing) need future prune ticks if bloat appears — not this cycle.
 
 ## From Optimizer
-`prefer_bet=M7` is **stale thrash** (M7 on main #23/#28). `n_implementers=3` unused until real NEXT. Plane: hold is correct latency vs busy noop.
+`prefer_bet=M7` remains **stale thrash**. `n_implementers=3` unused. Product outcomes this window came from open green PRs, not M7 re-kick. Plane latency: green PR→merge exercised on #74/#76/#77.
 
-## From Scout
-Prior WATCH only; not approval. Do not set STATE NEXT from seedlings.
+## From Scout / Git Agent
+Git Agent #76 on main (branch archaeology). WATCH seedlings ≠ NEXT.
 
 ## From Flywheel / cycles
-No open product PR. Claim **free**. Recent: N1.5 #60 → 0.8.1 #62 → P7-C #69 → docs #71/#72.
+Product merges: **#75** A26/A27, **#77** N0 residue. Plane: **#76** Git Agent, **#74** cycle-8 board, **#78** closeout. Open: **#81** docs only.
 
 ## Conductor synthesis
-- **Trajectory:** N1.5 DONE → 0.8.1 DONE → **P7-C DONE** → Overseer HOLD → live-G9 when RPC
-- **This-cycle bet:** **none**
-- **Parked:** re-open M7 / N1.5 / P7-C; settlement fiction; dual product; prefer_bet thrash
-- **Restart implement×3 / flywheel?** **No** — free claim + Overseer HOLD + no unblocked NEXT; refuse M7 thrash
-- **Merge:** none (open product PRs empty; no green product candidate)
-- **G13 before ship:** honored — no ship attempted without product PR + ship_ok
-- **Momentum:** **1** · **Settlements:** **0**
+- **Trajectory:** P7-C DONE → **A26/A27 + N0 residue DONE** → Overseer singular NEXT (G9 needs RPC)
+- **This-cycle bet:** none assigned; absorbed open green ships
+- **Parked:** re-open M7; settlement fiction; dual product; claim G10 closed
+- **Restart implement×3 / flywheel?** **No** — free claim + refuse M7 thrash; no RPC for G9
+- **Merge:** #74, #76, #77 (after base update); #75 already on main; #78 closeout; closed #73 superseded
+- **G13 before ship:** yes for #77; #75 CI green on head (external handoff) — post-facto stock only
+- **Momentum:** **2** · **Settlements:** **0**
 
 ### Message
-**Tip `64b7a1a`.** Claim **free**. **Do not** kick implementers on `prefer_bet=M7`. Wait RPC/Overseer live-G9 NEXT → claim → G13 → merge-on-green.
+**Tip `2876f0a`.** Claim **free**. Product spine + A26/A27 on main. **Do not** kick implementers on `prefer_bet=M7`. Wait Overseer NEXT → claim → G13 → merge-on-green.

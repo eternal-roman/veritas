@@ -21,6 +21,7 @@ VERITAS_METRICS_TOKEN=... veritas-server # /metrics exists only when a token is 
 veritas-ops revenue                      # operator reports from the ledger (JSON)
 veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
 veritas-diligence https://seller.example # vet a counterparty; exit 0 pass / 1 fail / 2 unverifiable
+veritas-verify receipt.json              # audit a receipt; one vendorable file, zero dependencies
 ```
 
 Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks

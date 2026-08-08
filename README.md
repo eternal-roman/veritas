@@ -95,6 +95,13 @@ up` provisions its own config and wallet and starts serving.
   seller's own links, since a hostile discovery document would otherwise steer
   the buyer's fetcher at the buyer's private network. Every check is
   cross-document consistency — **none proves a seller will deliver**
+- **A standalone verifier** (`veritas/verifier.py`, `veritas-verify receipt.json`)
+  — one file, zero dependencies, importing nothing from `veritas`. Copy it out
+  and run it: a buyer should not have to install our web server to audit our
+  receipt, nor check our work with our own code. It re-implements the hash
+  chain, and a differential test pins it against the engine on real output and
+  on tampered variants. It reports what it does **not** attest: consistent
+  records do not mean we ever contacted the URLs we name
 - **Hiding wallet commitments** so a broadcast offer does not leak the payout address
 - **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
 

@@ -67,6 +67,7 @@ veritas-agent = "veritas.agent_cli:main"
 veritas-mcp = "veritas.mcp_server:main"
 veritas-ops = "veritas.ops_cli:main"
 veritas-diligence = "veritas.diligence_cli:main"
+veritas-verify = "veritas.verifier:main"
 
 [project.urls]
 Homepage = "https://github.com/eternal-roman/veritas"

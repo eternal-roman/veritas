@@ -5,25 +5,21 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: M7 — credits via SIWx** (last of Phase M). After that:
-> **Phase N0** (the notary product).
+> **Do this next: Phase N0 — evidence notary core** (after Phase M closed).
 >
-> **O.8** supply chain (#22 / `96b9013`), diligence (#19 / `a4cfc49`), P7
-> honesty (#20 / `4a3d105`), and O.6 (#18 / `48194ab`) are **on main** —
-> do not re-open them as NEXT.
+> **M7 is on main** — do **not** re-open credits/SIWx as NEXT. Landed as
+> `#23` (`2171bfa`) with exception-path refund hardening `#28` (`386efff`).
+> Prepaid credits via SIWx (challenge/session, debit-before-work, refund on
+> non-billable and unexpected failure, top-up only after settled x402) are L1
+> tested. This is **not** on-chain refund of a top-up tx and **not** a second
+> payer path.
 >
-> **O.8b closes the container gap** (in review): the Dockerfile installs
-> `requirements.lock` with `--require-hashes`, then the package with
-> `--no-deps` plus `pip check`, and pins its base image by digest with
-> Dependabot's docker ecosystem watching it. All three shipping paths — CI,
-> the wheel, the image — now install the same hash-pinned closure. It also
-> extends the pin-file-vs-contract direction rule to **optional
-> dependencies**, the gap that let `mcp>=1.0` sit against a `mcp>=1.0,<2`
-> contract and silently freeze `mcp==2.0.0`, disabling an SDK test.
+> **Also on main (do not re-open as NEXT):** O.8 `#22` / `96b9013`, O.8b
+> `#24` / `5d6492f` (container hash-lock + extras direction rule), diligence
+> `#19`, P7 honesty `#20`, O.6 `#18`.
 >
-> Still deliberately not done: the SBOM is **unsigned** and a workflow
-> artifact rather than release-attached (`contents: write` + `id-token: write`
-> stay apart), and no image is published anywhere.
+> Still deliberately not done: SBOM is **unsigned** and a workflow artifact
+> rather than release-attached; no image is published anywhere.
 >
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
@@ -36,8 +32,24 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `96b9013` (PR #22 — O.8). Open product PRs:
-> **none** after this docs plane lands. Do not freeze **M7** on docs PRs.
+> **Tip of `origin/main`:** `be03dcd` (dependabot upload-artifact). Product
+> tip for Phase M: **M7** on main via `#23` + `#28`. Open product PRs at
+> closeout time may include dependency-guard work — do not freeze **N0** on
+> docs plane; do not re-open **M7**.
+>
+> **M7 landed on main @ `2171bfa` (PR #23) + `386efff` (PR #28).**
+> `veritas/credits.py` double-entry journal; `veritas/siwx.py` EIP-4361/EIP-191
+> offline session; HTTP wire for challenge/verify, balance, top-up (grant only
+> after settled x402), research debit with `X-VERITAS-SESSION`, refunds on
+> `unavailable`/deadline, and crash-path refund so debit-before-work cannot
+> charge a buyer for an unexpected exception. Tests: `tests/test_credits.py`,
+> `tests/test_siwx.py`, `tests/test_credits_api.py`. **Not proven:** live
+> facilitator top-up, multi-instance credit store, on-chain settlement (still
+> **0**).
+>
+> **O.8b landed on main @ `5d6492f` (PR #24).** Dockerfile installs
+> hash-pinned `requirements.lock` then the package with `--no-deps` +
+> `pip check`; base image pinned by digest; extras pin-direction rule extended.
 >
 > **O.8 landed on main @ `96b9013` (PR #22).** SHA-pinned GitHub Actions,
 > hash-pinned `requirements.lock` / `requirements-dev.lock` with CI
@@ -167,7 +179,7 @@ committed and pushed survives. Update this file and push after every sub-step.
 > from here; wall times are a floor because retrieval ran offline, and the
 > millisecond metering column is too coarse to resolve it at all (reads 0).
 >
-> Next: **M7** (credits via SIWx — last of Phase M). O.8 is on main. Cycles 1
+> Next: **N0** (notary core). M7 and O.8/O.8b are on main. Cycles 1
 > (cold install, gated on N0) and 5 (ecosystem, gated on the standalone
 > verifier) remain.
 >
@@ -196,19 +208,19 @@ committed and pushed survives. Update this file and push after every sub-step.
 | Steward 15m | Card hygiene |
 | Scout (Idea) 25m | Vision fuel · never sets NEXT |
 | **Pulse** | `/workflow agent-commerce-pulse` — support fan-out → Conductor |
-| **Implement×n** | `/workflow agent-commerce-implement {"n":3,"prefer_bet":"M7"}` — scale builders |
+| **Implement×n** | `/workflow agent-commerce-implement {"n":3,"prefer_bet":"N0"}` — scale builders |
 | **Pruner 10m** | [`PRUNER.md`](PRUNER.md) — bloat denial + battery/E2E ship veto |
 | **Optimizer** | [`OPTIMIZER.md`](OPTIMIZER.md) — continuous self-improvement every 5 cycles (no end state) |
-| Continuous forever | `/workflow agent-commerce-continuous {"max_cycles":5,"forever":true,"prefer_bet":"M7"}` |
+| Continuous forever | `/workflow agent-commerce-continuous {"max_cycles":5,"forever":true,"prefer_bet":"N0"}` |
 | Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) · G13 Pruner |
 | Autonomous | [`AUTONOMOUS.md`](AUTONOMOUS.md) |
 | Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
 
 ```text
-/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "M7"}
+/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "N0"}
 /workflow agent-commerce-conductor {"continuous": true, "max_cycles": 2}
 /workflow agent-commerce-steward
-/workflow agent-commerce-flywheel {"prefer_bet": "M7"}
+/workflow agent-commerce-flywheel {"prefer_bet": "N0"}
 ```
 
 **Conductor** reviews all work, confers via `CONFERRAL.md`, holds trajectory,
@@ -301,7 +313,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] M4 Indeterminate settlement distinguished from failure (R7)
 - [x] M5 Reconciliation + revenue/COGS/margin reports; `veritas-ops` CLI
 - [x] M6 Metering (COGS per request, free traffic included); versioned pricing stamped per entry
-- [ ] M7 Credits via SIWx; refunds as credits, documented
+- [x] M7 Credits via SIWx; refunds as credits, documented (`2171bfa` #23; crash refund `386efff` #28)
 
 ### Phase O — Operations
 - [x] O.1 Async handlers; research capped and shed rather than queued (O1)
@@ -405,3 +417,6 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-08 | P7 claim retraction + witness (`/v1/verify` not independent) | 4a3d105 (#20) |
 | 2026-08-08 | Buyer counterparty diligence + standalone verifier | a4cfc49 (#19) |
 | 2026-08-08 | O.8 supply chain: SHA Actions, hashed locks, artifact SBOM | 96b9013 (#22) |
+| 2026-08-08 | O.8b: container hash-lock + extras pin direction | 5d6492f (#24) |
+| 2026-08-08 | M7: credits via SIWx (ledger, session, debit/topup/refund) | 2171bfa (#23) |
+| 2026-08-08 | M7 follow-up: refund debit on unexpected research failure | 386efff (#28) |

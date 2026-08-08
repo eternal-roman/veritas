@@ -1,50 +1,46 @@
-# Program state — Veritas → Evidence Notary
+# Program state ΓÇö Veritas ΓåÆ Evidence Notary
 
 **This file is the resume point.** The working container is ephemeral; only what is
 committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet. Default **hold** unless unblocked (live RPC G9 dogfood if egress;
-> PyPI is human ops, not a dual product bet).
-> **G10:** never dual-reopen **P7-C**, **N1.5**, **0.8.1**, **cycle-5**,
-> **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**, **M7**, or **O.8**.
+> **Do this next: A26/A27 only (claim building on #75)** —
+> `fable/survival-records` / PR **#75**. Full green CI, G13, merge-on-green only.
+> **G10:** never dual-reopen **N0-residue #77**, **P7-C**, **N1.5**, **0.8.1**, **M7**.
 >
-> **P7-C is on main** — `#69` / `e7f674b`: free re-fetch shares `research_slots`.
-> Closeout `#71` / `e45a2f5` freed the claim. Settlements **0**. Gap G9
-> **still open**. Not PyPI.
->
-> **Also on main:** v0.8.1 `#62`; N1.5 `#60`; v0.8.0; cycle-5; N1.4; G9-design.
+> **On main:** N0-residue `#77` / `1c56a0b`; Git Agent `#76` / `e78a7a9`; P7-C `#69` / `e7f674b`.
+> Settlements **0**. Gap G9 open. Not PyPI.
 >
 > Nothing has settled on-chain.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `64b7a1a` (PR **#72** cycle-7 board after #71). Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**. Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
-> Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**.
-> Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `1c56a0b` (PR **#77** N0-residue). Claim **building A26/A27** (#75). Settlements: **0**. Gap G9 open. Open product PR: **#75**. Prior Git Agent `e78a7a9` (#76). **Not** on PyPI.
+>
+> **N0-residue landed on main @ `1c56a0b` (PR #77).** Fail-closed pack/log; drop dead re-exports.
+>
 >
 > **P7-C closeout landed on main @ `e45a2f5` (PR #71).** Claim free; tip-aligned.
 >
 > **P7-C landed on main @ `e7f674b` (PR #69).** Free re-fetch takes research_slots
-> on `POST /v1/verify`; full pool → 503 `service_overloaded`. Legacy
+> on `POST /v1/verify`; full pool ΓåÆ 503 `service_overloaded`. Legacy
 > caller_supplied path does not take a slot. **Not proven:** multi-instance;
 > production load under shed; on-chain (0).
 >
 
-> **M1–M4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite
+> **M1ΓÇôM4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite
 > (WAL, `synchronous=FULL`) record of authorizations, deliveries and settlement
-> attempts. The paid path now runs verify → deadline → claim(nonce,
-> request_id) → work → **record delivery (fsynced)** → settle → record
-> settlement → respond, and a resubmitted authorization returns the stored
+> attempts. The paid path now runs verify ΓåÆ deadline ΓåÆ claim(nonce,
+> request_id) ΓåÆ work ΓåÆ **record delivery (fsynced)** ΓåÆ settle ΓåÆ record
+> settlement ΓåÆ respond, and a resubmitted authorization returns the stored
 > deliverable instead of a 409. `veritas/replay.py` is gone: its nonce parsing
 > moved to `veritas/x402.py` beside the other payload parsing, and its store is
-> superseded — two nonce stores would have been two sources of truth about
+> superseded ΓÇö two nonce stores would have been two sources of truth about
 > whether a payment was used.
 >
 > **M5 and M6 also landed.** `veritas/metering.py` counts provider calls,
-> evidence bytes and wall time on every request (free ones included — cost is
+> evidence bytes and wall time on every request (free ones included ΓÇö cost is
 > incurred regardless of payment); `veritas/pricing.py` stamps
 > `PRICE_TABLE_VERSION` on every authorization so revenue across a reprice
 > stays explainable; `veritas/ops_cli.py` (`veritas-ops`) reports revenue,
@@ -65,28 +61,28 @@ committed and pushed survives. Update this file and push after every sub-step.
 > Starlette's plain-text 500.
 >
 > Every limit is **in-process**: behind a balancer each node has its own
-> budget. Tested for behaviour, not measured under load — no throughput or
+> budget. Tested for behaviour, not measured under load ΓÇö no throughput or
 > latency figure in this repo is measured.
 >
 > **O.5 landed too** (O9 closed): JSON access logs carrying method, path,
-> status and duration — never the query, never the `X-PAYMENT` header, both
-> asserted absent by test — plus Prometheus counters at `/metrics`, which
+> status and duration ΓÇö never the query, never the `X-PAYMENT` header, both
+> asserted absent by test ΓÇö plus Prometheus counters at `/metrics`, which
 > exists only when `VERITAS_METRICS_TOKEN` is set because
 > `veritas_settlements_total` is a revenue figure. Label values are escaped so
 > a caller-controlled path cannot forge metric lines. Tracing is still absent
 > and is not claimed.
 >
-> **O.3 and O.6 landed** (O3, O7, O10 closed). Trust is SQLite counters — one
-> row however much the service has been used — and custody receipts are written
+> **O.3 and O.6 landed** (O3, O7, O10 closed). Trust is SQLite counters ΓÇö one
+> row however much the service has been used ΓÇö and custody receipts are written
 > to a temp file, fsynced, and renamed. Retention (`VERITAS_RETENTION_DAYS`,
 > default 30) is ops-scheduled via `veritas-ops prune`: expired receipt bodies
 > are deleted with durable tombstones so `GET /v1/receipts/{id}` returns **410
 > `receipt_gone`**, never-seen stays **404 `receipt_not_found`**; ledger prune
 > deletes only aged settled/abandoned cascades and never rewrites settlement
-> outcomes (indeterminate remains ≠ failed). Tests:
+> outcomes (indeterminate remains Γëá failed). Tests:
 > `tests/test_durability.py` (lookup/tombstone), `tests/test_api.py`
 > (`test_receipt_pruned_returns_410_gone_not_404`), `tests/test_ledger.py`
-> (prune invariants), `tests/test_ops_cli.py` (`test_prune_reports_json_…`),
+> (prune invariants), `tests/test_ops_cli.py` (`test_prune_reports_json_ΓÇª`),
 > `tests/test_retention.py`, `tests/test_errors.py`
 > (`test_receipt_gone_is_registered_at_410`).
 >
@@ -94,13 +90,13 @@ committed and pushed survives. Update this file and push after every sub-step.
 > `/v1/trust` is free and unauthenticated, so counting free traffic let anyone
 > manufacture our reputation. Free outcomes are still counted and reported in
 > the basis, and simply do not score; an instance nobody has paid reports
-> UNPROVEN, which is the right answer. G10 records what that does *not* fix —
+> UNPROVEN, which is the right answer. G10 records what that does *not* fix ΓÇö
 > the number is still computed by the graded party from its own records, and a
 > seller who logged only favourable outcomes would produce an identical
 > document.
 >
-> **O.7 landed** (O12, O13 closed). `.dockerignore` is an allowlist — `*`
-> first, then the four paths the image needs — because the repository root is
+> **O.7 landed** (O12, O13 closed). `.dockerignore` is an allowlist ΓÇö `*`
+> first, then the four paths the image needs ΓÇö because the repository root is
 > where `veritas-agent up` writes a wallet keystore *and its plaintext
 > passphrase*, and a forgotten denylist pattern there is a private key in a
 > published image rather than a slow build. A test also asserts the Dockerfile
@@ -110,24 +106,24 @@ committed and pushed survives. Update this file and push after every sub-step.
 > volume with every credential read from the environment with an empty default,
 > so a missing one reaches the service's own misconfiguration path. Limit: the
 > tests read the shipped files; they prove the declarations are right, not that
-> a built image is clean — no Docker daemon is available here.
+> a built image is clean ΓÇö no Docker daemon is available here.
 >
 > **Dogfooding cycles 2 and 3 are done and wired into CI** (`tests/test_dogfood.py`,
 > reports under `docs/dogfood/`). Each found exactly one real defect, both
 > fixed in the same commit:
 >
-> * Cycle 2 — a resubmitted authorization carrying a **different question**
+> * Cycle 2 ΓÇö a resubmitted authorization carrying a **different question**
 >   returned 200 with the earlier deliverable. Now
 >   `409 payment_authorization_bound_to_another_request`.
-> * Cycle 3 — every structurally doomed `X-PAYMENT` payload cost an outbound
+> * Cycle 3 ΓÇö every structurally doomed `X-PAYMENT` payload cost an outbound
 >   **facilitator round trip**, because the nonce check ran after verification.
 >   An unpaid caller could spend our request budget one junk header at a time.
 >   The structural check now runs first: 8 doomed payloads, 0 facilitator calls.
 >
-> **Cycle 4 is done too** — operator economics, answered only from
+> **Cycle 4 is done too** ΓÇö operator economics, answered only from
 > `veritas-ops`. All five questions are answerable; it found two defects, both
 > fixed: `owed` reported **zero** while `reconcile` flagged an unresolved
-> settlement (an indeterminate settlement is exposure — delivered work is
+> settlement (an indeterminate settlement is exposure ΓÇö delivered work is
 > delivered whether the facilitator said no, said nothing, or was never
 > asked), and fixing that made `reconcile` label one entry twice. The cycle now
 > cross-checks the two commands so they cannot drift apart silently.
@@ -143,7 +139,7 @@ committed and pushed survives. Update this file and push after every sub-step.
 > (cold install, gated on N0) and 5 (ecosystem, gated on the standalone
 > verifier) remain.
 >
-> New gap opened while closing G8: **G9** — recorded settlements are never
+> New gap opened while closing G8: **G9** ΓÇö recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
 > us so". Closing it needs RPC access this sandbox does not have.
 >
@@ -151,28 +147,28 @@ committed and pushed survives. Update this file and push after every sub-step.
 > adoption) need facilitator egress this sandbox blocks; X6 (Bazaar) follows X1.
 >
 > Note the execution order was deliberately inverted from the original plan:
-> substrate (X → M → O) before new product surface (N0/N1). Rationale in the
-> approved plan — building a paid notary on a payment path that charges
+> substrate (X ΓåÆ M ΓåÆ O) before new product surface (N0/N1). Rationale in the
+> approved plan ΓÇö building a paid notary on a payment path that charges
 > disconnected buyers (G6/R11) and keeps no ledger (G8/R5) multiplies the defect.
 
 ## Innovation loop + agents + guardian
 
 | Piece | Doc / entry |
 |-------|-------------|
-| **Governing** | [`GOVERNING.md`](GOVERNING.md) — loops = goals |
-| **Product org** | [`PRODUCT_ORG.md`](PRODUCT_ORG.md) — eras, sequencing, timing, scale |
-| **Loops / north star** | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · this STATE NEXT |
+| **Governing** | [`GOVERNING.md`](GOVERNING.md) ΓÇö loops = goals |
+| **Product org** | [`PRODUCT_ORG.md`](PRODUCT_ORG.md) ΓÇö eras, sequencing, timing, scale |
+| **Loops / north star** | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) ┬╖ this STATE NEXT |
 | **Overseer 8m** | Quality + vision + strategy gate |
 | Conductor 12m | Merge green + restart one NEXT |
-| Flywheel 20m | Full cycle · functioning/necessary/pursuant |
+| Flywheel 20m | Full cycle ┬╖ functioning/necessary/pursuant |
 | Steward 15m | Card hygiene |
-| Scout (Idea) 25m | Vision fuel · never sets NEXT |
-| **Pulse** | `/workflow agent-commerce-pulse` — support fan-out → Conductor |
-| **Implement×n** | `/workflow agent-commerce-implement {"n":3,"prefer_bet":"N0"}` — scale builders |
-| **Pruner 10m** | [`PRUNER.md`](PRUNER.md) — bloat denial + battery/E2E ship veto |
-| **Optimizer** | [`OPTIMIZER.md`](OPTIMIZER.md) — continuous self-improvement every 5 cycles (no end state) |
+| Scout (Idea) 25m | Vision fuel ┬╖ never sets NEXT |
+| **Pulse** | `/workflow agent-commerce-pulse` ΓÇö support fan-out ΓåÆ Conductor |
+| **Implement├ùn** | `/workflow agent-commerce-implement {"n":3,"prefer_bet":"N0"}` ΓÇö scale builders |
+| **Pruner 10m** | [`PRUNER.md`](PRUNER.md) ΓÇö bloat denial + battery/E2E ship veto |
+| **Optimizer** | [`OPTIMIZER.md`](OPTIMIZER.md) ΓÇö continuous self-improvement every 5 cycles (no end state) |
 | Continuous forever | `/workflow agent-commerce-continuous {"max_cycles":5,"forever":true,"prefer_bet":"N0"}` |
-| Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) · G13 Pruner |
+| Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) ┬╖ G13 Pruner |
 | Autonomous | [`AUTONOMOUS.md`](AUTONOMOUS.md) |
 | Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
 
@@ -190,7 +186,7 @@ and **restarts** the builder when a cycle finishes or the plane is idle.
 
 ## Resume protocol
 
-1. `git log --oneline -15` — see what actually landed.
+1. `git log --oneline -15` ΓÇö see what actually landed.
 2. Read **NEXT ACTION** above, `GUARDIAN.md`, and the latest `cycles/` report.
 3. Run the battery to confirm the tree is green before continuing:
    ```bash
@@ -205,13 +201,13 @@ and **restarts** the builder when a cycle finishes or the plane is idle.
 ## Program
 
 Repositioning the service from "search snippets with a confidence number" to an
-**evidence notary**: `notarize(url) → signed, timestamped, anchored record of what
+**evidence notary**: `notarize(url) ΓåÆ signed, timestamped, anchored record of what
 that URL served at time T`, machine-payable over x402. Full plan and rationale in
 `ROADMAP.md` (Part III) once Phase T lands; the audit that motivated it is summarised
 in the defect register below.
 
-Decisions taken: evidence notary + trust layer · x402 first, Stripe-ready · build to
-one-credential-away with runbooks · licensed/permitted sources with truthful labels.
+Decisions taken: evidence notary + trust layer ┬╖ x402 first, Stripe-ready ┬╖ build to
+one-credential-away with runbooks ┬╖ licensed/permitted sources with truthful labels.
 
 ## Environment constraint (affects what is provable)
 
@@ -224,49 +220,49 @@ No claim of on-chain success may be made until an operator produces a transactio
 
 ## Phase checklist
 
-Legend: `[ ]` not started · `[~]` in progress · `[x]` done (commit SHA)
+Legend: `[ ]` not started ┬╖ `[~]` in progress ┬╖ `[x]` done (commit SHA)
 
-### Phase T — Truth restoration (blocking; stops shipping false claims)
+### Phase T ΓÇö Truth restoration (blocking; stops shipping false claims)
 - [x] T1 Enforce `MIN_RELEVANCE` in `pipeline.py` evidence loop (P1)
 - [x] T2 Deliver `custody_chain` in the response envelope (P2)
 - [x] T3 Removed the unreachable `low_confidence` branch with the posterior (P3)
 - [x] T4 Removed `ddgs`/metasearch; DDG Instant Answer named truthfully (L1, L2)
 - [x] T5 Corpus off the live path; `veritas://fixture/*` URLs (L4)
 - [x] T6 Deleted `posterior` and per-claim `confidence`; `support` report replaces them (P4, P5)
-- [x] T7 Price default `$0.25` → `$0.01`; price validated by the misconfig guard (R9)
-- [x] T8 `payer.py` assert → explicit raise; SSRF/scheme guards + bandit gate at `-ll`
-- [x] T9 Constitution 2.0: A12 **promoted** (chain now delivered), A22/A23 added, G3–G8 registered, re-rendered
+- [x] T7 Price default `$0.25` ΓåÆ `$0.01`; price validated by the misconfig guard (R9)
+- [x] T8 `payer.py` assert ΓåÆ explicit raise; SSRF/scheme guards + bandit gate at `-ll`
+- [x] T9 Constitution 2.0: A12 **promoted** (chain now delivered), A22/A23 added, G3ΓÇôG8 registered, re-rendered
 - [x] T10 Pointer resolution via real pytest collection, not string grep
 - [x] T11 Retracted false claims in README / STATUS.md / ANALYSIS.md
 
-### Phase X — x402 correctness (NEXT)
-See the checklist further down; execution order is X → M → O → N0 → N1 → L → G.
+### Phase X ΓÇö x402 correctness (NEXT)
+See the checklist further down; execution order is X ΓåÆ M ΓåÆ O ΓåÆ N0 ΓåÆ N1 ΓåÆ L ΓåÆ G.
 
-### Phase N0 — Notary core
+### Phase N0 ΓÇö Notary core
 - [ ] N0.1 `veritas/notary/fetch.py` with SSRF defence + local TLS origin fixture
 - [ ] N0.2 `extract.py` (versioned, deterministic), `record.py` (EvidenceRecord)
 - [ ] N0.3 `license.py` + `robots.py`
 - [ ] N0.4 `observe.py`; `pipeline.run_research` routes through it (preserves A1)
 - [ ] N0.5 `POST /v1/notarize`; stored evidence text + retention class
-- [ ] N0.6 `veritas/support.py` — countable support report replacing the posterior
+- [ ] N0.6 `veritas/support.py` ΓÇö countable support report replacing the posterior
 
-### Phase N1 — Signing, log, anchoring, non-circular verify
+### Phase N1 ΓÇö Signing, log, anchoring, non-circular verify
 - [ ] N1.1 EIP-191 signing with the payment secp256k1 key
 - [ ] N1.2 Append-only log + RFC-6962 Merkle batches + inclusion proofs
 - [ ] N1.3 Anchors (file backend default; on-chain behind config)
 - [x] N1.4 Origin re-fetch on `POST /v1/verify` (`url`+hash / `request_id`); legacy labeled `caller_supplied` (`4697c8d`, PR #38; P7 product)
-- [x] N1.5 `veritas/verifier.py` — zero-dependency standalone verification (`a4cfc49`, PR #19; packaging remains G.2)
+- [x] N1.5 `veritas/verifier.py` ΓÇö zero-dependency standalone verification (`a4cfc49`, PR #19; packaging remains G.2)
 
-### Phase X — x402 correctness + SDK adoption
+### Phase X ΓÇö x402 correctness + SDK adoption
 - [ ] X1 Adopt official `x402` SDK behind existing seams
 - [x] X2 Pinned per-network EIP-712 domain table with provenance; unverified networks refused (R1)
 - [ ] X3 `/supported` preflight, fail-closed
 - [x] X4 Absolute `resource` URL; `VERITAS_PUBLIC_URL` required in live mode (R2)
 - [x] X5 Base Sepolia default + `--network` and `--i-understand-this-is-real-money` opt-in (O11)
 - [ ] X6 Bazaar discovery extension, `discoverable: true`
-- [x] X7 `veritas/deadline.py` — budget checked before the nonce claim and again before settle (R4)
+- [x] X7 `veritas/deadline.py` ΓÇö budget checked before the nonce claim and again before settle (R4)
 
-### Phase M — Money infrastructure
+### Phase M ΓÇö Money infrastructure
 - [x] M1 SQLite ledger: authorization/delivery/settlement entries, delivery fsynced before settle (R5)
 - [x] M2 Nonce state machine; idempotent replay of a completed paid request (R11)
 - [x] M3 `request_id` allocated in the handler and recorded against the claim (R6)
@@ -275,32 +271,32 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] M6 Metering (COGS per request, free traffic included); versioned pricing stamped per entry
 - [x] M7 Credits via SIWx; refunds as credits, documented (`2171bfa` #23; crash refund `386efff` #28)
 
-### Phase O — Operations
+### Phase O ΓÇö Operations
 - [x] O.1 Async handlers; research capped and shed rather than queued (O1)
 - [x] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
 - [x] O.3 SQLite-backed trust counters and atomic receipt writes (O3, O4, O7); retention closed via O.6 (O10)
 - [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
-- [x] O.6 Retention/pruning; 410 Gone ≠ 404 (`veritas/retention.py`, custody tombstones, `Ledger.prune`, `veritas-ops prune`)
+- [x] O.6 Retention/pruning; 410 Gone Γëá 404 (`veritas/retention.py`, custody tombstones, `Ledger.prune`, `veritas-ops prune`)
 - [x] O.7 `.dockerignore` allowlist, VOLUME, docker-compose.yml (O12, O13)
-- [x] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15 partial — pins on main `96b9013`; Docker hash-lock + signed SBOM still open)
+- [x] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15 partial ΓÇö pins on main `96b9013`; Docker hash-lock + signed SBOM still open)
 
-### Phase L — Legal
+### Phase L ΓÇö Legal
 - [ ] L.1 TERMS.md, PRIVACY.md, provider compliance matrix, retention policy
 - [ ] L.2 Authorization on `/v1/receipts` (L6)
 - [ ] L.3 Erasure with hash-preserving tombstones
 
-### Phase G — Ecosystem
+### Phase G ΓÇö Ecosystem
 - [ ] G.1 Paid MCP surface
 - [ ] G.2 Standalone `veritas-verify` distribution
 - [ ] G.3 ERC-8004 identity registration (L0 until registered)
 
 ### Dogfooding cycles
-- [x] Cycle 1 — cold autonomous install (2cbed44, PR #44)
-- [x] Cycle 2 — paying buyer, real buyer path, local facilitator. 7/7 scenarios; found 1 defect (replay with a different query returned the old answer), fixed. `docs/dogfood/cycle2/`
-- [x] Cycle 3 — hostile caller incl. SSRF. 8/8 probes refused; found 1 defect (doomed payment payloads each cost a facilitator round trip), fixed. `docs/dogfood/cycle3/`
-- [x] Cycle 4 — operator economics from the ledger alone. All 5 questions answerable; found 2 defects (`owed` excluded indeterminate exposure; `reconcile` double-labelled it), both fixed. `docs/dogfood/cycle4/`
-- [x] Cycle 5 — ecosystem participant, independent verification (after G)
+- [x] Cycle 1 ΓÇö cold autonomous install (2cbed44, PR #44)
+- [x] Cycle 2 ΓÇö paying buyer, real buyer path, local facilitator. 7/7 scenarios; found 1 defect (replay with a different query returned the old answer), fixed. `docs/dogfood/cycle2/`
+- [x] Cycle 3 ΓÇö hostile caller incl. SSRF. 8/8 probes refused; found 1 defect (doomed payment payloads each cost a facilitator round trip), fixed. `docs/dogfood/cycle3/`
+- [x] Cycle 4 ΓÇö operator economics from the ledger alone. All 5 questions answerable; found 2 defects (`owed` excluded indeterminate exposure; `reconcile` double-labelled it), both fixed. `docs/dogfood/cycle4/`
+- [x] Cycle 5 ΓÇö ecosystem participant, independent verification (after G)
 
 ## Defect register
 
@@ -308,43 +304,43 @@ Ids from the three audits. `open` until a test pins the fix.
 
 | Id | Severity | Summary | Status |
 |----|----------|---------|--------|
-| P1 | critical | Relevance gate absent from production path; irrelevant evidence billed as `completed` | **closed** — `tests/test_truth_restoration.py::test_irrelevant_evidence_is_refused_on_the_production_path` |
-| P2 | critical | Custody chain never delivered; `to_list`/`verify_chain_records` unused; A12 false | **closed** — `::test_response_delivers_the_custody_chain` |
-| P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** — branch removed with the posterior |
-| P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
-| P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | **closed** for origin-bound paths — `tests/test_refetch_verify.py`; legacy `content`+hash remains `binding: caller_supplied` only (`4697c8d` #38). Not multi-party origin proof; not on-chain |
+| P1 | critical | Relevance gate absent from production path; irrelevant evidence billed as `completed` | **closed** ΓÇö `tests/test_truth_restoration.py::test_irrelevant_evidence_is_refused_on_the_production_path` |
+| P2 | critical | Custody chain never delivered; `to_list`/`verify_chain_records` unused; A12 false | **closed** ΓÇö `::test_response_delivers_the_custody_chain` |
+| P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** ΓÇö branch removed with the posterior |
+| P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** ΓÇö `::test_no_posterior_or_confidence_appears_on_the_wire` |
+| P7 | high | `/v1/verify` circular ΓÇö re-hashes caller input, no source binding | **closed** for origin-bound paths ΓÇö `tests/test_refetch_verify.py`; legacy `content`+hash remains `binding: caller_supplied` only (`4697c8d` #38). Not multi-party origin proof; not on-chain |
 | P13 | med | Evidence text never stored; hashes only | open |
-| L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** — `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
-| L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
-| L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |
+| L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** ΓÇö `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
+| L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** ΓÇö `::test_wikipedia_sources_carry_their_licence_and_attribution` |
+| L4 | high | Repo-authored corpus text published under third-party URLs | **closed** ΓÇö `::test_corpus_urls_are_not_third_party_attributions` |
 | L6 | high | Buyer queries persisted forever, served unauthenticated | open |
-| R1 | critical | EIP-712 domain guessed from symbol; would void every signature | **closed** — pinned table with provenance; unverified networks refused (`tests/test_x402_protocol.py`). Only Base/Base Sepolia are advertisable, from the reference implementation; **none is yet confirmed on-chain** — run `scripts/verify_eip712_domains.py` |
-| R4 | critical | No deadline; authorization can expire during paid work | **closed** — `veritas/deadline.py`; too-short windows refused before work, expiry before settle returns non-billable `deadline_exceeded` (`tests/test_x402_protocol.py`) |
-| R5 | critical | No financial ledger; settlement tx hash discarded | **closed** — `veritas/ledger.py`; `tests/test_money_path.py::test_settlement_is_recorded_durably` and `::test_revenue_is_answerable_from_the_ledger_alone`. Gap G8 closed, G9 opened (nothing is reconciled against the chain) |
-| R6 | high | `request_id` never recorded against the nonce claim | **closed** — allocated in the handler, threaded through `run_research`, claim and receipt (`::test_the_nonce_is_joined_to_the_request_it_burned_for`) |
-| R7 | high | Indeterminate settlement coded as definite failure | **closed** — `SettlementResult.outcome`; a facilitator that never answered records `indeterminate` and the buyer still receives the work (`::test_indeterminate_settlement_delivers_and_says_so`) |
-| R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | **closed** — `::test_price_is_validated_by_the_misconfiguration_guard` |
+| R1 | critical | EIP-712 domain guessed from symbol; would void every signature | **closed** ΓÇö pinned table with provenance; unverified networks refused (`tests/test_x402_protocol.py`). Only Base/Base Sepolia are advertisable, from the reference implementation; **none is yet confirmed on-chain** ΓÇö run `scripts/verify_eip712_domains.py` |
+| R4 | critical | No deadline; authorization can expire during paid work | **closed** ΓÇö `veritas/deadline.py`; too-short windows refused before work, expiry before settle returns non-billable `deadline_exceeded` (`tests/test_x402_protocol.py`) |
+| R5 | critical | No financial ledger; settlement tx hash discarded | **closed** ΓÇö `veritas/ledger.py`; `tests/test_money_path.py::test_settlement_is_recorded_durably` and `::test_revenue_is_answerable_from_the_ledger_alone`. Gap G8 closed, G9 opened (nothing is reconciled against the chain) |
+| R6 | high | `request_id` never recorded against the nonce claim | **closed** ΓÇö allocated in the handler, threaded through `run_research`, claim and receipt (`::test_the_nonce_is_joined_to_the_request_it_burned_for`) |
+| R7 | high | Indeterminate settlement coded as definite failure | **closed** ΓÇö `SettlementResult.outcome`; a facilitator that never answered records `indeterminate` and the buyer still receives the work (`::test_indeterminate_settlement_delivers_and_says_so`) |
+| R9 | high | `price` unvalidated ΓåÆ live mode with 500s and a green `/health` | **closed** ΓÇö `::test_price_is_validated_by_the_misconfiguration_guard` |
 | R10 | high | Paid Serper provider called in free mode | open |
-| R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | **closed** — `::test_replayed_authorization_returns_the_deliverable_it_paid_for`; the work still runs once (`::test_a_replay_does_not_run_the_work_again`). Bounded: single-instance ledger |
-| O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | **closed** — cheap handlers are `async def`; research runs in the threadpool behind a `BoundedSemaphore` that sheds with 503 `service_overloaded` (`tests/test_operations.py`) |
-| O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | **closed** — 256KB body cap, `max_length` on verify content, per-IP window limit that never touches `/health` or `/readyz` (`tests/test_operations.py`) |
-| O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | **closed** — SQLite counters, one row regardless of lifetime request count (`tests/test_durability.py::test_stats_are_counters_not_a_rescan`) |
-| O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
-| O5 | high | Relative runtime dir + cwd dependence → silent 503s | open |
+| R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | **closed** ΓÇö `::test_replayed_authorization_returns_the_deliverable_it_paid_for`; the work still runs once (`::test_a_replay_does_not_run_the_work_again`). Bounded: single-instance ledger |
+| O1 | critical | Sync handlers, 40 slots, no deadline ΓÇö service stalls incl. `/health` | **closed** ΓÇö cheap handlers are `async def`; research runs in the threadpool behind a `BoundedSemaphore` that sheds with 503 `service_overloaded` (`tests/test_operations.py`) |
+| O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | **closed** ΓÇö 256KB body cap, `max_length` on verify content, per-IP window limit that never touches `/health` or `/readyz` (`tests/test_operations.py`) |
+| O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | **closed** ΓÇö SQLite counters, one row regardless of lifetime request count (`tests/test_durability.py::test_stats_are_counters_not_a_rescan`) |
+| O4 | high | Nonce store rescanned under global lock per paid request | **closed** ΓÇö the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
+| O5 | high | Relative runtime dir + cwd dependence ΓåÆ silent 503s | open |
 | O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
-| O7 | high | Receipt writes neither atomic nor fsynced | **closed** — temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
-| O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
-| O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
-| O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | **closed** — `.dockerignore` is an allowlist (`*` then `!`), the Dockerfile is asserted never to `COPY .`, the runtime dir is a declared VOLUME (`tests/test_container.py`). Verified by reading the shipped files, not by building an image |
-| O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
-| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | **partial** — bandit `-ll`; lockfile/hashes + SHA Actions + artifact SBOM on main `96b9013` (#22); Docker hash-lock + signed SBOM still open |
-| O16 | high | Wallet keystore + plaintext passphrase written world-readable where POSIX mode bits are not enforced (observed `0o666` on Windows); `_write_owner_only` never checked that its own name was true | **reported, not fixed** — the mode is read back after each write and `WalletPermissionWarning` names the unprotected file (`tests/test_wallet.py::test_keystore_files_are_owner_only_or_say_they_are_not`). The POSIX assertion is now its own test, skipped off-POSIX. Enforcing ACLs on Windows is not implemented; deployment target is Linux/Docker |
-| O17 | **critical** | `GET /v1/receipts/{request_id}` interpolated the caller's string into a filesystem path. Starlette refuses a path parameter containing `/`, which hid it on Linux — but `\` is a Windows separator and is not a URL separator, so `GET /v1/receipts/..%5Ccanary` arrived intact. **Verified exploitable against a running server: HTTP 200 with the contents of a `.json` file outside the receipt directory.** Any `*.json` the process could read was readable unauthenticated, and `.veritas_agent/wallet.keystore.json` is such a file | **closed** — allowlist `custody.is_safe_request_id` validates *before* the path is built, on read and write both (`tests/test_durability.py::test_a_receipt_id_cannot_escape_the_receipt_directory`, `::test_a_traversing_id_is_refused_before_it_reaches_the_filesystem`, `::test_a_receipt_is_never_written_outside_its_directory`). Re-tested against a live server: 404, no contents. Found by CodeQL `py/path-injection`, which had been open on `main` |
-| O18 | med | Exception text reached a buyer through the 402 body: `_challenge(cfg, f"…: {exc}")` on `DeadlineTooShort`. The message is only timings today, but 4f2321c established that exception text does not go on the wire | **closed** — the message is built from `MIN_USABLE_SECONDS` / `SETTLEMENT_MARGIN_SECONDS`, never from the exception. Found by CodeQL `py/stack-trace-exposure` |
-| O19 | med | `mcp` extra was unpinned (`mcp>=1.0`); mcp 2.0 removed `mcp.server.fastmcp`, so CI installed an SDK the code does not target and `veritas-mcp` broke | **closed** — pinned `mcp>=1.0,<2`; `build_server` raises an actionable error instead of a bare `ModuleNotFoundError`; the test skips on the module it needs rather than the distribution name. Migrating to the 2.x API is separate work |
-| W1 | med | Test suite was not portable: repo files read with `Path.read_text()` and no `encoding=`, so a Windows contributor (cp1252) got mojibake and 2 red sync tests while Linux CI stayed green | **closed** — explicit `encoding="utf-8"` at all 30 read sites in `tests/`, and in `veritas/autonomous/wallet.py` where the write side now specifies it too |
-| W2 | low | `test_facilitator_fails_closed_on_unreachable_host` asserted a platform-dependent transport reason (a closed port refuses on Linux, times out on Windows) | **closed** — the network test now asserts the real invariant (fail closed, reason a registered verification outage); the unreachable/timeout split that R7 depends on is pinned deterministically in `::test_transport_reasons_separate_never_left_from_never_heard_back` |
-| T1 | high | Trust score manipulable by free traffic; refusal_health perverse | **closed for manipulation** — only paid requests score; free outcomes are recorded and reported but never scored (gap G7 closed, G10 opened: the score is still self-reported) |
+| O7 | high | Receipt writes neither atomic nor fsynced | **closed** ΓÇö temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
+| O9 | high | No logging, metrics, tracing or alerting | **closed** ΓÇö `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
+| O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** ΓÇö testnet default + explicit acknowledgement flag |
+| O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | **closed** ΓÇö `.dockerignore` is an allowlist (`*` then `!`), the Dockerfile is asserted never to `COPY .`, the runtime dir is a declared VOLUME (`tests/test_container.py`). Verified by reading the shipped files, not by building an image |
+| O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** ΓÇö catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
+| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | **partial** ΓÇö bandit `-ll`; lockfile/hashes + SHA Actions + artifact SBOM on main `96b9013` (#22); Docker hash-lock + signed SBOM still open |
+| O16 | high | Wallet keystore + plaintext passphrase written world-readable where POSIX mode bits are not enforced (observed `0o666` on Windows); `_write_owner_only` never checked that its own name was true | **reported, not fixed** ΓÇö the mode is read back after each write and `WalletPermissionWarning` names the unprotected file (`tests/test_wallet.py::test_keystore_files_are_owner_only_or_say_they_are_not`). The POSIX assertion is now its own test, skipped off-POSIX. Enforcing ACLs on Windows is not implemented; deployment target is Linux/Docker |
+| O17 | **critical** | `GET /v1/receipts/{request_id}` interpolated the caller's string into a filesystem path. Starlette refuses a path parameter containing `/`, which hid it on Linux ΓÇö but `\` is a Windows separator and is not a URL separator, so `GET /v1/receipts/..%5Ccanary` arrived intact. **Verified exploitable against a running server: HTTP 200 with the contents of a `.json` file outside the receipt directory.** Any `*.json` the process could read was readable unauthenticated, and `.veritas_agent/wallet.keystore.json` is such a file | **closed** ΓÇö allowlist `custody.is_safe_request_id` validates *before* the path is built, on read and write both (`tests/test_durability.py::test_a_receipt_id_cannot_escape_the_receipt_directory`, `::test_a_traversing_id_is_refused_before_it_reaches_the_filesystem`, `::test_a_receipt_is_never_written_outside_its_directory`). Re-tested against a live server: 404, no contents. Found by CodeQL `py/path-injection`, which had been open on `main` |
+| O18 | med | Exception text reached a buyer through the 402 body: `_challenge(cfg, f"ΓÇª: {exc}")` on `DeadlineTooShort`. The message is only timings today, but 4f2321c established that exception text does not go on the wire | **closed** ΓÇö the message is built from `MIN_USABLE_SECONDS` / `SETTLEMENT_MARGIN_SECONDS`, never from the exception. Found by CodeQL `py/stack-trace-exposure` |
+| O19 | med | `mcp` extra was unpinned (`mcp>=1.0`); mcp 2.0 removed `mcp.server.fastmcp`, so CI installed an SDK the code does not target and `veritas-mcp` broke | **closed** ΓÇö pinned `mcp>=1.0,<2`; `build_server` raises an actionable error instead of a bare `ModuleNotFoundError`; the test skips on the module it needs rather than the distribution name. Migrating to the 2.x API is separate work |
+| W1 | med | Test suite was not portable: repo files read with `Path.read_text()` and no `encoding=`, so a Windows contributor (cp1252) got mojibake and 2 red sync tests while Linux CI stayed green | **closed** ΓÇö explicit `encoding="utf-8"` at all 30 read sites in `tests/`, and in `veritas/autonomous/wallet.py` where the write side now specifies it too |
+| W2 | low | `test_facilitator_fails_closed_on_unreachable_host` asserted a platform-dependent transport reason (a closed port refuses on Linux, times out on Windows) | **closed** ΓÇö the network test now asserts the real invariant (fail closed, reason a registered verification outage); the unreachable/timeout split that R7 depends on is pinned deterministically in `::test_transport_reasons_separate_never_left_from_never_heard_back` |
+| T1 | high | Trust score manipulable by free traffic; refusal_health perverse | **closed for manipulation** ΓÇö only paid requests score; free outcomes are recorded and reported but never scored (gap G7 closed, G10 opened: the score is still self-reported) |
 
 ## Measured numbers
 
@@ -354,8 +350,8 @@ Updated as they are measured, never estimated in this table.
 |--------|-------|-------------|
 | Tests passing | 420 (+2 skipped) | 2026-08-07, Windows/py3.12, after W1/W2/O16 |
 | Payment model traces | 8,720 | 4f2321c |
-| COGS per notarization | not measured | — (Cycle 4) |
-| Break-even requests/month | not measured | — (Cycle 4) |
+| COGS per notarization | not measured | ΓÇö (Cycle 4) |
+| Break-even requests/month | not measured | ΓÇö (Cycle 4) |
 | On-chain settlements | **0** | never executed |
 
 ## Session log
@@ -363,17 +359,17 @@ Updated as they are measured, never estimated in this table.
 | Date | Landed | Commits |
 |------|--------|---------|
 | 2026-08-05 | Program bootstrapped; state file established | ece7e2a |
-| 2026-08-05 | T1–T3, T6: relevance gate on the served path, custody chain delivered, posterior removed | e5385bf |
-| 2026-08-05 | T4–T5: metasearch scraper removed, licences carried, corpus de-attributed | ba1ae33 |
-| 2026-08-05 | T7–T8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | c8b87ee |
+| 2026-08-05 | T1ΓÇôT3, T6: relevance gate on the served path, custody chain delivered, posterior removed | e5385bf |
+| 2026-08-05 | T4ΓÇôT5: metasearch scraper removed, licences carried, corpus de-attributed | ba1ae33 |
+| 2026-08-05 | T7ΓÇôT8: repricing to $0.01, price validation, SSRF/scheme guards, bandit `-ll` | c8b87ee |
 | 2026-08-05 | T11: README/STATUS/ANALYSIS retractions; honest verdict corrected | 3e48378, 96ac66b |
-| 2026-08-05 | T9–T10: constitution 2.0, three open gaps witnessed, pointers resolved by pytest collection | 86ad917 |
-| 2026-08-06 | X2 + X5(part): EIP-712 domains pinned with provenance, unverified networks refused, default network → Base Sepolia | 6413382 |
+| 2026-08-05 | T9ΓÇôT10: constitution 2.0, three open gaps witnessed, pointers resolved by pytest collection | 86ad917 |
+| 2026-08-06 | X2 + X5(part): EIP-712 domains pinned with provenance, unverified networks refused, default network ΓåÆ Base Sepolia | 6413382 |
 | 2026-08-06 | Bandit gate extended to scripts/; unguarded fetch in the settlement script fixed | 74dfb1b |
 | 2026-08-07 | W1/W2/O16: suite made portable off-Linux; wallet now verifies the mode it claims and warns when the OS will not grant it | d998da9 |
 | 2026-08-07 | Repo presentation: GitHub About + 17 topics, README hook and badges, CONTRIBUTING.md; banned-claims gate extended to README.md and STATUS.md | b7fa9bc |
-| 2026-08-07 | O17 (critical, exploit-verified path traversal on `/v1/receipts`), O18 (exception text in a 402 body), O19 (mcp 2.0 pin) — all three surfaced by CI on PR #17, not by local runs | (this commit) |
-| 2026-08-08 | O.6 retention/pruning + 410 Gone ≠ 404 | 48194ab (#18) |
+| 2026-08-07 | O17 (critical, exploit-verified path traversal on `/v1/receipts`), O18 (exception text in a 402 body), O19 (mcp 2.0 pin) ΓÇö all three surfaced by CI on PR #17, not by local runs | (this commit) |
+| 2026-08-08 | O.6 retention/pruning + 410 Gone Γëá 404 | 48194ab (#18) |
 | 2026-08-08 | P7 claim retraction + witness (`/v1/verify` not independent) | 4a3d105 (#20) |
 | 2026-08-08 | Buyer counterparty diligence + standalone verifier | a4cfc49 (#19) |
 | 2026-08-08 | O.8 supply chain: SHA Actions, hashed locks, artifact SBOM | 96b9013 (#22) |

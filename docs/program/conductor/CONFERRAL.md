@@ -1,29 +1,36 @@
-# Conferral — 2026-08-08T21:10:00Z (continuous cycle-5)
+# Conferral — 2026-08-08T21:15:00Z (conductor continuous cycle 6 final)
 
 ## From Steward
-Tip **`b253532`** (N1.4 #49). Free claim post-merge. STATE NEXT = **cycle-5** ecosystem dogfood. Docs closeout #53 tip-aligns plane.
+Tip thrash across G9 → N1.4 → cycle-5 this window; claim hygiene lagged merge
+heads (fixed free here). Stale building-hygiene PRs closed.
 
 ## From Overseer
-Disk CURRENT may lag. Git truth: N1.4 + G9-design + cycle-1 on tip. Single NEXT = **cycle-5** (STATE). Settlements **0**. Gap G9 **open**.
+Honor singular product; no dual; no G9-closed fiction; no re-open landed M7.
+Vision/strategy 2 still holds post-cycle-5.
 
 ## From Pruner (G13)
-#46/#49 landed under green CI (Security + CodeQL). Next product branch (**cycle-5**) needs a **fresh** Pruner ship_ok. No dual N1.4/G9-design/N0.
+ship_ok true for #46, #49, #54 (each CI green + lean surfaces / 7/7 dogfood).
+No open product surface now.
 
-## From Architect / Scout
-cycle-5: independent participant path on published verify/pack/log surfaces (axis F). Scout WATCH. Not live settlement.
+## From Optimizer
+prefer_bet empty-by-default; **stale M7 ignored**. After free claim without
+singular NEXT → **restart=false** wait.
 
 ## From Flywheel / cycles
-**N1.4 complete** @ `b253532`. **G9-design complete** @ `6777a92`. Claim **free**. Product open PRs: **none**. Docs #53 open.
+**cycle-5 complete** @ `bf09a99` (7/7 offline ecosystem checks). N1.4 @
+`b253532`. G9-design @ `6777a92`. Claim **free**.
 
 ## Conductor synthesis
-- **Trajectory:** M7 → N0 → N1.x → P7 → cycle-1 → G9-design → **N1.4 DONE** → **cycle-5 NEXT**
-- **This-cycle bet:** cycle-5 (restart / claim when builders fire)
-- **Parked:** dual product; re-open N1.4/G9-design/N0; settlement fiction; G9 closed claim
-- **Restart flywheel?** **Yes** — one cycle-5 claim; n_implementers=4; refuse prefer_bet=N0 dual
-- **Blockers (real only):** live G9 needs RPC (parked); settlements **0**
+- **Trajectory:** … → G9-design → N1.4 → **cycle-5 DONE** → Overseer NEXT
+- **This-cycle bet:** none (idle free)
+- **Parked:** live-RPC G9 (egress); bazaar/X1; re-open landed bets; dual NEXT
+- **Restart implement×3?** **No** — no unblocked singular NEXT
+- **Blockers (real only):** live G9 needs RPC; settlements 0 forever without chain
 - **Momentum:** **3**
 - **Settlements:** **0**
-- **n_implementers:** 4 on cycle-5 only
+- **n_implementers:** 3 ready when Overseer names NEXT
+- **merge_action:** #46 observed; #49 MERGED; #53 MERGED; #54 MERGED; closed #47/#50/#51/#52/#55
 
 ### Message
-**N1.4 on main** (`b253532`). Claim free → **cycle-5**. No dual N0. G13 before ship.
+**Tip `bf09a99`.** cycle-5 **on main**. Claim **free**. **Do not restart M7.**
+Wait Overseer singular NEXT (not invent dual). Settlements **0**.

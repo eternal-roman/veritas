@@ -5,24 +5,35 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: cycle-5 dogfood — ecosystem participant.**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. live RPC G9 dogfood, N1.5 anchors, or other singular).
+> **G10:** never dual-reopen **cycle-5**, **N1.4**, **G9-design surface**,
+> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
 >
-> **On main (do not re-open):** N1.4 `#49` / `b253532` and prior spine.
+> **cycle-5 is on main** — `#54` / `bf09a99`: ecosystem participant dogfood
+> (discovery + offline verify path, pack/Merkle, trust-not-authz). **Not**
+> foreign live venue; **not** on-chain. Settlements **0**.
 >
-> **Cycle-5 scope:** peer discovery + standalone verifier + pack/Merkle offline
-> + trust-not-authz. Settlements **0**.
+> **Also on main:** N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap
+> G9 **still open**); cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
+>
+> Still deliberately not done: live RPC confirmation; SBOM unsigned;
+> settlements **0**.
+>
+> Nothing has settled on-chain. That is still the single largest unproven
+> claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `b253532` (#49). Claim **cycle-5 building**. Settlements: **0**.
-> Prior closeout `#48` / `b77339f`; G9-design `#46` / `6777a92`. Claim **free**.
-> Settlements: **0**. Open product PRs: **none**.
-
-> **N1.4 landed on main @ `b253532` (PR #49).** `veritas/notary/merkle.py` +
-> `log.py`; append on completed observe; free `GET /v1/log`, `GET /v1/log/proof`,
-> `POST /v1/log/verify`; MCP `verify_log_inclusion`. **Not proven:** public
-> transparency log; on-chain anchors; multi-instance log; settlements (still **0**).
-
+> **Tip of `origin/main`:** `bf09a99` (PR **#54** cycle-5 ecosystem dogfood).
+> Claim **free**. Settlements: **0**. Gap G9 **still open**.
+>
+> **cycle-5 landed on main @ `bf09a99` (PR #54).** Offline ecosystem participant
+> dogfood (discovery + verify path). **Not proven:** live multi-venue; on-chain (0).
+>
+> **N1.4 landed on main @ `b253532` (PR #49).** Operator-local Merkle log.
+> **Not proven:** public CT; multi-operator; on-chain (still **0**).
+>
 > **G9-design landed on main @ `6777a92` (PR #46).** Fail-closed reconcile.
 > **Not proven:** live RPC; G9 closed; on-chain (still **0**).
 >
@@ -352,7 +363,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] Cycle 2 — paying buyer, real buyer path, local facilitator. 7/7 scenarios; found 1 defect (replay with a different query returned the old answer), fixed. `docs/dogfood/cycle2/`
 - [x] Cycle 3 — hostile caller incl. SSRF. 8/8 probes refused; found 1 defect (doomed payment payloads each cost a facilitator round trip), fixed. `docs/dogfood/cycle3/`
 - [x] Cycle 4 — operator economics from the ledger alone. All 5 questions answerable; found 2 defects (`owed` excluded indeterminate exposure; `reconcile` double-labelled it), both fixed. `docs/dogfood/cycle4/`
-- [ ] Cycle 5 — ecosystem participant, independent verification (after G)
+- [x] Cycle 5 — ecosystem participant, independent verification (after G)
 
 ## Defect register
 

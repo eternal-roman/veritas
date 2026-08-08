@@ -59,6 +59,7 @@ dev = [
     "pip-audit>=2.7",
     "build>=1.2",
     "twine>=5.0",
+    "cyclonedx-bom>=5.0",
 ]
 
 [project.scripts]

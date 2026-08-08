@@ -12,6 +12,11 @@ committed and pushed survives. Update this file and push after every sub-step.
 > honesty (#20 / `4a3d105`), and O.6 (#18 / `48194ab`) are **on main** —
 > do not re-open them as NEXT.
 >
+> O.8 deliberately did **not** do (separate decisions): Dockerfile still
+> installs from pyproject floors; SBOM is **unsigned** and a workflow artifact
+> rather than release-attached (`contents: write` + `id-token: write` stay
+> apart).
+>
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
 > (official SDK, `/supported` preflight, Bazaar discovery) need facilitator
@@ -24,15 +29,15 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## Progress log
 
 > **Tip of `origin/main`:** `96b9013` (PR #22 — O.8). Open product PRs:
-> **none**. Docs-only PR **#21** is open but **dirty** (conflicts with tip) —
-> not a product bet and must not freeze **M7**.
+> **none** after this docs plane lands. Do not freeze **M7** on docs PRs.
 >
 > **O.8 landed on main @ `96b9013` (PR #22).** SHA-pinned GitHub Actions,
 > hash-pinned `requirements.lock` / `requirements-dev.lock` with CI
-> `--require-hashes`, artifact SBOM of the published wheel venv, witness
-> tests in `tests/test_supply_chain.py`, and mcp upper-bound on the lock path
-> (O19 continuity). Deliberately not claimed: Docker image hash-lock, signed
-> SBOM, “wild install uncompromised.”
+> `--require-hashes`, artifact SBOM of the published wheel venv (buyer
+> closure, not CI toolchain), witness tests in `tests/test_supply_chain.py`,
+> fail-closed off-target lock generation (`scripts/lock_requirements.py`),
+> and mcp upper-bound on the lock path (O19 continuity). Deliberately not
+> claimed: Docker image hash-lock, signed SBOM, “wild install uncompromised.”
 >
 > **O.6 landed on main @ `48194ab` (PR #18).** Retention window, custody
 > prune+tombstones, ledger prune for terminal states, `veritas-ops prune`,

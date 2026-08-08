@@ -17,3 +17,15 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+
+  # The Dockerfile pins its base image by digest so builds are reproducible.
+  # Without this entry that pin would rot into a base image that stops
+  # receiving security updates — pinning and updating have to arrive together.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"

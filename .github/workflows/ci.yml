@@ -279,8 +279,11 @@ jobs:
           docker build -t veritas-research:ci .
       # Build-only: pushing to a registry (GHCR) needs a permissions decision
       # a maintainer must make; see ROADMAP P.7.
-      # Note: the Dockerfile still installs from pyproject floors, not the
-      # hashed lock — O.8 does not claim the image path is hash-locked.
+      #
+      # This build is what verifies the image's hash-pinned install path: the
+      # Dockerfile installs requirements.lock with --require-hashes, then the
+      # package with --no-deps, then runs `pip check`. A lock that does not
+      # satisfy the package's declared dependencies fails here.
 
   lint-structure:
     name: Structure checks

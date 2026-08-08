@@ -79,11 +79,22 @@ gives a buyer — not the CI toolchain, which would over-report by ~100 dev-only
 packages that never ship. The job fails if the SBOM disagrees with
 `requirements.lock`. It is uploaded as a workflow artifact.
 
+**The container image installs from the same lock.** The Dockerfile installs
+`requirements.lock` with `--require-hashes`, then the package itself with
+`--no-deps` so the resolution cannot creep back in, and runs `pip check` to
+prove the locked closure actually satisfies what the package declares. All
+three shipping paths — CI, the published wheel, and the image — now install
+the same hash-pinned closure.
+
 ### What this does not establish
 
-- The locks cover what CI and the published wheel install. **The Docker image
-  path is not hash-locked** — the Dockerfile still installs from pyproject
-  floors.
+- The image tests read the shipped `Dockerfile` and `.dockerignore`. CI builds
+  the image on every push, so the hash-pinned install path is exercised — but
+  nothing here scans a built image's filesystem. The base image is pinned by
+  digest and Dependabot watches it; what that pin fixes is *which* base image
+  is used, not what is inside it.
+- No image is published anywhere. CI builds it and throws it away; pushing to
+  a registry is still a maintainer decision (ROADMAP P.7).
 - The SBOM describes a closure installed in CI. It is not a scan of a running
   container, and it carries **no signature**: on its own it is a claim by the
   publisher, not evidence against the publisher.

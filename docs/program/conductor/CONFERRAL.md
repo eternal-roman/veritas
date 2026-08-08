@@ -1,29 +1,29 @@
-# Conferral — 2026-08-08T20:20:00Z (P7 post-merge)
+# Conferral — 2026-08-08T20:27:00Z (Conductor assign cycle-1)
 
 ## From Steward
-Tip **`4697c8d`**. P7 on main. Claim free. Align STATE NEXT post-P7 (do not leave building claim / "do P7" on tip).
+#39 on tip `330bf68`. P7 product `4697c8d`. Tip-aligned post-P7. Do not re-open landed bets.
 
 ## From Overseer
-Disk CURRENT may lag (pre-P7 eras). Git truth: P7+N1+N0 on tip. Restock + name **single** NEXT only. Settlements **0**.
+Log **009**: **NEXT = cycle-1 cold install dogfood only**. Park N1.3, G9, re-open P7/N0/N1/M7. Settlements **0**. Disk Overseer CURRENT O.8-era — **log 009 + git win**.
 
 ## From Pruner (G13)
-#38 merged under product CI SUCCESS. Next product branch needs a **fresh** Pruner ship_ok. Do not re-open P7 as dual with cycle-1/G9/N1.3.
+Next product branch needs a **fresh** ship_ok. No open product PR at assign.
 
 ## From Architect / Scout
-P7: verify binds re-fetch via `notary.observe` / custody; one engine. Not settlement. Optional follow-up P7-C (free re-fetch + `research_slots`) is not a second money path — only if Overseer singles it. Scout WATCH.
+Architect CURRENT mid-P7 is **stale**. Unauthorized N1.3 pack WIP stashed — **not claimed**. Scout WATCH.
 
 ## From Flywheel / cycles
-**P7 complete** @ `4697c8d`. Claim **free**. Open product PRs: **none**. prefer_bet=M7 continuous default remains **retired**.
+prefer_bet=M7 **retired**. Claim → **building cycle-1**. Open product PRs: none at kick.
 
 ## Conductor synthesis
-- **Trajectory:** M7 DONE → N0 DONE → N1.1 DONE → N1.2 DONE → **P7 DONE** → Overseer NEXT
-- **This-cycle bet:** none (post-merge hygiene)
-- **Parked:** dual product; settlement fiction; re-open P7/N0/N1.1/N1.2/M7
-- **Restart flywheel?** **No** until singular NEXT
-- **Blockers (real only):** NEXT choice gate; G9 needs RPC for C-proof
+- **Trajectory:** M7 → N0 → N1.1 → N1.2 → P7 → **cycle-1 (building)**
+- **This-cycle bet:** **cycle-1**
+- **Parked:** N1.3; G9; re-open landed product
+- **Restart flywheel?** **Yes**
+- **Blockers (real only):** none for cycle-1 start. G9 still needs RPC (parked).
 - **Momentum:** **3**
 - **Settlements:** **0**
-- **n_implementers:** 3 idle
+- **n_implementers:** 3 on cycle-1 only
 
 ### Message
-**P7 on main** (`4697c8d`). Claim free. No dual. Overseer: name **one** NEXT.
+Tip **`330bf68`**. Claim **building cycle-1**. **Do not start M7 or N1.3.** Honor **G13**.

@@ -5,10 +5,14 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. cycle-1 cold install dogfood, N1.3 Merkle/inclusion, or G9
-> design). **G10:** never dual-reopen **P7**, **N0**, **N1.1**, **N1.2**,
-> **M7**, or **O.8**.
+> **Do this next: cycle-1 — cold autonomous install dogfood** (claim
+> **building**). N0 gate is clear. Deliver a runnable cycle-1 harness
+> (`scripts/dogfood_cycle1.py`), committed report under `docs/dogfood/cycle1/`,
+> and CI pin via `tests/test_dogfood.py` — same honesty bar as cycles 2–4
+> (defects recorded, no settlement fiction).
+>
+> **G10:** never dual-reopen **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or
+> **O.8**. Park **N1.3** Merkle/inclusion and **G9** design (RPC) — not dual.
 >
 > **P7 is on main** — `#38` / `4697c8d`: `POST /v1/verify` binds origin
 > re-fetch via `notary.observe` (`url`+`content_hash`) or custody receipt
@@ -17,12 +21,12 @@ committed and pushed survives. Update this file and push after every sub-step.
 > diverge after notarization. Pins: `tests/test_refetch_verify.py`.
 >
 > **Also on main (do not re-open):** N0 `#30` / `4cd2d0c`; N1.1 `#33` /
-> `db04ae2`; N1.2 `#34` / `32d1054`; plane docs `#37` / `b7e4f34`, `#36` /
-> `a679b76`; integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
+> `db04ae2`; N1.2 `#34` / `32d1054`; plane docs `#39` / `330bf68`, `#37` /
+> `b7e4f34`, `#36` / `a679b76`; integrity `#29`/`#32`; M7 `#23`/`#28`;
+> O.8/O.8b `#22`/`#24`.
 >
 > Still deliberately not done: SBOM **unsigned**; no image registry;
-> N1.3 Merkle/anchors; G9 chain reconcile; cycle-1 cold install; settlements
-> **0**.
+> N1.3 Merkle/anchors; G9 chain reconcile; settlements **0**.
 >
 > Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
 > egress.
@@ -32,9 +36,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `4697c8d` (PR **#38** P7 origin re-fetch verify).
-> Claim **free**. Settlements: **0**. Prior plane `#37` / `b7e4f34`; N1.2
-> `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`.
+> **Tip of `origin/main`:** `330bf68` (PR **#39** P7 post-merge closeout).
+> Product P7 @ `4697c8d` (#38). Claim **building cycle-1**. Settlements: **0**.
 >
 > **P7 landed on main @ `4697c8d` (PR #38).** `veritas/notary/refetch.py`
 > re-fetches via `notary.observe` (one engine); `POST /v1/verify` accepts

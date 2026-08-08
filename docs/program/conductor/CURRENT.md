@@ -1,22 +1,25 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T20:20:00Z (P7 post-merge closeout)
-- **origin/main:** **`4697c8d`** — **P7 #38** origin re-fetch on `POST /v1/verify` squash-merged. Prior: docs #37 `b7e4f34`, N1.2 `32d1054`, N1.1 `db04ae2`, N0 `4cd2d0c`.
-- **Open PRs:** **none**
-- **Momentum score:** **3** — P7 product shipped this window; claim free; plane being tip-aligned
+- **Time:** 2026-08-08T20:27:00Z
+- **origin/main:** **`330bf68`** — docs #39 P7 closeout on tip; product P7 **`4697c8d`** (#38). Prior: N1.2 `32d1054`, N1.1 `db04ae2`, N0 `4cd2d0c`.
+- **Open PRs:** **none** at assign
+- **Momentum score:** **3** — P7+plane shipped; claim **building cycle-1**; restart kicked
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free post-P7). Await Overseer single NEXT (cycle-1 | G9 design | N1.3 Merkle). **Do not re-open P7 / N0 / N1.1 / N1.2 / M7.**
+- **Primary bet:** **cycle-1** cold autonomous install dogfood (Overseer log 009)
+- **prefer_bet input:** M7/N0 → **closed** (on main; G10 no re-open)
+- **n_implementers:** **3** on **one** claim (cycle-1 only)
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** until Overseer names singular NEXT — no invent dual
-- **Last action:** stocked #38 MERGED @ `4697c8d`; freed claim; advanced STATE NEXT past P7; restocked conductor cards
-- **Next expected:** Overseer restock + one NEXT → one claim → Pruner G13 → green merge
+- **Recursive restart:** **Yes** — claim set building; open product PRs none; Overseer 009 singular NEXT
+- **Last action:** stocked tip `330bf68`; #39 already MERGED green; set claim building cycle-1; park N1.3 dual; kick implement
+- **Next expected:** Implement cycle-1 harness+report+CI pin → **fresh Pruner G13 ship_ok** → green PR → auto-merge
+- **Do not:** re-open N0/P7/M7; dual-claim N1.3; invent settlement; merge without G13
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: P7 on main @ 4697c8d (#38 MERGED); open product PRs none; claim free; STATE NEXT claim-free
+PROPERTY: tip 330bf68; open product PRs none; claim building cycle-1; prefer_bet M7/N0 closed; restart true; G13 required before next ship
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: 4697c8d; #38 MERGED 20:18Z; gh pr list empty; flywheel-claim free
-ASSUMPTIONS: Overseer assigns next single bet; no dual cycle-1+N1.3; G13 before next ship
-NOT PROVEN: live origin re-fetch under production load; free re-fetch research_slots shed (P7-C); on-chain (0)
+CHECKED ARTIFACT: origin/main 330bf68; #38/#39 MERGED; gh pr list []; overseer/log/009-brief NEXT=cycle-1
+ASSUMPTIONS: Implementers honor single claim; Pruner re-gates cycle-1
+NOT PROVEN: cycle-1 green results; cold install under sandbox; on-chain (0)
 ```

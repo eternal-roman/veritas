@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1] - 2026-08-08
+
+### Added
+- **N1.5** Completed observe/notarize envelopes include `evidence_log.inclusion_proof` so peers verify Merkle membership offline without `GET /v1/log/proof`.
+
+### Honesty
+- Still operator-local log (not public CT, not on-chain)
+- On-chain settlements: **0**; G9 still open; not a new PyPI publish by itself
 ## [0.8.0] - 2026-08-08
 
 Agent-to-agent commerce **substrate** cut: notary spine + dogfood 1–5 + G9 design.

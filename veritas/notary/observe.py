@@ -27,6 +27,7 @@ from veritas.notary.record import (
     build_evidence_record,
 )
 from veritas.notary.robots import FetchClass, evaluate_robots
+from veritas.notary.sign import maybe_attest_record
 from veritas.safeurl import UnsafeUrlError
 from veritas.support import support_report
 
@@ -60,8 +61,9 @@ def _envelope(
     refusal_reason: str | None,
     retrieval_meta: dict[str, Any],
     evidence_hashes_valid: bool = True,
+    attestation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    body: dict[str, Any] = {
         "request_id": request_id,
         "status": status,
         "url": url,
@@ -82,6 +84,10 @@ def _envelope(
         "billable": billable,
         "timestamp": _now(),
     }
+    # N1.1: omit rather than invent when no operator key is configured.
+    if attestation is not None:
+        body["attestation"] = attestation
+    return body
 
 
 def _fetch_robots_body(
@@ -353,6 +359,15 @@ def observe(
         "status_code": fetched.status,
         "truncated": fetched.truncated,
     }
+    # N1.1 EIP-191: sign bound fields when VERITAS_SIGNING_KEY / agent wallet
+    # is present. Refusal/unavailable paths never invent a signature.
+    attestation = maybe_attest_record(record_dict)
+    if attestation is not None:
+        ledger.append("attested", "notary.sign", {
+            "scheme": attestation.get("scheme"),
+            "signer": attestation.get("signer"),
+            "content_hash": content_hash,
+        })
     return _envelope(
         request_id=request_id,
         url=url,
@@ -365,6 +380,7 @@ def observe(
         refusal_reason=None,
         retrieval_meta=retrieval_meta,
         evidence_hashes_valid=hashes_valid,
+        attestation=attestation,
     )
 
 

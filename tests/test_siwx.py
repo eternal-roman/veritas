@@ -27,7 +27,6 @@ from veritas.siwx import (
     verify_siwx,
 )
 
-
 eth_account = pytest.importorskip("eth_account")
 
 

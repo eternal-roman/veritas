@@ -30,29 +30,31 @@ class ReuseClass:
 # url is the canonical deed / SPDX reference when one is standard.
 _KNOWN: dict[str, tuple[str, str | None, bool]] = {
     # (reuse_class, url, attribution_required)
+    # Licence deed URLs use SPDX/CC canonical hosts with full path only
+    # (no host-substring matching — CodeQL incomplete URL sanitization).
     "CC0-1.0": (
         ReuseClass.PERMITTED,
-        "https://creativecommons.org/publicdomain/zero/1.0/",
+        "https://spdx.org/licenses/CC0-1.0.html",
         False,
     ),
     "CC-BY-4.0": (
         ReuseClass.ATTRIBUTION,
-        "https://creativecommons.org/licenses/by/4.0/",
+        "https://spdx.org/licenses/CC-BY-4.0.html",
         True,
     ),
     "CC-BY-SA-4.0": (
         ReuseClass.ATTRIBUTION,
-        "https://creativecommons.org/licenses/by-sa/4.0/",
+        "https://spdx.org/licenses/CC-BY-SA-4.0.html",
         True,
     ),
     "CC-BY-NC-4.0": (
         ReuseClass.RESTRICTED,
-        "https://creativecommons.org/licenses/by-nc/4.0/",
+        "https://spdx.org/licenses/CC-BY-NC-4.0.html",
         True,
     ),
     "CC-BY-NC-SA-4.0": (
         ReuseClass.RESTRICTED,
-        "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "https://spdx.org/licenses/CC-BY-NC-SA-4.0.html",
         True,
     ),
     "MIT": (

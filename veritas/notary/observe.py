@@ -205,16 +205,18 @@ def observe(
     try:
         fetched = fetch_impl(url, **fetch_kwargs)
     except UnsafeUrlError as exc:
+        # Type name only — no exception text on the wire (CodeQL / 4f2321c).
+        err_type = type(exc).__name__
         ledger.append("unavailable", "notary.observe", {
             "reason": "url_refused",
-            "detail": str(exc)[:200],
+            "detail": err_type,
         })
         meta = {
             **empty_retrieval,
             "errors": [{
                 "provider": "notary",
-                "error_type": "UnsafeUrlError",
-                "detail": str(exc)[:200],
+                "error_type": err_type,
+                "detail": err_type,
             }],
             "degraded": True,
             "unavailable": True,
@@ -232,16 +234,17 @@ def observe(
             retrieval_meta=meta,
         )
     except FetchError as exc:
+        err_type = type(exc).__name__
         ledger.append("unavailable", "notary.observe", {
             "reason": "fetch_failed",
-            "detail": str(exc)[:200],
+            "detail": err_type,
         })
         meta = {
             **empty_retrieval,
             "errors": [{
                 "provider": "notary",
-                "error_type": "FetchError",
-                "detail": str(exc)[:200],
+                "error_type": err_type,
+                "detail": err_type,
             }],
             "degraded": True,
             "unavailable": True,
@@ -259,16 +262,17 @@ def observe(
             retrieval_meta=meta,
         )
     except Exception as exc:  # noqa: BLE001 - converted to unavailable
+        err_type = type(exc).__name__
         ledger.append("unavailable", "notary.observe", {
             "reason": "fetch_failed",
-            "detail": f"{type(exc).__name__}: {str(exc)[:180]}",
+            "detail": err_type,
         })
         meta = {
             **empty_retrieval,
             "errors": [{
                 "provider": "notary",
-                "error_type": type(exc).__name__,
-                "detail": str(exc)[:200],
+                "error_type": err_type,
+                "detail": err_type,
             }],
             "degraded": True,
             "unavailable": True,

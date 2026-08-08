@@ -110,7 +110,10 @@ def local_tls_origin(tmp_path):
     cert_path, key_path = _issue_self_signed(tmp_path, host_name)
 
     server = HTTPServer(("127.0.0.1", 0), _FixtureHandler)
+    # Pin minimum TLS 1.2+ — bare PROTOCOL_TLS_* still admits legacy versions
+    # under some OpenSSL builds (CodeQL: insecure SSL/TLS version).
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.load_cert_chain(certfile=str(cert_path), keyfile=str(key_path))
     server.socket = ctx.wrap_socket(server.socket, server_side=True)
     port = server.server_address[1]

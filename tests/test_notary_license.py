@@ -61,7 +61,7 @@ def test_cc_by_sa_requires_attribution():
     assert label.reuse == ReuseClass.ATTRIBUTION
     assert label.may_reuse is True
     assert label.attribution_required is True
-    assert label.url and "creativecommons.org" in label.url
+    assert label.url and "spdx.org" in label.url
 
 
 def test_cc_by_is_attribution():

@@ -443,3 +443,5 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-08 | N0 notary core | 4cd2d0c (#30) |
 | 2026-08-08 | N1.1 EIP-191 attestation + N1.2 free attest verify | db04ae2 (#33); 32d1054 (#34) |
 | 2026-08-08 | P7 origin re-fetch on POST /v1/verify | 4697c8d (#38) |
+| 2026-08-08 | N1.3 portable EvidencePack | 622429c (#41) |
+| 2026-08-08 | cycle-1 cold install dogfood | 2cbed44 (#44) |

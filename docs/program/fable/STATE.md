@@ -43,3 +43,32 @@ phases rather than trusting partial synthesis. The shared checkout at
   observed in minutes (`docs/conductor-c8-final` → `docs/steward-post-81-free`),
   PRs #74–#82 all merged within ~40 minutes on 2026-08-08. Evaluation of the
   program layer must ask whether this churn ships product value or ceremony.
+
+Interim synthesis (mine, pre-workflow; test against audit results before
+promoting to REFOUNDING.md):
+
+1. **The wrapper is the product.** The trust machinery — receipts, custody,
+   warranties (falsifiable commerce), survival records, standing, diligence,
+   constitution-with-enforcement — is the novel asset. The good it wraps
+   (snippet-grade research) is admittedly uncompetitive (ROADMAP known-issue
+   #2). The program keeps polishing the seller; the platform play is the
+   substrate any seller embeds.
+2. **Verification-blocked vs demand-blocked.** The program acts as if trust is
+   the barrier to agent commerce; the actual near-term barrier is contact:
+   nothing deployed, nothing discoverable, 0 settlements, 0 evidence of
+   demand. The trust layer solves the scaling problem of a market that does
+   not yet locally exist.
+3. **Governance consumes the program.** Roughly 7 governance roles per builder
+   (conductor/steward/overseer/scout/pruner/optimizer/git-agent/architect);
+   recent PR mix is dominated by docs/program churn at 8–25-minute tick
+   cadences. The org's fitness function rewards tick completion, not market
+   contact. (Quantify from git log before asserting in the deliverable.)
+4. **The human-ops list is THE bottleneck and it is being routed around.**
+   PyPI name, funded testnet wallet, TLS host, registry listing, RPC egress —
+   each marked "human ops" and deferred indefinitely while more self-auditable
+   code accretes. The refounding must put a short, concrete unblock list in
+   front of the user.
+5. **Environment hypothesis:** the "no egress" constraint was the cloud
+   sandbox's, not necessarily this Windows machine's. If this machine reaches
+   a facilitator + Base Sepolia RPC, Phase 0.1 (first settled payment ever)
+   may be executable here with faucet funds. Probe before claiming.

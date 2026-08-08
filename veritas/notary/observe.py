@@ -368,6 +368,27 @@ def observe(
             "signer": attestation.get("signer"),
             "content_hash": content_hash,
         })
+    # N1.4: append content_hash to operator-local Merkle log before envelope
+    # so custody can record the log event; leaf is the stable record hash
+    # (not pack_hash, which depends on custody_root).
+    evidence_log_meta: dict[str, Any] | None = None
+    try:
+        from veritas.notary.log import EvidenceLogError, default_evidence_log
+
+        log_entry = default_evidence_log().append(content_hash)
+        evidence_log_meta = {
+            "index": log_entry["index"],
+            "root": log_entry["root"],
+            "leaf": log_entry["leaf"],
+            "note": log_entry["note"],
+        }
+        ledger.append("logged", "notary.log", {
+            "index": log_entry["index"],
+            "root": log_entry["root"],
+            "leaf": log_entry["leaf"],
+        })
+    except EvidenceLogError:
+        evidence_log_meta = None
     envelope = _envelope(
         request_id=request_id,
         url=url,
@@ -388,6 +409,8 @@ def observe(
         envelope["evidence_pack"] = pack_from_observation(envelope)
     except EvidencePackError:
         pass
+    if evidence_log_meta is not None:
+        envelope["evidence_log"] = evidence_log_meta
     return envelope
 
 

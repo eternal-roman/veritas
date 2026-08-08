@@ -5,30 +5,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, N1.4 Merkle inclusion, or cycle-5
-> ecosystem dogfood). **G10:** never dual-reopen **G9-design surface**,
-> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: N1.4 — operator-local Merkle evidence log + inclusion proofs.**
 >
-> **G9-design is on main** — `#46` / `6777a92`: `veritas/chain_reconcile.py` +
-> `veritas-ops reconcile-chain` + design doc. Fail-closed without
-> `VERITAS_RPC_URL`. **Does not close constitution G9.** Settlements **0**.
+> **On main (do not re-open):** G9-design `#46` / `6777a92` + closeout `#48` /
+> `b77339f`; cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2.
 >
-> **Also on main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout
-> `#45` / `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
->
-> Still deliberately not done: SBOM **unsigned**; live RPC confirmation;
-> full Merkle/anchors; cycle-5; settlements **0**.
->
-> Blocked on sandbox externals: **live G9 close** needs RPC; **X1/X3/X6** need
-> facilitator egress.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository, and no amount of local green changes it.
+> **N1.4 scope:** merkle + evidence log; observe appends content_hash; free
+> `/v1/log`, `/v1/log/proof`, `/v1/log/verify`. Not public CT; not on-chain.
+> Settlements **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `6777a92` (PR **#46** G9-design fail-closed reconcile).
+> **Tip of `origin/main`:** `b77339f` (#48). Claim **N1.4 building**. Settlements: **0**.
 > Claim **free**. Settlements: **0**. Gap G9 **still open**.
 >
 > **G9-design landed on main @ `6777a92` (PR #46).** `veritas/chain_reconcile.py`

@@ -19,6 +19,9 @@ failure.
 - /v1/verify: POST — origin re-fetch check (url+content_hash or request_id); legacy content+content_hash is non-independent arithmetic
 - /v1/attestations/verify: POST — free check of an N1.1 EIP-191 EvidenceRecord attestation (bound fields + signature; not on-chain)
 - /v1/packs/verify: POST — free integrity check of an N1.3 portable EvidencePack (pack_hash; optional attestation/body; not Merkle/on-chain)
+- /v1/log: GET — N1.4 operator-local evidence log root/count (not public CT, not on-chain)
+- /v1/log/proof: GET — Merkle inclusion proof for a log index
+- /v1/log/verify: POST — free offline verify of an inclusion proof
 - /v1/receipts/{request_id}: durable custody receipt
 - /v1/trust: behaviour-derived trust score; reports UNPROVEN below 10 recorded outcomes
 - /v1/schema: the wire contract as JSON Schema

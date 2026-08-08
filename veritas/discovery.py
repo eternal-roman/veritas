@@ -24,6 +24,7 @@ failure.
 - /v1/identity: identity document with stable content hash
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
 - /v1/research: POST — the paid product; returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
+- /v1/notarize: POST — observe-once evidence notary for a URL; same payment gates as research (X-PAYMENT or X-VERITAS-SESSION); stores evidence text with a retention class; unavailable is non-billable
 - /v1/siwx/challenge: POST — issue a SIWx challenge for credit-session establishment
 - /v1/siwx/verify: POST — verify SIWx signature and receive an X-VERITAS-SESSION token
 - /v1/credits: GET — prepaid credit balance for the SIWx session

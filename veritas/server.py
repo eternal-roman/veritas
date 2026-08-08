@@ -1219,6 +1219,20 @@ def _notarize(
     return result
 
 
+def _research_slot_shed_response() -> JSONResponse:
+    """503 when the shared research/notary/refetch concurrency pool is full."""
+    metrics.increment("veritas_research_shed_total")
+    return JSONResponse(
+        status_code=503,
+        content=error_envelope(
+            ErrorCode.SERVICE_OVERLOADED,
+            f"all {MAX_CONCURRENT_RESEARCH} research slots are in use; "
+            "nothing was done and nothing is owed",
+        ),
+        headers={"Retry-After": OVERLOAD_RETRY_AFTER},
+    )
+
+
 @app.post("/v1/verify")
 async def verify(req: VerifyRequest):
     """Verify a content hash — with origin re-fetch when bound (P7 product).
@@ -1227,6 +1241,11 @@ async def verify(req: VerifyRequest):
     arithmetic on caller-supplied pairs. The legacy ``content``+``content_hash``
     path remains for offline re-hash convenience and is labeled
     ``binding: caller_supplied`` (not independent).
+
+    P7-C: origin/receipt re-fetch takes the same ``research_slots`` pool as
+    research and notarize (outbound observe is the expensive work). A full
+    pool sheds with 503 rather than opening free egress while paid work waits.
+    Legacy caller-supplied arithmetic does **not** take a slot.
     """
     # --- Independent: receipt → re-fetch stored URL ---
     if req.request_id:
@@ -1268,20 +1287,33 @@ async def verify(req: VerifyRequest):
                     "cannot re-fetch"
                 ),
             }
-        from veritas.notary.refetch import refetch_verify
+        if not research_slots.acquire(blocking=False):
+            return _research_slot_shed_response()
+        try:
+            from veritas.notary.refetch import refetch_verify
 
-        result = await run_in_threadpool(refetch_verify, url, published)
-        result["binding"] = "receipt_refetch"
-        result["request_id"] = req.request_id
-        return result
+            result = await run_in_threadpool(refetch_verify, url, published)
+            result["binding"] = "receipt_refetch"
+            result["request_id"] = req.request_id
+            return result
+        finally:
+            research_slots.release()
 
     # --- Independent: caller names URL + published hash; we re-fetch ---
     if req.url and req.content_hash:
-        from veritas.notary.refetch import refetch_verify
+        if not research_slots.acquire(blocking=False):
+            return _research_slot_shed_response()
+        try:
+            from veritas.notary.refetch import refetch_verify
 
-        return await run_in_threadpool(refetch_verify, req.url, req.content_hash)
+            return await run_in_threadpool(
+                refetch_verify, req.url, req.content_hash
+            )
+        finally:
+            research_slots.release()
 
     # --- Legacy convenience: arithmetic on caller-supplied pair ---
+    # No research slot: pure local hash, no egress (P7-C).
     if req.content is not None and req.content_hash:
         ok, detail = verify_content_hash(req.content, req.content_hash)
         return {

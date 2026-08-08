@@ -156,6 +156,111 @@ def test_verify_endpoint_requires_a_mode(free_client):
     assert r.status_code == 422
 
 
+def test_url_refetch_sheds_when_research_slots_full(free_client, monkeypatch):
+    """P7-C: free origin re-fetch shares research_slots; full pool → 503."""
+    import veritas.notary.refetch as refetch_mod
+    import veritas.server as server
+
+    calls = {"n": 0}
+
+    def counting_refetch(url, content_hash, **kwargs):
+        calls["n"] += 1
+        return {
+            "valid": True,
+            "binding": "origin_refetch",
+            "match": True,
+            "status": "completed",
+            "reason": "match",
+            "expected": content_hash,
+            "actual": content_hash,
+            "url": url,
+            "note": "should not run when shed",
+        }
+
+    monkeypatch.setattr(refetch_mod, "refetch_verify", counting_refetch)
+    held = [
+        server.research_slots.acquire(blocking=False)
+        for _ in range(server.MAX_CONCURRENT_RESEARCH)
+    ]
+    assert all(held)
+    try:
+        r = free_client.post(
+            "/v1/verify",
+            json={
+                "url": "https://example.org/shed",
+                "content_hash": compute_content_hash("x"),
+            },
+        )
+        assert r.status_code == 503
+        assert r.json()["error"] == "service_overloaded"
+        assert r.headers.get("Retry-After")
+        assert calls["n"] == 0
+    finally:
+        for _ in held:
+            server.research_slots.release()
+
+
+def test_receipt_refetch_sheds_when_research_slots_full(free_client, monkeypatch):
+    """P7-C: receipt-bound re-fetch also takes a research slot."""
+    import veritas.notary.refetch as refetch_mod
+    import veritas.server as server
+
+    rid = "req-p7c-shed"
+    published = compute_content_hash("receipt body")
+    server.store.save(
+        {
+            "request_id": rid,
+            "query": "https://example.org/receipt-shed",
+            "status": "completed",
+            "custody_root": "sha256:" + "cd" * 32,
+            "custody_valid": True,
+            "evidence": [{"content_hash": published}],
+        }
+    )
+    calls = {"n": 0}
+
+    def counting_refetch(url, content_hash, **kwargs):
+        calls["n"] += 1
+        return {"valid": True, "match": True, "binding": "origin_refetch"}
+
+    monkeypatch.setattr(refetch_mod, "refetch_verify", counting_refetch)
+    held = [
+        server.research_slots.acquire(blocking=False)
+        for _ in range(server.MAX_CONCURRENT_RESEARCH)
+    ]
+    assert all(held)
+    try:
+        r = free_client.post("/v1/verify", json={"request_id": rid})
+        assert r.status_code == 503
+        assert r.json()["error"] == "service_overloaded"
+        assert calls["n"] == 0
+    finally:
+        for _ in held:
+            server.research_slots.release()
+
+
+def test_legacy_caller_supplied_does_not_take_research_slot(free_client):
+    """P7-C: pure local hash arithmetic stays free of the egress pool."""
+    import veritas.server as server
+
+    text = "legacy still works under saturation"
+    h = compute_content_hash(text)
+    held = [
+        server.research_slots.acquire(blocking=False)
+        for _ in range(server.MAX_CONCURRENT_RESEARCH)
+    ]
+    assert all(held)
+    try:
+        r = free_client.post("/v1/verify", json={"content": text, "content_hash": h})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["valid"] is True
+        assert body["binding"] == "caller_supplied"
+    finally:
+        for _ in held:
+            server.research_slots.release()
+
+
 def test_verify_source_binds_store_or_refetch():
     """P7 close witness: independent path is present on /v1/verify."""
     from veritas import server as server_module
@@ -164,3 +269,4 @@ def test_verify_source_binds_store_or_refetch():
     verify_body = source.split('@app.post("/v1/verify")')[1].split("@app.")[0]
     assert "store.load" in verify_body
     assert "refetch_verify" in verify_body
+    assert "research_slots.acquire" in verify_body

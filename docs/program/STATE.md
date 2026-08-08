@@ -5,23 +5,42 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: cycle-1 dogfood — cold autonomous install / first-boot.**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. G9 chain-reconcile design, N1.4 Merkle inclusion, or cycle-5
+> ecosystem dogfood). **G10:** never dual-reopen **cycle-1**, **N1.3**,
+> **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
 >
-> **On main (do not re-open):** N1.3 `#41` / `622429c`; P7 `#38`; N1.2 `#34`;
-> N1.1 `#33`; N0 `#30`.
+> **cycle-1 is on main** — `#44` / `2cbed44`: `scripts/dogfood_cycle1.py` +
+> CI + `tests/test_dogfood.py` + `docs/dogfood/cycle1/report.json`. Free-mode
+> first-boot (discovery/notarize/attest/pack, offline research, offline
+> notary+pack verify). **Not** blank-machine PyPI install. Settlements **0**.
 >
-> **Cycle-1 scope:** `scripts/dogfood_cycle1.py` + CI + `tests/test_dogfood.py`
-> + committed report. Free-mode bootstrap, discovery (notarize/attest/pack),
-> offline research, offline notary+pack verify. **Not** blank-machine PyPI
-> install (package job owns that). Settlements **0**.
+> **Also on main (do not re-open):** N1.3 `#41` / `622429c`; P7 `#38` /
+> `4697c8d`; N1.2 `#34`; N1.1 `#33`; N0 `#30`; plane docs `#39` / `330bf68`;
+> integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
 >
-> **Parked:** G9 design (RPC); N1.4 Merkle log.
+> Still deliberately not done: SBOM **unsigned**; no image registry; full
+> Merkle/anchors; G9 chain reconcile; cycle-5; settlements **0**.
+>
+> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
+> egress.
+>
+> Nothing has settled on-chain. That is still the single largest unproven
+> claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `622429c` (#41 N1.3). Claim **cycle-1 building**. Settlements: **0**.
-> Claim **free**. Settlements: **0**. Prior plane `#37` / `b7e4f34`; N1.2
-> `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`.
+> **Tip of `origin/main`:** `2cbed44` (PR **#44** cycle-1 cold install dogfood).
+> Claim **free**. Settlements: **0**. Prior N1.3 `#41` / `622429c`.
+>
+> **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
+> (7 checks), committed report, CI wire-up. **Not proven:** blank-machine
+> PyPI cold install; on-chain (still **0**).
+>
+> **N1.3 landed on main @ `622429c` (PR #41).** Portable `EvidencePack`
+> (`veritas/notary/pack.py`) with `pack_hash` integrity, optional EIP-191
+> attestation re-check, free `POST /v1/packs/verify` + MCP `verify_pack`.
+> **Not proven:** Merkle inclusion, multi-party origin, on-chain (still **0**).
 >
 > **P7 landed on main @ `4697c8d` (PR #38).** `veritas/notary/refetch.py`
 > re-fetches via `notary.observe` (one engine); `POST /v1/verify` accepts
@@ -337,7 +356,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [ ] G.3 ERC-8004 identity registration (L0 until registered)
 
 ### Dogfooding cycles
-- [ ] Cycle 1 — cold autonomous install (after N0)
+- [x] Cycle 1 — cold autonomous install (2cbed44, PR #44)
 - [x] Cycle 2 — paying buyer, real buyer path, local facilitator. 7/7 scenarios; found 1 defect (replay with a different query returned the old answer), fixed. `docs/dogfood/cycle2/`
 - [x] Cycle 3 — hostile caller incl. SSRF. 8/8 probes refused; found 1 defect (doomed payment payloads each cost a facilitator round trip), fixed. `docs/dogfood/cycle3/`
 - [x] Cycle 4 — operator economics from the ledger alone. All 5 questions answerable; found 2 defects (`owed` excluded indeterminate exposure; `reconcile` double-labelled it), both fixed. `docs/dogfood/cycle4/`

@@ -81,15 +81,7 @@ def test_tools_register_with_mcp_sdk():
     server = mcp_server.build_server()
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}
-    # N1.1: verify_attestation is free-mode MCP check of EIP-191 record
-    # signatures (not on-chain). Paid notary remains HTTP-only.
-    assert names == {
-        "research",
-        "verify",
-        "trust",
-        "constitution",
-        "verify_attestation",
-    }
+    assert names == {"research", "verify", "trust", "constitution"}
 
 
 def test_declared_mcp_bound_excludes_versions_without_the_shipped_surface():

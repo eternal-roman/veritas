@@ -22,7 +22,8 @@ import sqlite3
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 CURRENCY = "VAAT"
 CURRENCY_NAME = "Veritas Agent Atomic Token"

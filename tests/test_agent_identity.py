@@ -46,5 +46,5 @@ def test_bootstrap_roster():
     )
     assert set(roster) == {"overseer", "money_loop", "multiparty_trust"}
     issuer = PlaneIdentityIssuer(secret=b"roster-secret")
-    for vid, doc in roster.items():
+    for _vid, doc in roster.items():
         issuer.verify(doc)

@@ -46,6 +46,7 @@ def build_identity(
             "origin-refetch-verification",
             "evidence-record-attestation-verify",
             "portable-evidence-pack",
+            "merkle-evidence-log",
         ],
         "base_url_configured": configured is not None,
         "endpoints": {
@@ -53,6 +54,9 @@ def build_identity(
             "verify": f"{base}/v1/verify",
             "attestations_verify": f"{base}/v1/attestations/verify",
             "packs_verify": f"{base}/v1/packs/verify",
+            "evidence_log": f"{base}/v1/log",
+            "evidence_log_proof": f"{base}/v1/log/proof",
+            "evidence_log_verify": f"{base}/v1/log/verify",
             "receipts": f"{base}/v1/receipts/{{request_id}}",
             "identity": f"{base}/v1/identity",
             "constitution": f"{base}/v1/constitution",

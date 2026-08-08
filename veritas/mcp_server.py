@@ -72,6 +72,13 @@ def tool_verify_pack(pack: dict[str, Any]) -> dict[str, Any]:
     return verify_evidence_pack(pack)
 
 
+def tool_verify_log_inclusion(proof: dict[str, Any]) -> dict[str, Any]:
+    """Verify an N1.4 local Merkle inclusion proof (not public CT / not on-chain)."""
+    from veritas.notary.log import verify_log_inclusion
+
+    return verify_log_inclusion(proof)
+
+
 def tool_trust() -> dict[str, Any]:
     """Behaviour-derived trust score; UNPROVEN below the sample floor."""
     from veritas.trust import score_service
@@ -118,6 +125,7 @@ def build_server():
     server.tool(name="verify")(tool_verify)
     server.tool(name="verify_attestation")(tool_verify_attestation)
     server.tool(name="verify_pack")(tool_verify_pack)
+    server.tool(name="verify_log_inclusion")(tool_verify_log_inclusion)
     server.tool(name="trust")(tool_trust)
     server.tool(name="constitution")(tool_constitution)
     return server

@@ -65,6 +65,9 @@ RESOURCE_PATH = "/v1/research"
 NOTARIZE_PATH = "/v1/notarize"
 ATTESTATION_VERIFY_PATH = "/v1/attestations/verify"
 PACK_VERIFY_PATH = "/v1/packs/verify"
+LOG_PROOF_PATH = "/v1/log/proof"
+LOG_VERIFY_PATH = "/v1/log/verify"
+LOG_STATUS_PATH = "/v1/log"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -334,6 +337,14 @@ class VerifyPackRequest(BaseModel):
     """Portable N1.3 EvidencePack to integrity-check (free)."""
 
     pack: dict[str, Any] = Field(min_length=1)
+
+
+class LogProofRequest(BaseModel):
+    index: int = Field(ge=0)
+
+
+class LogVerifyRequest(BaseModel):
+    proof: dict[str, Any] = Field(min_length=1)
 
 
 @app.get("/health")
@@ -1326,6 +1337,41 @@ async def verify_attestation_endpoint(req: VerifyAttestationRequest):
     return body
 
 
+
+@app.get(LOG_STATUS_PATH)
+async def evidence_log_status():
+    """N1.4: operator-local evidence log root/count (free)."""
+    from veritas.notary.log import default_evidence_log
+
+    return default_evidence_log().snapshot()
+
+
+@app.get(LOG_PROOF_PATH)
+async def evidence_log_proof(index: int = 0):
+    """N1.4: Merkle inclusion proof for a log index (free)."""
+    from veritas.notary.log import EvidenceLogError, default_evidence_log
+
+    try:
+        return default_evidence_log().proof(index)
+    except EvidenceLogError as exc:
+        # 400 not 404: route exists; empty/out-of-range is a client error.
+        # Fixed tokens only (CodeQL: no exception text to client).
+        msg = exc.code if exc.code in {"log_empty", "index out of range", "proof_unavailable"} else "proof_unavailable"
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope(ErrorCode.INVALID_REQUEST, msg),
+        )
+
+
+
+@app.post(LOG_VERIFY_PATH)
+async def evidence_log_verify(req: LogVerifyRequest):
+    """N1.4: verify a Merkle inclusion proof (free, offline)."""
+    from veritas.notary.log import verify_log_inclusion
+
+    return verify_log_inclusion(req.proof)
+
+
 @app.post(PACK_VERIFY_PATH)
 async def verify_pack_endpoint(req: VerifyPackRequest):
     """Check an N1.3 portable EvidencePack (free, no payment).
@@ -1761,6 +1807,9 @@ async def well_known():
             # Free N1.2 surface: agents re-check operator EIP-191 attestations.
             "attestations_verify": ATTESTATION_VERIFY_PATH,
             "packs_verify": PACK_VERIFY_PATH,
+            "evidence_log": LOG_STATUS_PATH,
+            "evidence_log_proof": LOG_PROOF_PATH,
+            "evidence_log_verify": LOG_VERIFY_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

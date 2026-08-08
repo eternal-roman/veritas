@@ -649,6 +649,22 @@ class Ledger:
             (NonceState.SETTLED.value,),
         )
 
+    def settled_with_transaction(self) -> list[dict[str, Any]]:
+        """Facilitator-reported successes that carry a transaction hash.
+
+        These are the only settlements G9 chain reconcile can ask an RPC about.
+        Presence of a hash is still not on-chain proof until reconcile runs
+        (see ``veritas.chain_reconcile``); this query only lists candidates.
+        """
+        return self._query_settlements(
+            "SELECT s.* FROM settlements s"
+            " JOIN authorizations a ON a.request_id = s.request_id"
+            " WHERE a.state = ? AND s.outcome = 'settled'"
+            " AND s.transaction_hash IS NOT NULL AND s.transaction_hash != ''"
+            " ORDER BY s.id",
+            (NonceState.SETTLED.value,),
+        )
+
     def _query_settlements(self, sql: str, params: tuple) -> list[dict[str, Any]]:
         """Run a complete, literal settlements query. Every caller passes a
         whole statement — no fragment is ever concatenated — so there is no

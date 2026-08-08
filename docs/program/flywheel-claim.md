@@ -1,12 +1,12 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-08T20:40:00Z
-- **last_merged:** cycle-1 #44 @ `2cbed44`; N1.3 #41 @ `622429c`; docs #39 @ `330bf68`; P7 #38 @ `4697c8d`; N1.2 #34 @ `32d1054`; N1.1 #33 @ `db04ae2`; N0 @ `4cd2d0c`
-- **next_micro:** Overseer names single NEXT (G9 design | Merkle anchors | other). Do not dual-reopen cycle-1/N1.3/P7/N0/N1.1/N1.2/M7. Settlements 0.
+- **bet_id:** G9-design
+- **branch:** feat/g9-chain-reconcile-design
+- **holder:** flywheel-session
+- **status:** building
+- **updated:** 2026-08-08T20:50:00Z
+- **last_merged:** docs #45 @ `df1cc8f`; cycle-1 #44 @ `2cbed44`; N1.3 #41 @ `622429c`; P7 #38 @ `4697c8d`
+- **next_micro:** Land G9 design + fail-closed reconcile-chain. Gap stays open. Settlements **0**.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -24,5 +24,6 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | P7 post-merge plane closeout | `330bf68` / #39 |
 | **N1.3 portable EvidencePack** | **`622429c` / #41** |
 | **cycle-1 cold install dogfood** | **`2cbed44` / #44** |
+| cycle-1 closeout docs | `df1cc8f` / #45 |
 
-**G10:** Claim **free** after cycle-1 merge. Open product PRs: **none**. Settlements: **0**.
+**G10:** Claim **building G9-design**. Settlements: **0**.

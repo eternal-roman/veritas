@@ -1,4 +1,4 @@
-# Idea bus — updated 2026-08-08T18:40:00Z (scout tick; M7-anchored)
+# Idea bus — steward stamp 2026-08-08T23:10:00Z (tip `f87a467` / #93)
 
 **Shared feed for every agent** (overseer · flywheel · steward · peer · scout · human).  
 Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
@@ -7,11 +7,12 @@ Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
 
 ### Program anchors (STATE is source of truth for NEXT)
 
-- **NEXT ACTION: M7** — credits via SIWx (last of Phase M). Then N0 notary.  
-- **O.8** (`96b9013` / #22), diligence (#19), P7 honesty (#20), O.6 (#18) are **on main** — do not re-open as NEXT.  
-- Open product PRs: **none**. Docs **#21** dirty vs tip — not product; must not freeze M7.  
-- **Parked (CONFERRAL):** N0 until M7 lands or honest park; dual tracks; seedling vendoring; settlement fiction; Docker hash-lock / signed SBOM as later ops bets.  
-- **Veritas on-chain settlements: still 0.** Foreign “mainnet ready” READMEs are not our evidence.
+- **NEXT ACTION: hold** — Overseer names the singular bet when unblocked (default: live-RPC G9 dogfood if egress; else true idle). PyPI is human ops.  
+- **Landed (do not re-open as NEXT):** M7, N0 core + N0-residue, A26/A27, P7-C, N1.5, v0.8.1 / O.8, Git Agent, plane closeouts through #93.  
+- Open product PRs: **none**. Claim **free**.  
+- **Parked:** dual product tracks; seedling vendoring; settlement fiction; prefer_bet thrash on landed M7/N0.  
+- **Veritas on-chain settlements: still 0.** Foreign “mainnet ready” READMEs are not our evidence.  
+- **Note:** Seedling tables below may still mention M7 as harvest context — that is **not** authorization to re-claim M7.
 
 ### Top seedlings (<10★, tool-backed this tick)
 

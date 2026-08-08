@@ -5,34 +5,21 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. cycle-1 cold install dogfood, N1.3 Merkle/inclusion, or G9
-> design). **G10:** never dual-reopen **P7**, **N0**, **N1.1**, **N1.2**,
-> **M7**, or **O.8**.
+> **Do this next: N1.3 — portable EvidencePack for agent-to-agent handoff.**
 >
-> **P7 is on main** — `#38` / `4697c8d`: `POST /v1/verify` binds origin
-> re-fetch via `notary.observe` (`url`+`content_hash`) or custody receipt
-> (`request_id` then re-fetch). Legacy `content`+`content_hash` labeled
-> `binding: caller_supplied` only. One engine. **Not** on-chain; page may
-> diverge after notarization. Pins: `tests/test_refetch_verify.py`.
+> **On main (do not re-open):** P7 `#38` / `4697c8d`; N1.2 `#34`; N1.1 `#33`;
+> N0 `#30`; tip docs `#39` / `330bf68`.
 >
-> **Also on main (do not re-open):** N0 `#30` / `4cd2d0c`; N1.1 `#33` /
-> `db04ae2`; N1.2 `#34` / `32d1054`; plane docs `#37` / `b7e4f34`, `#36` /
-> `a679b76`; integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
+> **N1.3 scope:** `veritas-evidence-pack-v1` with `pack_hash` integrity;
+> optional attestation re-check; free `POST /v1/packs/verify` + MCP
+> `verify_pack`; attach hash-only pack on completed observe. **Not** Merkle
+> log inclusion; **not** on-chain anchors. Settlements **0**.
 >
-> Still deliberately not done: SBOM **unsigned**; no image registry;
-> N1.3 Merkle/anchors; G9 chain reconcile; cycle-1 cold install; settlements
-> **0**.
->
-> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
-> egress.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository, and no amount of local green changes it.
+> **Parked:** full Merkle/anchors; G9 design; cycle-1 dogfood.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `4697c8d` (PR **#38** P7 origin re-fetch verify).
+> **Tip of `origin/main`:** `330bf68` (#39). Claim **N1.3 building**. Settlements: **0**.
 > Claim **free**. Settlements: **0**. Prior plane `#37` / `b7e4f34`; N1.2
 > `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`.
 >

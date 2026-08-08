@@ -21,7 +21,7 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `e45a2f5` (PR **#71** P7-C free closeout).
+> **Tip of `origin/main`:** `64b7a1a` (PR **#72** cycle-7 board after #71). Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**. Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 > Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**.
 > Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 >

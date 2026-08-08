@@ -1,7 +1,7 @@
 # Trajectory — agent commerce vision
 
-**Updated:** 2026-08-08T22:55:00Z (continuous cycle 7)
-**Main:** `e45a2f5` (closeout #71) · product tip `e7f674b` (P7-C #69) · **version:** `0.8.1`
+**Updated:** 2026-08-08T23:10:00Z (continuous cycle 8)
+**Main:** `64b7a1a` (#72) · closeout `e45a2f5` (#71) · product tip `e7f674b` (P7-C #69) · version **0.8.1**
 
 ## Where we are
 
@@ -12,28 +12,30 @@
 | **N1.5** inclusion proof on observe | **On main** `e089f86` (#60) |
 | **v0.8.1** | **On main** `070d4c4` (#62) — **not** PyPI |
 | **P7-C** free re-fetch `research_slots` | **On main** `e7f674b` (#69) |
-| Program closeout | **On main** `e45a2f5` (#71) |
+| Program closeouts | **On main** `e45a2f5` (#71), `64b7a1a` (#72) |
 | On-chain settlements | **0** |
 | Claim | **free** |
 | Open product PRs | **none** |
+| `VERITAS_RPC_URL` | **unset** → live-G9 dogfood **blocked** |
 
 ## Primary trajectory
 
 ```
 … → N1.5 DONE → 0.8.1 DONE → P7-C DONE
-  → Overseer singular NEXT only
-     candidates (blocked/external): live-RPC G9 (needs egress) | PyPI human ops | other unblocked slice
+  → Overseer HOLD (this era)
+     when unblocked: live-RPC G9 dogfood (G9-L-A…E)
+     external only: PyPI Trusted Publishing (human ops)
 ```
 
-**This-cycle bet:** none (claim free)
+**This-cycle bet:** none (claim free · restart=false)
 
 **Refuse:** `prefer_bet=M7` thrash — M7 landed `2171bfa` (#23) + crash refund `386efff` (#28).
 
 ## Parked
 
 - Re-opening M7 / N1.5 / P7-C / 0.8.1 / cycle-5 / N1.4 / G9-design / N0 as dual NEXT
-- Stale `prefer_bet=M7` or `N0` in continuous params when STATE is free
-- Live RPC G9 close without egress
+- Stale `prefer_bet=M7` or `N0` in continuous params when STATE is free/HOLD
+- Live RPC G9 close without egress / invented settlement green
 - Treating version bump as PyPI / revenue-ready
 - Bazaar / X1 / X3 / X6 before money is real
 - Settlement fiction

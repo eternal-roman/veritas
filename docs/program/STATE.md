@@ -23,8 +23,19 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `070d4c4` (#62 v0.8.1). Claim **free**. Settlements: **0**. Tags: `v0.8.1`, `v0.8.0`.
-> Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
+> **Tip of `origin/main`:** `17222c5` (PR **#63** v0.8.1 plane closeout).
+> Product v0.8.1 `@070d4c4` (#62). N1.5 `@e089f86` (#60). Claim **free**.
+> Settlements: **0**. Gap G9 **still open**. **Not** on PyPI. Tags: `v0.8.1`,
+> `v0.8.0`. Open product PRs: **none**.
+>
+> **v0.8.1 closeout landed on main @ `17222c5` (PR #63).** Free claim post-0.8.1.
+> **Not proven:** PyPI; on-chain (0).
+>
+> **v0.8.1 prep landed on main @ `070d4c4` (PR #62).** Labels N1.5 inclusion
+> proof on observe. **Not proven:** PyPI; on-chain (0).
+>
+> **N1.5 landed on main @ `e089f86` (PR #60).** Inclusion proof on completed
+> observe. **Not proven:** public CT; on-chain (0).
 >
 > **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;
 > CHANGELOG + STATUS for N0–N1.4 / P7 / G9-design / dogfood 1–5. **Not proven:**

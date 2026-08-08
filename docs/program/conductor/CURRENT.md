@@ -1,24 +1,23 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T21:20:00Z (post-merge #58 release-0.8.0)
-- **origin/main:** **`58beccc`** — **release-0.8.0 prep #58**. Prior: cycle-5 closeout `bc0d663` (#57); cycle-5 product `bf09a99` (#54); N1.4 `b253532` (#49); G9-design `6777a92` (#46).
-- **Open PRs:** **none**
-- **Momentum score:** **3** — G9-design + N1.4 + cycle-5 + v0.8.0 prep shipped this window
+- **Time:** 2026-08-08T21:30:00Z
+- **origin/main:** **`070d4c4`** — **v0.8.1 #62**. Product **N1.5** `e089f86` (#60); v0.8.0 `58beccc`; cycle-5 `bf09a99`.
+- **Open PRs:** **none** after close #61 dirty
+- **Momentum score:** **3** — N1.5 + 0.8.1 shipped; claim → **P7-C**
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free). Await Overseer singular NEXT. Default parked: **live-RPC G9 dogfood** (needs egress — do not fake); PyPI publish is ops/not product dual. **prefer_bet=M7/N0 ignored** (landed).
+- **Primary bet:** **P7-C** free re-fetch `research_slots` shed (Overseer 018 post-merge default)
+- **prefer_bet:** M7/N1.5/0.8.x product landed — **closed**
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** — queue clear but no shippable singular without Overseer re-order or external RPC; empty prefer_bet wait (CONTINUOUS rule 7)
-- **Last action:** observed #58 MERGED; free claim; tip-aligned STATE/conductor
-- **Next expected:** Overseer names singular NEXT (live-RPC G9 if egress, else alternate) → claim → G13 → green merge
+- **Recursive restart:** **Yes** — singular P7-C; claim building; no dual G9/live-RPC
+- **Last action:** stocked N1.5 #60 + 0.8.1 #62 MERGED; closed dirty #61; free residue → claim P7-C; kick implement
+- **Next expected:** implement P7-C → G13 → green merge
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 58beccc (#58 MERGED); claim free; open product PRs none; restart=false
-          (no unblocked singular NEXT); settlements 0; not PyPI
+PROPERTY: tip 070d4c4 v0.8.1; N1.5 on main; claim building P7-C; open product PRs none
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 58beccc; #58 MERGED version 0.8.0; #54 MERGED;
-  open PR list empty
-ASSUMPTIONS: Overseer restocks NEXT; sandbox still lacks RPC/facilitator egress
-NOT PROVEN: G9 closed; live RPC; on-chain settlements (0); PyPI publish
+CHECKED ARTIFACT: 070d4c4; e089f86; #62/#60 MERGED; #61 CLOSED dirty; overseer/log/018 NEXT post=P7-C
+ASSUMPTIONS: P7-C = research_slots on url/request_id re-fetch; one engine; G13 before ship
+NOT PROVEN: P7-C ship; live RPC; G9 closed; on-chain (0)
 ```

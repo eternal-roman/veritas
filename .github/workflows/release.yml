@@ -22,10 +22,10 @@ jobs:
     permissions:
       id-token: write  # Trusted Publishing (OIDC)
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"
 
@@ -43,11 +43,46 @@ jobs:
           print(f"tag {tag} matches package version")
           PY
 
+      # The tooling that builds a published artifact is part of that artifact's
+      # supply chain, so it comes from the hashed lock rather than whatever
+      # PyPI serves at tag-push time.
+      - name: Install build tooling (hash-pinned)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --require-hashes -r requirements-dev.lock
+
       - name: Build sdist and wheel
         run: |
-          python -m pip install --upgrade pip build twine
           python -m build
           twine check dist/*
 
+      # The SBOM describes what this release installs: the wheel and its
+      # runtime closure, not the toolchain that built it.
+      - name: Generate CycloneDX SBOM for the release artifact
+        run: |
+          mkdir -p sbom
+          python -m venv /tmp/relvenv
+          /tmp/relvenv/bin/pip install --require-hashes -r requirements.lock
+          /tmp/relvenv/bin/pip install --no-deps dist/*.whl
+          /tmp/relvenv/bin/pip check
+          cyclonedx-py environment /tmp/relvenv \
+            --output-format JSON \
+            --output-reproducible \
+            --output-file "sbom/veritas-research-${GITHUB_REF_NAME}.cdx.json"
+
+      # Uploaded as a workflow artifact, NOT attached to the GitHub release:
+      # `gh release upload` needs `contents: write`, and this job already holds
+      # the PyPI publishing identity (`id-token: write`). Granting both to one
+      # job widens the blast radius of the most sensitive job in the repository
+      # for a distribution convenience. Attaching the SBOM to releases is worth
+      # doing in a separate job that never sees the OIDC token — a maintainer
+      # decision, like the GHCR push in ci.yml.
+      - name: Upload the release SBOM as a workflow artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: sbom-release
+          path: sbom/*.cdx.json
+          if-no-files-found: error
+
       - name: Publish to PyPI (Trusted Publishing)
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2

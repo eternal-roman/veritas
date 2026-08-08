@@ -1,32 +1,23 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T21:20:00Z
-- **Branch / HEAD:** `origin/main` @ **`32d1054`** (N1.2 #34; N1.1 #33; **N0 #30** `4cd2d0c`)
-- **Scope:** N0 Evidence Notary gate (G13) — `veritas/notary/*`, pipeline
-  `observe_urls` → one engine, `POST /v1/notarize` + inv.3 share of
-  `_refund_unfinished_charge`, discovery/llms, tests `test_notary_*` +
-  `test_notarize_api`. Post-merge confirmation on tip.
-- **Verdict:** LEAN
-- **ship_ok:** true
-- **Deleted / pruned:** none (N0 remains one observe path; no second
-  engine/payer; N1.1/N1.2 are optional attestation, not a second money path)
-- **Refined:** notarize reuses research crash-refund helper
-- **Battery:**
-  - PR #30 CI: Tests & syntax / Structure / Security / Package / Container /
-    CodeQL **SUCCESS** (merge commit `4cd2d0c`)
-  - Local N0 surface: **93 passed** (notary + notarize + sign)
-  - harness: **exit 0**; payment_model module: **I1–I7 holds**
-- **E2E exercised:** paid/free notarize; unavailable non-billable; credit
-  unexpected-failure refund (N0-J); SSRF/robots refuse. On-chain: **NOT PROVEN**
-- **Denied:** re-open N0 as NEXT; second scraper/payer; settlement without tx
-- **Directive:** N0 product ship gate passed. Claim free. Do not re-open N0/M7.
+- **Time:** 2026-08-08T22:05:00Z
+- **Path:** LIGHT / **noop_idle**
+- **Branch / HEAD:** product tip `2cbed44` (cycle-1 #44); plane closeout via docs PR
+- **Scope:** Stock only — no open product PR to prune; claim **free** after cycle-1
+- **Verdict:** LEAN (idle — nothing to prune this tick)
+- **ship_ok:** n/a (no active product surface). Last landed product: cycle-1 #44 @ `2cbed44`
+- **Deleted / pruned:** none
+- **Refined:** none
+- **Battery:** **not run** (G13 light path — claim free + no product PR; do not burn full battery)
+- **E2E exercised:** none this tick
+- **Denied:** dual NEXT; re-open cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7; invent settlement
+- **Directive:** Claim free; tip-aligned STATE/conductor. Wait for Overseer single NEXT → G13 heavy on that ship.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: N0 notary core is lean and functioning on main; Pruner ship_ok
+PROPERTY: No product work for Pruner this tick — claim free, no product PR open
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: 4cd2d0c (#30); tip 32d1054; veritas/notary/*;
-  server _notarize + _refund_unfinished_charge; CI SUCCESS on #30
-ASSUMPTIONS: single-instance ledger/credits; offline SSRF fixtures
-NOT PROVEN: on-chain settlement (0); cold install cycle-1
+CHECKED ARTIFACT: origin/main 2cbed44 (#44); open product PRs empty; flywheel-claim free
+ASSUMPTIONS: Overseer names one NEXT before next ship; G13 heavy only on claim/PR
+NOT PROVEN: on-chain settlement (0); blank-machine PyPI cold install (out of cycle-1)
 ```

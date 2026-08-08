@@ -5,7 +5,8 @@ Each completed flywheel cycle writes `NNN-<slug>.md` here.
 | File | Meaning |
 |------|---------|
 | [000-baseline.md](000-baseline.md) | Stock of `main` before the loop; scorecard floor |
-| `001-…` onward | One shippable bet each: scores, PR, learnings, next bet |
+| [001-o6-retention-410-gone.md](001-o6-retention-410-gone.md) | O.6 retention/pruning; 410 Gone ≠ 404; axis B 2→3; PR #18 |
+| `002-…` onward | One shippable bet each: scores, PR, learnings, next bet |
 
 Protocol: [`../INNOVATION_LOOP.md`](../INNOVATION_LOOP.md)  
 Orchestration: `.grok/workflows/agent-commerce-flywheel.rhai`

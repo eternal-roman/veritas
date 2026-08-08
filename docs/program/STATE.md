@@ -6,8 +6,14 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: O.8 — supply chain.** Lockfile with hashes, SHA-pinned
-> actions, SBOM, bandit already at `-ll`. After that: **M7** (credits via
-> SIWx; the last of Phase M), then **Phase N0** (the notary product).
+> GitHub Actions, SBOM; bandit already at `-ll`. Human merge of **PR #18**
+> (O.6 retention/410) onto `main` first if still open — cycle
+> [`001-o6-retention-410-gone.md`](cycles/001-o6-retention-410-gone.md)
+> already records the LEARN for that bet (scorecard sum 10→11, **B 2→3**).
+>
+> After O.8: **M7** (credits via SIWx; last of Phase M), then **Phase N0**
+> (notary). Scorecard still has **C=0** — no amount of ops work invents a
+> settlement.
 >
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
@@ -158,6 +164,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 **Overseer** runs every 15 minutes: reviews ongoing work for honesty, laziness,
 and A2A commercial value; writes steering to `overseer/CURRENT.md`.  
+**Scout** every 20 minutes: GitHub **&lt;10★** seedlings + divergent synthesis →
+[`scout/IDEA_BUS.md`](scout/IDEA_BUS.md) (all agents read).  
 **Peer review** every 45 minutes: scrutinizes Claude session branch
 `feat/session-2026-08-08` (`PEER_REVIEW.md`); inherit only what survives GUARDIAN.  
 **Flywheel** hourly builds one bet under GUARDIAN. Neither auto-merges.
@@ -348,3 +356,4 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-07 | W1/W2/O16: suite made portable off-Linux; wallet now verifies the mode it claims and warns when the OS will not grant it | d998da9 |
 | 2026-08-07 | Repo presentation: GitHub About + 17 topics, README hook and badges, CONTRIBUTING.md; banned-claims gate extended to README.md and STATUS.md | b7fa9bc |
 | 2026-08-07 | O17 (critical, exploit-verified path traversal on `/v1/receipts`), O18 (exception text in a 402 body), O19 (mcp 2.0 pin) — all three surfaced by CI on PR #17, not by local runs | (this commit) |
+| 2026-08-08 | O.6 retention/pruning + 410 Gone ≠ 404 (custody tombstones, ledger prune of aged settled/abandoned only, `veritas-ops prune`); flywheel cycle 001 LEARN; scorecard B 2→3 (sum 11/24). PR #18 CI green, not auto-merged | 463e22f + cycle docs |

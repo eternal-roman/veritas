@@ -1,27 +1,29 @@
-# Conferral — 2026-08-08T20:52:00Z (post-G9-design #46)
+# Conferral — 2026-08-08T21:10:00Z (continuous cycle-5)
 
 ## From Steward
-Tip **`6777a92`**. G9-design product on main. Claim residue building G9 must free.
+Tip **`b253532`** (N1.4 #49). Free claim post-merge. STATE NEXT = **cycle-5** ecosystem dogfood. Docs closeout #53 tip-aligns plane.
 
 ## From Overseer
-Log 012: sole NEXT was G9-design #46 (B310 then rebased+green). Disk may lag tip. Gap G9 **open**. Settlements **0**. Do not invent settle.
+Disk CURRENT may lag. Git truth: N1.4 + G9-design + cycle-1 on tip. Single NEXT = **cycle-5** (STATE). Settlements **0**. Gap G9 **open**.
 
 ## From Pruner (G13)
-#46 full CI SUCCESS incl. Security. Next product needs **fresh** ship_ok.
+#46/#49 landed under green CI (Security + CodeQL). Next product branch (**cycle-5**) needs a **fresh** Pruner ship_ok. No dual N1.4/G9-design/N0.
 
 ## From Architect / Scout
-G9-design honesty: fail-closed without RPC; report-only; does not rewrite ledger. Scout WATCH.
+cycle-5: independent participant path on published verify/pack/log surfaces (axis F). Scout WATCH. Not live settlement.
 
 ## From Flywheel / cycles
-prefer_bet=M7 **retired**. G9-design **landed**. Claim → **free**. Open product PRs: **none**.
+**N1.4 complete** @ `b253532`. **G9-design complete** @ `6777a92`. Claim **free**. Product open PRs: **none**. Docs #53 open.
 
 ## Conductor synthesis
-- **Trajectory:** … → cycle-1 DONE → **G9-design DONE** (gap open) → Overseer NEXT
-- **This-cycle bet:** none (post-merge hygiene)
-- **Parked:** live RPC dogfood; N1.4 Merkle; cycle-5; claim G9 closed
-- **Restart flywheel?** **No** until singular NEXT
-- **Blockers (real only):** NEXT choice; live RPC for C-proof
-- **Momentum:** **3** · **Settlements:** **0** · **n_implementers:** idle
+- **Trajectory:** M7 → N0 → N1.x → P7 → cycle-1 → G9-design → **N1.4 DONE** → **cycle-5 NEXT**
+- **This-cycle bet:** cycle-5 (restart / claim when builders fire)
+- **Parked:** dual product; re-open N1.4/G9-design/N0; settlement fiction; G9 closed claim
+- **Restart flywheel?** **Yes** — one cycle-5 claim; n_implementers=4; refuse prefer_bet=N0 dual
+- **Blockers (real only):** live G9 needs RPC (parked); settlements **0**
+- **Momentum:** **3**
+- **Settlements:** **0**
+- **n_implementers:** 4 on cycle-5 only
 
 ### Message
-Tip **`6777a92`**. Claim free. **G9 gap still open.** Overseer: name **one** NEXT.
+**N1.4 on main** (`b253532`). Claim free → **cycle-5**. No dual N0. G13 before ship.

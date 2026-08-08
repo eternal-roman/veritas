@@ -60,6 +60,8 @@ def rpc_timeout_from_env() -> float:
 
 def _default_transport(url: str, method: str, params: list[Any]) -> Any:
     """Minimal JSON-RPC over HTTP(S). Used only when RPC URL is configured."""
+    if not (url.startswith("https://") or url.startswith("http://")):
+        raise ChainReconcileError("rpc_url_scheme_not_http")
     payload = json.dumps(
         {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
     ).encode("utf-8")
@@ -71,7 +73,8 @@ def _default_transport(url: str, method: str, params: list[Any]) -> Any:
     )
     timeout = rpc_timeout_from_env()
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        # Operator-configured RPC only; scheme restricted to http(s) above.
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
             body = json.loads(response.read().decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
         raise ChainReconcileError(f"rpc_transport_error:{type(exc).__name__}") from exc

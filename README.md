@@ -101,6 +101,17 @@ up` provisions its own config and wallet and starts serving.
   records you hold may be curated (constitution gap G11), and `/v1/trust`
   remains self-reported (G10) — this ships the mechanism for external
   standing, not the standing itself (see `docs/program/FABLE_INSIGHTS.md`)
+- **Falsifiable commerce, W0** (`veritas/warranty.py`) — a deliverable can
+  carry seller-authored falsification predicates from a registered D0 set
+  (custody chain verifies, every claim cites delivered evidence, the status
+  taxonomy coheres, attestations recover), a bonded stake, and a challenge
+  window; any party evaluates a challenge deterministically —
+  `fired` / `not_fired` / `undecidable` — with no arbiter, and content with
+  no decidable refutation procedure ships labeled `U` (unwarrantable)
+  instead of dressed in a warranty. Bonds are **signed commitments, not
+  escrowed value** (gap G12; settlement is still unproven), and unfalsified
+  does not mean useful — the methodology, its prior-art differentiation,
+  and its honesty boundaries are in `docs/program/FALSIFIABLE_COMMERCE.md`
 - **Buyer-side counterparty diligence** (`veritas/diligence.py`,
   `veritas-diligence <url>`) — a buyer agent decides whether a seller may be
   paid at all, from documents that seller publishes, and the verdict gates the

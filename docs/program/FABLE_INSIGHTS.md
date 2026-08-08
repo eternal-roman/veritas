@@ -153,6 +153,38 @@ policy then gates on evidence the buyer verified rather than on the
 counterparty's self-assessment, which is the same trust-shape as invariant 8's
 "payment parameters derive only from the validated challenge."
 
+## 8. Second derivation (2026-08-08, same branch): falsifiable commerce
+
+Survival records answered "how can standing be computed without trusting the
+audited party?" — and left the deeper question exposed: **why would anyone
+audit at equilibrium?** Verification in every current agent-commerce design
+is a cost center — arithmetic (free, shallow), altruism (underprovided), or
+escalation (human-speed). The ecosystem-forming move is giving verification
+its own economics: every claim ships with a seller-authored, deterministic
+falsification predicate, a bonded stake, and a challenge window, so hunting
+bad answers is a paid occupation and disputes terminate in re-execution, not
+judgment. The Popperian inversion — the seller writes the experiment that
+would refute itself, and prices its own confidence by staking on it — plus
+falsifiability classes (D0/D1/D2/U) as priced market metadata, is the part
+that does not currently exist in the space. Forfeited bonds also repair this
+document's own §6 asymmetry: a forfeit is a settlement event the seller
+signed, so negative reputation becomes unomittable — G11's floor gains an
+enforcement mechanism at W1. Full methodology, prior-art differentiation,
+honesty boundaries, and the recorded mandate:
+`docs/program/FALSIFIABLE_COMMERCE.md`. Implementation: `veritas/warranty.py`
+(D0 registry), constitution A27 + gap G12.
+
+Key transferable insights for future agents, compressed: (1) in agent
+commerce the scarce good is not trust but *economically motivated
+distrust* — design for profitable falsification, not certified truth;
+(2) the repo's own invariants make the best warranty predicates — an
+invariant a service brags about is an invariant it should be willing to
+stake on per-transaction (`status_incoherent.v1` bonds invariant 3);
+(3) honesty taxonomies generalize: completed/refused/unavailable →
+confirmed/diverged/unobserved → fired/not_fired/undecidable — every layer
+needs its "we could not decide, and that is different from both yes and no."
+
 ---
 *Maintained on `fable/survival-records`. Update this document in the same
-commit as any change to `veritas/audit.py`, the A22 article, or gap G11.*
+commit as any change to `veritas/audit.py`, `veritas/warranty.py`, the A22
+or A27 articles, or gaps G11/G12.*

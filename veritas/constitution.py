@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.3"
+CONSTITUTION_VERSION = "2.4"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -299,6 +299,18 @@ ARTICLES: tuple[dict[str, Any], ...] = (
             {"kind": "test", "pointer": "tests/test_audit.py::test_record_volume_from_one_key_counts_as_one_auditor"},
         ],
     ),
+    _article(
+        "A27",
+        "Warranted claims are falsifiable or labeled",
+        "A warranted deliverable carries seller-authored falsification predicates that any party evaluates deterministically — a challenge terminates in re-execution, never in an arbiter — a defective challenge context decides nothing and forfeits nothing either way, and content with no decidable refutation procedure is sold labeled unwarrantable rather than dressed in a warranty.",
+        "venue",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_warranty.py::test_challenge_terminates_in_deterministic_reexecution"},
+            {"kind": "test", "pointer": "tests/test_warranty.py::test_unwarrantable_content_is_labeled_never_dressed_in_a_warranty"},
+            {"kind": "test", "pointer": "tests/test_warranty.py::test_undecidable_context_forfeits_nothing_either_way"},
+        ],
+    ),
     # Aspirational articles: named norms with no enforcement yet. Each cites
     # the roadmap phase expected to promote it to L1.
     _article(
@@ -507,6 +519,21 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "later N1 work)."
         ),
         "witness_test": "tests/test_known_gaps.py::test_known_gap_survival_reports_are_bounded_by_what_auditors_share",
+    },
+    {
+        "id": "G12",
+        "article": "A27",
+        "status": "open",
+        "description": (
+            "Warranty bonds are signed commitments, not escrowed value: no "
+            "settlement has ever run from this codebase, so a fired challenge "
+            "indicates a forfeit the payment rails cannot yet enforce, and the "
+            "unomittable-negative-reputation property of forfeits is designed, not "
+            "real. The wire says so on every warranty (bond_binding: "
+            "signed_commitment_not_escrow). Removal requires escrowed bonds over "
+            "proven settlement (W1, gated on ROADMAP Phase 0)."
+        ),
+        "witness_test": "tests/test_known_gaps.py::test_known_gap_warranty_bonds_are_commitments_not_escrow",
     },
     {
         "id": "G9",

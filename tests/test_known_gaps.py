@@ -53,6 +53,24 @@ def test_known_gap_the_trust_score_is_self_reported():
     assert "self_reported" in source
 
 
+def test_known_gap_warranty_bonds_are_commitments_not_escrow():
+    """G12. A fired challenge indicates a forfeit, but no code escrows or
+    settles a bond — the stake is an EIP-191 commitment, stated on the wire
+    as bond_binding: signed_commitment_not_escrow. Until W1 (gated on Phase
+    0 settlement proof), the unomittable-negative-reputation property of
+    forfeits is designed, not real.
+
+    If this test fails, escrowed bonds exist — close G12 and delete this
+    test.
+    """
+    from veritas import warranty as warranty_module
+
+    source = Path(warranty_module.__file__).read_text(encoding="utf-8")
+    assert "signed_commitment_not_escrow" in source
+    assert "escrow_bond" not in source
+    assert not hasattr(warranty_module, "settle_forfeit")
+
+
 def test_known_gap_survival_reports_are_bounded_by_what_auditors_share():
     """G11. A survival report is a pure function of the records handed to it,
     and nothing forces an unfavourable record into the set: withholding the

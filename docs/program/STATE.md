@@ -5,23 +5,42 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: N1.3 — portable EvidencePack for agent-to-agent handoff.**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. cycle-1 cold install dogfood, G9 design, or Merkle anchors).
+> **G10:** never dual-reopen **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**,
+> **M7**, or **O.8**.
 >
-> **On main (do not re-open):** P7 `#38` / `4697c8d`; N1.2 `#34`; N1.1 `#33`;
-> N0 `#30`; tip docs `#39` / `330bf68`.
+> **N1.3 is on main** — `#41` / `622429c`: portable `veritas-evidence-pack-v1`
+> with `pack_hash` integrity; optional EIP-191 re-check; free
+> `POST /v1/packs/verify` + MCP `verify_pack`; hash-only pack on completed
+> observe. **Not** Merkle log inclusion; **not** on-chain anchors. Pins:
+> `tests/test_evidence_pack.py`.
 >
-> **N1.3 scope:** `veritas-evidence-pack-v1` with `pack_hash` integrity;
-> optional attestation re-check; free `POST /v1/packs/verify` + MCP
-> `verify_pack`; attach hash-only pack on completed observe. **Not** Merkle
-> log inclusion; **not** on-chain anchors. Settlements **0**.
+> **Also on main (do not re-open):** P7 `#38` / `4697c8d`; N1.2 `#34` /
+> `32d1054`; N1.1 `#33` / `db04ae2`; N0 `#30` / `4cd2d0c`; plane docs `#39` /
+> `330bf68`; integrity `#29`/`#32`; M7 `#23`/`#28`; O.8/O.8b `#22`/`#24`.
 >
-> **Parked:** full Merkle/anchors; G9 design; cycle-1 dogfood.
+> Still deliberately not done: SBOM **unsigned**; no image registry; full
+> Merkle/anchors; G9 chain reconcile; cycle-1 cold install; settlements **0**.
+>
+> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
+> egress.
+>
+> Nothing has settled on-chain. That is still the single largest unproven
+> claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `330bf68` (#39). Claim **N1.3 building**. Settlements: **0**.
-> Claim **free**. Settlements: **0**. Prior plane `#37` / `b7e4f34`; N1.2
-> `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`.
+> **Tip of `origin/main`:** `622429c` (PR **#41** N1.3 portable EvidencePack).
+> Claim **free**. Settlements: **0**. Prior plane `#39` / `330bf68`; P7
+> `#38` / `4697c8d`; N1.2 `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0**
+> `#30` / `4cd2d0c`.
+>
+> **N1.3 landed on main @ `622429c` (PR #41).** Portable `EvidencePack`
+> (`veritas/notary/pack.py`) with `pack_hash` integrity, optional EIP-191
+> attestation re-check, free `POST /v1/packs/verify` + MCP `verify_pack`,
+> hash-only attach on completed observe. **Not proven:** Merkle inclusion,
+> multi-party origin, on-chain anchors, settlements (still **0**).
 >
 > **P7 landed on main @ `4697c8d` (PR #38).** `veritas/notary/refetch.py`
 > re-fetches via `notary.observe` (one engine); `POST /v1/verify` accepts
@@ -294,7 +313,8 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 ### Phase N1 — Signing, log, anchoring, non-circular verify
 - [ ] N1.1 EIP-191 signing with the payment secp256k1 key
 - [ ] N1.2 Append-only log + RFC-6962 Merkle batches + inclusion proofs
-- [ ] N1.3 Anchors (file backend default; on-chain behind config)
+- [x] N1.3 portable EvidencePack handoff (`622429c`, PR #41; not Merkle/on-chain anchors)
+- [ ] N1.3b Anchors (file backend default; on-chain behind config)
 - [x] N1.4 Origin re-fetch on `POST /v1/verify` (`url`+hash / `request_id`); legacy labeled `caller_supplied` (`4697c8d`, PR #38; P7 product)
 - [x] N1.5 `veritas/verifier.py` — zero-dependency standalone verification (`a4cfc49`, PR #19; packaging remains G.2)
 
@@ -424,3 +444,4 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-08 | N0 notary core | 4cd2d0c (#30) |
 | 2026-08-08 | N1.1 EIP-191 attestation + N1.2 free attest verify | db04ae2 (#33); 32d1054 (#34) |
 | 2026-08-08 | P7 origin re-fetch on POST /v1/verify | 4697c8d (#38) |
+| 2026-08-08 | N1.3 portable EvidencePack | 622429c (#41) |

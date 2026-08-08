@@ -18,6 +18,7 @@ scalable momentum (L0 multi-billion *direction* — never claim proven).
 | **Steward** | **15m** | Card/STATE cohesion (lags Overseer to cut thrash) |
 | **Flywheel** | **20m** | Full build cycle backup; Pruner gate; auto-merge on green |
 | **Scout (Idea)** | **25m** | Pattern fuel for Overseer; answers `scout_question` |
+| **Git Agent** | on demand / ~6–12h | Branch archaeology, salvage, local prune; Overseer conferral on remotes |
 | **Implement×n** | on demand | `/workflow agent-commerce-implement {"n":3}` — scale workers |
 
 **Shared truth:** `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md` ·

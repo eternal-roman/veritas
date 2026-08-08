@@ -6,12 +6,14 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood if egress, PyPI ops, or hold).
+> the bet. Default **hold** unless unblocked (live RPC G9 dogfood if egress;
+> PyPI is human ops, not a dual product bet).
 > **G10:** never dual-reopen **P7-C**, **N1.5**, **0.8.1**, **cycle-5**,
 > **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**, **M7**, or **O.8**.
 >
 > **P7-C is on main** — `#69` / `e7f674b`: free re-fetch shares `research_slots`.
-> Settlements **0**. Gap G9 **still open**. Not PyPI.
+> Closeout `#71` / `e45a2f5` freed the claim. Settlements **0**. Gap G9
+> **still open**. Not PyPI.
 >
 > **Also on main:** v0.8.1 `#62`; N1.5 `#60`; v0.8.0; cycle-5; N1.4; G9-design.
 >
@@ -19,10 +21,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `e7f674b` (PR **#69** P7-C).
-> Claim **free**. Settlements: **0**. Gap G9 open.
+> **Tip of `origin/main`:** `64b7a1a` (PR **#72** cycle-7 board after #71). Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**. Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**.
+> Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 >
-> **P7-C landed on main @ `e7f674b` (PR #69).** Free re-fetch takes research_slots.
+> **P7-C closeout landed on main @ `e45a2f5` (PR #71).** Claim free; tip-aligned.
+>
+> **P7-C landed on main @ `e7f674b` (PR #69).** Free re-fetch takes research_slots
+> on `POST /v1/verify`; full pool → 503 `service_overloaded`. Legacy
+> caller_supplied path does not take a slot. **Not proven:** multi-instance;
+> production load under shed; on-chain (0).
 >
 
 > **M1–M4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite

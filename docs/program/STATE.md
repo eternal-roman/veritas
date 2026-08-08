@@ -5,15 +5,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: version 0.8.1 prep** (patch for N1.5 on observe).
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. live RPC G9 dogfood, PyPI Trusted Publishing setup, N1.6, or
+> hold). **G10:** never dual-reopen **release-0.8.1**, **N1.5**, **release-0.8.0**,
+> **cycle-5**, **N1.4**, **G9-design**, **cycle-1**, **N1.3**, **P7**, **N0–N1.2**,
+> **M7**, or **O.8**.
 >
-> **On main:** N1.5 `#60` / `e089f86`; v0.8.0 `#58` / `58beccc`.
+> **v0.8.1 is on main** — `#62` / `070d4c4` + signed tag `v0.8.1` + GH Release.
+> Labels N1.5 inclusion proof on observe. Install via git tag. **Not** PyPI.
+> Settlements **0**. Gap G9 **still open**.
 >
-> **Scope:** `veritas.__version__ = 0.8.1` + CHANGELOG. Settlements **0**.
+> **Also on main:** N1.5 `#60`; v0.8.0 `#58` / tag `v0.8.0`; cycle-5 `#54`;
+> N1.4 `#49`; G9-design `#46`; cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2.
+>
+> Nothing has settled on-chain. That is still the single largest unproven
+> claim in this repository.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `e089f86` (#60 N1.5). Claim **0.8.1 prep**. Settlements: **0**.
+> **Tip of `origin/main`:** `070d4c4` (#62 v0.8.1). Claim **free**. Settlements: **0**. Tags: `v0.8.1`, `v0.8.0`.
 > Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
 >
 > **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;

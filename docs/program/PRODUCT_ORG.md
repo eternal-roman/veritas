@@ -77,11 +77,11 @@ writes why).
 | **T1c Self-improve** | **Optimizer** | Every **5 product cycles** forever; edits org/cadence/workflows (Overseer veto thrash) |
 | **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart |
 | **T3 Build** | Flywheel **or** Implement×**n** | **1 product bet**; N workers share one claim |
-| **T4 Support** | Steward, Scout | Parallel OK; no product code |
+| **T4 Support** | Steward, Scout, **Git Agent** | Parallel OK; no product code (Git Agent may open salvage PRs only) |
 | **T5 Burst** | continuous / pulse | Multi-cycle under budget cap |
 
 **Scale agents by fan-out of *support, audit, and implementer workers*, never by dual product NEXT.**  
-See [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md).
+See [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md).
 
 ---
 

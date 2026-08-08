@@ -17,7 +17,13 @@ after token exhaustion; do not lose state.
 - [x] Session-start branch `docs/g10-survival-consensus-only` concluded —
       merged as PR #81, now the tip of origin/main (458c36a). Nothing to do.
 - [x] Isolated worktree + branch created (this file's commit).
-- [ ] Multi-agent audit workflow over the codebase (8 domains) — pending.
+- [~] Multi-agent audit workflow launched — run ID `wf_dc7565b5-d86`, script
+      at `~/.claude/projects/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/workflows/scripts/veritas-refounding-audit-wf_dc7565b5-d86.js`,
+      journal in the sibling `subagents/workflows/wf_dc7565b5-d86/` dir.
+      8 auditors (money-path, trust-verification, core-product, agent-surfaces,
+      ops-scale, tests-evidence, program-governance, claims-market) → top-12
+      issue refutation ∥ 5 strategy lenses (marketplace, protocol, economics,
+      red-team, rebuild) → 3 judges.
 - [ ] Adversarial verification of top findings — pending.
 - [ ] First-principles strategy panel (5 lenses) + judging — pending.
 - [ ] Synthesis: `docs/program/fable/REFOUNDING.md` — pending.

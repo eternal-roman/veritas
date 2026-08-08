@@ -371,16 +371,21 @@ def observe(
     # N1.4: append content_hash to operator-local Merkle log before envelope
     # so custody can record the log event; leaf is the stable record hash
     # (not pack_hash, which depends on custody_root).
+    # N1.5: include the full inclusion proof so a peer agent can verify
+    # membership offline without a second GET /v1/log/proof hop.
     evidence_log_meta: dict[str, Any] | None = None
     try:
         from veritas.notary.log import EvidenceLogError, default_evidence_log
 
-        log_entry = default_evidence_log().append(content_hash)
+        log = default_evidence_log()
+        log_entry = log.append(content_hash)
+        proof = log.proof(int(log_entry["index"]))
         evidence_log_meta = {
             "index": log_entry["index"],
             "root": log_entry["root"],
             "leaf": log_entry["leaf"],
             "note": log_entry["note"],
+            "inclusion_proof": proof,
         }
         ledger.append("logged", "notary.log", {
             "index": log_entry["index"],

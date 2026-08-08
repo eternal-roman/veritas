@@ -5,28 +5,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, N1.5 anchors, PyPI publish, or other
-> singular). **G10:** never dual-reopen **release-0.8.0 prep**, **cycle-5**,
-> **N1.4**, **G9-design surface**, **cycle-1**, **N1.3**, **P7**, **N0**,
-> **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: N1.5 — embed Merkle inclusion proof on completed observe.**
 >
-> **v0.8.0 prep is on main** — `#58` / `58beccc`: version bump + CHANGELOG/
-> STATUS for A2A notary spine cut. **Not** PyPI publish. Settlements **0**.
+> **On main (do not re-open):** v0.8.0 `#58` / `58beccc` + closeout `#59` /
+> `e5092ca`; N1.4 `#49`; cycle-5 `#54`; G9-design; P7; N0–N1.3.
 >
-> **Also on main:** cycle-5 `#54` / `bf09a99` (offline ecosystem dogfood);
-> N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap G9 **still open**);
-> cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
->
-> Still deliberately not done: live RPC confirmation; SBOM unsigned; PyPI
-> publish; settlements **0**.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository, and no amount of local green changes it.
+> **N1.5 scope:** `evidence_log.inclusion_proof` on observe/notarize envelope
+> so peers verify membership offline without GET /v1/log/proof. **Not** public
+> CT; **not** on-chain. Settlements **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `58beccc` (PR **#58** v0.8.0 release prep).
+> **Tip of `origin/main`:** `e5092ca` (#59). Claim **N1.5 building**. Settlements: **0**.
 > Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
 >
 > **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;

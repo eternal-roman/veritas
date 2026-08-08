@@ -1,7 +1,9 @@
 """Evidence notary: observe-once records of what a URL served at time T.
 
 N0 ships fetch, extract, record, licence/robots policy, and observe compose.
-Signing, Merkle log, and re-fetch verify are N1 — not claimed here.
+N1.1 adds optional EIP-191 attestation of bound record fields when an
+operator signing key is configured. Merkle log, anchors, and re-fetch
+verify remain later N1 work — not claimed here.
 
 Import observation from the submodule so package attributes never shadow
 module paths used by pipeline, server, and tests::

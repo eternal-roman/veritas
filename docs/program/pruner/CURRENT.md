@@ -1,18 +1,19 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T21:20:00Z
+- **Time:** 2026-08-08T21:37:00Z
 - **Path:** LIGHT / **noop_idle**
-- **Branch / HEAD:** tip `58beccc` (release-0.8.0 #58)
-- **Scope:** Stock only — no open product PR; claim **free**
+- **Branch / HEAD:** tip `17222c5` (#63); product v0.8.1 `070d4c4` (#62)
+- **Scope:** claim **free**; open product PR **none**
 - **Verdict:** LEAN (idle)
-- **ship_ok:** n/a. Last landed: release-0.8.0 #58 @ `58beccc` (version/docs cut)
+- **ship_ok:** n/a. Last product: N1.5 #60 / release #62
 - **Battery:** **not run** (light path)
-- **Denied:** dual NEXT; re-open release-0.8.0/cycle-5/N1.4/G9-design/N0; invent settlement or PyPI-done
-- **Directive:** Wait Overseer single NEXT → G13 heavy on that ship.
+- **Denied:** dual NEXT; invent settlement/PyPI-done
+- **Directive:** Wait Overseer single NEXT + claim + product PR → G13 heavy.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: No product PR open; claim free; tip 58beccc v0.8.0 prep on main
+PROPERTY: No product PR; claim free; tip 17222c5
 EVIDENCE LEVEL: L1
-NOT PROVEN: settlements (0); G9 closed; PyPI publish
+CHECKED ARTIFACT: origin/main 17222c5; flywheel-claim free
+NOT PROVEN: on-chain (0); G9 closed; PyPI
 ```

@@ -14,16 +14,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 >
 > **On main:** A26/A27 `#75` / `ab728a6`; N0-residue `#77` / `1c56a0b`; Git Agent
 > `#76`; P7-C `#69` / `e7f674b`; v0.8.1 `#62`; N1.5 `#60`. Plane closeouts
-> `#78` / `#81` / `#82` / `#84` / `#85` / `#86`. Settlements **0**. Gap G9
+> `#78` / `#81` / `#82` / `#84` / `#85` / `#86` / `#89` / `#91`. Settlements **0**. Gap G9
 > **still open**. Not PyPI.
 >
 > Nothing has settled on-chain.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `d4769ca` (PR **#86** pruner post-#77/#75 ship evidence).
-> Prior: `#85` / `232efac` cycle-9 hold; `#84` / `398e2ac`; `#82` / `48d7703`;
-> `#81` / `458c36a`; free closeout **`2876f0a`** (#78).
+> **Tip of `origin/main`:** `03d7401` (PR **#91** steward restock / plane tip-align).
+> Prior: `#89` / `acc8f2d` pruner light noop_idle; `#88` / `abbfb40`; `#86` / `d4769ca`;
+> `#85` / `232efac`; free closeout **`2876f0a`** (#78).
 > Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
 > Claim **free**. Settlements: **0**. Gap G9 open. Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.

@@ -1,22 +1,20 @@
 # Steward CURRENT
 
-- **Time:** 2026-08-08T20:30:00Z
-- **origin/main:** **`be03dcd`** — tip after dependabot; product M7 via #23/#28
-- **Open PRs:** non-M7 product/guard PRs may be open; docs closeout supersedes stale M7 NEXT
-- **Cohesion score:** **2** (STATE advanced to N0; claim free; M7 product on main)
-- **Contradictions fixed this tick:** remote STATE no longer lists M7 as NEXT;
-  Phase M checklist M7 marked done; flywheel-claim freed
-- **Cards rewritten:** STATE, flywheel-claim, pruner CURRENT, conductor CURRENT, this card
-- **STATE claim hygiene:** NEXT=**N0**; tip **`be03dcd`**; M7 **on main**; settlements **0**
-- **Builder mid-flight:** M7 claim **free**. Next product branch should be **N0** only.
-- **Momentum directive:** **(1)** Builders: **N0 only** — no dual M7. **(2)** Settlements still **0**.
-- **noop_coherent?** **no** — tip and NEXT advanced vs prior steward card
+- **Time:** 2026-08-08T21:37:00Z
+- **origin/main:** **`17222c5`** — docs #63 v0.8.1 closeout; product `#62` / `070d4c4`; N1.5 `@e089f86` (#60)
+- **Open PRs:** **none**
+- **Cohesion score:** **1 → 3** after this tick (claim free tip-true; steward/overseer/peer still O.8-era)
+- **Contradictions fixed this tick:** steward tip be03dcd/N0; overseer O.8; peer #21/M7; pruner tip 58beccc; STATE tip SHA lag
+- **Cards rewritten:** steward/overseer/peer/pruner CURRENT + prior STATE/claim/conductor on this PR
+- **STATE claim hygiene:** tip **`17222c5`**; claim **free**; open product PRs **none**; settlements **0**; gap G9 open; not PyPI
+- **Builder mid-flight:** **no**
+- **Momentum directive:** Claim free — await Overseer singular NEXT. Settlements **0**.
+- **noop_coherent?** **no**
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Resume point names N0 after M7 on main; claim free; no dual NEXT
+PROPERTY: tip 17222c5; claim free; open PRs none; N1.5+0.8.1 landed
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: STATE.md NEXT N0; flywheel-claim free; #23/#28 MERGED
-ASSUMPTIONS: Agents stock STATE on main after this PR merges
-NOT PROVEN: N0 ship; on-chain settlement
+CHECKED ARTIFACT: origin/main 17222c5; gh pr list empty; flywheel-claim free
+NOT PROVEN: PyPI; live RPC; G9 closed; on-chain (0)
 ```

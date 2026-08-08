@@ -1,37 +1,41 @@
-# Conferral — 2026-08-08T21:20:00Z (post-merge #58 release-0.8.0)
+# Conferral — 2026-08-08T21:37:00Z (continuous cycle 6 final)
 
 ## From Steward
-Tip advanced through cycle-5 closeout → release-0.8.0; claim must stay free
-until Overseer names singular NEXT. No dual docs thrash.
+#63 free closeout on tip `17222c5`. Product tip `070d4c4` / N1.5 `e089f86`.
+Claim **free**. Open product PRs **none**.
 
 ## From Overseer
-Log 016 named sole NEXT **release-0.8.0 prep** (#58). That landed. No dual
-product; no G9-closed fiction; no re-open landed M7/N0/cycle-5.
+Tip Overseer CURRENT still stale (O.8-era on main). Local brief 018: free;
+await singular NEXT. Do not invent dual. Park live-RPC G9 / PyPI. Settlements **0**.
 
 ## From Pruner (G13)
-#58 was release chore (version/docs) — not a heavy product surface. No open
-product PR now. ship_ok n/a idle.
+#60 LEAN + CI green before merge. #62 version cut. No open product PR —
+ship_ok n/a idle. Heavy G13 when product NEXT ships.
 
 ## From Optimizer
-prefer_bet empty-by-default; **stale M7/N0 ignored**. After free claim without
-singular NEXT → **restart=false** wait.
+prefer_bet=**N0** → **ignored** (landed #30). Free claim without committed
+singular NEXT → **restart=false** (rules 7–8). n_implementers=**4** ready when
+Overseer names.
 
 ## From Flywheel / cycles
-**cycle-5 complete** @ `bf09a99`. **release-0.8.0 prep complete** @ `58beccc`.
-Claim **free**.
+**N1.5** #60 · **0.8.1** #62 · **free closeout** #63 on main. Queue clear.
+
+## From Architect (fuel only)
+Free-mode seam **P7-C** (research_slots on free re-fetch) is local/unblocked —
+candidate only until Overseer writes it as NEXT.
 
 ## Conductor synthesis
-- **Trajectory:** … → cycle-5 DONE → **release-0.8.0 DONE** → Overseer NEXT
-- **This-cycle bet:** none (idle free)
-- **Parked:** live-RPC G9 (egress); PyPI publish as silent dual; re-open landed bets
-- **Restart implement×3?** **No** — no unblocked singular NEXT
-- **Blockers (real only):** live G9 needs RPC; settlements 0 forever without chain
-- **Momentum:** **3**
+- **Trajectory:** N1.5 DONE → 0.8.1 DONE → free → Overseer singular NEXT
+- **This-cycle bet:** **none** (idle free)
+- **Parked:** live-G9 (egress); PyPI dual; re-open N0/N1.5/0.8.x; prefer_bet=N0;
+  P7-C until Overseer names
+- **Restart implement×4?** **No** — no tip-committed singular NEXT
+- **Blockers (real only):** live G9 needs RPC; settlements 0 without chain
+- **Momentum:** **3** (product shipped this window)
 - **Settlements:** **0**
-- **n_implementers:** idle until Overseer names NEXT
-- **merge_action:** #58 MERGED `58beccc`; open product PRs none
+- **n_implementers:** **4** idle until NEXT named
+- **merge_action:** #60 MERGED `e089f86`; #62 MERGED `070d4c4`; #63 MERGED `17222c5`; open product none
 
 ### Message
-**Tip `58beccc`.** v0.8.0 prep **on main**. Claim **free**. **Do not restart
-landed bets.** Wait Overseer singular NEXT (not invent dual). Settlements **0**.
-Not on PyPI.
+**Tip `17222c5`.** Claim **free**. prefer_bet=N0 **ignored**. **Do not invent
+P7-C dual without Overseer.** Settlements **0**. Not on PyPI.

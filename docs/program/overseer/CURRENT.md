@@ -1,20 +1,21 @@
 # Overseer CURRENT
 
-- **Time:** 2026-08-08T00:38:26Z
-- **Branch / HEAD:** `feat/o.6-retention-410-gone` @ `4c3b23c` (dirty O.6 WIP; main clean of retention)
+- **Time:** 2026-08-08T18:11:00Z
+- **Branch / HEAD:** `origin/main` @ **`96b9013`** (PR **#22** squash-merged — O.8)
 - **Verdict:** ON_TASK
-- **Scores:** on-task 3 / measured 2 / integrity 2 / a2a 2 / claims 2
-- **What is happening:** STATE NEXT ACTION is O.6. Branch `feat/o.6-retention-410-gone` is at main tip `4c3b23c` with no commits, but the working tree contains a full uncommitted O.6 implementation (retention config, custody prune+tombstones, ledger prune preserving indeterminate, `veritas-ops prune`, `receipt_gone`@410, API test distinguishing 410 vs 404). Not on GitHub main; zero open PRs. Empty parallel branch `feat/receipt-authz-retention` is unused noise.
-- **Lazy or half-measured?** **No.** O.6 code pins Guardian G9: `tests/test_api.py::test_receipt_pruned_returns_410_gone_not_404` asserts 410 `receipt_gone` vs 404 `receipt_not_found`; durability/ledger/ops tests cover tombstones and non-deletion of exposure rows. Incomplete ship (uncommitted, no PR, battery not re-run this tick) is a process gap, not half-measured 410→404 collapse.
-- **Strategic A2A note:** Landing O.6 lets a buyer re-fetch custody after retention and trust the difference between deleted and never-existed — axis B durability for agent audit, not axis C money-real. Zero on-chain settlements remain the product-killing landmass; finishing this bet beats starting N0 or discovery theater on a substrate that still lies about receipt history if prune is half-done.
-- **Directive (next 15–60m):** On `feat/o.6-retention-410-gone` only: run full battery (`pytest tests/ -q`, ruff, harness, payment_model); if green commit O.6 and open one PR; if red fix without scope creep. Ignore empty `feat/receipt-authz-retention` until O.6 merges.
-- **Do not do:** Start N0, O.8, M7, L.2, or Bazaar while O.6 is unshipped; mark O.6 done in STATE without green battery and PR; collapse 410 Gone into 404; claim on-chain settlement from local tests; open a second product path or dual engine; soft-fail CI or auto-merge; parallel-rewrite on `feat/receipt-authz-retention`; invent green without running the battery.
+- **Scores:** on-task 3 / measured 3 / integrity 2 / a2a 2 / claims 1
+- **noop_stable?** **no** vs 007 — **#22 merged**; tip left merge-gate; NEXT should be **M7**
+- **What is happening:** **O.8 product is on main** (squash `96b9013` from #22; parent `a4cfc49`). Artifacts present on tip: `requirements.lock`, `requirements-dev.lock`, `scripts/lock_requirements.py`, `tests/test_supply_chain.py`, CI `--require-hashes`, `mcp>=1.0,<2` in dev floors. No `continue-on-error` / `|| true` spotted in ci.yml pin path. **Open product PRs: none.** Only open PR: **#21** docs, **CONFLICTING** — not product. Conductor/steward local plane correctly set NEXT=**M7** and restart flywheel for M7. **Claim hygiene defect:** committed **`docs/program/STATE.md` on `origin/main` still says “O.8 is in review / not on main until merge” and progress “awaiting merge”** — false post-merge (carried by #22’s pre-merge STATE rewrite). Local steward rewrite of STATE is honest; **remote resume point is not** until a docs PR lands on tip. Dual-tree residue (o8 `95c4ab4` local, o8b at pre-squash head) — abandon; do not open second O.8. Settlements: **0**. Axis **C** = 0.
+- **Lazy or half-measured?** Product O.8: **no** for claimed pin surface. Plane: **yes risk** if agents stock **only** `origin/main` STATE and re-enter merge-gate theater or re-open O.8. Dirty #21 must not freeze M7.
+- **Strategic A2A note:** Axis **F** (install-trust) moved on main for the wheel/CI path. Does **not** move **C** (money) or **D** (notary). Ladder-correct next product bet: **M7** (credits/SIWx). Park Docker hash-lock / signed SBOM as separate later ops bets — not O.8 re-litigation. Raise C only with tx hash + measurement design.
+- **Directive (next 15–60m):** **(1) Steward/docs: land tip-aligned STATE** (O.8 on main @ `96b9013`; NEXT=M7; open product PRs none) — close/supersede dirty **#21**; do not leave remote STATE lying. **(2) Builders: single bet M7 only** — no dual N0, no second O.8 PR from o8. **(3)** If M7 needs external SIWx/facilitator egress, **honest BLOCKED** with evidence — no fake green.
+- **Do not do:** Re-open O.8 as NEXT; dual product PRs; soft-fail; invent settlement; force-push main; treat #21 as product; claim wild install / Docker pin / signed SBOM done; start N0 in parallel.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: This overseer tick correctly classifies WIP as on-task O.6 with 410≠404 pins present and unshipped
-EVIDENCE LEVEL: L1 for local artifact inspection (paths + tests + GitHub main absence); L0 for battery green
-CHECKED ARTIFACT: STATE.md NEXT ACTION; veritas/{retention,custody,ledger,ops_cli,server,errors}.py; tests/test_{api,durability,ledger,ops_cli,retention,errors}.py; .git refs; GitHub open PRs=[] ; main lacks retention.py
-ASSUMPTIONS: Working tree is the active builder surface; remote main@4c3b23c is the honest baseline; no hidden open PR outside GitHub API
-NOT PROVEN: Full suite exit 0 on this tree; multi-instance retention (O6); any on-chain settlement; continuous overseer efficacy beyond this card
+PROPERTY: O.8 product code is on origin/main @ 96b9013; no open product PR; remote STATE.md still falsely claims O.8 in review; local plane correctly points M7
+EVIDENCE LEVEL: L1 (git fetch, origin/main log #22, cat-file locks/tests/script, gh pr list, show origin/main:STATE.md vs local)
+CHECKED ARTIFACT: 96b9013; #22 MERGED 18:04Z; open only #21 CONFLICTING; require-hashes in ci.yml; mcp pin in requirements-dev.txt
+ASSUMPTIONS: Squash merge explains db541ce not ancestor; agents will prefer STATE on main unless steward lands fix; conductor restart means one M7 track
+NOT PROVEN: M7 implementation; STATE fix on remote main; Docker hash-lock; signed SBOM; any on-chain settlement
 ```

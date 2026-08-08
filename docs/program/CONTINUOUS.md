@@ -1,106 +1,134 @@
-# Continuous control plane (builders + overseer)
+# Continuous control plane
 
-Two durable loops, one honesty bar (`GUARDIAN.md`):
+**Governing stack:** [`GOVERNING.md`](GOVERNING.md) → [`GUARDIAN.md`](GUARDIAN.md)
+→ **Overseer** → Conductor / Flywheel.  
+**Product org / sequencing / timing:** [`PRODUCT_ORG.md`](PRODUCT_ORG.md).  
+**Autonomous (no human gates):** [`AUTONOMOUS.md`](AUTONOMOUS.md).
+
+Primary objective: **agent-to-agent autonomous commerce** substrate with
+scalable momentum (L0 multi-billion *direction* — never claim proven).
+
+## Active cadence (v2 — progress + scale)
 
 | Loop | Interval | Job |
 |------|----------|-----|
-| **Overseer** | **15 minutes** | Review WIP, kill lazy/half-measured work, strategic A2A redirect |
-| **Flywheel** | **1 hour** | Build one honest bet (stock → ship → learn) |
+| **Overseer** | **8m** | Quality + vision + strategy gate; Scout confer if vision≤1 |
+| **Pruner** | **10m** | Aggressive clean/prune; battery + E2E; **ship_ok veto** (G13) |
+| **Conductor** | **12m** | Merge green product PRs; restart single NEXT bet |
+| **Steward** | **15m** | Card/STATE cohesion (lags Overseer to cut thrash) |
+| **Flywheel** | **20m** | Full build cycle backup; Pruner gate; auto-merge on green |
+| **Scout (Idea)** | **25m** | Pattern fuel for Overseer; answers `scout_question` |
+| **Implement×n** | on demand | `/workflow agent-commerce-implement {"n":3}` — scale workers |
 
-Protocol: [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · [`OVERSEER.md`](OVERSEER.md)  
-**Guardian:** [`GUARDIAN.md`](GUARDIAN.md)  
-Orchestrators: `.grok/workflows/agent-commerce-flywheel.rhai`,
-`.grok/workflows/agent-commerce-overseer.rhai`  
-Ledgers: [`cycles/`](cycles/), [`overseer/`](overseer/)
+**Shared truth:** `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md` ·
+`conductor/TRAJECTORY.md` · `steward/CURRENT.md`  
+**Claim:** `flywheel-claim.md` (one product builder)
+
+Orchestrators:
+
+```
+.agent-commerce-{pulse,continuous,conductor,flywheel,overseer,steward}.rhai
+```
+
+(Scout is scheduler + tick prompt; optional future `agent-commerce-scout.rhai`.)
+
+---
+
+## Progress tree (autonomous)
+
+```
+event: idle | CI green | merge | LEARN
+        │
+        ▼
+   Overseer (8m) ── quality / vision / strategy
+        │                 │
+        │                 └── vision≤1 → Scout (25m) Idea fuel
+        ▼
+   Steward (15m) ── cards ≡ git/gh (parallel OK)
+        ▼
+   Conductor (12m)
+        ├── green product PR → squash-merge → LEARN → advance NEXT
+        ├── CI pending → poll once → next tick
+        └── queue clear → kick one bet (STATE NEXT / M7)
+                ▼
+        Implement×n  OR  Flywheel (20m)
+                │
+                └── battery → PRUNER ship_ok → PR → auto-merge → LEARN
+
+   Pruner (10m) ── continuous deny bloat on open PR / claim (may comment; no dual NEXT)
+```
+
+### Latency targets
+
+| Path | Target |
+|------|--------|
+| Green PR → merged | ≤ 12m |
+| Merge → coherent cards | ≤ 15m |
+| Idle → build start | ≤ 12m |
+| Thin vision → idea harvest | ≤ 25m |
+
+### Design rules
+
+1. **One product NEXT** — dual bets forbidden (G10 + claim file).  
+2. **Scale support + implementer workers in parallel; never dual product NEXT.**  
+   Pruner (G13) blocks useless/non-functional/bloated ships.
+3. **I ≥ ~2× p95** write roles; **I ≥ ~5×** pure review roles.  
+4. **Docs-only dirty PRs** do not freeze product.  
+5. **No `await_user`** on commerce workflows.  
+6. **noop_*** when facts unchanged.
+
+---
+
+## Scaled entrypoints
+
+```text
+/workflow agent-commerce-pulse {"prefer_bet": "M7"}
+/workflow agent-commerce-implement {"n": 3, "prefer_bet": "M7"}
+/workflow agent-commerce-pruner
+/workflow agent-commerce-continuous {"max_cycles": 5, "forever": true, "prefer_bet": "M7"}
+/workflow agent-commerce-optimizer
+/workflow agent-commerce-flywheel {"max_cycles": 2, "prefer_bet": "M7", "auto_merge": true}
+/workflow agent-commerce-overseer
+/workflow agent-commerce-steward
+/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 3}
+```
+
+---
 
 ## Active schedules
 
-### Overseer (every 15 minutes)
+| Name | Id | Interval |
+|------|-----|----------|
+| Overseer | `019fdfde0212` | **8m** |
+| **Pruner** | `019fe29d4d61` | **10m** |
+| Conductor | `019fe25403f2` | **12m** |
+| Steward | `019fdff1fbe4` | **15m** |
+| Flywheel | `019fdfd6c9bf` | **20m** |
+| Scout | `019fe0026e7d` | **25m** |
 
-| Setting | Value |
-|---------|--------|
-| Interval | **15 minutes** |
-| Scheduler task id | `019fdfde0212` (durable; re-arm after ~7 days) |
-| Tick prompt | [`OVERSEER_TICK_PROMPT.md`](OVERSEER_TICK_PROMPT.md) |
-| Writes | `overseer/CURRENT.md` + `overseer/log/NNN-brief.md` |
-| Merge | Never |
-| Role | Honesty + strategy; not a second builder |
+### Role briefs
 
-### Flywheel (every 1 hour)
+| Role | Charter | Tick |
+|------|---------|------|
+| Overseer | [`OVERSEER.md`](OVERSEER.md) | [`OVERSEER_TICK_PROMPT.md`](OVERSEER_TICK_PROMPT.md) |
+| **Pruner** | [`PRUNER.md`](PRUNER.md) | [`PRUNER_TICK_PROMPT.md`](PRUNER_TICK_PROMPT.md) |
+| Conductor | [`CONDUCTOR.md`](CONDUCTOR.md) | [`CONDUCTOR_TICK_PROMPT.md`](CONDUCTOR_TICK_PROMPT.md) |
+| Flywheel | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
+| Implement×n | [`IMPLEMENTERS.md`](IMPLEMENTERS.md) | workflow only |
+| Steward | [`STEWARD.md`](STEWARD.md) | [`STEWARD_TICK_PROMPT.md`](STEWARD_TICK_PROMPT.md) |
+| Scout | Idea fuel | [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) |
 
-| Setting | Value |
-|---------|--------|
-| Interval | **1 hour** |
-| Scheduler task id | `019fdfd6c9bf` (durable; re-arm after ~7 days) |
-| Tick prompt | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
-| Mode | Durable scheduled task (survives session end) |
-| Per tick | One full cycle: stock → select → plan → build → audit → verify → PR |
-| Merge | **Off** (`auto_merge: false`) — human owns `main` |
-| Concurrency | Skip tick if WIP clash or prior PR CI still pending |
+---
 
-Re-arm after ~7 days or if the task list is empty:
+## Era (product)
 
-```text
-Ask Grok: "Re-arm the Veritas flywheel and overseer schedulers"
-```
+See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). **NOW: M7** → N0 → C-measure/G9 design.
+On-chain settlements remain **0** until proven.
 
-Cancel:
-
-```text
-Ask Grok: "Stop the Veritas overseer scheduler" / "Stop the flywheel scheduler"
-```
-
-## Manual / interactive
+## Re-arm
 
 ```text
-# Overseer pass (review + steer)
-/workflow agent-commerce-overseer
-
-# Builder cycle
-/workflow agent-commerce-flywheel
-/workflow agent-commerce-flywheel {"prefer_bet": "O.6", "max_cycles": 1}
-/workflow agent-commerce-flywheel {"dry_run": true}
-/workflow agent-commerce-flywheel {"max_cycles": 3, "auto_merge": false}
+Ask Grok: "Re-arm Veritas control-plane schedulers"
 ```
 
-## Hourly tick contract (what the scheduler runs)
-
-Each hour the agent must:
-
-1. **cwd** = Veritas repo root (`veritas` / this workspace).
-2. Read `docs/program/INNOVATION_LOOP.md`, `docs/program/STATE.md`, latest
-   `docs/program/cycles/*.md`, `skills/adversarial-code-truth.md`.
-3. **Skip** (exit with a one-line reason, change nothing) if:
-   - `git status` shows another agent's incomplete flywheel WIP you did not start
-     and cannot safely continue, **or**
-   - a PR from the previous tick is open and CI is still running (wait for next hour), **or**
-   - the battery cannot be run (missing venv) — report, do not invent green.
-4. Prefer **STATE.md NEXT ACTION** unless a critical security/money-path defect
-   outranks it (write the deviation in the cycle report).
-5. Execute **one** shippable bet: tests first, implement, adversarial self-check,
-   run `python -m pytest tests/ -q` (and ruff/harness/payment_model when feasible).
-6. Push branch + open PR against `main` if there is a real delta. **Do not merge**
-   unless explicitly configured. Never force-push `main`. Never claim on-chain
-   settlement without a transaction hash.
-7. Write `docs/program/cycles/NNN-<slug>.md` and update STATE.md NEXT ACTION.
-8. Emit PROPERTY / EVIDENCE LEVEL / NOT PROVEN before any success claim.
-
-### Windows (pwsh) shell rules
-
-No bare `head` / `grep` / `tail` / `find`. Truncate with
-`| Out-String -Stream | Select-Object -First N`. Prefer
-`.\\scripts\\with-git-bash.cmd "..."` for complex git if the helper exists.
-
-### Interactive workflow vs scheduled tick
-
-| Path | When |
-|------|------|
-| `/workflow agent-commerce-flywheel` | Human in session; multi-agent phases |
-| Hourly scheduler prompt | Unattended; single agent walks the same protocol |
-
-Same protocol file. Same scorecard. Same ledger directory.
-
-## What "done" never means
-
-The hub vision is recursive. Stopping is external (delete the scheduler), not
-"scorecard maxed". Volume and on-chain settlements are not inventable in-loop.
+Tasks expire ~7 days. Use intervals in the Active schedules table.

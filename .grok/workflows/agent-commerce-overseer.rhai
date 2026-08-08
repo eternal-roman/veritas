@@ -1,21 +1,21 @@
-// Agent Commerce Overseer — honesty + strategy + course-correction review.
-// Spec: docs/program/OVERSEER.md  ·  Rules: docs/program/GUARDIAN.md
-// Cadence: every 15m via durable scheduler; this workflow is the interactive form.
+// Agent Commerce Overseer — quality + objectivity + vision + strategy gate.
+// Spec: GOVERNING.md · OVERSEER.md · GUARDIAN.md
+// Cadence: every 10m durable scheduler; this workflow is interactive form.
 
 let meta = #{
     name: "agent-commerce-overseer",
-    description: "15m-class overseer: review WIP honesty, A2A strategy, redirect lazy/misguided work",
-    when_to_use: "When work may be drifting, before merge, or to run an overseer pass interactively",
+    description: "Top-tier quality/vision/strategy gate: honesty scores, vision health, Scout conferral, redirect thrash",
+    when_to_use: "Standing product self-government; when work may drift; before endorsing a bet",
     phases: [
-        #{ title: "Stock", detail: "Tree, STATE, PRs, prior CURRENT" },
-        #{ title: "Judge", detail: "Rubric scores + verdict" },
-        #{ title: "Steer", detail: "Write CURRENT + log; optional PR comment" },
+        #{ title: "Stock", detail: "Governing loops, tree, STATE, IDEA_BUS, PRs" },
+        #{ title: "Judge", detail: "Quality + honesty + vision/strategy scores" },
+        #{ title: "Steer", detail: "Write CURRENT + log; Scout question if vision thin" },
     ],
 };
 
 let review_schema = #{
     "type": "object",
-    "required": ["verdict", "scores", "happening", "lazy", "strategic_note", "directive", "do_not", "property_block"],
+    "required": ["verdict", "scores", "happening", "lazy", "strategic_note", "directive", "do_not", "property_block", "vision", "strategy", "confer_scout"],
     "properties": #{
         "verdict": #{ "type": "string" },
         "scores": #{
@@ -29,6 +29,14 @@ let review_schema = #{
                 "claims": #{ "type": "integer" },
             },
         },
+        "vision": #{ "type": "integer" },
+        "strategy": #{ "type": "integer" },
+        "confer_scout": #{ "type": "boolean" },
+        "scout_question": #{ "type": "string" },
+        "idea_synthesis": #{ "type": "string" },
+        "functioning": #{ "type": "boolean" },
+        "necessary": #{ "type": "boolean" },
+        "pursuant": #{ "type": "boolean" },
         "happening": #{ "type": "string" },
         "lazy": #{ "type": "boolean" },
         "lazy_proof": #{ "type": "string" },
@@ -57,19 +65,20 @@ let write_schema = #{
 phase("Stock");
 let stock_prompt = "";
 stock_prompt += "### WINDOWS PWSH: no bare head/grep/tail; use Select-Object -First N.\n\n";
-stock_prompt += "You are the Veritas OVERSEER (docs/program/OVERSEER.md).\n";
-stock_prompt += "Read with tools — never invent:\n";
-stock_prompt += "1. docs/program/OVERSEER.md, GUARDIAN.md, STATE.md, OVERSEER_TICK_PROMPT.md\n";
-stock_prompt += "2. docs/program/overseer/CURRENT.md if present; cycles/000-baseline.md; latest cycle\n";
-stock_prompt += "3. git status -sb; branch; log --oneline -12; diff --stat if dirty\n";
-stock_prompt += "4. Open PRs if gh/GitHub available\n";
-stock_prompt += "5. If WIP claims O.6 or similar, spot-check tests exist for the claim (e.g. 410 Gone)\n\n";
-stock_prompt += "Judge against agent-to-agent commerce value: money real → product worth → independence → discovery → lifecycle.\n";
-stock_prompt += "Detect lazy/half-measured/theater. Prefer STATE NEXT ACTION unless severity outranks it.\n\n";
-stock_prompt += "Return JSON: verdict (ON_TASK|DRIFT|LAZY|MISGUIDED|BLOCKED), scores 0-3 each,\n";
-stock_prompt += "happening, lazy bool + lazy_proof, strategic_note, directive, do_not[], branch,\n";
-stock_prompt += "property_block (full gate text), pr_comment_needed, pr_url if any.\n";
-stock_prompt += "Fail closed on thin evidence: do not cheerlead.\n";
+stock_prompt += "You are the Veritas OVERSEER — top-tier quality/objectivity/vision/strategy gate.\n";
+stock_prompt += "Read GOVERNING.md, OVERSEER.md, GUARDIAN.md, INNOVATION_LOOP.md, STATE.md, OVERSEER_TICK_PROMPT.md.\n";
+stock_prompt += "Also: overseer/CURRENT, steward/CURRENT, conductor/CONFERRAL+TRAJECTORY, scout/IDEA_BUS,\n";
+stock_prompt += "cycles/*, git status/log, open PRs. Never invent.\n\n";
+stock_prompt += "Governing loops set goals. You judge: functioning (tests/CI), necessary (not vanity),\n";
+stock_prompt += "pursuant (A2A commerce trajectory / scorecard A-F / STATE NEXT).\n";
+stock_prompt += "Strategy order: money real → product worth → independence → discovery → lifecycle.\n";
+stock_prompt += "Score vision 0-3 and strategy 0-3. If either <=1: confer_scout=true + scout_question;\n";
+stock_prompt += "read IDEA_BUS and put idea_synthesis (hypotheses only, WATCH not approve).\n";
+stock_prompt += "Detect lazy/half-measured/theater. Prefer STATE NEXT unless severity outranks.\n\n";
+stock_prompt += "Return: verdict, scores{}, vision, strategy, confer_scout, scout_question, idea_synthesis,\n";
+stock_prompt += "functioning, necessary, pursuant, happening, lazy, lazy_proof, strategic_note, directive,\n";
+stock_prompt += "do_not[], branch, property_block, pr_comment_needed, pr_url.\n";
+stock_prompt += "Fail closed on thin evidence. Never claim multibillion outcomes as proven.\n";
 
 let review_r = agent(stock_prompt, #{
     label: "overseer-judge",
@@ -78,7 +87,15 @@ let review_r = agent(stock_prompt, #{
 });
 
 if review_r == () || !review_r.success || review_r.output == () {
-    pause("infra", "Overseer stock/judge failed — cannot steer without reading the tree.");
+    // AUTONOMOUS: no human pause — complete with failure so next tick retries
+    complete(#{
+        path: write_scratch_file("overseer-report.json", json_encode(#{
+            success: false,
+            reason: "judge_failed",
+            autonomous: true,
+        })),
+        report: #{ success: false, reason: "judge_failed" },
+    });
 }
 
 let review = review_r.output;
@@ -90,11 +107,13 @@ let steer_prompt = "";
 steer_prompt += "### WINDOWS PWSH SAFETY.\n\n";
 steer_prompt += "Write overseer artifacts from this review JSON (do not soften the verdict):\n";
 steer_prompt += json_encode(review) + "\n\n";
-steer_prompt += "1. Overwrite docs/program/overseer/CURRENT.md per OVERSEER.md output contract.\n";
-steer_prompt += "2. Create docs/program/overseer/log/NNN-brief.md with next NNN after existing log files.\n";
-steer_prompt += "3. If pr_comment_needed and pr_url set, leave a short factual PR comment via gh if available.\n";
+steer_prompt += "1. Overwrite docs/program/overseer/CURRENT.md per OVERSEER.md contract INCLUDING\n";
+steer_prompt += "   vision/strategy scores, quality gate (functioning/necessary/pursuant),\n";
+steer_prompt += "   Confer Scout? / Scout question / Idea synthesis.\n";
+steer_prompt += "2. Create docs/program/overseer/log/NNN-brief.md (next free NNN).\n";
+steer_prompt += "3. If pr_comment_needed and pr_url set, short factual PR comment via gh if available.\n";
 steer_prompt += "4. Do not merge. Do not force-push. Do not invent green.\n";
-steer_prompt += "5. Only if verdict implies a guardian-class one-line integrity bug with a test you can finish now — otherwise no code drive-by.\n";
+steer_prompt += "5. Guardian-class one-line integrity fix + test only if finishable this tick.\n";
 steer_prompt += "Return success, current_path, log_path, notes, pr_commented.\n";
 
 let write_r = agent(steer_prompt, #{

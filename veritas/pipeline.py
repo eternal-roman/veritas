@@ -27,6 +27,7 @@ repaired — see `veritas/support.py` for why, and for the counts that replace i
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
@@ -42,6 +43,9 @@ from .retrieval import (
     relevance_score,
 )
 from .support import support_report
+
+# URL observation for research goes through notary.observe — never a second scraper.
+Observer = Callable[..., dict[str, Any]]
 
 # Minimum usable evidence length; shorter excerpts cannot ground a claim.
 MIN_EVIDENCE_CHARS = 40
@@ -94,12 +98,41 @@ def _envelope(
     }
 
 
+def _default_observer(url: str, **kwargs: Any) -> dict[str, Any]:
+    """Sole research-side URL observation path: notary.observe (N0-A)."""
+    from veritas.notary.observe import observe as notary_observe
+
+    return notary_observe(url, **kwargs)
+
+
+def _apply_observation(src: dict[str, Any], observation: dict[str, Any]) -> dict[str, Any]:
+    """Merge a notary observation into a retrieval source dict in place."""
+    record = observation.get("evidence_record") or {}
+    body = (record.get("body") or "").strip()
+    if observation.get("status") == "completed" and body:
+        src = dict(src)
+        src["text"] = body
+        src["title"] = record.get("title") or src.get("title")
+        src["observed"] = True
+        src["observe_content_hash"] = record.get("content_hash")
+        src["extract_version"] = record.get("extract_version")
+        src["retention_class"] = record.get("retention_class")
+        policy = observation.get("policy") or {}
+        if policy.get("license"):
+            src["license"] = policy["license"]
+        src["provenance"] = src.get("provenance") or "notary.observe"
+    return src
+
+
 def run_research(
     query: str,
     retriever: Retriever | None = None,
     max_results: int = 5,
     allow_network: bool = True,
     request_id: str | None = None,
+    *,
+    observe_urls: bool = False,
+    observer: Observer | None = None,
 ) -> dict[str, Any]:
     """Run one research request end to end.
 
@@ -110,6 +143,11 @@ def run_research(
     paid HTTP path claims a payment authorization against it before any work
     starts — can have the custody chain, the receipt and the financial ledger
     all name the same request. Callers that do not care get a fresh uuid4.
+
+    When ``observe_urls`` is true, each http(s) source URL is re-observed
+    through ``observer`` (default: ``veritas.notary.observe.observe``). That is
+    the only research path that fetches caller-named page bodies — never a
+    second engine (N0-A / constitution A1).
     """
     ledger = CustodyLedger()
     request_id = request_id or str(uuid.uuid4())
@@ -133,6 +171,33 @@ def run_research(
 
     if len(result.sources) > max_results:
         result.sources = result.sources[:max_results]
+
+    # Optional full-page observation: always through notary.observe (or an
+    # injected stand-in of the same shape). Fixture / veritas:// URLs are skipped.
+    if observe_urls:
+        active_observer = observer or _default_observer
+        upgraded: list[dict[str, Any]] = []
+        for src in result.sources:
+            url = src.get("url")
+            if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+                upgraded.append(src)
+                continue
+            try:
+                observation = active_observer(url, request_id=request_id)
+            except Exception as exc:  # noqa: BLE001 - observation failure is non-fatal for the source
+                ledger.append("observation_error", "notary.observe", {
+                    "url": url,
+                    "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+                })
+                upgraded.append(src)
+                continue
+            ledger.append("observed", "notary.observe", {
+                "url": url,
+                "status": observation.get("status"),
+                "content_hash": (observation.get("evidence_record") or {}).get("content_hash"),
+            })
+            upgraded.append(_apply_observation(src, observation))
+        result.sources = upgraded
 
     retrieval_meta = result.to_dict()
 
@@ -176,8 +241,9 @@ def run_research(
             "url": src.get("url"),
             "title": src.get("title"),
             "provenance": src.get("provenance"),
+            **({"observed": True} if src.get("observed") else {}),
         })
-        evidence.append({
+        item = {
             "url": src.get("url"),
             "title": src.get("title"),
             "excerpt": text,
@@ -189,7 +255,10 @@ def run_research(
             # it. Unknown is stated as unknown rather than left blank.
             "license": src.get("license") or dict(UNKNOWN_LICENSE),
             "attribution": src.get("attribution") or {"required": False, "text": None},
-        })
+        }
+        if src.get("observed"):
+            item["observed"] = True
+        evidence.append(item)
 
     # Sources were reachable but nothing usable came back. Two different honest
     # refusals: nothing was returned at all, or everything returned was off-topic.

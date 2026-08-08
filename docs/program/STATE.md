@@ -5,19 +5,21 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: N1.4 — operator-local Merkle evidence log + inclusion proofs.**
+> **Do this next: N1.4 — operator-local Merkle evidence log.**
 >
 > **On main (do not re-open):** G9-design `#46` / `6777a92` + closeout `#48` /
-> `b77339f`; cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2.
+> `b77339f`; cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
 >
-> **N1.4 scope:** merkle + evidence log; observe appends content_hash; free
-> `/v1/log`, `/v1/log/proof`, `/v1/log/verify`. Not public CT; not on-chain.
-> Settlements **0**.
+> **N1.4 scope:** `veritas/notary/merkle.py` + `log.py`; append on completed
+> observe; free `GET /v1/log`, `GET /v1/log/proof`, `POST /v1/log/verify`.
+> **Not** public CT; **not** on-chain. Settlements **0**. Gap G9 still open.
+>
+> **Parked:** live RPC G9 dogfood; cycle-5; claim G9 closed.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `b77339f` (#48). Claim **N1.4 building**. Settlements: **0**.
-> Claim **free**. Settlements: **0**. Gap G9 **still open**.
+> **Tip of `origin/main`:** `b77339f` (#48 G9 closeout). Product G9-design
+> @ `6777a92` (#46). Claim **N1.4 building**. Settlements: **0**. Gap G9 open.
 >
 > **G9-design landed on main @ `6777a92` (PR #46).** `veritas/chain_reconcile.py`
 > + `veritas-ops reconcile-chain`; fail-closed without RPC. **Not proven:**

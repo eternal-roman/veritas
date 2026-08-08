@@ -5,7 +5,7 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: G9 design — chain reconcile fail-closed surface.**
+> **Do this next: G9 design — chain reconcile fail-closed surface (#46 only).**
 >
 > **On main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout `#45` /
 > `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
@@ -15,13 +15,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 > `rpc_not_configured`. Injectable transport for L1 tests. **Does not** close
 > constitution G9; **does not** rewrite ledger revenue. Settlements **0**.
 >
-> **Parked:** live RPC dogfood; N1.4 Merkle log; cycle-5.
+> **G10:** never dual-reopen cycle-1, N1.3, P7, N0, N1.1, N1.2, M7, or O.8.
+> Do not dual Merkle/cycle-5 while G9 claim holds.
+>
+> **Parked:** live RPC dogfood; N1.4 Merkle log; cycle-5; settlements still **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `df1cc8f` (#45 cycle-1 closeout). Product cycle-1
-> @ `2cbed44` (#44). Claim **G9-design building**. Settlements: **0**.
->
+> **Tip of `origin/main`:** `df1cc8f` (PR **#45** cycle-1 closeout). Product
+> cycle-1 @ `2cbed44` (#44). Claim **building G9-design** on #46. Settlements: **0**.
+
 > **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
 > (7 checks), committed report, CI wire-up. **Not proven:** blank-machine
 > PyPI cold install; on-chain (still **0**).

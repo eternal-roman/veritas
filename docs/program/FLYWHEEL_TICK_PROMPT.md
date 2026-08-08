@@ -34,9 +34,12 @@ Advance agent independence, scalable agent commerce, and lifecycle enrichment
    - `docs/program/INNOVATION_LOOP.md`
    - `docs/program/STATE.md` (NEXT ACTION)
    - `docs/program/CONTINUOUS.md`
+   - **`docs/program/conductor/CONFERRAL.md`** + `TRAJECTORY.md` (primary bet / parks)
+   - **`docs/program/steward/CURRENT.md`** (cohesion / real NEXT — git wins if cards lag)
+   - **`docs/program/scout/IDEA_BUS.md`** if present (patterns only)
    - latest `docs/program/cycles/*.md` + `000-baseline.md`
    - `skills/adversarial-code-truth.md`
-3. `git status -sb`; `git log --oneline -10`; fetch if possible.
+3. `git status -sb`; `git fetch`; `git log origin/main --oneline -10`.
 4. If an incomplete branch for the **same** NEXT ACTION exists, **continue it**.
    Do not open a second parallel bet.
 5. **SELECT** one bet: default STATE NEXT ACTION. Deviate only for critical

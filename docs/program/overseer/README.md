@@ -2,9 +2,9 @@
 
 | Path | Role |
 |------|------|
-| [`CURRENT.md`](CURRENT.md) | Latest steering card (overwritten each tick) |
-| [`log/`](log/) | Append-only history of briefs |
-| [`../OVERSEER.md`](../OVERSEER.md) | Charter + rubric |
-| [`../OVERSEER_TICK_PROMPT.md`](../OVERSEER_TICK_PROMPT.md) | Scheduler prompt |
+| [`CURRENT.md`](CURRENT.md) | Product honesty / strategy board |
+| [`log/`](log/) | Brief history (`INDEX.md` maintained by Steward) |
+| [`peer/`](peer/) | Peer branch watch — **IDLE** unless a new parallel agent lands |
+| [`../STEWARD.md`](../STEWARD.md) | Cohesion agent (30m) — keeps this CURRENT from rotting |
 
-Cadence: **every 15 minutes** (see `../CONTINUOUS.md`).
+Cadence: Overseer **15m** · Steward **30m**.

@@ -20,7 +20,7 @@ Orchestration: `.grok/workflows/agent-commerce-flywheel.rhai`
 /workflow agent-commerce-flywheel {"dry_run": true}
 
 # Prefer a bet id from STATE / ROADMAP
-/workflow agent-commerce-flywheel {"prefer_bet": "O.6", "max_cycles": 1}
+/workflow agent-commerce-flywheel {"prefer_bet": "O.8", "max_cycles": 1}
 
 # Burst (pauses between unmerged PRs)
 /workflow agent-commerce-flywheel {"max_cycles": 3, "auto_merge": false}

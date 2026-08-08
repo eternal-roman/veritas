@@ -2,7 +2,7 @@
 
 - **Time:** 2026-08-08T17:05:00Z
 - **origin/main:** `a4cfc49` — tip = PR #19 (diligence + verifier); ancestry includes `4a3d105` (#20), `48194ab` (#18 O.6)
-- **Open PRs:** none (queue clear)
+- **Open PRs:** **#21** docs card hygiene (this plane; not a product bet). Queue otherwise clear.
 - **Cohesion score:** 3 (after this tick: cards + STATE NEXT match git/gh)
 - **Contradictions fixed this tick:**
   1. origin overseer CURRENT claimed main lacks `retention.py` / O.6 unshipped / STATE NEXT=O.6 / direct `feat/o.6-retention-410-gone` — **false** (`48194ab` on tip path; tip `a4cfc49`)

@@ -19,6 +19,7 @@
 - STATE claim hygiene: single NEXT=O.8; SHA progress bullets; fixed verifier-on-#19 lie; session log rows; N1.5 [x] with #19.
 - cycles/README prefer_bet example O.6 → O.8.
 - Steward CURRENT full contract; this log.
+- Landed plane on branch `docs/steward-card-hygiene-o8` → **PR #21** (main protected; no direct push; no merge by steward).
 
 ## Momentum
 

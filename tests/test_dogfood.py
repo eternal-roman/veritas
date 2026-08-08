@@ -15,10 +15,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts import dogfood_cycle2, dogfood_cycle3, dogfood_cycle4
+from scripts import dogfood_cycle1, dogfood_cycle2, dogfood_cycle3, dogfood_cycle4
 
 REPO = Path(__file__).resolve().parents[1]
 
+
+
+
+def test_cycle1_cold_install_first_boot_passes():
+    report = dogfood_cycle1.run()
+    failed = [c for c in report["checks"] if not c["pass"]]
+    assert not failed, json.dumps(failed, indent=2)
+    assert report["total"] >= 7
+    assert report["all_pass"] is True
 
 def test_cycle2_paying_buyer_passes_every_scenario():
     report = dogfood_cycle2.run()
@@ -65,7 +74,7 @@ def test_no_dogfood_script_performs_an_outbound_request():
     """Both cycles claim to make no network call. That claim is load-bearing:
     it is why their results describe the product rather than this sandbox's
     egress."""
-    for name in ("dogfood_cycle2.py", "dogfood_cycle3.py", "dogfood_cycle4.py"):
+    for name in ("dogfood_cycle1.py", "dogfood_cycle2.py", "dogfood_cycle3.py", "dogfood_cycle4.py"):
         source = (REPO / "scripts" / name).read_text(encoding="utf-8")
         for forbidden in ("urlopen(", "requests.get", "requests.post", "httpx.get"):
             assert forbidden not in source, f"{name} may reach the network via {forbidden}"

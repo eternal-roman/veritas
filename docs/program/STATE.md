@@ -5,21 +5,21 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: N1.3 — portable EvidencePack for agent-to-agent handoff.**
+> **Do this next: cycle-1 dogfood — cold autonomous install / first-boot.**
 >
-> **On main (do not re-open):** P7 `#38` / `4697c8d`; N1.2 `#34`; N1.1 `#33`;
-> N0 `#30`; tip docs `#39` / `330bf68`.
+> **On main (do not re-open):** N1.3 `#41` / `622429c`; P7 `#38`; N1.2 `#34`;
+> N1.1 `#33`; N0 `#30`.
 >
-> **N1.3 scope:** `veritas-evidence-pack-v1` with `pack_hash` integrity;
-> optional attestation re-check; free `POST /v1/packs/verify` + MCP
-> `verify_pack`; attach hash-only pack on completed observe. **Not** Merkle
-> log inclusion; **not** on-chain anchors. Settlements **0**.
+> **Cycle-1 scope:** `scripts/dogfood_cycle1.py` + CI + `tests/test_dogfood.py`
+> + committed report. Free-mode bootstrap, discovery (notarize/attest/pack),
+> offline research, offline notary+pack verify. **Not** blank-machine PyPI
+> install (package job owns that). Settlements **0**.
 >
-> **Parked:** full Merkle/anchors; G9 design; cycle-1 dogfood.
+> **Parked:** G9 design (RPC); N1.4 Merkle log.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `330bf68` (#39). Claim **N1.3 building**. Settlements: **0**.
+> **Tip of `origin/main`:** `622429c` (#41 N1.3). Claim **cycle-1 building**. Settlements: **0**.
 > Claim **free**. Settlements: **0**. Prior plane `#37` / `b7e4f34`; N1.2
 > `#34` / `32d1054`; N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`.
 >

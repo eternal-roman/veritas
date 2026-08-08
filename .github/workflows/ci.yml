@@ -65,6 +65,7 @@ jobs:
       # operator would use against their own instance, including --out.
       - name: Dogfooding cycles
         run: |
+          python scripts/dogfood_cycle1.py --out /tmp/cycle1.json
           python scripts/dogfood_cycle2.py --out /tmp/cycle2.json
           python scripts/dogfood_cycle3.py --out /tmp/cycle3.json
           python scripts/dogfood_cycle4.py --out /tmp/cycle4.json

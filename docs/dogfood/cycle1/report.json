@@ -1,0 +1,55 @@
+{
+  "all_pass": true,
+  "boundary": "Does not re-run blank-machine pip install from PyPI; CI package job owns wheel install. This cycle is first-boot agent surfaces after the package is available (post N0\u2013N1.3).",
+  "checks": [
+    {
+      "check": "entry_points",
+      "expected": "console scripts ['veritas-server', 'veritas-agent', 'veritas-mcp', 'veritas-ops', 'veritas-verify'] declared in pyproject",
+      "observed": "pyproject_present=['veritas-agent', 'veritas-mcp', 'veritas-ops', 'veritas-server', 'veritas-verify']; missing=[]; installed_metadata_missing=[]",
+      "pass": true,
+      "source": "pyproject"
+    },
+    {
+      "check": "required_modules",
+      "expected": "N0\u2013N1.3 product modules import",
+      "observed": "imported 8 modules",
+      "pass": true
+    },
+    {
+      "check": "one_top_level_package",
+      "expected": "exactly one installable top-level package: veritas",
+      "observed": "veritas_present=True; extra_top_level=[]",
+      "pass": true
+    },
+    {
+      "check": "free_bootstrap",
+      "expected": "veritas-agent init produces free-mode config without payment env",
+      "observed": "exit=0, config=True, mode=free",
+      "pass": true
+    },
+    {
+      "check": "free_server_surfaces",
+      "expected": "free-mode health + discovery reaches notarize/attest/pack surfaces",
+      "observed": "health=200/free, wk=200, identity=200, schema=200, missing_links=[]",
+      "pass": true
+    },
+    {
+      "check": "offline_research",
+      "expected": "run_research(allow_network=False) returns a contract-shaped body",
+      "observed": "status=completed, has_custody=True",
+      "pass": true
+    },
+    {
+      "check": "notary_and_pack",
+      "expected": "offline observe completes with evidence_pack; packs/verify accepts it",
+      "observed": "status=completed, has_pack=True, hash_ok=True, verify=200/True",
+      "pass": true
+    }
+  ],
+  "cycle": 1,
+  "network": "none \u2014 no outbound sockets; offline corpus and injected fetch only",
+  "on_chain_settlements": 0,
+  "passed": 7,
+  "perspective": "cold autonomous install / first-boot",
+  "total": 7
+}

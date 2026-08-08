@@ -79,6 +79,13 @@ def test_observe_appends_to_log(tmp_path, monkeypatch):
     assert "evidence_log" in result
     assert result["evidence_log"]["index"] == 0
     assert result["evidence_log"]["leaf"] == result["evidence_record"]["content_hash"]
+    # N1.5: full inclusion proof on the observe envelope (peer offline path).
+    proof = result["evidence_log"]["inclusion_proof"]
+    assert proof["leaf"] == result["evidence_log"]["leaf"]
+    assert proof["root"] == result["evidence_log"]["root"]
+    from veritas.notary.log import verify_log_inclusion
+
+    assert verify_log_inclusion(proof)["valid"] is True
     chain = str(result["custody_chain"])
     assert "logged" in chain or "notary.log" in chain
 

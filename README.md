@@ -44,8 +44,16 @@ network is not a research service. Veritas never bills for its own outage.
 
 **You can check our work without trusting us.** Every response carries its own
 hash-chained custody record. Run `veritas.custody.verify_chain_records` on what
-you received, or re-check any published hash at `POST /v1/verify` — verification
-does not route back through our goodwill.
+you received: that check runs entirely on your side, on bytes already in your
+hands, and does not route back through our goodwill.
+
+`POST /v1/verify` is **not** that check, and this file used to say it was. You
+send it both the content and the hash; it hashes the content and compares. That
+tells you nothing you could not compute yourself, and it routes through us
+completely — a dishonest server would simply answer `valid: true`. It is a
+convenience, not evidence, and treating it as evidence is strictly worse than
+doing the arithmetic locally. The defect register carries this as **P7**, open,
+with a witness test pinning the current behaviour.
 
 **We wrote down the rules we can be held to.** The
 [venue constitution](CONSTITUTION.md) states each norm this service commits to,
@@ -162,7 +170,7 @@ If any of these is invalid the service reports `mode: misconfigured` and returns
 | Endpoint | Purpose |
 |----------|---------|
 | `POST /v1/research` | Run research (402-gated in live mode) |
-| `POST /v1/verify` | Independently re-check a published evidence hash |
+| `POST /v1/verify` | Re-hash content you supply and compare (convenience; **not** independent verification — see P7) |
 | `GET /v1/receipts/{id}` | Retrieve a stored custody receipt after the call |
 | `GET /v1/trust` | Behaviour-derived trust score (`UNPROVEN` until enough data) |
 | `GET /v1/identity` | ERC-8004 style identity document |

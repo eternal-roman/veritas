@@ -255,9 +255,13 @@ attestation recovery, status/evidence coherence) as pure functions;
 deterministic challenge evaluation returning `fired` / `not_fired` /
 `undecidable` with stable reasons; outcome records; `warranty_report`
 counts in the survival-record tradition; falsifiability-class labeling
-with U-class refusing warranty construction. Proposed, not implemented:
-escrowed bonds (G12), D2 predicates, venue-cut calibration, registry
-advertisement of warranty terms.
+with U-class refusing warranty construction. Also implemented
+(`veritas/standing.py`, `tests/test_standing.py`): the §3.4 evidence
+hierarchy composed into one recomputable standing document — forfeits
+dominate, one warranty counts once, survived challenges upgrade the audit
+verdict, the self-report is carried only as the labeled floor. Proposed,
+not implemented: escrowed bonds (G12), D2 predicates, venue-cut
+calibration, registry advertisement of warranty terms.
 
 ## 9. Objective completion criteria for the mandate (§0)
 

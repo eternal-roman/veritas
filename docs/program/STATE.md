@@ -9,15 +9,35 @@ committed and pushed survives. Update this file and push after every sub-step.
 > actions, SBOM, bandit already at `-ll`. After that: **M7** (credits via
 > SIWx; the last of Phase M), then **Phase N0** (the notary product).
 >
+> Diligence (#19 / `a4cfc49`), P7 honesty (#20 / `4a3d105`), and O.6
+> (#18 / `48194ab`) are **on main** — do not re-open them as NEXT.
+>
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
 > (official SDK, `/supported` preflight, Bazaar discovery) need facilitator
-> egress; **cycle 1** is gated on N0 and **cycle 5** on the standalone verifier.
+> egress; **cycle 1** is gated on N0; **cycle 5** remains open (ecosystem
+> dogfood — standalone verifier module is on main via #19, full cycle not closed).
 >
 > Nothing has settled on-chain. That is still the single largest unproven
 > claim in this repository, and no amount of local green changes it.
 
 ## Progress log
+
+> **Tip of `origin/main`:** `a4cfc49` (PR #19). Open product PRs: **none**.
+>
+> **O.6 landed on main @ `48194ab` (PR #18).** Retention window, custody
+> prune+tombstones, ledger prune for terminal states, `veritas-ops prune`,
+> and `GET /v1/receipts/{id}` → **410 `receipt_gone`** vs **404** never-seen.
+> `veritas/retention.py` is on main. Multi-instance prune still open (O6).
+>
+> **P7 honesty patch on main @ `4a3d105` (PR #20).** Retracted the false claim
+> that `/v1/verify` is independent verification; register witness added.
+> Product defect P7 (circular `/v1/verify`) remains open; claim theater fixed.
+>
+> **Buyer diligence + standalone verifier on main @ `a4cfc49` (PR #19).**
+> `veritas/diligence.py`, `veritas/counterparty.py`, `veritas-diligence` CLI,
+> payer diligence gate, `veritas/verifier.py` + reproducible tests. Not a
+> substitute for on-chain settlement (still **0**).
 
 > **M1–M4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite
 > (WAL, `synchronous=FULL`) record of authorizations, deliveries and settlement
@@ -141,27 +161,30 @@ committed and pushed survives. Update this file and push after every sub-step.
 > approved plan — building a paid notary on a payment path that charges
 > disconnected buyers (G6/R11) and keeps no ledger (G8/R5) multiplies the defect.
 
-## Innovation loop + overseer + guardian
+## Innovation loop + agents + guardian
 
 | Piece | Doc / entry |
 |-------|-------------|
-| Builder loop | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · `/workflow agent-commerce-flywheel` |
-| **Overseer (15m)** | [`OVERSEER.md`](OVERSEER.md) · `/workflow agent-commerce-overseer` · [`overseer/CURRENT.md`](overseer/CURRENT.md) |
+| **Conductor 45m** | [`CONDUCTOR.md`](CONDUCTOR.md) · `conductor/TRAJECTORY.md` + `CONFERRAL.md` — vision, conferral, **recursive restart** |
+| Continuous | `/workflow agent-commerce-continuous` — multi-cycle momentum |
+| Builder | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · `/workflow agent-commerce-flywheel` |
+| Overseer 15m | [`OVERSEER.md`](OVERSEER.md) · `overseer/CURRENT.md` |
+| Steward 30m | [`STEWARD.md`](STEWARD.md) · `steward/CURRENT.md` — card hygiene |
+| Scout 20m | `scout/IDEA_BUS.md` (patterns only; no SCOUT charter file yet) |
 | Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) |
 | Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
 
 ```text
-/workflow agent-commerce-overseer
-/workflow agent-commerce-flywheel
-/workflow agent-commerce-flywheel {"prefer_bet": "O.6", "dry_run": true}
+/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "O.8"}
+/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 2}
+/workflow agent-commerce-steward
+/workflow agent-commerce-flywheel {"prefer_bet": "O.8"}
 ```
 
-**Overseer** runs every 15 minutes: reviews ongoing work for honesty, laziness,
-and A2A commercial value; writes steering to `overseer/CURRENT.md`.  
-**Peer review** every 45 minutes: scrutinizes Claude session branch
-`feat/session-2026-08-08` (`PEER_REVIEW.md`); inherit only what survives GUARDIAN.  
-**Flywheel** hourly builds one bet under GUARDIAN. Neither auto-merges.
-Default bet: **NEXT ACTION** below.
+**Conductor** reviews all work, confers via `CONFERRAL.md`, holds trajectory,
+and **restarts** the builder when a cycle finishes or the plane is idle.
+**Steward** keeps cards honest. **Overseer** judges product quality.
+**Flywheel** ships one bet. Default bet: **NEXT ACTION** below.
 
 ## Resume protocol
 
@@ -230,7 +253,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [ ] N1.2 Append-only log + RFC-6962 Merkle batches + inclusion proofs
 - [ ] N1.3 Anchors (file backend default; on-chain behind config)
 - [ ] N1.4 Re-fetching `/v1/verify/{record_id}`; deprecate the circular verify (P7)
-- [ ] N1.5 `veritas/verifier.py` — zero-dependency standalone verification
+- [x] N1.5 `veritas/verifier.py` — zero-dependency standalone verification (`a4cfc49`, PR #19; packaging remains G.2)
 
 ### Phase X — x402 correctness + SDK adoption
 - [ ] X1 Adopt official `x402` SDK behind existing seams
@@ -348,3 +371,6 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-07 | W1/W2/O16: suite made portable off-Linux; wallet now verifies the mode it claims and warns when the OS will not grant it | d998da9 |
 | 2026-08-07 | Repo presentation: GitHub About + 17 topics, README hook and badges, CONTRIBUTING.md; banned-claims gate extended to README.md and STATUS.md | b7fa9bc |
 | 2026-08-07 | O17 (critical, exploit-verified path traversal on `/v1/receipts`), O18 (exception text in a 402 body), O19 (mcp 2.0 pin) — all three surfaced by CI on PR #17, not by local runs | (this commit) |
+| 2026-08-08 | O.6 retention/pruning + 410 Gone ≠ 404 | 48194ab (#18) |
+| 2026-08-08 | P7 claim retraction + witness (`/v1/verify` not independent) | 4a3d105 (#20) |
+| 2026-08-08 | Buyer counterparty diligence + standalone verifier | a4cfc49 (#19) |

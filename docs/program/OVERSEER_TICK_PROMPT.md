@@ -25,9 +25,12 @@ Git helper if present: `.\\scripts\\with-git-bash.cmd "single-line"`.
 - `docs/program/GUARDIAN.md`
 - `docs/program/STATE.md` (NEXT ACTION)
 - `docs/program/overseer/CURRENT.md` (if exists)
+- **`docs/program/conductor/CONFERRAL.md`** + `TRAJECTORY.md` (organized conference — honor synthesis)
+- **`docs/program/steward/CURRENT.md`** (cohesion — if it contradicts git/gh, trust git/gh)
+- **`docs/program/scout/IDEA_BUS.md`** if present (patterns only)
 - latest `docs/program/cycles/*`
-- `git status -sb`, branch, `git log --oneline -12`, `git diff --stat` if dirty
-- Open PRs if tools allow (`gh pr list` etc.)
+- `git status -sb`, branch, `git log origin/main --oneline -8`, `git diff --stat` if dirty
+- Open PRs (`gh pr list`) — never claim a merged PR is still blocked
 
 ### Rubric
 Score 0–3: on-task, measured, integrity, a2a value, claim hygiene.  

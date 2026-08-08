@@ -1,106 +1,88 @@
-# Continuous control plane (builders + overseer)
+# Continuous control plane
 
-Two durable loops, one honesty bar (`GUARDIAN.md`):
+One honesty bar (`GUARDIAN.md`). Multiple agents, **one truth on main**,
+**one primary trajectory**, recursive builder restart under Conductor.
 
 | Loop | Interval | Job |
 |------|----------|-----|
-| **Overseer** | **15 minutes** | Review WIP, kill lazy/half-measured work, strategic A2A redirect |
-| **Flywheel** | **1 hour** | Build one honest bet (stock → ship → learn) |
+| **Overseer** | **15m** | Product honesty: lazy/half-measured, A2A strategy |
+| **Scout** | **20m** | Low-star OSS → `scout/IDEA_BUS.md` |
+| **Steward** | **30m** | Cohesion: clean cards, STATE claim hygiene |
+| **Conductor** | **45m** | **Vision + conferral + restart flywheel when idle** |
+| **Flywheel** | **1h** | One shippable bet (also kicked by Conductor) |
 
-Protocol: [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · [`OVERSEER.md`](OVERSEER.md)  
-**Guardian:** [`GUARDIAN.md`](GUARDIAN.md)  
-Orchestrators: `.grok/workflows/agent-commerce-flywheel.rhai`,
-`.grok/workflows/agent-commerce-overseer.rhai`  
-Ledgers: [`cycles/`](cycles/), [`overseer/`](overseer/)
+**Shared truth:** `STATE.md` · `steward/CURRENT.md` · **`conductor/CONFERRAL.md`** · `conductor/TRAJECTORY.md`  
+**Guardian:** [`GUARDIAN.md`](GUARDIAN.md)
+
+Orchestrators: `.grok/workflows/agent-commerce-{conductor,continuous,flywheel,overseer,scout,steward}.rhai`
+
+## Recursion (how work keeps going)
+
+```
+Conductor tick / continuous workflow
+    → confer all agent cards
+    → update TRAJECTORY + CONFERRAL
+    → if idle: run one build cycle (NEXT ACTION)
+    → if PR opened: wait merge (human)
+    → resume / next tick → recurse
+```
+
+```text
+# Multi-cycle recurse (interactive)
+/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "O.8"}
+/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 2}
+
+# Single roles
+/workflow agent-commerce-steward
+/workflow agent-commerce-overseer
+/workflow agent-commerce-scout
+/workflow agent-commerce-flywheel {"prefer_bet": "O.8"}
+```
 
 ## Active schedules
 
-### Overseer (every 15 minutes)
+| Name | Id | Interval |
+|------|-----|----------|
+| Overseer | `019fdfde0212` | 15m |
+| Scout | `019fe0026e7d` | 20m |
+| Steward | `019fdff1fbe4` | 30m |
+| **Conductor** | `019fe25403f2` | **45m** |
+| Flywheel hourly | `019fdfd6c9bf` | 1h |
 
-| Setting | Value |
-|---------|--------|
-| Interval | **15 minutes** |
-| Scheduler task id | `019fdfde0212` (durable; re-arm after ~7 days) |
-| Tick prompt | [`OVERSEER_TICK_PROMPT.md`](OVERSEER_TICK_PROMPT.md) |
-| Writes | `overseer/CURRENT.md` + `overseer/log/NNN-brief.md` |
-| Merge | Never |
-| Role | Honesty + strategy; not a second builder |
+### Conductor — 45m
 
-### Flywheel (every 1 hour)
+Charter: [`CONDUCTOR.md`](CONDUCTOR.md) · Tick: [`CONDUCTOR_TICK_PROMPT.md`](CONDUCTOR_TICK_PROMPT.md)  
+Writes: `conductor/CURRENT.md`, `TRAJECTORY.md`, `CONFERRAL.md`  
+**Restarts** builder work when queue clear and NEXT is known.
 
-| Setting | Value |
-|---------|--------|
-| Interval | **1 hour** |
-| Scheduler task id | `019fdfd6c9bf` (durable; re-arm after ~7 days) |
-| Tick prompt | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
-| Mode | Durable scheduled task (survives session end) |
-| Per tick | One full cycle: stock → select → plan → build → audit → verify → PR |
-| Merge | **Off** (`auto_merge: false`) — human owns `main` |
-| Concurrency | Skip tick if WIP clash or prior PR CI still pending |
+### Steward — 30m · `019fdff1fbe4`
 
-Re-arm after ~7 days or if the task list is empty:
+Card hygiene so Conductor/Overseer do not thrash on stale BLOCKED lies.
+
+### Overseer — 15m · `019fdfde0212`
+
+Product honesty only; must read CONFERRAL + steward CURRENT.
+
+### Scout — 20m · `019fe0026e7d`
+
+Seedlings only; never dual product path.
+
+### Flywheel — 1h · `019fdfd6c9bf`
+
+Scheduled backup builder; Conductor may also kick cycles mid-hour.
+
+## Cohesion rules
+
+1. Stock `origin/main` + `gh pr list` before any CURRENT write.  
+2. **CONFERRAL.md** is the organized conference — agents read it first.  
+3. One primary NEXT; dual tracks need explicit park in TRAJECTORY.  
+4. git/gh beat stale cards.  
+5. No auto-merge by default; no settlement fiction; no soft-fail.  
+
+## Re-arm
 
 ```text
-Ask Grok: "Re-arm the Veritas flywheel and overseer schedulers"
+Ask Grok: "Re-arm Veritas control-plane schedulers"
 ```
 
-Cancel:
-
-```text
-Ask Grok: "Stop the Veritas overseer scheduler" / "Stop the flywheel scheduler"
-```
-
-## Manual / interactive
-
-```text
-# Overseer pass (review + steer)
-/workflow agent-commerce-overseer
-
-# Builder cycle
-/workflow agent-commerce-flywheel
-/workflow agent-commerce-flywheel {"prefer_bet": "O.6", "max_cycles": 1}
-/workflow agent-commerce-flywheel {"dry_run": true}
-/workflow agent-commerce-flywheel {"max_cycles": 3, "auto_merge": false}
-```
-
-## Hourly tick contract (what the scheduler runs)
-
-Each hour the agent must:
-
-1. **cwd** = Veritas repo root (`veritas` / this workspace).
-2. Read `docs/program/INNOVATION_LOOP.md`, `docs/program/STATE.md`, latest
-   `docs/program/cycles/*.md`, `skills/adversarial-code-truth.md`.
-3. **Skip** (exit with a one-line reason, change nothing) if:
-   - `git status` shows another agent's incomplete flywheel WIP you did not start
-     and cannot safely continue, **or**
-   - a PR from the previous tick is open and CI is still running (wait for next hour), **or**
-   - the battery cannot be run (missing venv) — report, do not invent green.
-4. Prefer **STATE.md NEXT ACTION** unless a critical security/money-path defect
-   outranks it (write the deviation in the cycle report).
-5. Execute **one** shippable bet: tests first, implement, adversarial self-check,
-   run `python -m pytest tests/ -q` (and ruff/harness/payment_model when feasible).
-6. Push branch + open PR against `main` if there is a real delta. **Do not merge**
-   unless explicitly configured. Never force-push `main`. Never claim on-chain
-   settlement without a transaction hash.
-7. Write `docs/program/cycles/NNN-<slug>.md` and update STATE.md NEXT ACTION.
-8. Emit PROPERTY / EVIDENCE LEVEL / NOT PROVEN before any success claim.
-
-### Windows (pwsh) shell rules
-
-No bare `head` / `grep` / `tail` / `find`. Truncate with
-`| Out-String -Stream | Select-Object -First N`. Prefer
-`.\\scripts\\with-git-bash.cmd "..."` for complex git if the helper exists.
-
-### Interactive workflow vs scheduled tick
-
-| Path | When |
-|------|------|
-| `/workflow agent-commerce-flywheel` | Human in session; multi-agent phases |
-| Hourly scheduler prompt | Unattended; single agent walks the same protocol |
-
-Same protocol file. Same scorecard. Same ledger directory.
-
-## What "done" never means
-
-The hub vision is recursive. Stopping is external (delete the scheduler), not
-"scorecard maxed". Volume and on-chain settlements are not inventable in-loop.
+Tasks expire ~7 days.

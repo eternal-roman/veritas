@@ -1,19 +1,19 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T21:37:00Z
+- **Time:** 2026-08-08T21:46:00Z
 - **Path:** LIGHT / **noop_idle**
-- **Branch / HEAD:** tip `17222c5` (#63); product v0.8.1 `070d4c4` (#62)
-- **Scope:** claim **free**; open product PR **none**
+- **Branch / HEAD:** tip `e7f674b` (#69 P7-C)
+- **Scope:** claim **free** post-P7-C; open product PR **none** (#71 docs only)
 - **Verdict:** LEAN (idle)
-- **ship_ok:** n/a. Last product: N1.5 #60 / release #62
+- **ship_ok:** n/a. Last product: P7-C #69 @ `e7f674b`
 - **Battery:** **not run** (light path)
-- **Denied:** dual NEXT; invent settlement/PyPI-done
+- **Denied:** dual NEXT; re-open P7-C; invent settlement/PyPI-done
 - **Directive:** Wait Overseer single NEXT + claim + product PR → G13 heavy.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: No product PR; claim free; tip 17222c5
+PROPERTY: No product PR; claim free; tip e7f674b P7-C landed
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 17222c5; flywheel-claim free
+CHECKED ARTIFACT: origin/main e7f674b; #69 MERGED; flywheel-claim free on #71
 NOT PROVEN: on-chain (0); G9 closed; PyPI
 ```

@@ -5,93 +5,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: P7-C — free re-fetch takes `research_slots` (building).**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. live RPC G9 dogfood if egress, PyPI ops, or hold).
+> **G10:** never dual-reopen **P7-C**, **N1.5**, **0.8.1**, **cycle-5**,
+> **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**, **M7**, or **O.8**.
 >
-> Origin/receipt re-fetch on `POST /v1/verify` acquires the same semaphore as
-> research/notarize; full pool → 503 `service_overloaded`. Legacy
-> caller_supplied arithmetic does **not** take a slot. One engine.
+> **P7-C is on main** — `#69` / `e7f674b`: free re-fetch shares `research_slots`.
+> Settlements **0**. Gap G9 **still open**. Not PyPI.
 >
-> **On main (do not re-open):** v0.8.1 `#62`; N1.5 `#60`; v0.8.0; cycle-5;
-> N1.4; G9-design; P7 product; N0–N1.3; cycle-1.
+> **Also on main:** v0.8.1 `#62`; N1.5 `#60`; v0.8.0; cycle-5; N1.4; G9-design.
 >
-> Settlements **0**. Gap G9 **still open**.
+> Nothing has settled on-chain.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `070d4c4` (#62 v0.8.1). Claim **free**. Settlements: **0**. Tags: `v0.8.1`, `v0.8.0`.
-> Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
+> **Tip of `origin/main`:** `e7f674b` (PR **#69** P7-C).
+> Claim **free**. Settlements: **0**. Gap G9 open.
 >
-> **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;
-> CHANGELOG + STATUS for N0–N1.4 / P7 / G9-design / dogfood 1–5. **Not proven:**
-> PyPI publish; on-chain (0).
+> **P7-C landed on main @ `e7f674b` (PR #69).** Free re-fetch takes research_slots.
 >
-> **cycle-5 landed on main @ `bf09a99` (PR #54).** Offline ecosystem participant
-> dogfood (discovery + verify path). **Not proven:** live multi-venue; on-chain (0).
->
-> **N1.4 landed on main @ `b253532` (PR #49).** Operator-local Merkle log.
-> **Not proven:** public CT; multi-operator; on-chain (still **0**).
->
-> **G9-design landed on main @ `6777a92` (PR #46).** Fail-closed reconcile.
-> **Not proven:** live RPC; G9 closed; on-chain (still **0**).
->
-> **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
-> (7 checks), committed report, CI wire-up. **Not proven:** blank-machine
-> PyPI cold install; on-chain (still **0**).
->
-> **N1.3 landed on main @ `622429c` (PR #41).** Portable `EvidencePack`
-> (`veritas/notary/pack.py`) with `pack_hash` integrity. **Not proven:**
-> Merkle inclusion; on-chain (still **0**).
->
-> **P7 landed on main @ `4697c8d` (PR #38).** `veritas/notary/refetch.py`
-> re-fetches via `notary.observe` (one engine); `POST /v1/verify` accepts
-> `url`+`content_hash` or `request_id` for origin/receipt binding; legacy
-> pair is labeled `caller_supplied`. Defect P7 (circular verify) closed for
-> origin-bound paths. **Not proven:** live production re-fetch under load,
-> free re-fetch sharing `research_slots` under shed (architect P7-C note),
-> on-chain (still **0**).
->
-> **N0 landed on main @ `4cd2d0c` (PR #30).** SSRF-safe fetch, extract/record
-> with full-body `content_hash`, license/robots, `observe` compose, pipeline
-> URL observation via one engine, `POST /v1/notarize` (x402 + SIWx credits)
-> with inv.3 unexpected-failure refund shared with research. Tests:
-> `tests/test_notary_*.py`, `tests/test_notarize_api.py`. **Not proven:** live
-> facilitator notarize settle, on-chain (still **0**), cold install cycle-1.
->
-> **M7 landed on main @ `2171bfa` (PR #23) + `386efff` (PR #28).**
-> `veritas/credits.py` double-entry journal; `veritas/siwx.py` EIP-4361/EIP-191
-> offline session; HTTP wire for challenge/verify, balance, top-up (grant only
-> after settled x402), research debit with `X-VERITAS-SESSION`, refunds on
-> `unavailable`/deadline, and crash-path refund so debit-before-work cannot
-> charge a buyer for an unexpected exception. Tests: `tests/test_credits.py`,
-> `tests/test_siwx.py`, `tests/test_credits_api.py`. **Not proven:** live
-> facilitator top-up, multi-instance credit store, on-chain settlement (still
-> **0**).
->
-> **O.8b landed on main @ `5d6492f` (PR #24).** Dockerfile installs
-> hash-pinned `requirements.lock` then the package with `--no-deps` +
-> `pip check`; base image pinned by digest; extras pin-direction rule extended.
->
-> **O.8 landed on main @ `96b9013` (PR #22).** SHA-pinned GitHub Actions,
-> hash-pinned `requirements.lock` / `requirements-dev.lock` with CI
-> `--require-hashes`, artifact SBOM of the published wheel venv (buyer
-> closure, not CI toolchain), witness tests in `tests/test_supply_chain.py`,
-> fail-closed off-target lock generation (`scripts/lock_requirements.py`),
-> and mcp upper-bound on the lock path (O19 continuity). Deliberately not
-> claimed: Docker image hash-lock, signed SBOM, “wild install uncompromised.”
->
-> **O.6 landed on main @ `48194ab` (PR #18).** Retention window, custody
-> prune+tombstones, ledger prune for terminal states, `veritas-ops prune`,
-> and `GET /v1/receipts/{id}` → **410 `receipt_gone`** vs **404** never-seen.
-> `veritas/retention.py` is on main. Multi-instance prune still open (O6).
->
-> **P7 honesty patch on main @ `4a3d105` (PR #20).** Retracted the false claim
-> that `/v1/verify` is independent verification; register witness added.
-> Product defect P7 (circular `/v1/verify`) remains open; claim theater fixed.
->
-> **Buyer diligence + standalone verifier on main @ `a4cfc49` (PR #19).**
-> `veritas/diligence.py`, `veritas/counterparty.py`, `veritas-diligence` CLI,
-> payer diligence gate, `veritas/verifier.py` + reproducible tests. Not a
-> substitute for on-chain settlement (still **0**).
 
 > **M1–M4 landed; G6 and G8 are closed.** `veritas/ledger.py` is a SQLite
 > (WAL, `synchronous=FULL`) record of authorizations, deliveries and settlement

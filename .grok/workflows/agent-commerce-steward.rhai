@@ -57,7 +57,15 @@ let stock_r = agent(stock_prompt, #{
 });
 
 if stock_r == () || !stock_r.success || stock_r.output == () {
-    pause("infra", "Steward stock failed — cannot clean without git/gh.");
+    // AUTONOMOUS: no human pause — complete so next tick retries
+    complete(#{
+        path: write_scratch_file("steward-report.json", json_encode(#{
+            success: false,
+            reason: "stock_failed",
+            autonomous: true,
+        })),
+        report: #{ success: false, reason: "stock_failed" },
+    });
 }
 let stock = stock_r.output;
 log("cohesion=" + stock.cohesion_score.to_string() + " main=" + stock.main_sha);

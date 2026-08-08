@@ -1,25 +1,24 @@
 # Steward CURRENT
 
-- **Time:** 2026-08-08T17:18:48Z
-- **origin/main:** `a4cfc49` — tip = PR #19 (diligence + verifier); ancestry includes `4a3d105` (#20), `48194ab` (#18 O.6). `veritas/retention.py` on main.
-- **Open PRs:** **#21** docs-only card hygiene (`docs/steward-card-hygiene-o8`) — **all CI green**, `MERGEABLE`/`CLEAN`, **awaiting human merge**. No open **product** PR.
-- **Cohesion score:** **2** (local plane coherent; **remote main still serves stale overseer** until #21 merges)
-- **Contradictions fixed this tick:**
-  1. Live overseer/peer/conductor cards claimed open PRs `[]` / “queue clear” while **#21** is open and green
-  2. Re-stock confirmed: do **not** re-block on #18 — O.6 + `retention.py` on main
-  3. STATE product-open-PR line remains honest (none); add explicit docs-PR wait note
-  4. Peer stays **IDLE** (no parallel product branch PR; session diligence is on main)
-- **Cards rewritten:** `overseer/CURRENT.md`, `overseer/peer/CURRENT.md`, `steward/CURRENT.md`, `conductor/CURRENT.md` (open-PR line), `STATE.md` (claim hygiene only), this log `002`
-- **STATE claim hygiene:** single NEXT=**O.8**; tip SHA `a4cfc49`; landed SHAs `48194ab` / `4a3d105` / `a4cfc49`; no ladder jump; settlements **0**
-- **O.8 product status (not steward-owned):** mid-flight **uncommitted** WIP in worktree(s) `veritas-o8` / `veritas-o8b` on `feat/o.8-supply-chain*` — locks/actions/SBOM tests dirty; **0 commits** ahead of main; **no O.8 PR** yet
-- **Momentum directive:** **Human: merge green docs PR #21 so remote agents stop stocking pre-O.6 overseer. Builders: finish O.8 only (commit + PR from mid-flight WIP); do not re-litigate #18/#19/#20; on-chain settlements still 0.**
-- **noop_coherent?** no — open-PR list was wrong on multiple cards; remote main still stale until merge
+- **Time:** 2026-08-08T18:20:00Z
+- **origin/main:** **`96b9013`** — PR #22 merged (O.8). Unchanged vs steward 005.
+- **Open PRs:**
+  - **#21** docs-only (`015a4db`) — still **`mergeable_state: dirty`** vs tip. Not product; must not freeze M7. Close/supersede preferred over rebase theater.
+  - **No open product PR.**
+- **Cohesion score:** **2** (local CURRENT/STATE plane tip-true and single NEXT=M7; **remote** `origin/main:docs/program/STATE.md` still claims “O.8 is in review / not on main” — resume-point lie until a **new** docs PR from tip lands)
+- **Contradictions fixed this tick:** **none** among local cards — product stock matches 005. Residual (not fixed this tick; steward does not merge/push): remote STATE on main still pre-merge O.8 text.
+- **Cards rewritten:** steward CURRENT + log `006` only (`noop_coherent` stamp)
+- **STATE claim hygiene (local):** NEXT=**M7**; tip **`96b9013`**; open product PRs **none**; #21 dirty docs; settlements **0** — **local file honest; remote main not yet**
+- **O.8 product status:** **ON MAIN** @ `96b9013` (locks, SHA Actions, SBOM witness tests). Docker hash-lock / signed SBOM still separate.
+- **Builder mid-flight (not steward-owned):** worktree `feat/m7-credits-siwx` @ `C:/Users/elamj/Dev/veritas-m7` tracking **`origin/main` @ `96b9013`** — correct single track. Residue: `veritas-o8` ahead-1/behind-1 thrash — **abandon**, do not open second O.8 PR.
+- **Momentum directive:** **(1) Builders: continue only M7** on the m7 worktree — no dual O.8/N0. **(2) Human/docs: supersede dirty #21** with tip-aligned STATE (O.8 on main, NEXT=M7) so remote agents stop stocking merge-gate theater. **(3)** Settlements still **0**.
+- **noop_coherent?** **yes** — `origin/main`, open PRs, and local single NEXT unchanged since 005
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Cards + STATE match git/gh stock; single product NEXT=O.8; #21 green docs PR flagged for human
-EVIDENCE LEVEL: L1 (git fetch, origin/main a4cfc49, gh pr view 21, path checks retention.py)
-CHECKED ARTIFACT: origin/main a4cfc49; PR #21 MERGEABLE+SUCCESS checks; veritas/retention.py on main; worktree O.8 dirty uncommitted
-ASSUMPTIONS: Human merges docs; flywheel owns O.8 commit/PR; steward does not implement O.8
-NOT PROVEN: Multi-day cohesion after #21 merge; O.8 ship; any on-chain settlement
+PROPERTY: Product stock stable (main 96b9013, no product PR, NEXT=M7 local); remote STATE.md still false on O.8 merge-gate; #21 dirty; M7 worktree started at tip
+EVIDENCE LEVEL: L1 (git fetch, show origin/main:STATE.md, gh pr #21 dirty, branch -vv m7 worktree)
+CHECKED ARTIFACT: origin/main 96b9013; open [#21]; local STATE NEXT M7; feat/m7-credits-siwx @ 96b9013
+ASSUMPTIONS: Flywheel owns M7 code; human lands docs fix; steward does not push/merge
+NOT PROVEN: M7 ship; remote STATE fix; on-chain settlement; #21 clean re-land
 ```

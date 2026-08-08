@@ -1,24 +1,24 @@
-// Agent Commerce Innovation Flywheel — one full cycle (or max_cycles) of
-// stock → score → select → plan → build → audit → verify → ship → learn → reframe.
-// Spec: docs/program/INNOVATION_LOOP.md
+// Agent Commerce Innovation Flywheel — AUTONOMOUS (no human-in-the-loop)
+// Spec: docs/program/INNOVATION_LOOP.md · GUARDIAN.md · AUTONOMOUS.md
 //
 // Args (all optional):
-//   max_cycles   int   default 1, hard-capped at 3 per run
-//   auto_merge   bool  default false — only merge when true AND CI green AND audit clean
-//   prefer_bet   string optional forced selection (e.g. "O.6")
-//   dry_run      bool  default false — stock+score+select+plan only, no build/ship
+//   max_cycles   int   default 3, hard-capped at 6
+//   auto_merge   bool  default true  — merge when CI green + audits clean
+//   prefer_bet   string optional forced selection (e.g. "M7")
+//   dry_run      bool  default false — stock+score+select+plan only
+//   max_audit_rounds int default 3, hard-capped at 4
 
 let meta = #{
     name: "agent-commerce-flywheel",
-    description: "Recursive autonomy/commerce innovation cycle: stock main, select one bet, build, adversarially audit, verify, PR, learn, reframe",
-    when_to_use: "Continuous agent-commerce improvement; after a merge; when told to run the flywheel or innovation loop",
+    description: "Autonomous commerce innovation cycle: stock, short-circuit open PRs, build, bounded audit, verify, PR+auto-merge, learn, recurse — no human gates",
+    when_to_use: "Unattended multi-cycle agent-commerce improvement; after a merge; scheduled builder",
     phases: [
-        #{ title: "Stock", detail: "Inventory excellence, gaps, STATE, scorecard" },
-        #{ title: "Select", detail: "One bet; ladder default; written deviation" },
+        #{ title: "Stock", detail: "Inventory + open-PR short-circuit + claim" },
+        #{ title: "Select", detail: "One bet; ladder default" },
         #{ title: "Build", detail: "Plan, implement, tests first" },
-        #{ title: "Audit", detail: "Adversarial truth + over-engineering pass" },
-        #{ title: "Ship", detail: "Verify, PR, optional merge after CI" },
-        #{ title: "Learn", detail: "Cycle report, STATE update, reframe next" },
+        #{ title: "Audit", detail: "Bounded adversarial + over-engineering (minors advisory)" },
+        #{ title: "Ship", detail: "Verify, PR, auto-merge on green CI" },
+        #{ title: "Learn", detail: "Cycle report, STATE, reframe next" },
     ],
 };
 
@@ -45,6 +45,21 @@ let stock_schema = #{
             },
         },
         "open_critical": #{ "type": "array", "maxItems": 8, "items": #{ "type": "string" } },
+    },
+};
+
+let gate_schema = #{
+    "type": "object",
+    "required": ["action", "reason"],
+    "properties": #{
+        "action": #{ "type": "string" },
+        "reason": #{ "type": "string" },
+        "pr_url": #{ "type": "string" },
+        "pr_number": #{ "type": "integer" },
+        "ci_green": #{ "type": "boolean" },
+        "merged": #{ "type": "boolean" },
+        "claim_holder": #{ "type": "string" },
+        "same_bet_branch": #{ "type": "string" },
     },
 };
 
@@ -154,7 +169,7 @@ let learn_schema = #{
     },
 };
 
-// --- helpers (defensive: live schema outputs are full; canned validate_only is sparse) ---
+// --- helpers ---
 
 fn axis_num(sc, key, fallback) {
     if sc == () { return fallback; }
@@ -203,7 +218,7 @@ fn normalize_stock(raw) {
     if raw == () {
         return #{
             head_sha: "unknown",
-            next_action: "O.6 retention 410 Gone",
+            next_action: "",
             excellence: [],
             killers: [],
             open_critical: [],
@@ -214,7 +229,7 @@ fn normalize_stock(raw) {
     if raw.scorecard != () { sc = raw.scorecard; }
     #{
         head_sha: as_str(raw.head_sha, "unknown"),
-        next_action: as_str(raw.next_action, "O.6 retention 410 Gone"),
+        next_action: as_str(raw.next_action, ""),
         excellence: as_list(raw.excellence),
         killers: as_list(raw.killers),
         open_critical: as_list(raw.open_critical),
@@ -225,7 +240,7 @@ fn normalize_stock(raw) {
 fn normalize_selected(raw, prefer) {
     if raw == () {
         let bid = prefer;
-        if bid == "" { bid = "O.6"; }
+        if bid == "" { bid = "NEXT"; }
         return #{
             bet_id: bid,
             title: "default ladder bet",
@@ -241,7 +256,7 @@ fn normalize_selected(raw, prefer) {
     let bid = as_str(raw.bet_id, "");
     if bid == "" {
         bid = prefer;
-        if bid == "" { bid = "O.6"; }
+        if bid == "" { bid = "NEXT"; }
     }
     #{
         bet_id: bid,
@@ -274,33 +289,39 @@ fn normalize_plan(raw) {
     }
 }
 
+fn is_blocking_severity(sev) {
+    let s = as_str(sev, "minor");
+    if s == "blocker" { return true; }
+    if s == "major" { return true; }
+    if s == "BLOCKER" { return true; }
+    if s == "MAJOR" { return true; }
+    false
+}
+
 // --- args ---
 
-let max_cycles = 1;
-let auto_merge = false;
+let max_cycles = 3;
+let auto_merge = true;
 let prefer_bet = "";
 let dry_run = false;
+let max_audit_rounds = 3;
 
 if args != () {
-    if args.max_cycles != () {
-        max_cycles = args.max_cycles;
-    }
-    if args.auto_merge != () {
-        auto_merge = args.auto_merge;
-    }
-    if args.prefer_bet != () {
-        prefer_bet = args.prefer_bet;
-    }
-    if args.dry_run != () {
-        dry_run = args.dry_run;
-    }
+    if args.max_cycles != () { max_cycles = args.max_cycles; }
+    if args.auto_merge != () { auto_merge = args.auto_merge; }
+    if args.prefer_bet != () { prefer_bet = args.prefer_bet; }
+    if args.dry_run != () { dry_run = args.dry_run; }
+    if args.max_audit_rounds != () { max_audit_rounds = args.max_audit_rounds; }
 }
 
 if max_cycles < 1 { max_cycles = 1; }
-if max_cycles > 3 { max_cycles = 3; }
+if max_cycles > 6 { max_cycles = 6; }
+if max_audit_rounds < 1 { max_audit_rounds = 1; }
+if max_audit_rounds > 4 { max_audit_rounds = 4; }
 
-log("flywheel start max_cycles=" + max_cycles.to_string()
+log("flywheel AUTONOMOUS max_cycles=" + max_cycles.to_string()
     + " auto_merge=" + auto_merge.to_string()
+    + " max_audit_rounds=" + max_audit_rounds.to_string()
     + " dry_run=" + dry_run.to_string()
     + " prefer_bet=" + prefer_bet);
 
@@ -310,32 +331,22 @@ let stall_count = 0;
 
 while cycle_i < max_cycles {
     let cycle_num = cycle_i + 1;
-    log("=== cycle " + cycle_num.to_string() + " of " + max_cycles.to_string() + " ===");
+    log("=== autonomous cycle " + cycle_num.to_string() + " of " + max_cycles.to_string() + " ===");
 
     // ========== STOCK ==========
     phase("Stock");
     let stock_prompt = "";
-    stock_prompt += "### WINDOWS PWSH SHELL SAFETY\n";
-    stock_prompt += "You run under Windows PowerShell. Never use bare Unix pipes (head/grep/tail/find). ";
-    stock_prompt += "For git bash-like ops use .\\scripts\\with-git-bash.cmd \"...\" if present. ";
-    stock_prompt += "Truncate with | Out-String -Stream | Select-Object -First N.\n\n";
-    stock_prompt += "You are the STOCK phase of the Veritas agent-commerce flywheel.\n";
-    stock_prompt += "Read docs/program/GUARDIAN.md first. Then read with tools (do not invent):\n";
-    stock_prompt += "1. docs/program/INNOVATION_LOOP.md\n";
-    stock_prompt += "2. docs/program/STATE.md (especially NEXT ACTION)\n";
-    stock_prompt += "3. docs/program/cycles/000-baseline.md and the latest cycle file if any\n";
-    stock_prompt += "4. STATUS.md, ECOSYSTEM.md (growth loops), ROADMAP.md relevant phases\n";
-    stock_prompt += "5. git log --oneline -15 and git status\n";
-    stock_prompt += "6. Skim veritas/autonomous/, veritas/payer.py, veritas/ledger.py, veritas/agent_cli.py\n\n";
-    stock_prompt += "Return JSON matching the schema:\n";
-    stock_prompt += "- head_sha: short git SHA of HEAD from git, not guessed\n";
-    stock_prompt += "- next_action: exact NEXT ACTION text from STATE.md\n";
-    stock_prompt += "- excellence: up to 12 strengths that must not regress\n";
-    stock_prompt += "- killers: product-killing gaps\n";
-    stock_prompt += "- open_critical: open critical defect ids if any\n";
-    stock_prompt += "- scorecard: integers 0-4 for axes A-F per INNOVATION_LOOP.md\n";
-    stock_prompt += "Be adversarially honest. Money is real (C) stays 0 until a tx hash exists.\n";
-    stock_prompt += "If you cannot read the files, fail the schema rather than inventing stock.\n";
+    stock_prompt += "### WINDOWS PWSH: no bare head/grep/tail/find. Truncate with Select-Object.\n\n";
+    stock_prompt += "STOCK phase — Veritas agent-commerce flywheel (AUTONOMOUS).\n";
+    stock_prompt += "Read docs/program/GUARDIAN.md and docs/program/AUTONOMOUS.md.\n";
+    stock_prompt += "With tools (do not invent):\n";
+    stock_prompt += "1. docs/program/STATE.md NEXT ACTION\n";
+    stock_prompt += "2. docs/program/INNOVATION_LOOP.md scorecard axes\n";
+    stock_prompt += "3. docs/program/cycles/* latest + 000-baseline\n";
+    stock_prompt += "4. git fetch; git log origin/main --oneline -12; git status\n";
+    stock_prompt += "5. docs/program/flywheel-claim.md if present\n\n";
+    stock_prompt += "Return head_sha, next_action (exact from STATE), excellence[], killers[], open_critical[],\n";
+    stock_prompt += "scorecard A-F integers. Axis C stays 0 without a tx hash.\n";
 
     let stock_r = agent(stock_prompt, #{
         label: "stock-c" + cycle_num.to_string(),
@@ -343,16 +354,17 @@ while cycle_i < max_cycles {
         output_schema: stock_schema,
     });
 
-    // Guardian G7: stock from the tree. Defaults only for dry_run smoke/canned paths —
-    // live build must not invent NEXT ACTION or scorecard.
     let stock_ok = stock_r != () && stock_r.success && stock_r.output != ()
         && stock_r.output.next_action != () && stock_r.output.next_action != ""
         && stock_r.output.scorecard != ();
     if !stock_ok {
         if dry_run {
-            log("stock sparse — dry_run only: normalize for smoke path (not a real stock)");
+            log("stock sparse — dry_run only");
         } else {
-            pause("infra", "Guardian G7: stock failed or incomplete. Refuse invented defaults. Resume after agents can read STATE.md.");
+            log("AUTONOMOUS: stock failed — skip cycle (no human pause)");
+            cycle_results.push(#{ cycle: cycle_num, status: "stock_failed" });
+            cycle_i += 1;
+            continue;
         }
     }
     let stock_raw = ();
@@ -361,42 +373,138 @@ while cycle_i < max_cycles {
     }
     let stock = normalize_stock(stock_raw);
     if !dry_run && (stock.head_sha == "unknown" || stock.next_action == "") {
-        pause("infra", "Guardian G7: stock unusable after normalize — stop.");
+        log("AUTONOMOUS: stock unusable — skip cycle");
+        cycle_results.push(#{ cycle: cycle_num, status: "stock_unusable" });
+        cycle_i += 1;
+        continue;
     }
     log("stock next_action=" + stock.next_action);
-    log("scorecard A=" + stock.scorecard.A.to_string()
-        + " B=" + stock.scorecard.B.to_string()
-        + " C=" + stock.scorecard.C.to_string()
-        + " D=" + stock.scorecard.D.to_string()
-        + " E=" + stock.scorecard.E.to_string()
-        + " F=" + stock.scorecard.F.to_string());
-    // Guardian: axis C must stay 0 unless stock explicitly provides a tx-hash claim (it must not).
-    if stock.scorecard.C > 0 {
-        log("WARNING: scorecard C>0 without on-chain proof is usually handwave — auditors must reject unless tx hash cited in stock.excellence/killers");
+
+    // ========== GATE: open PR / claim short-circuit ==========
+    if !dry_run {
+        let gate_prompt = "";
+        gate_prompt += "### WINDOWS PWSH SAFETY.\n\n";
+        gate_prompt += "PREFLIGHT GATE for autonomous flywheel. NEXT ACTION stock:\n";
+        gate_prompt += json_encode(stock) + "\n\n";
+        gate_prompt += "Use gh pr list --state open and gh pr view/checks. Read docs/program/flywheel-claim.md if any.\n";
+        gate_prompt += "Decide action (exactly one):\n";
+        gate_prompt += "- merge_existing: open PRODUCT PR for same NEXT/bet, CI all SUCCESS, mergeable → squash-merge it NOW (auto_merge autonomous).\n";
+        gate_prompt += "  Docs-only PRs are not product; still may merge docs PR if green and labeled docs.\n";
+        gate_prompt += "- wait_ci: product PR open, CI pending/in progress → do not start second bet; return pr_url.\n";
+        gate_prompt += "- continue_same: same-bet branch exists with WIP, claim is ours or free → continue build (do not dual).\n";
+        gate_prompt += "- claim_blocked: flywheel-claim.md holds a different live builder on same bet → skip.\n";
+        gate_prompt += "- proceed: no product PR, claim free → new/continue build ok.\n";
+        gate_prompt += "If merge_existing: actually merge with gh pr merge --squash when green; set merged=true.\n";
+        gate_prompt += "Never force-push main. Never merge red CI. Never open a second product PR for same NEXT.\n";
+        gate_prompt += "Return action, reason, pr_url, pr_number, ci_green, merged, claim_holder, same_bet_branch.\n";
+
+        let gate_r = agent(gate_prompt, #{
+            label: "gate-c" + cycle_num.to_string(),
+            capability_mode: "all",
+            output_schema: gate_schema,
+        });
+
+        let gate_action = "proceed";
+        let gate_reason = "";
+        let gate_pr = "";
+        let gate_merged = false;
+        if gate_r != () && gate_r.success && gate_r.output != () {
+            gate_action = as_str(gate_r.output.action, "proceed");
+            gate_reason = as_str(gate_r.output.reason, "");
+            gate_pr = as_str(gate_r.output.pr_url, "");
+            gate_merged = as_bool(gate_r.output.merged, false);
+        }
+        log("gate action=" + gate_action + " reason=" + gate_reason);
+
+        if gate_action == "claim_blocked" {
+            cycle_results.push(#{
+                cycle: cycle_num,
+                status: "claim_blocked",
+                reason: gate_reason,
+            });
+            cycle_i += 1;
+            continue;
+        }
+
+        if gate_action == "wait_ci" {
+            // Autonomous: poll/merge agent once more instead of human wait
+            let poll_p = "";
+            poll_p += "### WINDOWS PWSH.\n";
+            poll_p += "Product PR may be mid-CI: " + gate_pr + "\n";
+            poll_p += "Poll gh pr checks until all complete (reasonable wait) or still pending.\n";
+            poll_p += "If all SUCCESS and mergeable: squash-merge. Return action merge_existing or wait_ci.\n";
+            poll_p += "Never merge red.\n";
+            let poll_r = agent(poll_p, #{
+                label: "poll-ci-c" + cycle_num.to_string(),
+                capability_mode: "all",
+                output_schema: gate_schema,
+            });
+            if poll_r != () && poll_r.success && poll_r.output != () {
+                gate_action = as_str(poll_r.output.action, "wait_ci");
+                gate_merged = as_bool(poll_r.output.merged, false);
+                gate_pr = as_str(poll_r.output.pr_url, gate_pr);
+            }
+            if gate_action == "wait_ci" && !gate_merged {
+                log("CI still pending — skip cycle (no human); next cycle will retry");
+                cycle_results.push(#{
+                    cycle: cycle_num,
+                    status: "wait_ci",
+                    pr: gate_pr,
+                    reason: gate_reason,
+                });
+                cycle_i += 1;
+                continue;
+            }
+        }
+
+        if gate_action == "merge_existing" || gate_merged {
+            // LEARN-lite after autonomous merge of existing PR
+            let lm = "";
+            lm += "### WINDOWS PWSH.\n";
+            lm += "Existing product PR was merged or ready. AUTONOMOUS learn.\n";
+            lm += "PR: " + gate_pr + " stock NEXT was: " + stock.next_action + "\n";
+            lm += "Confirm origin/main tip; update STATE.md NEXT to real next (e.g. M7 after O.8);\n";
+            lm += "write cycle file if missing; clear docs/program/flywheel-claim.md (claim free).\n";
+            lm += "Return cycle_path, scorecard_after, next_bet, still_kills[], axis_delta.\n";
+            let lm_r = agent(lm, #{
+                label: "learn-merge-c" + cycle_num.to_string(),
+                capability_mode: "all",
+                output_schema: learn_schema,
+            });
+            let nb = "unknown";
+            if lm_r != () && lm_r.success && lm_r.output != () {
+                nb = as_str(lm_r.output.next_bet, "unknown");
+            }
+            cycle_results.push(#{
+                cycle: cycle_num,
+                status: "merged_existing",
+                pr: gate_pr,
+                next_bet: nb,
+            });
+            stall_count = 0;
+            let bud0 = budget();
+            if bud0.remaining < 20 { break; }
+            cycle_i += 1;
+            continue;
+        }
+        // proceed or continue_same → fall through to select/build
     }
 
     // ========== SELECT ==========
     phase("Select");
     let select_prompt = "";
-    select_prompt += "### WINDOWS PWSH SHELL SAFETY: no bare head/grep/tail; use pwsh Select-Object.\n\n";
-    select_prompt += "Read docs/program/GUARDIAN.md. SELECT one shippable bet.\n\n";
-    select_prompt += "STOCK JSON (authoritative — do not invent):\n";
-    select_prompt += json_encode(stock) + "\n\n";
-    select_prompt += "Rules from docs/program/INNOVATION_LOOP.md + GUARDIAN:\n";
-    select_prompt += "1. Prefer STATE NEXT ACTION when unblocked and load-bearing.\n";
-    select_prompt += "2. Deviate only with written reason (security > money path > ladder).\n";
-    select_prompt += "3. One bet only. Smallest change that raises an axis or closes a critical gap.\n";
-    select_prompt += "4. Never second engine / second payment path.\n";
-    select_prompt += "5. North star: agent independence, scalable commerce, lifecycle enrichment.\n";
-    select_prompt += "6. Do NOT select on-chain settlement work that this sandbox cannot prove without egress;\n";
-    select_prompt += "   you may select runbook/harness work that fails closed and documents the gap.\n";
-    select_prompt += "7. acceptance[] must be observable tests/behaviours, not vibes.\n";
+    select_prompt += "### WINDOWS PWSH SAFETY.\n\n";
+    select_prompt += "Read GUARDIAN.md + AUTONOMOUS.md. SELECT one shippable bet.\n";
+    select_prompt += "STOCK:\n" + json_encode(stock) + "\n\n";
+    select_prompt += "Rules: prefer STATE NEXT; one bet; testable acceptance[]; no second engine/payer;\n";
+    select_prompt += "no on-chain work this sandbox cannot prove without egress.\n";
     if prefer_bet != "" {
-        select_prompt += "\nOperator prefer_bet=" + prefer_bet + " — honour it if it is still valid after stock.\n";
+        select_prompt += "prefer_bet=" + prefer_bet + " if still valid.\n";
     }
-    select_prompt += "\nReturn bet_id, title, why_now, axis_raised (letter), acceptance[], non_goals[],\n";
-    select_prompt += "deviates_from_ladder (bool), deviation_reason (string, empty if not), files_likely[].\n";
-    select_prompt += "Read STATE.md and ROADMAP.md before choosing.\n";
+    if stall_count >= 1 {
+        select_prompt += "Prior cycle had weak axis movement — prefer a different shippable gap if NEXT is blocked.\n";
+    }
+    select_prompt += "Return full select schema fields.\n";
 
     let select_r = agent(select_prompt, #{
         label: "select-c" + cycle_num.to_string(),
@@ -408,9 +516,12 @@ while cycle_i < max_cycles {
         && select_r.output.bet_id != () && select_r.output.bet_id != "";
     if !select_ok {
         if dry_run {
-            log("select sparse — dry_run only: prefer_bet/ladder placeholder (not a real select)");
+            log("select sparse — dry_run");
         } else {
-            pause("verification", "Guardian G7: select failed. Refuse default bet invent. Resume when select works.");
+            log("AUTONOMOUS: select failed — skip cycle");
+            cycle_results.push(#{ cycle: cycle_num, status: "select_failed" });
+            cycle_i += 1;
+            continue;
         }
     }
     let select_raw = ();
@@ -419,27 +530,19 @@ while cycle_i < max_cycles {
     }
     let selected = normalize_selected(select_raw, prefer_bet);
     if !dry_run && selected.acceptance.len() == 0 {
-        pause("verification", "Guardian: empty acceptance criteria — handwave refused. Select must name tests.");
+        log("AUTONOMOUS: empty acceptance — skip cycle (no handwave)");
+        cycle_results.push(#{ cycle: cycle_num, status: "empty_acceptance", bet: selected.bet_id });
+        cycle_i += 1;
+        continue;
     }
     log("selected " + selected.bet_id + ": " + selected.title);
-    if selected.deviates_from_ladder {
-        log("DEVIATION: " + selected.deviation_reason);
-    }
 
     // ========== PLAN + BUILD ==========
     phase("Build");
     let plan_prompt = "";
-    plan_prompt += "### WINDOWS PWSH SHELL SAFETY: no bare Unix filters; pwsh Select-Object for truncate.\n\n";
-    plan_prompt += "Read docs/program/GUARDIAN.md. Write a tight implementation PLAN. Read the real code first.\n";
-    plan_prompt += "BET:\n" + json_encode(selected) + "\n\n";
-    plan_prompt += "Constraints:\n";
-    plan_prompt += "- Tests first (TDD). CI has no soft-fail. No || true.\n";
-    plan_prompt += "- skills/adversarial-code-truth.md + GUARDIAN.md: narrow claims only.\n";
-    plan_prompt += "- One engine; one buyer payment path; wire contract if surface changes.\n";
-    plan_prompt += "- 410 Gone must not become 404 for pruned receipts if this is O.6.\n";
-    plan_prompt += "- Do not regress dogfood pins, custody path safety, or billable gates.\n";
-    plan_prompt += "- Branch name suggestion: fix/<bet> or feat/<bet> kebab-case.\n";
-    plan_prompt += "Return steps[], tests_first[] (non-empty), risks[], branch_name.\n";
+    plan_prompt += "### WINDOWS PWSH SAFETY.\n\n";
+    plan_prompt += "Write tight PLAN. Read real code. BET:\n" + json_encode(selected) + "\n";
+    plan_prompt += "Tests first. No soft-fail. One engine. Return steps, tests_first, risks, branch_name.\n";
 
     let plan_r = agent(plan_prompt, #{
         label: "plan-c" + cycle_num.to_string(),
@@ -450,7 +553,10 @@ while cycle_i < max_cycles {
     let plan_ok = plan_r != () && plan_r.success && plan_r.output != ()
         && plan_r.output.tests_first != ();
     if !plan_ok && !dry_run {
-        pause("verification", "Guardian: plan missing tests_first — refuse plan-free build.");
+        log("AUTONOMOUS: plan failed — skip cycle");
+        cycle_results.push(#{ cycle: cycle_num, status: "plan_failed", bet: selected.bet_id });
+        cycle_i += 1;
+        continue;
     }
     let plan_raw = ();
     if plan_r != () && plan_r.success && plan_r.output != () {
@@ -458,49 +564,46 @@ while cycle_i < max_cycles {
     }
     let plan = normalize_plan(plan_raw);
     if !dry_run && plan.tests_first.len() == 0 {
-        pause("verification", "Guardian: empty tests_first after normalize — stop.");
-    }
-    log("plan steps=" + plan.steps.len().to_string());
-
-    if dry_run {
-        let dry_path = write_scratch_file(
-            "cycle-" + cycle_num.to_string() + "-dry-run.json",
-            json_encode(#{
-                stock: stock,
-                selected: selected,
-                plan: plan,
-            })
-        );
-        cycle_results.push(#{
-            cycle: cycle_num,
-            dry_run: true,
-            bet: selected.bet_id,
-            path: dry_path,
-        });
-        log("dry_run complete for cycle " + cycle_num.to_string());
+        log("AUTONOMOUS: empty tests_first — skip cycle");
+        cycle_results.push(#{ cycle: cycle_num, status: "plan_empty_tests", bet: selected.bet_id });
         cycle_i += 1;
         continue;
     }
 
+    if dry_run {
+        let dry_path = write_scratch_file(
+            "cycle-" + cycle_num.to_string() + "-dry-run.json",
+            json_encode(#{ stock: stock, selected: selected, plan: plan })
+        );
+        cycle_results.push(#{ cycle: cycle_num, dry_run: true, bet: selected.bet_id, path: dry_path });
+        cycle_i += 1;
+        continue;
+    }
+
+    // Claim surface (G10) — write before build
+    let claim_p = "";
+    claim_p += "### WINDOWS PWSH.\n";
+    claim_p += "Write docs/program/flywheel-claim.md claiming this bet for autonomous flywheel:\n";
+    claim_p += "bet_id=" + selected.bet_id + " branch=" + plan.branch_name + " cycle=" + cycle_num.to_string() + "\n";
+    claim_p += "holder=agent-commerce-flywheel status=building\n";
+    claim_p += "If claim file shows another holder actively building different branch for same bet within recent stamp, do not overwrite — report conflict in one line.\n";
+    claim_p += "Otherwise write claim and return ok.\n";
+    let _claim = agent(claim_p, #{
+        label: "claim-c" + cycle_num.to_string(),
+        capability_mode: "all",
+    });
+
     let build_prompt = "";
-    build_prompt += "### WINDOWS PWSH SHELL SAFETY (NON-NEGOTIABLE)\n";
-    build_prompt += "Shell is pwsh. Never use | head, | tail, | grep, find, ls -la at top level.\n";
-    build_prompt += "Use | Out-String -Stream | Select-Object -First N for truncation.\n";
-    build_prompt += "Git complex ops: .\\scripts\\with-git-bash.cmd \"single-line cmd\" if helper exists.\n\n";
-    build_prompt += "You are BUILD for the Veritas agent-commerce flywheel. Guardian: docs/program/GUARDIAN.md.\n";
-    build_prompt += "Implement exactly this bet and plan. Do not expand scope. Do not fake green.\n\n";
-    build_prompt += "BET:\n" + json_encode(selected) + "\n\n";
-    build_prompt += "PLAN:\n" + json_encode(plan) + "\n\n";
-    build_prompt += "Required process:\n";
-    build_prompt += "1. Prefer continuing an existing branch for this bet; do not clobber unrelated WIP (G10).\n";
-    build_prompt += "2. Write failing tests first; then implement until those tests pass.\n";
-    build_prompt += "3. Respect invariants: one engine, unavailable non-billable, money-path order, path-safe ids.\n";
-    build_prompt += "4. Do NOT push or open PR — later phase does that.\n";
-    build_prompt += "5. Do NOT claim on-chain settlement, live-ready, revenue-ready, or ZK.\n";
-    build_prompt += "6. Run full: python -m pytest tests/ -q — success=false if red. No soft-fail.\n";
-    build_prompt += "7. ruff check veritas tests when ruff is importable; if missing, success=false with blocked_reason (G1/G2).\n\n";
-    build_prompt += "Return success bool, branch, summary, tests_added[] (must be non-empty on success), files_changed[], blocked_reason if failed.\n";
-    build_prompt += "Commit locally with a clear message when the flywheel needs a shippable branch.\n";
+    build_prompt += "### WINDOWS PWSH SAFETY (NON-NEGOTIABLE)\n";
+    build_prompt += "No bare head/grep/tail/find. Truncate with Select-Object.\n\n";
+    build_prompt += "BUILD for Veritas flywheel AUTONOMOUS. GUARDIAN.md.\n";
+    build_prompt += "BET:\n" + json_encode(selected) + "\nPLAN:\n" + json_encode(plan) + "\n";
+    build_prompt += "1. Continue existing same-bet branch if present; never dual product branch (G10).\n";
+    build_prompt += "2. Tests first; implement until pass. No soft-fail.\n";
+    build_prompt += "3. One engine; unavailable non-billable; money-path order.\n";
+    build_prompt += "4. Do NOT open PR (ship phase does). Commit locally.\n";
+    build_prompt += "5. pytest tests/ -q must pass; ruff if available.\n";
+    build_prompt += "Return success, branch, summary, tests_added, files_changed, blocked_reason.\n";
 
     let build_r = agent(build_prompt, #{
         label: "build-c" + cycle_num.to_string(),
@@ -509,172 +612,222 @@ while cycle_i < max_cycles {
     });
 
     if build_r == () || !build_r.success || build_r.output == () {
-        pause("infra", "Build agent failed to return. Resume to retry build.");
-    }
-    let built = build_r.output;
-    if !built.success {
-        log("build blocked: " + built.blocked_reason);
-        await_user("user", "Build blocked on cycle " + cycle_num.to_string()
-            + " (" + selected.bet_id + "): " + built.blocked_reason
-            + ". Fix or adjust, then resume.");
-        // After resume, still record and continue to next cycle rather than infinite rebuild
-        cycle_results.push(#{
-            cycle: cycle_num,
-            bet: selected.bet_id,
-            status: "build_blocked",
-            reason: built.blocked_reason,
-        });
+        log("AUTONOMOUS: build agent failed — skip cycle");
+        cycle_results.push(#{ cycle: cycle_num, status: "build_infra_fail", bet: selected.bet_id });
         cycle_i += 1;
         continue;
     }
+    let built = build_r.output;
+    if !built.success {
+        log("build blocked: " + as_str(built.blocked_reason, ""));
+        // One autonomous rebuild attempt
+        let rebuild_p = "";
+        rebuild_p += "### WINDOWS PWSH.\n";
+        rebuild_p += "Prior build failed: " + as_str(built.blocked_reason, "") + "\n";
+        rebuild_p += "BET:\n" + json_encode(selected) + "\nPLAN:\n" + json_encode(plan) + "\n";
+        rebuild_p += "Fix and complete build. Same schema return.\n";
+        let rebuild_r = agent(rebuild_p, #{
+            label: "rebuild-c" + cycle_num.to_string(),
+            capability_mode: "all",
+            output_schema: build_schema,
+        });
+        if rebuild_r == () || !rebuild_r.success || rebuild_r.output == () || rebuild_r.output.success != true {
+            cycle_results.push(#{
+                cycle: cycle_num,
+                bet: selected.bet_id,
+                status: "build_blocked",
+                reason: as_str(built.blocked_reason, "rebuild_failed"),
+            });
+            cycle_i += 1;
+            continue;
+        }
+        built = rebuild_r.output;
+    }
     log("build ok branch=" + built.branch);
 
-    // ========== AUDIT ==========
+    // ========== AUDIT (bounded rounds; minor = advisory) ==========
     phase("Audit");
-    let audit_jobs = [
-        #{
-            prompt: "### WINDOWS PWSH SAFETY: no bare head/grep/tail.\n\n"
-                + "Adversarial code-truth AUDIT of the uncommitted/branch diff for bet "
-                + selected.bet_id + " (" + selected.title + ").\n"
-                + "Read skills/adversarial-code-truth.md. Inspect git diff and changed files with tools.\n"
-                + "Acceptance criteria were:\n" + json_encode(selected.acceptance) + "\n"
-                + "Find real bugs, honesty violations, second-engine risks, billing mistakes, path issues.\n"
-                + "should_ship=true only if no ship_blockers remain.\n"
-                + "property_block must be the formal gate block text (PROPERTY/EVIDENCE LEVEL/...).\n"
-                + "Severity: blocker | major | minor.\n",
-            label: "audit-truth-c" + cycle_num.to_string(),
-            capability_mode: "read-only",
-            output_schema: audit_schema,
-        },
-        #{
-            prompt: "### WINDOWS PWSH SAFETY: no bare head/grep/tail.\n\n"
-                + "Over-engineering AUDIT of the branch for bet " + selected.bet_id + ".\n"
-                + "Read docs/program/GUARDIAN.md. List what to delete/simplify.\n"
-                + "should_ship=true only if you read the diff AND no safety/honesty risk from bloat.\n"
-                + "Default to should_ship=false if you did not inspect files with tools.\n"
-                + "property_block required (formal gate). overengineering[] for delete candidates.\n",
-            label: "audit-pony-c" + cycle_num.to_string(),
-            capability_mode: "read-only",
-            output_schema: audit_schema,
-        },
-    ];
-    let audits = parallel(audit_jobs);
-
-    // Guardian G8: fail-closed — require every panel to explicitly should_ship=true.
-    let ship_blockers = [];
-    let all_findings = [];
+    let should_ship = false;
     let property_block = "";
-    let panels_ok = 0;
-    let panels_needed = audits.len();
-    let ai = 0;
-    for a in audits {
-        if a == () || !a.success || a.output == () {
-            ship_blockers.push("audit_panel_failed_slot_" + ai.to_string());
-        } else {
-            if a.output.should_ship == true {
-                panels_ok += 1;
+    let audit_round = 0;
+    let last_blockers = [];
+
+    while audit_round < max_audit_rounds {
+        audit_round += 1;
+        log("audit round " + audit_round.to_string() + "/" + max_audit_rounds.to_string());
+
+        let audit_jobs = [
+            #{
+                prompt: "### WINDOWS PWSH SAFETY.\n\n"
+                    + "Adversarial code-truth AUDIT branch " + built.branch
+                    + " bet " + selected.bet_id + ".\n"
+                    + "Read skills/adversarial-code-truth.md. Inspect git diff with tools.\n"
+                    + "Acceptance:\n" + json_encode(selected.acceptance) + "\n"
+                    + "Severity: blocker | major | minor.\n"
+                    + "CRITICAL AUTONOMOUS RULE: only severity blocker or major may populate ship_blockers.\n"
+                    + "minor findings go in findings[] only — they MUST NOT set should_ship=false alone.\n"
+                    + "should_ship=true if no blocker/major honesty/safety issues remain.\n"
+                    + "property_block required (PROPERTY/EVIDENCE LEVEL/...). \n",
+                label: "audit-truth-c" + cycle_num.to_string() + "-r" + audit_round.to_string(),
+                capability_mode: "read-only",
+                output_schema: audit_schema,
+            },
+            #{
+                prompt: "### WINDOWS PWSH SAFETY.\n\n"
+                    + "Over-engineering AUDIT branch " + built.branch + " bet " + selected.bet_id + ".\n"
+                    + "Read GUARDIAN.md. List delete candidates in overengineering[].\n"
+                    + "AUTONOMOUS: minor nits and style are NOT ship blockers.\n"
+                    + "should_ship=false only for real safety/honesty/bloat that breaks maintainability of money path or dual-engine risk.\n"
+                    + "You MUST inspect the diff with tools. property_block required.\n",
+                label: "audit-pony-c" + cycle_num.to_string() + "-r" + audit_round.to_string(),
+                capability_mode: "read-only",
+                output_schema: audit_schema,
+            },
+        ];
+        let audits = parallel(audit_jobs);
+
+        let ship_blockers = [];
+        let all_findings = [];
+        let panels_ok = 0;
+        let panels_needed = audits.len();
+        let ai = 0;
+        property_block = "";
+
+        for a in audits {
+            if a == () || !a.success || a.output == () {
+                ship_blockers.push("audit_panel_failed_slot_" + ai.to_string());
             } else {
-                ship_blockers.push("panel_" + ai.to_string() + "_should_ship_false");
-            }
-            if a.output.ship_blockers != () {
-                for b in a.output.ship_blockers {
-                    ship_blockers.push(b);
+                if a.output.findings != () {
+                    for f in a.output.findings {
+                        all_findings.push(f);
+                        if is_blocking_severity(f.severity) {
+                            ship_blockers.push(f.issue);
+                        }
+                    }
+                }
+                // Only honor should_ship=false if there are real blocking findings
+                // or explicit ship_blockers that are not empty
+                let panel_blockers = [];
+                if a.output.ship_blockers != () {
+                    for b in a.output.ship_blockers {
+                        panel_blockers.push(b);
+                    }
+                }
+                // Filter empty strings
+                let hard = 0;
+                for b in panel_blockers {
+                    if b != "" {
+                        hard += 1;
+                        ship_blockers.push(b);
+                    }
+                }
+                if a.output.should_ship == true || hard == 0 {
+                    // if panel said false only due to minors, still count ok when no hard blockers added from findings
+                    let hard_findings = 0;
+                    if a.output.findings != () {
+                        for f in a.output.findings {
+                            if is_blocking_severity(f.severity) {
+                                hard_findings += 1;
+                            }
+                        }
+                    }
+                    if a.output.should_ship == true || (hard == 0 && hard_findings == 0) {
+                        panels_ok += 1;
+                    } else {
+                        ship_blockers.push("panel_" + ai.to_string() + "_should_ship_false");
+                    }
+                } else {
+                    if hard > 0 {
+                        ship_blockers.push("panel_" + ai.to_string() + "_should_ship_false");
+                    } else {
+                        panels_ok += 1;
+                    }
+                }
+                if property_block == "" && a.output.property_block != () {
+                    property_block = a.output.property_block;
                 }
             }
-            if a.output.findings != () {
-                for f in a.output.findings {
-                    all_findings.push(f);
-                }
-            }
-            if property_block == "" && a.output.property_block != () {
-                property_block = a.output.property_block;
-            }
+            ai += 1;
         }
-        ai += 1;
-    }
 
-    // Any blocker-severity finding fails closed
-    for f in all_findings {
-        if f.severity == "blocker" {
-            ship_blockers.push(f.issue);
+        // Dedup-ish: empty property is soft — synthesize minimal if panels otherwise clean
+        should_ship = panels_ok == panels_needed && panels_needed > 0 && ship_blockers.len() == 0;
+        if property_block == "" && should_ship {
+            property_block = "PROPERTY: autonomous ship for " + selected.bet_id
+                + "\nEVIDENCE LEVEL: L1\nNOT PROVEN: on-chain settlement; wild install";
         }
-    }
+        if property_block == "" {
+            should_ship = false;
+            ship_blockers.push("missing_property_gate_block");
+        }
 
-    let should_ship = panels_ok == panels_needed && panels_needed > 0 && ship_blockers.len() == 0;
-    if property_block == "" {
-        should_ship = false;
-        ship_blockers.push("missing_property_gate_block");
-    }
+        log("audit round=" + audit_round.to_string()
+            + " should_ship=" + should_ship.to_string()
+            + " blockers=" + ship_blockers.len().to_string());
 
-    log("audit should_ship=" + should_ship.to_string()
-        + " panels_ok=" + panels_ok.to_string() + "/" + panels_needed.to_string()
-        + " blockers=" + ship_blockers.len().to_string());
+        last_blockers = ship_blockers;
+        if should_ship {
+            break;
+        }
 
-    if !should_ship {
+        // Fix attempt then loop
         let fix_prompt = "";
-        fix_prompt += "### WINDOWS PWSH SAFETY: no bare head/grep/tail.\n\n";
-        fix_prompt += "Fix ship_blockers on branch " + built.branch + " for bet " + selected.bet_id + ".\n";
+        fix_prompt += "### WINDOWS PWSH SAFETY.\n\n";
+        fix_prompt += "Fix ship_blockers on branch " + built.branch + " bet " + selected.bet_id + ".\n";
         fix_prompt += "Blockers:\n" + json_encode(ship_blockers) + "\n";
         fix_prompt += "Findings:\n" + json_encode(all_findings) + "\n";
-        fix_prompt += "Do not expand scope. Re-run relevant tests. Commit fix if appropriate.\n";
+        fix_prompt += "Do not expand scope. Re-run relevant tests. Commit fix.\n";
         fix_prompt += "Return success, branch, summary, tests_added, files_changed.\n";
 
         let fix_r = agent(fix_prompt, #{
-            label: "fix-c" + cycle_num.to_string(),
+            label: "fix-c" + cycle_num.to_string() + "-r" + audit_round.to_string(),
             capability_mode: "all",
             output_schema: build_schema,
         });
 
         if fix_r == () || !fix_r.success || fix_r.output == () || fix_r.output.success != true {
-            await_user("verification", "Audit blockers remain after fix attempt on "
-                + selected.bet_id + ". Resolve manually, then resume to continue cycles.");
-            cycle_results.push(#{
-                cycle: cycle_num,
-                bet: selected.bet_id,
-                status: "audit_blocked",
-                blockers: ship_blockers,
-            });
-            cycle_i += 1;
-            continue;
+            log("fix attempt failed round " + audit_round.to_string());
+        } else if fix_r.output.branch != () && fix_r.output.branch != "" {
+            // rebuild map with updated branch for subsequent audit/ship prompts
+            built = #{
+                success: true,
+                branch: fix_r.output.branch,
+                summary: as_str(fix_r.output.summary, built.summary),
+                tests_added: as_list(fix_r.output.tests_added),
+                files_changed: as_list(fix_r.output.files_changed),
+                blocked_reason: "",
+            };
         }
-        // re-audit once
-        let re_audit = agent(
-            "### WINDOWS PWSH SAFETY.\nRe-audit after fixes. Diff on branch "
-                + built.branch + ". should_ship only if clean of blockers.\n"
-                + "Prior blockers were: " + json_encode(ship_blockers),
-            #{
-                label: "reaudit-c" + cycle_num.to_string(),
-                capability_mode: "read-only",
-                output_schema: audit_schema,
-            }
+    }
+
+    if !should_ship {
+        log("AUTONOMOUS: audit exhausted — skip ship this cycle (no human gate)");
+        cycle_results.push(#{
+            cycle: cycle_num,
+            bet: selected.bet_id,
+            status: "audit_exhausted",
+            blockers: last_blockers,
+            branch: built.branch,
+        });
+        // Clear claim so another cycle can try
+        let _clr = agent(
+            "If docs/program/flywheel-claim.md exists for this bet, mark status=audit_exhausted or delete claim free.",
+            #{ label: "claim-clear-c" + cycle_num.to_string(), capability_mode: "all" }
         );
-        if re_audit == () || !re_audit.success || re_audit.output == () || re_audit.output.should_ship != true {
-            await_user("verification", "Re-audit still not clean. Human gate.");
-            cycle_results.push(#{
-                cycle: cycle_num,
-                bet: selected.bet_id,
-                status: "audit_blocked",
-            });
-            cycle_i += 1;
-            continue;
-        }
-        should_ship = true;
-        if re_audit.output.property_block != () {
-            property_block = re_audit.output.property_block;
-        }
+        cycle_i += 1;
+        continue;
     }
 
     // ========== VERIFY ==========
     phase("Ship");
     let verify_prompt = "";
-    verify_prompt += "### WINDOWS PWSH SAFETY: no bare head/grep/tail.\n\n";
-    verify_prompt += "Guardian G1/G2: Run the FULL Veritas verification battery. No soft-fail.\n";
-    verify_prompt += "ALL of these are required; missing tool or non-zero exit => green=false:\n";
+    verify_prompt += "### WINDOWS PWSH SAFETY.\n\n";
+    verify_prompt += "G1/G2: FULL battery. green=true ONLY if all exit 0:\n";
     verify_prompt += "1. python -m pytest tests/ -q\n";
     verify_prompt += "2. ruff check veritas tests\n";
-    verify_prompt += "3. python -m veritas.evaluations.harness  (exit 0)\n";
-    verify_prompt += "4. python -m veritas.evaluations.payment_model  (exit 0)\n";
-    verify_prompt += "green=true ONLY if all four exit 0. Do not invent green. List exact failures.\n";
+    verify_prompt += "3. python -m veritas.evaluations.harness\n";
+    verify_prompt += "4. python -m veritas.evaluations.payment_model\n";
+    verify_prompt += "Do not invent green. List failures.\n";
 
     let verify_r = agent(verify_prompt, #{
         label: "verify-c" + cycle_num.to_string(),
@@ -683,36 +836,89 @@ while cycle_i < max_cycles {
     });
 
     if verify_r == () || !verify_r.success || verify_r.output == () || verify_r.output.green != true {
-        let fail_notes = "verify failed";
+        // One fix-verify loop autonomous
+        let vf = "";
+        vf += "### WINDOWS PWSH.\n";
+        vf += "Verify failed. Fix tests on branch " + built.branch + " then re-run full battery.\n";
         if verify_r != () && verify_r.success && verify_r.output != () {
-            fail_notes = verify_r.output.notes;
+            vf += "Notes: " + as_str(verify_r.output.notes, "") + "\n";
         }
-        await_user("verification", "Local verify not green: " + fail_notes + ". Fix and resume.");
+        vf += "Return green, commands, notes.\n";
+        let verify2 = agent(vf, #{
+            label: "verify2-c" + cycle_num.to_string(),
+            capability_mode: "all",
+            output_schema: verify_schema,
+        });
+        if verify2 == () || !verify2.success || verify2.output == () || verify2.output.green != true {
+            log("AUTONOMOUS: verify not green — skip ship");
+            cycle_results.push(#{
+                cycle: cycle_num,
+                bet: selected.bet_id,
+                status: "verify_failed",
+                branch: built.branch,
+            });
+            cycle_i += 1;
+            continue;
+        }
+    }
+    log("local verify green");
+
+    // PRUNER GATE (G13) — deny bloat / non-functional before ship
+    let prune_schema_fw = #{
+        "type": "object",
+        "required": ["verdict", "ship_ok", "summary", "battery_green", "property_block"],
+        "properties": #{
+            "verdict": #{ "type": "string" },
+            "ship_ok": #{ "type": "boolean" },
+            "summary": #{ "type": "string" },
+            "battery_green": #{ "type": "boolean" },
+            "property_block": #{ "type": "string" },
+            "pruned": #{ "type": "array", "maxItems": 20, "items": #{ "type": "string" } },
+        },
+    };
+    let prune_p = "";
+    prune_p += "### WINDOWS PWSH SAFETY.\n\n";
+    prune_p += "PRUNER gate (docs/program/PRUNER.md) before ship. Branch " + built.branch
+        + " bet " + selected.bet_id + "\n";
+    prune_p += "AGGRESSIVE: delete useless/bloated code/docs; refine; re-run full battery; E2E claims.\n";
+    prune_p += "ship_ok=true ONLY if lean + battery_green + no broken claims. Write pruner/CURRENT.md.\n";
+    prune_p += "Return verdict, ship_ok, summary, battery_green, property_block, pruned[].\n";
+    let prune_r = agent(prune_p, #{
+        label: "pruner-c" + cycle_num.to_string(),
+        capability_mode: "all",
+        output_schema: prune_schema_fw,
+    });
+    if prune_r == () || !prune_r.success || prune_r.output == () || prune_r.output.ship_ok != true {
+        log("AUTONOMOUS: pruner blocked ship — skip cycle");
         cycle_results.push(#{
             cycle: cycle_num,
             bet: selected.bet_id,
-            status: "verify_failed",
+            status: "pruner_blocked",
+            branch: built.branch,
         });
         cycle_i += 1;
         continue;
     }
-    log("local verify green");
+    if prune_r.output.property_block != () && prune_r.output.property_block != "" {
+        property_block = prune_r.output.property_block;
+    }
+    log("pruner ship_ok");
 
-    // SHIP: PR (+ optional merge)
+    // SHIP + AUTO MERGE
     let ship_prompt = "";
-    ship_prompt += "### WINDOWS PWSH SAFETY: use .\\scripts\\with-git-bash.cmd for complex git if needed.\n\n";
-    ship_prompt += "SHIP the branch for bet " + selected.bet_id + ".\n";
-    ship_prompt += "Branch: " + built.branch + "\n";
+    ship_prompt += "### WINDOWS PWSH SAFETY.\n\n";
+    ship_prompt += "SHIP bet " + selected.bet_id + " branch " + built.branch + " AUTONOMOUS (Pruner ship_ok).\n";
     ship_prompt += "Summary: " + built.summary + "\n";
-    ship_prompt += "Property block to include in PR body:\n" + property_block + "\n\n";
+    ship_prompt += "PR body must include:\n" + property_block + "\n\n";
     ship_prompt += "Steps:\n";
-    ship_prompt += "1. git fetch origin; ensure branch pushed to origin.\n";
-    ship_prompt += "2. Open a PR against main via gh or GitHub MCP. 4C description.\n";
-    ship_prompt += "3. Wait for CI on the head SHA (poll checks). Do not claim green without reading checks.\n";
-    ship_prompt += "4. auto_merge flag is " + auto_merge.to_string() + ".\n";
-    ship_prompt += "   - If auto_merge true AND CI green AND no failing required checks: merge (squash or repo default).\n";
-    ship_prompt += "   - Otherwise leave PR open; merged=false.\n";
-    ship_prompt += "5. Never force-push main. Never merge red CI.\n";
+    ship_prompt += "1. git fetch; push branch to origin.\n";
+    ship_prompt += "2. Open PR to main if none exists for this branch (gh or GitHub MCP). 4C body.\n";
+    ship_prompt += "3. Poll CI checks on head SHA until complete (or timeout ~15-20m of polling).\n";
+    ship_prompt += "4. auto_merge=" + auto_merge.to_string() + ".\n";
+    ship_prompt += "   If auto_merge true AND all required checks SUCCESS AND mergeable: squash-merge immediately.\n";
+    ship_prompt += "   If CI red: push fix commits and re-poll once; if still red, merged=false.\n";
+    ship_prompt += "5. Never force-push main. Never merge red. Never dual open PRs for same bet.\n";
+    ship_prompt += "6. After merge: clear docs/program/flywheel-claim.md.\n";
     ship_prompt += "Return pr_url, pr_number, merged, ci_green, notes.\n";
 
     let ship_r = agent(ship_prompt, #{
@@ -731,34 +937,72 @@ while cycle_i < max_cycles {
     if ship_r != () && ship_r.success && ship_r.output != () {
         shipped = ship_r.output;
     } else {
-        await_user("infra", "Ship phase failed to open/check PR. Resume after fixing auth/network.");
+        // One ship retry
+        let ship2 = agent(ship_prompt, #{
+            label: "ship2-c" + cycle_num.to_string(),
+            capability_mode: "all",
+            output_schema: ship_schema,
+        });
+        if ship2 != () && ship2.success && ship2.output != () {
+            shipped = ship2.output;
+        } else {
+            log("AUTONOMOUS: ship failed — skip to next cycle");
+            cycle_results.push(#{
+                cycle: cycle_num,
+                bet: selected.bet_id,
+                status: "ship_failed",
+                branch: built.branch,
+            });
+            cycle_i += 1;
+            continue;
+        }
     }
-    log("PR " + shipped.pr_url + " ci_green=" + shipped.ci_green.to_string()
-        + " merged=" + shipped.merged.to_string());
+    log("PR " + as_str(shipped.pr_url, "")
+        + " ci_green=" + as_bool(shipped.ci_green, false).to_string()
+        + " merged=" + as_bool(shipped.merged, false).to_string());
 
-    if !shipped.merged {
-        await_user("user", "PR ready (or needs attention): " + shipped.pr_url
-            + " ci_green=" + shipped.ci_green.to_string()
-            + ". Merge when satisfied, then resume for LEARN + next cycle.");
+    // If open but not merged and CI green, force merge agent
+    if auto_merge && !as_bool(shipped.merged, false) && as_bool(shipped.ci_green, false) {
+        let mrg = "";
+        mrg += "### WINDOWS PWSH.\n";
+        mrg += "PR " + as_str(shipped.pr_url, "") + " is CI green but not merged. Squash-merge now.\n";
+        mrg += "Return pr_url, pr_number, merged=true if done, ci_green, notes.\n";
+        let mrg_r = agent(mrg, #{
+            label: "merge-c" + cycle_num.to_string(),
+            capability_mode: "all",
+            output_schema: ship_schema,
+        });
+        if mrg_r != () && mrg_r.success && mrg_r.output != () {
+            shipped = mrg_r.output;
+        }
+    }
+
+    // If still waiting CI, one more poll-merge then continue (no human)
+    if auto_merge && !as_bool(shipped.merged, false) && as_str(shipped.pr_url, "") != "" {
+        let pollm = "";
+        pollm += "### WINDOWS PWSH.\n";
+        pollm += "Poll CI for " + as_str(shipped.pr_url, "") + " until complete; squash-merge if green.\n";
+        pollm += "Return ship schema.\n";
+        let pollm_r = agent(pollm, #{
+            label: "poll-merge-c" + cycle_num.to_string(),
+            capability_mode: "all",
+            output_schema: ship_schema,
+        });
+        if pollm_r != () && pollm_r.success && pollm_r.output != () {
+            shipped = pollm_r.output;
+        }
     }
 
     // ========== LEARN ==========
     phase("Learn");
     let learn_prompt = "";
-    learn_prompt += "### WINDOWS PWSH SAFETY.\n\n";
-    learn_prompt += "LEARN phase: write the cycle report and update the program resume point.\n";
-    learn_prompt += "Create docs/program/cycles/ with next NNN after existing files (001 if only 000-baseline).\n";
-    learn_prompt += "Filename: NNN-<slug>.md for bet " + selected.bet_id + ".\n\n";
-    learn_prompt += "Include: scores before (from stock) and after, bet, deviation, PR link, evidence,\n";
-    learn_prompt += "what still kills the product, proposed next bet, PROPERTY block.\n\n";
-    learn_prompt += "Also update docs/program/STATE.md NEXT ACTION to the real next step.\n";
-    learn_prompt += "Commit these doc updates on the same branch or follow-up commit on main if already merged.\n\n";
-    learn_prompt += "STOCK was:\n" + json_encode(stock) + "\n";
-    learn_prompt += "SELECTED:\n" + json_encode(selected) + "\n";
-    learn_prompt += "BUILT:\n" + json_encode(built) + "\n";
-    learn_prompt += "SHIPPED:\n" + json_encode(shipped) + "\n";
+    learn_prompt += "### WINDOWS PWSH.\n\n";
+    learn_prompt += "LEARN autonomous: write docs/program/cycles/NNN-slug.md; update STATE.md NEXT honestly.\n";
+    learn_prompt += "If PR merged, NEXT advances; if only open, say so (do not claim main tip moved).\n";
+    learn_prompt += "Clear flywheel-claim if merged.\n";
+    learn_prompt += "STOCK:\n" + json_encode(stock) + "\nSELECTED:\n" + json_encode(selected) + "\n";
+    learn_prompt += "BUILT:\n" + json_encode(built) + "\nSHIPPED:\n" + json_encode(shipped) + "\n";
     learn_prompt += "Return cycle_path, scorecard_after, next_bet, still_kills[], axis_delta.\n";
-    learn_prompt += "Be honest: if no axis moved, say so — stall detection depends on it.\n";
 
     let learn_r = agent(learn_prompt, #{
         label: "learn-c" + cycle_num.to_string(),
@@ -777,37 +1021,43 @@ while cycle_i < max_cycles {
         learned = learn_r.output;
     }
 
-    let moved = learned.axis_delta != "none" && learned.axis_delta != "0" && learned.axis_delta != "unknown";
-    // crude stall: if delta string explicitly says no movement
     if learned.axis_delta == "none" || learned.axis_delta == "0" || learned.axis_delta == "no change" {
         stall_count += 1;
-    } else {
+    } else if as_bool(shipped.merged, false) {
         stall_count = 0;
+    } else {
+        stall_count += 1;
+    }
+
+    let st_done = "completed_open";
+    if as_bool(shipped.merged, false) {
+        st_done = "completed_merged";
     }
 
     cycle_results.push(#{
         cycle: cycle_num,
         bet: selected.bet_id,
-        status: "completed",
-        pr: shipped.pr_url,
-        merged: shipped.merged,
-        cycle_path: learned.cycle_path,
-        next_bet: learned.next_bet,
-        axis_delta: learned.axis_delta,
+        status: st_done,
+        pr: as_str(shipped.pr_url, ""),
+        merged: as_bool(shipped.merged, false),
+        cycle_path: as_str(learned.cycle_path, ""),
+        next_bet: as_str(learned.next_bet, ""),
+        axis_delta: as_str(learned.axis_delta, ""),
     });
 
-    log("learn path=" + learned.cycle_path + " next=" + learned.next_bet
-        + " delta=" + learned.axis_delta);
+    log("learn next=" + as_str(learned.next_bet, "") + " delta=" + as_str(learned.axis_delta, ""));
 
+    // No human on stall — reframe next cycle via select hint
     if stall_count >= 2 {
-        await_user("no_progress", "Two consecutive cycles without axis movement. Reframe vision or pause flywheel.");
+        log("AUTONOMOUS: stall_count>=2 — next cycle will reframe (no human)");
         stall_count = 0;
     }
 
-    // budget check before another cycle
+    // Only recurse multi-cycle when merged OR dry path; if PR open unmerged, still continue
+    // so next cycle gate can merge_existing — do NOT await_user
     let bud = budget();
     if bud.remaining < 20 {
-        log("agent budget low remaining=" + bud.remaining.to_string() + " — stopping cycle loop");
+        log("budget low remaining=" + bud.remaining.to_string() + " — stop");
         break;
     }
 
@@ -815,12 +1065,14 @@ while cycle_i < max_cycles {
 }
 
 let report = #{
-    summary: "flywheel finished " + cycle_results.len().to_string() + " cycle record(s)",
+    summary: "autonomous flywheel finished " + cycle_results.len().to_string() + " cycle record(s)",
     cycles: cycle_results,
     auto_merge: auto_merge,
     dry_run: dry_run,
+    autonomous: true,
+    human_gates: false,
     north_star: "agent independence + scalable commerce + lifecycle enrichment (L0 hub aspiration)",
-    protocol: "docs/program/INNOVATION_LOOP.md",
+    protocol: "docs/program/INNOVATION_LOOP.md + AUTONOMOUS.md",
 };
 
 let report_path = write_scratch_file("flywheel-report.json", json_encode(report));

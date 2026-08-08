@@ -8,4 +8,4 @@
 | [`log/`](log/) | Tick history |
 | [`../CONDUCTOR.md`](../CONDUCTOR.md) | Charter |
 
-Cadence: **every 45 minutes** + continuous workflow recurse.
+Cadence: **every 15 minutes** + continuous workflow recurse (see `CONTINUOUS.md`).

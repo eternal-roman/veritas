@@ -6,7 +6,9 @@ workflows, **confers** with Overseer / Steward / Scout / Flywheel via their
 cards, and **keeps the builder workflow recursing** so finished cycles do not
 become dead air.
 
-Bound by `GUARDIAN.md`. Momentum without honesty is thrash.
+Bound by [`GOVERNING.md`](GOVERNING.md) (loops = goals), `GUARDIAN.md` (no fake
+code), and the **Overseer** quality/vision/strategy gate. Momentum without
+honesty is thrash; green without strategy is thrash.
 
 ## Why this agent exists
 
@@ -61,14 +63,15 @@ Other agents **read** this file at the start of their ticks (wired in prompts).
 |-----------|--------|
 | No open product PR, NEXT clear, tree not hostile WIP | **Restart** flywheel / run one cycle |
 | Open PR with CI pending | Wait; do not start a second bet |
-| Open PR CI green, unmerged | Confer: human merge or document; optional auto note — **no silent merge** unless policy says so |
-| Overseer LAZY/MISGUIDED on live WIP | Do not restart new bet; demand fix |
+| Open PR CI green, unmerged | **Autonomous: squash-merge** (see `AUTONOMOUS.md`); no human wait |
+| Open PR CI pending | Poll once; else next tick — **no `await_user`** |
+| Overseer LAZY/MISGUIDED on live WIP | Do not restart new bet; demand fix in cards |
 | Steward cohesion < 2 | Demand card cleanup before restart |
 | Budget exhausted / max cycles | Stop with trajectory updated |
 
-**Continuous mode** (`continuous: true` on the conductor workflow): after each
-successful LEARN, immediately select the next bet and build again until
-`max_cycles` or a hard stop.
+**Autonomous continuous** (`continuous: true`, default `auto_merge: true`): after
+each LEARN/merge, recurse until `max_cycles` or budget — **no human-in-the-loop**.
+See `docs/program/AUTONOMOUS.md`.
 
 ## Vision stack (stable)
 
@@ -97,7 +100,8 @@ Landmass always restated (on-chain 0, multi-instance, …)
 
 ## Cadence
 
-- **Scheduler: every 45 minutes** — review + confer + restart if idle.
+- **Scheduler: every 12 minutes** — review + confer + merge green + restart
+  if idle. See `CONTINUOUS.md` + `PRODUCT_ORG.md` latency model.
 - **Interactive continuous:**  
   `/workflow agent-commerce-continuous {"max_cycles": 3}`  
   or `/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 3}`

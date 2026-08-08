@@ -5,12 +5,12 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: O.8 — supply chain.** Lockfile with hashes, SHA-pinned
-> actions, SBOM, bandit already at `-ll`. After that: **M7** (credits via
-> SIWx; the last of Phase M), then **Phase N0** (the notary product).
+> **Do this next: M7 — credits via SIWx** (last of Phase M). After that:
+> **Phase N0** (the notary product).
 >
-> Diligence (#19 / `a4cfc49`), P7 honesty (#20 / `4a3d105`), and O.6
-> (#18 / `48194ab`) are **on main** — do not re-open them as NEXT.
+> **O.8** supply chain (#22 / `96b9013`), diligence (#19 / `a4cfc49`), P7
+> honesty (#20 / `4a3d105`), and O.6 (#18 / `48194ab`) are **on main** —
+> do not re-open them as NEXT.
 >
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
@@ -23,9 +23,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `a4cfc49` (PR #19). Open product PRs: **none**.
-> Docs-only PR **#21** (card hygiene) is open, CI green, awaiting human merge —
-> not a product bet and does not change NEXT.
+> **Tip of `origin/main`:** `96b9013` (PR #22 — O.8). Open product PRs:
+> **none**. Docs-only PR **#21** is open but **dirty** (conflicts with tip) —
+> not a product bet and must not freeze **M7**.
+>
+> **O.8 landed on main @ `96b9013` (PR #22).** SHA-pinned GitHub Actions,
+> hash-pinned `requirements.lock` / `requirements-dev.lock` with CI
+> `--require-hashes`, artifact SBOM of the published wheel venv, witness
+> tests in `tests/test_supply_chain.py`, and mcp upper-bound on the lock path
+> (O19 continuity). Deliberately not claimed: Docker image hash-lock, signed
+> SBOM, “wild install uncompromised.”
 >
 > **O.6 landed on main @ `48194ab` (PR #18).** Retention window, custody
 > prune+tombstones, ledger prune for terminal states, `veritas-ops prune`,
@@ -147,9 +154,9 @@ committed and pushed survives. Update this file and push after every sub-step.
 > from here; wall times are a floor because retrieval ran offline, and the
 > millisecond metering column is too coarse to resolve it at all (reads 0).
 >
-> Next: **O.8** (supply chain: lockfile with hashes, SHA-pinned actions, SBOM).
-> **M7** (credits via SIWx) is the last of Phase M. Cycles 1 (cold install,
-> gated on N0) and 5 (ecosystem, gated on the standalone verifier) remain.
+> Next: **M7** (credits via SIWx — last of Phase M). O.8 is on main. Cycles 1
+> (cold install, gated on N0) and 5 (ecosystem, gated on the standalone
+> verifier) remain.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -167,20 +174,28 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 | Piece | Doc / entry |
 |-------|-------------|
-| **Conductor 45m** | [`CONDUCTOR.md`](CONDUCTOR.md) · `conductor/TRAJECTORY.md` + `CONFERRAL.md` — vision, conferral, **recursive restart** |
-| Continuous | `/workflow agent-commerce-continuous` — multi-cycle momentum |
-| Builder | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · `/workflow agent-commerce-flywheel` |
-| Overseer 15m | [`OVERSEER.md`](OVERSEER.md) · `overseer/CURRENT.md` |
-| Steward 30m | [`STEWARD.md`](STEWARD.md) · `steward/CURRENT.md` — card hygiene |
-| Scout 20m | `scout/IDEA_BUS.md` (patterns only; no SCOUT charter file yet) |
-| Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) |
+| **Governing** | [`GOVERNING.md`](GOVERNING.md) — loops = goals |
+| **Product org** | [`PRODUCT_ORG.md`](PRODUCT_ORG.md) — eras, sequencing, timing, scale |
+| **Loops / north star** | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · this STATE NEXT |
+| **Overseer 8m** | Quality + vision + strategy gate |
+| Conductor 12m | Merge green + restart one NEXT |
+| Flywheel 20m | Full cycle · functioning/necessary/pursuant |
+| Steward 15m | Card hygiene |
+| Scout (Idea) 25m | Vision fuel · never sets NEXT |
+| **Pulse** | `/workflow agent-commerce-pulse` — support fan-out → Conductor |
+| **Implement×n** | `/workflow agent-commerce-implement {"n":3,"prefer_bet":"M7"}` — scale builders |
+| **Pruner 10m** | [`PRUNER.md`](PRUNER.md) — bloat denial + battery/E2E ship veto |
+| **Optimizer** | [`OPTIMIZER.md`](OPTIMIZER.md) — continuous self-improvement every 5 cycles (no end state) |
+| Continuous forever | `/workflow agent-commerce-continuous {"max_cycles":5,"forever":true,"prefer_bet":"M7"}` |
+| Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) · G13 Pruner |
+| Autonomous | [`AUTONOMOUS.md`](AUTONOMOUS.md) |
 | Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
 
 ```text
-/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "O.8"}
+/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "M7"}
 /workflow agent-commerce-conductor {"continuous": true, "max_cycles": 2}
 /workflow agent-commerce-steward
-/workflow agent-commerce-flywheel {"prefer_bet": "O.8"}
+/workflow agent-commerce-flywheel {"prefer_bet": "M7"}
 ```
 
 **Conductor** reviews all work, confers via `CONFERRAL.md`, holds trajectory,
@@ -283,7 +298,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
 - [x] O.6 Retention/pruning; 410 Gone ≠ 404 (`veritas/retention.py`, custody tombstones, `Ledger.prune`, `veritas-ops prune`)
 - [x] O.7 `.dockerignore` allowlist, VOLUME, docker-compose.yml (O12, O13)
-- [ ] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15)
+- [x] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15 partial — pins on main `96b9013`; Docker hash-lock + signed SBOM still open)
 
 ### Phase L — Legal
 - [ ] L.1 TERMS.md, PRIVACY.md, provider compliance matrix, retention policy
@@ -337,7 +352,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | **closed** — `.dockerignore` is an allowlist (`*` then `!`), the Dockerfile is asserted never to `COPY .`, the runtime dir is a declared VOLUME (`tests/test_container.py`). Verified by reading the shipped files, not by building an image |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
-| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | partial — bandit gate raised to `-ll` with real fixes; lockfile/action pinning open |
+| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | **partial** — bandit `-ll`; lockfile/hashes + SHA Actions + artifact SBOM on main `96b9013` (#22); Docker hash-lock + signed SBOM still open |
 | O16 | high | Wallet keystore + plaintext passphrase written world-readable where POSIX mode bits are not enforced (observed `0o666` on Windows); `_write_owner_only` never checked that its own name was true | **reported, not fixed** — the mode is read back after each write and `WalletPermissionWarning` names the unprotected file (`tests/test_wallet.py::test_keystore_files_are_owner_only_or_say_they_are_not`). The POSIX assertion is now its own test, skipped off-POSIX. Enforcing ACLs on Windows is not implemented; deployment target is Linux/Docker |
 | O17 | **critical** | `GET /v1/receipts/{request_id}` interpolated the caller's string into a filesystem path. Starlette refuses a path parameter containing `/`, which hid it on Linux — but `\` is a Windows separator and is not a URL separator, so `GET /v1/receipts/..%5Ccanary` arrived intact. **Verified exploitable against a running server: HTTP 200 with the contents of a `.json` file outside the receipt directory.** Any `*.json` the process could read was readable unauthenticated, and `.veritas_agent/wallet.keystore.json` is such a file | **closed** — allowlist `custody.is_safe_request_id` validates *before* the path is built, on read and write both (`tests/test_durability.py::test_a_receipt_id_cannot_escape_the_receipt_directory`, `::test_a_traversing_id_is_refused_before_it_reaches_the_filesystem`, `::test_a_receipt_is_never_written_outside_its_directory`). Re-tested against a live server: 404, no contents. Found by CodeQL `py/path-injection`, which had been open on `main` |
 | O18 | med | Exception text reached a buyer through the 402 body: `_challenge(cfg, f"…: {exc}")` on `DeadlineTooShort`. The message is only timings today, but 4f2321c established that exception text does not go on the wire | **closed** — the message is built from `MIN_USABLE_SECONDS` / `SETTLEMENT_MARGIN_SECONDS`, never from the exception. Found by CodeQL `py/stack-trace-exposure` |
@@ -376,3 +391,4 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-08 | O.6 retention/pruning + 410 Gone ≠ 404 | 48194ab (#18) |
 | 2026-08-08 | P7 claim retraction + witness (`/v1/verify` not independent) | 4a3d105 (#20) |
 | 2026-08-08 | Buyer counterparty diligence + standalone verifier | a4cfc49 (#19) |
+| 2026-08-08 | O.8 supply chain: SHA Actions, hashed locks, artifact SBOM | 96b9013 (#22) |

@@ -1,20 +1,21 @@
 # Overseer CURRENT
 
-- **Time:** 2026-08-08T17:18:48Z
-- **Branch / HEAD:** `origin/main` @ **`a4cfc49`**
+- **Time:** 2026-08-08T18:11:00Z
+- **Branch / HEAD:** `origin/main` @ **`96b9013`** (PR **#22** squash-merged — O.8)
 - **Verdict:** ON_TASK
-- **Scores:** on-task 3 / measured 2 / integrity 3 / a2a 2 / claims 3
-- **What is happening:** **O.6** on main (`48194ab`; `veritas/retention.py` present). **#20** (`4a3d105`) and **#19** (`a4cfc49`) merged. STATE NEXT = **O.8 supply chain** only. Open queue: **docs PR #21** (card hygiene) — CI **green**, mergeable, **human merge pending** (not a product bet). No open product PR. Local `feat/o.8-supply-chain` worktrees have **uncommitted** lock/action/SBOM WIP and **0 commits** ahead of main — measured gap is “not shipped,” not half-measured 410/404. On-chain settlements: **0**.
-- **Lazy or half-measured?** No false BLOCKED/#18 thrash. Risk: docs-only thrash if agents keep restamping plane while O.8 stays uncommitted. Product risk on O.8: soft-fail lock/audit jobs or tag-pinned actions (`@v7` still on main).
-- **Strategic A2A note:** Axes A/B improved by landed merges; axis **C still 0**. O.8 (hashes + SHA pins + SBOM, no soft-fail) shortens hostile “can I trust this install?” path. M7/N0 parked until O.8 ships or is honestly parked.
-- **Directive (next 15–60m):** **(1)** Human merge **#21** so remote CURRENT matches tip. **(2)** One product track — finish **O.8** from mid-flight WIP: lockfile with hashes, SHA-pin actions, SBOM; full battery; one PR. Do not open #18/#19 workstreams.
-- **Do not do:** Claim #18 blocked; dual NEXT (diligence + O.8); invent CI/settlement green; soft-fail lock/audit jobs; force-push; merge red; parallel N0/M7 product code; treat #21 as product progress.
+- **Scores:** on-task 3 / measured 3 / integrity 2 / a2a 2 / claims 1
+- **noop_stable?** **no** vs 007 — **#22 merged**; tip left merge-gate; NEXT should be **M7**
+- **What is happening:** **O.8 product is on main** (squash `96b9013` from #22; parent `a4cfc49`). Artifacts present on tip: `requirements.lock`, `requirements-dev.lock`, `scripts/lock_requirements.py`, `tests/test_supply_chain.py`, CI `--require-hashes`, `mcp>=1.0,<2` in dev floors. No `continue-on-error` / `|| true` spotted in ci.yml pin path. **Open product PRs: none.** Only open PR: **#21** docs, **CONFLICTING** — not product. Conductor/steward local plane correctly set NEXT=**M7** and restart flywheel for M7. **Claim hygiene defect:** committed **`docs/program/STATE.md` on `origin/main` still says “O.8 is in review / not on main until merge” and progress “awaiting merge”** — false post-merge (carried by #22’s pre-merge STATE rewrite). Local steward rewrite of STATE is honest; **remote resume point is not** until a docs PR lands on tip. Dual-tree residue (o8 `95c4ab4` local, o8b at pre-squash head) — abandon; do not open second O.8. Settlements: **0**. Axis **C** = 0.
+- **Lazy or half-measured?** Product O.8: **no** for claimed pin surface. Plane: **yes risk** if agents stock **only** `origin/main` STATE and re-enter merge-gate theater or re-open O.8. Dirty #21 must not freeze M7.
+- **Strategic A2A note:** Axis **F** (install-trust) moved on main for the wheel/CI path. Does **not** move **C** (money) or **D** (notary). Ladder-correct next product bet: **M7** (credits/SIWx). Park Docker hash-lock / signed SBOM as separate later ops bets — not O.8 re-litigation. Raise C only with tx hash + measurement design.
+- **Directive (next 15–60m):** **(1) Steward/docs: land tip-aligned STATE** (O.8 on main @ `96b9013`; NEXT=M7; open product PRs none) — close/supersede dirty **#21**; do not leave remote STATE lying. **(2) Builders: single bet M7 only** — no dual N0, no second O.8 PR from o8. **(3)** If M7 needs external SIWx/facilitator egress, **honest BLOCKED** with evidence — no fake green.
+- **Do not do:** Re-open O.8 as NEXT; dual product PRs; soft-fail; invent settlement; force-push main; treat #21 as product; claim wild install / Docker pin / signed SBOM done; start N0 in parallel.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Post-merge main is coherent for product NEXT=O.8; O.6 on main; only open PR is green docs #21
-EVIDENCE LEVEL: L1 (git fetch + origin/main log + gh pr list/view + cat-file retention.py)
-CHECKED ARTIFACT: origin/main a4cfc49; 48194ab/4a3d105/a4cfc49; veritas/retention.py; PR #21 SUCCESS; STATE NEXT O.8
-ASSUMPTIONS: Flywheel commits O.8 WIP; human merges green docs; steward keeps cards from re-blocking #18
-NOT PROVEN: O.8 delivery; battery on O.8 tree this tick; multi-instance prune; any on-chain settlement
+PROPERTY: O.8 product code is on origin/main @ 96b9013; no open product PR; remote STATE.md still falsely claims O.8 in review; local plane correctly points M7
+EVIDENCE LEVEL: L1 (git fetch, origin/main log #22, cat-file locks/tests/script, gh pr list, show origin/main:STATE.md vs local)
+CHECKED ARTIFACT: 96b9013; #22 MERGED 18:04Z; open only #21 CONFLICTING; require-hashes in ci.yml; mcp pin in requirements-dev.txt
+ASSUMPTIONS: Squash merge explains db541ce not ancestor; agents will prefer STATE on main unless steward lands fix; conductor restart means one M7 track
+NOT PROVEN: M7 implementation; STATE fix on remote main; Docker hash-lock; signed SBOM; any on-chain settlement
 ```

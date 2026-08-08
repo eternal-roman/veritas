@@ -3,9 +3,15 @@
 A recursive build system for Veritas: stock the work honestly, ship one
 autonomy-raising increment, prove it, learn, re-goal, and run again.
 
-This is not a second roadmap. It is the **execution engine** that consumes
-`docs/program/STATE.md`, `ROADMAP.md`, `ECOSYSTEM.md`, and the live tree, and
-emits PRs until the venue is worth joining.
+This is not a second roadmap. It is a **governing loop** (goals + scorecard +
+cycle atom) and the **execution engine** that consumes `docs/program/STATE.md`,
+`ROADMAP.md`, `ECOSYSTEM.md`, and the live tree, and emits PRs until the venue
+is worth joining.
+
+**Plane authority:** [`GOVERNING.md`](GOVERNING.md) elevates this loop (and
+STATE NEXT) above agent chatter. [`GUARDIAN.md`](GUARDIAN.md) forbids failing
+or fake code. The **Overseer** is the quality/vision/strategy gate; builders
+ship only what is functioning, necessary, and pursuant to the north star.
 
 ---
 
@@ -50,7 +56,7 @@ Hold these. Improve around them. Do not dilute them for speed.
 | **Zero on-chain settlements** | Every commercial claim downstream |
 | Snippet-grade retrieval / notary not built | Willingness to pay |
 | No public deployment or registry listing | Discovery by strangers |
-| Unbounded retention (O.6 open) | First production disk failure mode |
+| Multi-instance prune still open | Scale beyond one process retention |
 | Shared state across instances missing | Scale beyond one process |
 | Chain reconciliation missing (G9) | "settled" means "facilitator said so" |
 
@@ -138,9 +144,10 @@ cycle report, and stops. Humans re-invoke when ready.
 
 ### Mode B — Scheduled re-fire (true continuous)
 
-See `docs/program/CONTINUOUS.md` and `docs/program/GUARDIAN.md`. Production
-cadence is **1 hour**, durable scheduler, tick text in
-`FLYWHEEL_TICK_PROMPT.md`. Default **no auto-merge**.
+See `docs/program/CONTINUOUS.md`, `GUARDIAN.md`, and **`AUTONOMOUS.md`**. Production
+cadence is **25 minutes** (backup builder; Conductor also kicks at 15m), durable
+scheduler, tick text in `FLYWHEEL_TICK_PROMPT.md`. Default **auto-merge on green
+CI** — no human-in-the-loop workflow gates.
 
 Between fires: skip if WIP clash or CI pending; continue the same bet rather
 than inventing a parallel branch. A tick that cannot run the full battery is

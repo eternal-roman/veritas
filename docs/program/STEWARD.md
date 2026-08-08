@@ -34,7 +34,7 @@ under Steward when a foreign branch reappears.
 
 | Card | Path | Max age before steward rewrite |
 |------|------|--------------------------------|
-| Overseer CURRENT | `docs/program/overseer/CURRENT.md` | 30 min if facts drift |
+| Overseer CURRENT | `docs/program/overseer/CURRENT.md` | 12 min if facts drift |
 | Steward CURRENT | `docs/program/steward/CURRENT.md` | each steward tick |
 | Peer CURRENT | `docs/program/overseer/peer/CURRENT.md` | idle note if no peer branch |
 | Scout IDEA_BUS | `docs/program/scout/IDEA_BUS.md` | stamp freshness; do not invent seedlings |
@@ -65,9 +65,10 @@ under Steward when a foreign branch reappears.
 
 ## Cadence
 
-**Every 30 minutes** — enough to catch post-merge card rot before the next
-overseer/flywheel pair runs on lies; not so frequent that it races the 15m
-overseer for CPU.
+**Every 15 minutes** — post-merge card rot must clear before builders trust
+cards. Slightly slower than Overseer (8m) / Conductor (12m) so honesty scoring
+and card rewrites thrash less; prefer `noop_coherent` when facts unchanged.
+See `PRODUCT_ORG.md` + `CONTINUOUS.md`.
 
 Interactive: `/workflow agent-commerce-steward`  
 Scheduler: durable task (id in CONTINUOUS.md)
@@ -75,16 +76,17 @@ Scheduler: durable task (id in CONTINUOUS.md)
 ## Relationship diagram
 
 ```
-Steward (30m) ──cleans cards / STATE cohesion──► shared docs
+Steward (12m) ──cleans cards / STATE cohesion──► shared docs
       │
-      ├──► Overseer (15m) reads clean CURRENT
-      ├──► Flywheel (1h) reads honest STATE NEXT
-      ├──► Scout (20m) IDEA_BUS freshness stamped
+      ├──► Overseer (10m) reads clean CURRENT
+      ├──► Conductor (15m) confers on clean cards
+      ├──► Flywheel (25m) reads honest STATE NEXT
+      ├──► Scout (40m) IDEA_BUS freshness stamped
       └──► Peer card IDLE or future branch watch
 ```
 
 ## Success metric (honest)
 
 Not “more commits.” Success = **zero contradictions** between CURRENT cards and
-`origin/main` / open PRs for a full 30m window, and agents can resume without
+`origin/main` / open PRs for a full **12m** window, and agents can resume without
 re-stocking history from chat.

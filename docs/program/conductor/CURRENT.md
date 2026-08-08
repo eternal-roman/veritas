@@ -1,22 +1,22 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T17:18:48Z (steward open-PR hygiene pass)
-- **origin/main:** `a4cfc49` (diligence #19; includes O.6 `48194ab`, P7 honesty `4a3d105`)
-- **Open PRs:** **#21** docs card hygiene — CI green, mergeable, **human merge pending**. Product queue: empty.
-- **Momentum score:** **2** — O.8 substance mid-flight (locks/actions/SBOM/tests) but uncommitted / no product PR; plane fixes ride #21; no dual thrash
+- **Time:** 2026-08-08T18:16:00Z (steward post-merge stock)
+- **origin/main:** **`96b9013`** — O.8 landed (PR #22)
+- **Open PRs:** **#21** docs only — **dirty**/conflict with main; not product. Product queue: **empty**.
+- **Momentum score:** **2** — cycle complete (O.8 on main); next bet **M7** ready to start; not dual
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **O.8 supply chain** (mid-flight `feat/o.8-supply-chain` @ `veritas-o8`)
+- **Primary bet:** **M7** credits via SIWx (last of Phase M). O.8 done on main — do not re-run.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No this tick** (continue mid-flight O.8; never dual)
-- **Last action:** steward stock pass corrected open-PR list; O.8 still the one product bet
-- **Next expected:** human merges #21; O.8 commit → product PR → human merge → then restart for M7 or next STATE
+- **Recursive restart:** **Yes eligible** — product PR queue clear; tip advanced; primary = **M7** only (never dual with O.8 re-open)
+- **Last action:** steward cleared post-merge fog after #22 land
+- **Next expected:** flywheel cycle on **M7** (commit → green → PR; human merges); human supersedes dirty #21 docs
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Conductor holds one primary bet (O.8); no dual restart while WIP active; open PRs match gh
-EVIDENCE LEVEL: L1 (git fetch, origin/main a4cfc49, gh pr view 21, worktree status)
-CHECKED ARTIFACT: origin/main; PR #21 green docs; C:/Users/elamj/Dev/veritas-o8 dirty feat/o.8-supply-chain; STATE NEXT O.8
-ASSUMPTIONS: Flywheel or human will finish commit/PR on that worktree; human merges green docs
-NOT PROVEN: O.8 CI green; multi-instance; on-chain settlement (0); unattended multi-cycle efficacy
+PROPERTY: One primary bet M7 after O.8 on main; no open product PR; restart eligible single-track
+EVIDENCE LEVEL: L1 (git fetch, origin/main 96b9013 #22, gh open only #21 dirty)
+CHECKED ARTIFACT: origin/main 96b9013; open PRs [#21]; STATE NEXT M7
+ASSUMPTIONS: Flywheel starts M7 only; no auto-merge; settlements remain 0 until proven
+NOT PROVEN: M7 design fitness; CI green M7 PR; on-chain settlement
 ```

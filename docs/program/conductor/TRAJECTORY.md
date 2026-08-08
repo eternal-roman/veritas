@@ -1,7 +1,7 @@
 # Trajectory — agent commerce vision
 
-**Updated:** 2026-08-08T17:50:00Z (conductor 45m tick)  
-**Main:** `a4cfc49`
+**Updated:** 2026-08-08T18:16:00Z (steward post-merge — #22 on main)  
+**Main:** `96b9013`
 
 ## North star (L0 — never claim proven)
 
@@ -16,8 +16,8 @@ Substrate for **agent independence**, **hyper-scalable agent commerce**, and
 | O.6 retention + 410≠404 | **On main** `48194ab` |
 | `/v1/verify` claim honesty (P7) | **On main** `4a3d105` |
 | Buyer diligence + standalone verifier | **On main** `a4cfc49` |
-| O.8 supply chain | **MID-FLIGHT** worktree `veritas-o8` / `feat/o.8-supply-chain` — uncommitted WIP (locks, SHA actions, SBOM, tests); **no PR yet** |
-| M7 credits / N0 notary | Parked until O.8 PR lands |
+| O.8 supply chain | **On main** `96b9013` (PR #22) — locks, SHA Actions, SBOM artifact, mcp pin. Docker hash-lock / signed SBOM **not** claimed |
+| M7 credits / N0 notary | **NEXT = M7**; N0 parked until M7 lands or honest park |
 | On-chain settlement | **0** (axis C) |
 
 ## Scorecard snapshot (honest)
@@ -29,34 +29,35 @@ Substrate for **agent independence**, **hyper-scalable agent commerce**, and
 | C Money real | 0 | No tx hash; G9 open |
 | D Product worth | 1 | Snippets; N0 not started |
 | E Found alone | 1 | Well-known only; no Bazaar |
-| F Lifecycle | ~2–3 | Trust, metering, ops, diligence; supply-chain hardening in flight |
+| F Lifecycle | ~3 | Trust, metering, ops, diligence, **supply-chain pins on main** |
 
 ## Primary trajectory (this era)
 
 ```
-O.8 supply chain  →  M7 credits  →  N0 notary / product worth
+O.8 supply chain (DONE 96b9013)  →  M7 credits  →  N0 notary / product worth
          │
          └── parallel only if outranked: G9 design (RPC), hostile pay tests
 ```
 
-**This-cycle bet:** **O.8** — finish the mid-flight branch (commit → tests-green → PR, no merge).  
-Do **not** open a second product bet.
+**This-cycle bet:** **M7** — credits via SIWx.  
+Do **not** re-open O.8 or dual with N0.
 
 ## Parked (explicit)
 
-- Dual product PRs / second O.8 cycle while `feat/o.8-supply-chain` is dirty  
+- Re-litigating O.8 / second supply-chain PR without new defect evidence  
 - Scout seedlings as “approved dependencies”  
 - Bazaar before settlement instrumentation  
-- Claiming diligence closes on-chain risk  
-- N0 / M7 until O.8 is on main or honestly parked with evidence  
+- Claiming diligence or locks close on-chain risk  
+- N0 until M7 is on main or honestly parked with evidence  
+- Image hash-lock / signed SBOM as separate follow-ons  
 
 ## Conferral inputs honored
 
-- Steward: cards realigned; primary O.8; no #18 BLOCKED theater  
-- Overseer: ON_TASK; refuse parallel N0/M7  
-- Scout: patterns only (SBOM/sign, payment gates, G9 harness)  
+- Steward: post-merge fog cleared; NEXT=M7  
+- Overseer: ON_TASK; O.8 on main; freeze dual  
+- Scout: anchors → M7; seedlings WATCH  
 - Peer: IDLE  
-- Flywheel: O.8 WIP present — **continue**, do not restart dual  
+- Flywheel: restart eligible for **M7** only  
 
 ## Landmass (always)
 

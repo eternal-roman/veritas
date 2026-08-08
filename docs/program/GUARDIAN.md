@@ -1,8 +1,13 @@
 # Guardian charter — clean, sharp, end-to-end
 
-This file is the **anti-handwave gate** for every flywheel tick, workflow
-cycle, PR, and agent session that touches
+This file is the **anti-handwave / no-fake-code gate** for every flywheel tick,
+workflow cycle, PR, and agent session that touches
 [eternal-roman/veritas](https://github.com/eternal-roman/veritas).
+
+**Stack:** [`GOVERNING.md`](GOVERNING.md) sets goals (loops). This file ensures
+code that ships is **functioning** (battery, no soft-fail) and **not false**
+(settlement, dual engine, claim theater). The **Overseer** then judges whether
+that code is **necessary** and **pursuant** to A2A commerce strategy.
 
 It does not replace `skills/adversarial-code-truth.md` or `AGENTS.md`. It
 applies them to autonomous loops that would otherwise optimise for looking
@@ -35,11 +40,12 @@ busy.
 | G5 | **Money path order.** Verify → claim nonce → work → fsync delivery → settle. Indeterminate ≠ failed. | Settle before delivery; invent costs |
 | G6 | **Settlement claims need a tx hash.** Local facilitator green is not on-chain. Gap G9 remains until chain reconcile exists. | "Live payments work" from unit tests |
 | G7 | **Stock from the tree, not from defaults.** If stock/select cannot read STATE + code, **stop**. Do not invent NEXT ACTION or scorecard. | Silent O.6 default while STATE says otherwise |
-| G8 | **Audit fail-closed.** Ship only when every required audit panel returns `should_ship: true` with evidence. Failed/missing panel = do not ship. | Cheerleading empty findings |
+| G8 | **Audit fail-closed on blocker/major.** Ship only when required panels have no **blocker/major** honesty/safety issues and a PROPERTY block exists. **Minor findings are advisory** (do not veto alone). Failed/missing panel = do not ship that cycle. | Cheerleading empty findings; OR minor-nit human stalls |
 | G9 | **410 ≠ 404** for pruned receipts (and any analogous "we deleted it"). | Collapsing retention into not-found |
-| G10 | **Do not clobber WIP.** Concurrent tick skips if another honest branch is mid-flight. Continue same bet; never parallel rewrite. | Second agent overwriting O.6 |
+| G10 | **Do not clobber WIP.** Concurrent tick skips if another honest branch is mid-flight. Use `docs/program/flywheel-claim.md`. Continue same bet; never parallel rewrite. | Second agent overwriting O.8 |
 | G11 | **Docs match code.** STATUS/STATE/cycle reports must not claim what tests do not pin. Banned words without evidence: complete, live-ready, ZK, revenue-ready. | Marketing in cycle ledger |
-| G12 | **Merge only on green CI head SHA.** Default `auto_merge: false`. Human owns mainnet, funding, TLS, PyPI publisher. | Merge red or unreviewed money changes |
+| G12 | **Merge only on green CI head SHA.** **Autonomous default `auto_merge: true`** (squash when required checks SUCCESS). Never merge red. Humans still own mainnet funding, TLS, PyPI publisher identity — not routine green product merges. See `AUTONOMOUS.md`. | Merge red; block forever on human for green CI |
+| G13 | **Pruner before ship.** Product PR/ship only when Pruner `ship_ok` (lean + battery + no broken E2E claims). Blocks useless, non-functional, or bloated code/docs. See `PRUNER.md`. | Ship after lazy green; bloat merged; unrun paths claimed working |
 
 ## Evidence levels (repeat for agents)
 

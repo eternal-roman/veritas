@@ -1,145 +1,140 @@
-# Scout CURRENT — 2026-08-08T17:08:56Z
+# Scout CURRENT — 2026-08-08T18:40:00Z
 
 ## Method
 
-- `gh search repos` `--stars="0..9"`, themes rotated: **x402**, **agent payment**,
-  **facilitator × x402**, **EIP-3009**, **spend/payment policy**, **attestation**,
-  **MCP × payment**, **settlement**, **SBOM/lockfile**, **hash-chain/custody**.
-- Cap: multi-query hits; **12** retained after filter (noise, marketing shells,
-  self-as-trust, unrelated “settlement” senses dropped).
-- Spot-checked via `gh api` + README raw for lockvet, agent-audit-chain,
-  TrustBench, Rul1an/assay, kahea.
-- Patterns (≥3): **Hostile-agent**, **Constraint transfer**, **Time-shift**,
-  **Inversion**, **Adjacent possible**, **Combinatorial mash**, **Negative space**,
-  **Scale inversion**.
-- Convergence: `GUARDIAN.md` + `STATE.md` **NEXT ACTION = O.8**. Main tip context
-  from steward stamp: diligence/P7/O.6 on main; **O.8** still the bet. Zero
-  proven Veritas on-chain settlements. No product implementation this tick.
+- Stock: `docs/program/STATE.md` **NEXT = M7** (credits via SIWx); CONFERRAL
+  primary bet **M7**; parks honored (N0, dual tracks, seedling vendoring,
+  settlement fiction, Docker hash-lock / signed SBOM). O.8 on main
+  (`96b9013`). Product PRs: none. Settlements: **0**.
+- `gh search repos` `--stars="0..9"` themes: **x402 payment agent**, **mcp x402**,
+  **micropayment agent**, **facilitator x402**, plus continuity re-check of
+  M7-adjacent prior hits (pacioli, Tollgate). Mid-tick **search API 403
+  rate-limit** — further breadth stopped; quality retained via `gh api` + raw
+  README spot-checks on retained candidates.
+- Cap: multi-query hits; **12** retained after filter (+1 park note).
+- Spot-checked: pacioli, CodeRush-2.0, Instant-RAG, fireblocks/x402-agent,
+  ipfacts-lab, x402-agent-template, x402-directory, mcp-x402-toolkit, alethe,
+  AAVE-MCP-X402, zpay, MetaMask/mcp-x402, mcp-x402-bridge.
+- Patterns (≥3): **Double-entry**, **Time-shift**, **Constraint transfer**,
+  **Hostile-agent**, **Adjacent possible**, **Inversion**, **Freemium honesty**,
+  **Negative space**, **Scale inversion**.
+- Convergence: `GUARDIAN.md` + STATE **NEXT = M7**. O.8 demoted from “now
+  implement.” No product code this tick.
 
 ## Seedling detail (this tick)
 
-### O.8 supply chain (ladder = now)
+### M7 credits / reserve / double-entry (ladder = now)
 
 | Seedling | ★ | License | Claim | Complement | Risk |
 |----------|---|---------|-------|------------|------|
-| [matteo-sung/lockvet](https://github.com/matteo-sung/lockvet) | 0 | MIT | Gate/explain lockfile changes: OSV, typosquats, integrity, Actions/Docker/K8s/SBOM formats | **Direct O.8 pattern**: produce lockfile+hashes, then vet diffs before merge | Go CLI; fitness unproven as our CI step |
-| [shiftleftcyber/sbom-signing-best-practices](https://github.com/shiftleftcyber/sbom-signing-best-practices) | 5 | Apache-2.0 | Canonical SBOM hashes CycloneDX/SPDX | Produce-then-verify SBOM | Continuity |
-| [oorabona/docker-containers](https://github.com/oorabona/docker-containers) | 5 | MIT | SBOM + Sigstore + Trivy on hardened images | O.7/O.8 image honesty | Their images ≠ ours |
-| [houdini91/firmware-sbom-supplychain](https://github.com/houdini91/firmware-sbom-supplychain) | 0 | MIT | generate → attest → OPA gate (cosign lane) | Attest-then-gate pipeline shape | Firmware demo |
-| [OtowoSamuel/model-supply-chain](https://github.com/OtowoSamuel/model-supply-chain) | 0 | MIT | Cosign + SBOM + SLSA + policy gates | Same produce-attest-gate ladder | MLOps framing |
-| [pfenerty/ocidex](https://github.com/pfenerty/ocidex) | 1 | MIT | CycloneDX inventory + release changelog | Post-O.8 inventory of what we shipped | Optional ops |
+| [john-broadway/pacioli](https://github.com/john-broadway/pacioli) | 3 | Apache-2.0 | PLAN · CONSENT · PROVE · UNDO; no debit without credit; governed agent door | **M7** credits ledger language | ERPNext spine; not our stack |
+| [theveryholypenguin/CodeRush-2.0](https://github.com/theveryholypenguin/CodeRush-2.0) (Tollgate) | 0 | NOASSERTION (README MIT) | Budget **reservation** before task; multi-provider failover; append-only audit | SpendPolicy / credits reserve-before-work | Hackathon; multi-provider router could tempt dual path |
+| [sagaritabd/Instant-RAG---…](https://github.com/sagaritabd/Instant-RAG---Infrastructure-for-Autonomous-Agents) | 0 | none | Deposit USDC with agent memo; auto-deduct on `/query`; multi-tenant billing | Prepaid **credits balance** session framing | “Production-ready” marketing; different chain/memo model; fitness unproven |
 
-### Custody / audit honesty (G10, N1 language)
+### Hostile-agent / one signing seam (culture, not deps)
 
 | Seedling | ★ | License | Claim | Complement | Risk |
 |----------|---|---------|-------|------------|------|
-| [SeansGravy/agent-audit-chain](https://github.com/SeansGravy/agent-audit-chain) | 0 | Apache-2.0 | Hash chains catch **0/5** threats vs attacker who **recomputes** hashes; **external witness** closes all five | **Constraint transfer to custody**: self-held chain alone is not tamper-proof; witness/anchor needed for real dispute | Measurement paper-repo; not a dep |
-| [Rul1an/assay](https://github.com/Rul1an/assay) | 9 | MIT | MCP tool-call gate; deny risky calls; **recomputable evidence**; bounded claims; offline replay | Honesty taxonomy for tool actions; “what stays unproven” language | At 9★ near cap; not payment settle layer |
-| [MSKazemi/novafabric](https://github.com/MSKazemi/novafabric) | 2 | Apache-2.0 | Signed evidence capsules for agent runs; self-hosted | N0/N1 portable evidence framing | Heavy scope |
-| [huguryildiz/research-graph](https://github.com/huguryildiz/research-graph) | 0 | MIT | Provenance hash walk; reviewer ≠ producer | Cycle-5 / non-circular verify culture | Continuity |
-| [milonpatowary/double-entry-ledger](https://github.com/milonpatowary/double-entry-ledger) | 1 | MIT | Append-only, balanced-by-construction, reconcilable | M/ledger culture (we already have SQLite ledger) | Node/Mongo — park as dep |
+| [fireblocks/x402-agent](https://github.com/fireblocks/x402-agent) | 0 | Apache-2.0 | CLI+MCP x402 v2 client; **MPC** sign; verify 402 body vs facilitator `did:web`; EIP-3009 + Permit2 `upto` | Integrity-before-pay; key not in model | Vendor lock-in Fireblocks; not our buyer path |
+| [CrankingAI/ipfacts-lab](https://github.com/CrankingAI/ipfacts-lab) | 2 | MIT | Lab: pay for MCP tool in **middleware, never LLM** | Hostile-agent: payment not prompt-driven | Teaching lab only |
+| [gustavovalverde/zpay](https://github.com/gustavovalverde/zpay) | 4 | MIT | Facilitator never holds funds/keys; wallet signs under bounded grant; x402 v2 adapter | Separate facilitator architecture → **park as dep** | Different L1 (Zcash); dual money path if adopted |
+| [MetaMask/mcp-x402](https://github.com/MetaMask/mcp-x402) | 3 | MIT | MCP tools mint `X-PAYMENT` from local private key | Local Signer-shaped seam observation | Experimental; key on agent host |
 
-### Pay / settle / G9-adjacent
-
-| Seedling | ★ | License | Claim | Complement | Risk |
-|----------|---|---------|-------|------------|------|
-| [lithvall/TrustBench](https://github.com/lithvall/TrustBench) | 0 | none | Verify x402 **on-chain**; signed receipts; spend caps; **fail-safe paywall** (no charge if merchant non-conformant) | G9 + our non-billable failure honesty; buyer-side route | License none; multi-network registry scores (G10-adjacent if used as auth) |
-| [nickthelegend/outcome](https://github.com/nickthelegend/outcome) | 0 | none | Facilitator can report success while only one path pays | G9 dual-facilitator honesty | Continuity |
-| [mimisco-git/Assay](https://github.com/mimisco-git/Assay) | 0 | none | Settlement guarantee / verified-or-refunded | `owed` / indeterminate framing | Distinct from Rul1an/assay |
-| [4KInc/circle-prize-submission](https://github.com/4KInc/circle-prize-submission) (Verigate) | 0 | none | Policy-bound authorize receipts | SpendPolicy culture | Unlicensed prize |
-| [ETH402/facilitator](https://github.com/ETH402/facilitator) | 0 | Apache-2.0 | Open x402 v2 facilitator (ETH mainnet USDC) | Facilitator market signal | Park; we don’t run dual money path |
-| [Vellar-Wallet/vellar-facilitator](https://github.com/Vellar-Wallet/vellar-facilitator) | 0 | Apache-2.0 | Stellar facilitator + **Bazaar discovery** | X6 discovery culture | Non-Base rail |
-| [JustaName-id/agentic-payments-cheatsheet](https://github.com/JustaName-id/agentic-payments-cheatsheet) | 1 | MIT | Field guide: x402, facilitators, EIP-3009, CAIP-2, AP2 | Human/peer education only | Not code to integrate |
-
-### Evaluate / agent-call safety
+### Discovery / single catalog
 
 | Seedling | ★ | License | Claim | Complement | Risk |
 |----------|---|---------|-------|------------|------|
-| [copyleftdev/kahea](https://github.com/copyleftdev/kahea) | 0 | Apache-2.0 | Sealed OpenAPI plans; grant → invoke → evidence MCP tools | Hostile agent: exact calls before money/data leave | Not our product surface |
-| [Nikolife2016/pulsefeed-x402](https://github.com/Nikolife2016/pulsefeed-x402) | 0 | none | Verify endpoint before pay | Evaluate stage | Prior README gap |
-| [Sigil-Core/ove](https://github.com/Sigil-Core/ove) | 0 | MIT | Intent attestation before capital moves | Authorize-before-move culture | Boilerplate |
+| [andreasbjornsund-hub/x402-agent-template](https://github.com/andreasbjornsund-hub/x402-agent-template) | 0 | none | One `ENDPOINT_CATALOG` → well-known + llms.txt; prices/paths cannot drift | Discovery honesty habit | Skeleton; mainnet needs CDP facilitator |
+| [shipyard-projects/x402-directory](https://github.com/shipyard-projects/x402-directory) | 0 | none | Agent-maintained x402 app/endpoint directory + liveness | X6-adjacent culture only | Thin README; no fitness |
 
-### Reject / park hard
+### Guardrails / freemium / evidence honesty
+
+| Seedling | ★ | License | Claim | Complement | Risk |
+|----------|---|---------|-------|------------|------|
+| [gameonc/mcp-x402-toolkit](https://github.com/gameonc/mcp-x402-toolkit) | 0 | none | Budgets, velocity, circuit breakers for MCP+x402 | SpendPolicy unit language | Early (v0.1 planned); npm not proven here |
+| [bonesdefi/AAVE-MCP-X402](https://github.com/bonesdefi/AAVE-MCP-X402) | 0 | none | Free `/sample` redacted; paid full feed; honest “demo not business” | Freemium + claim discipline | Domain-specific indexer; mainnet showcase ≠ our G9 |
+| [ss251/alethe](https://github.com/ss251/alethe) | 0 | MIT | Verdict only after real probes; gasless x402 on Celo | Refuse invent; evidence-first | Hackathon; dual product (judge + pay) |
+
+### Park / reject
 
 | Item | Why |
 |------|-----|
-| [wyattpalm2-eng/x402-seller](https://github.com/wyattpalm2-eng/x402-seller) | Explicit **self-graded track record** — G10 reject as trust-as-auth |
-| TrustBench rankings as authorization | Score ≠ authority; methodology ok, use as input only |
-| m402 / ZK-SSL seedlings | Do not claim ZK without L1 on our tree |
-| Dual facilitator / multi-chain policy fork | G3 one payer |
-| Skipping O.8 for facilitator toys | STATE = O.8 |
+| [leo-guinan/mcp-x402-bridge](https://github.com/leo-guinan/mcp-x402-bridge) | Multi-endpoint auto-pay proxy → G3 dual-router temptation; **PARK** |
+| Open facilitators / zpay as Veritas facilitator | X1/X3 park; one money path |
+| lockvet / package-intel as *M7 implement* | O.8 already on main; checklist only if supply-chain thrash returns |
+| Foreign “production settlement / mainnet ready” as our green | G6 / G11 |
+| Starting N0 or re-opening O.8 in parallel | STATE = M7; CONFERRAL freeze dual |
 
 ## Fit workflow
 
 ```
-supply (O.8 NOW)
-  → lockfile with hashes + SHA-pinned actions + SBOM
-  → lockvet-class gate on lockfile diffs; cosign/Sigstore/SBOM verify-after-produce
+supply (O.8 done)
+  → pin/hash habits already on main; park Docker/signed SBOM
 
 discover
-  → well-known; Vellar/Bazaar language only when X6 unblocked
+  → ENDPOINT_CATALOG → well-known/llms single source
+  → directory culture later (X6); not this bet
 
 evaluate
-  → pulsefeed/kahea: inspect before call; sealed plans
-  → TrustBench-style endpoint hygiene (idea); never trust self-scores
+  → alethe: probe before verdict
+  → free sample is preview, not authorization
 
-pay
-  → veritas.payer + Signer + SpendPolicy ONLY
-  → Verigate/ove: policy/intent before move
-  → fail-safe: non-billable on our failure / non-conformant work (G4)
+pay / credits (M7 NOW)
+  → pacioli double-entry language
+  → Instant-RAG prepaid deposit framing
+  → Tollgate reserve-before-work
+  → fireblocks/ipfacts/zpay: model never signs; Signer seam only
 
-consume
-  → pipeline.run_research one engine
-  → free MCP stays free; Rul1an/assay = tool-call evidence culture for G.1 later
+consume → pipeline.run_research only
 
 verify
-  → content_hash + custody client; research-graph exit-code shape
-  → agent-audit-chain: hash chain alone insufficient without external witness
+  → content_hash + custody
+  → payment-instruction integrity is foreign shape, not our claim
 
 settle
-  → delivery fsync before settle; ledger records
-  → Outcome/TrustBench: facilitator-OK ≠ chain-OK (G9 needs RPC)
+  → fsync delivery then settle; G9 design only
+  → never import foreign mainnet blogs as Veritas green
 
-attest
-  → facts-only receipts; novafabric capsule language → N1 after ladder
-  → 410 ≠ 404 for pruned receipts
+attest → facts-only; 410≠404
 ```
 
 ## Traits (divergent → convergent)
 
 | Trait | Pattern | Scorecard | Ladder |
 |-------|---------|-----------|--------|
-| Vet lockfile diff before merge | Time-shift | F | **O.8** |
-| Hash chain fails vs recompute attacker | Hostile-agent + Constraint transfer | F, C | custody / G10 / N1 witness |
-| Fail-safe: no charge if merchant broken | Inversion | C, D | G4 billable:false culture |
-| On-chain re-verify receipt | Adjacent possible | C | **G9** (RPC blocked) |
-| MCP tool evidence: observed vs unproven | Combinatorial mash | F | free MCP honesty; G.1 later |
-| Intent attestation before capital | Scale inversion | D | SpendPolicy (done) + M7 |
-| Self-graded seller track record | Negative space / reject | — | G10 |
-| Facilitator open-source flood | Negative space | park | X1/X3 need egress |
+| No debit without credit | Double-entry | D, F | **M7** |
+| Reserve budget before task | Time-shift | D | SpendPolicy / credits |
+| Deposit then auto-deduct | Constraint transfer | D | SIWx session balance |
+| Middleware/MPC pays; LLM doesn’t | Hostile-agent | D | Signer seam (done) |
+| One catalog → discovery surfaces | Adjacent possible | A | schema / well-known |
+| Probe-before-verdict | Inversion | C | unavailable ≠ invent |
+| Free sample / paid full | Freemium honesty | F | pricing culture |
+| Foreign mainnet marketing | Negative space / reject | — | not our evidence |
+| Velocity / circuit breaker units | Scale inversion | D | SpendPolicy, not 2nd path |
 
 ## Top 3 to watch (not implement this tick)
 
-1. **lockvet + SBOM/Sigstore habits** for shipping **O.8**  
-2. **agent-audit-chain finding** (witness required) for custody honesty docs/N1  
-3. **TrustBench fail-safe + on-chain verify** language for G9 when RPC exists  
+1. **M7 credits culture:** pacioli double-entry + Instant-RAG prepaid + Tollgate reserve  
+2. **Hostile-agent signing:** fireblocks integrity/MPC + ipfacts middleware-not-LLM  
+3. **Discovery single-source:** x402-agent-template `ENDPOINT_CATALOG` (habit, not dep)
 
 ## Program ladder
 
-- **Now:** O.8 supply chain (STATE). Diligence/P7/O.6 already on main — do not re-open.  
-- **Then:** M7 credits (SIWx).  
-- **Then:** Phase N0 notary.  
-- **Park:** X1/X3/X6, G9 (egress/RPC).  
-- **Never this tick:** implement seedlings; dual payer; settlement-success claims.
+- **Now:** M7 (SIWx credits).  
+- **Then:** N0 notary.  
+- **Park:** X1/X3/X6, G9, Docker hash-lock / signed SBOM.  
+- **Never this tick:** implement seedlings; claim Veritas on-chain success; dual N0.
 
 ## PROPERTY block
 
 ```
-PROPERTY: Scout listed tool-fetched <10★ complementary seedlings with ≥3 named
-  divergent patterns, fit workflow, and Guardian-aligned park/reject; no adoption
+PROPERTY: Scout listed tool-fetched <10★ seedlings with ≥3 named divergent
+  patterns, fit workflow, Guardian park/reject; no adoption
 EVIDENCE LEVEL: L1 for gh search/api/README this tick; L0 for foreign fitness
-CHECKED ARTIFACT: gh search stars 0..9; gh api; READMEs lockvet, agent-audit-chain,
-  TrustBench, Rul1an/assay, kahea
-ASSUMPTIONS: GitHub recency ≠ quality; unlicensed repos may be unusable as deps
-NOT PROVEN: Integration; Veritas on-chain settlement; O.8 completion
+CHECKED ARTIFACT: pacioli, Tollgate, Instant-RAG, fireblocks/x402-agent,
+  ipfacts-lab, x402-agent-template, x402-directory, mcp-x402-toolkit, alethe,
+  AAVE-MCP-X402, zpay, MetaMask/mcp-x402 READMEs + api metadata
+ASSUMPTIONS: Search rate-limit truncated further queries; foreign settlement
+  claims not re-verified by us
+NOT PROVEN: Integration; Veritas on-chain settlement; M7 completion
 ```

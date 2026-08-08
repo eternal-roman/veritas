@@ -1,83 +1,129 @@
 # Continuous control plane
 
-One honesty bar (`GUARDIAN.md`). Multiple agents, **one truth on main**,
-**one primary trajectory**, recursive builder restart under Conductor.
+**Governing stack:** [`GOVERNING.md`](GOVERNING.md) → [`GUARDIAN.md`](GUARDIAN.md)
+→ **Overseer** → Conductor / Flywheel.  
+**Product org / sequencing / timing:** [`PRODUCT_ORG.md`](PRODUCT_ORG.md).  
+**Autonomous (no human gates):** [`AUTONOMOUS.md`](AUTONOMOUS.md).
+
+Primary objective: **agent-to-agent autonomous commerce** substrate with
+scalable momentum (L0 multi-billion *direction* — never claim proven).
+
+## Active cadence (v2 — progress + scale)
 
 | Loop | Interval | Job |
 |------|----------|-----|
-| **Overseer** | **15m** | Product honesty: lazy/half-measured, A2A strategy |
-| **Scout** | **20m** | Low-star OSS → `scout/IDEA_BUS.md` |
-| **Steward** | **30m** | Cohesion: clean cards, STATE claim hygiene |
-| **Conductor** | **45m** | **Vision + conferral + restart flywheel when idle** |
-| **Flywheel** | **1h** | One shippable bet (also kicked by Conductor) |
+| **Overseer** | **8m** | Quality + vision + strategy gate; Scout confer if vision≤1 |
+| **Pruner** | **10m** | Aggressive clean/prune; battery + E2E; **ship_ok veto** (G13) |
+| **Conductor** | **12m** | Merge green product PRs; restart single NEXT bet |
+| **Steward** | **15m** | Card/STATE cohesion (lags Overseer to cut thrash) |
+| **Flywheel** | **20m** | Full build cycle backup; Pruner gate; auto-merge on green |
+| **Scout (Idea)** | **25m** | Pattern fuel for Overseer; answers `scout_question` |
+| **Implement×n** | on demand | `/workflow agent-commerce-implement {"n":3}` — scale workers |
 
-**Shared truth:** `STATE.md` · `steward/CURRENT.md` · **`conductor/CONFERRAL.md`** · `conductor/TRAJECTORY.md`  
-**Guardian:** [`GUARDIAN.md`](GUARDIAN.md)
+**Shared truth:** `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md` ·
+`conductor/TRAJECTORY.md` · `steward/CURRENT.md`  
+**Claim:** `flywheel-claim.md` (one product builder)
 
-Orchestrators: `.grok/workflows/agent-commerce-{conductor,continuous,flywheel,overseer,scout,steward}.rhai`
-
-## Recursion (how work keeps going)
+Orchestrators:
 
 ```
-Conductor tick / continuous workflow
-    → confer all agent cards
-    → update TRAJECTORY + CONFERRAL
-    → if idle: run one build cycle (NEXT ACTION)
-    → if PR opened: wait merge (human)
-    → resume / next tick → recurse
+.agent-commerce-{pulse,continuous,conductor,flywheel,overseer,steward}.rhai
 ```
+
+(Scout is scheduler + tick prompt; optional future `agent-commerce-scout.rhai`.)
+
+---
+
+## Progress tree (autonomous)
+
+```
+event: idle | CI green | merge | LEARN
+        │
+        ▼
+   Overseer (8m) ── quality / vision / strategy
+        │                 │
+        │                 └── vision≤1 → Scout (25m) Idea fuel
+        ▼
+   Steward (15m) ── cards ≡ git/gh (parallel OK)
+        ▼
+   Conductor (12m)
+        ├── green product PR → squash-merge → LEARN → advance NEXT
+        ├── CI pending → poll once → next tick
+        └── queue clear → kick one bet (STATE NEXT / M7)
+                ▼
+        Implement×n  OR  Flywheel (20m)
+                │
+                └── battery → PRUNER ship_ok → PR → auto-merge → LEARN
+
+   Pruner (10m) ── continuous deny bloat on open PR / claim (may comment; no dual NEXT)
+```
+
+### Latency targets
+
+| Path | Target |
+|------|--------|
+| Green PR → merged | ≤ 12m |
+| Merge → coherent cards | ≤ 15m |
+| Idle → build start | ≤ 12m |
+| Thin vision → idea harvest | ≤ 25m |
+
+### Design rules
+
+1. **One product NEXT** — dual bets forbidden (G10 + claim file).  
+2. **Scale support + implementer workers in parallel; never dual product NEXT.**  
+   Pruner (G13) blocks useless/non-functional/bloated ships.
+3. **I ≥ ~2× p95** write roles; **I ≥ ~5×** pure review roles.  
+4. **Docs-only dirty PRs** do not freeze product.  
+5. **No `await_user`** on commerce workflows.  
+6. **noop_*** when facts unchanged.
+
+---
+
+## Scaled entrypoints
 
 ```text
-# Multi-cycle recurse (interactive)
-/workflow agent-commerce-continuous {"max_cycles": 3, "prefer_bet": "O.8"}
-/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 2}
-
-# Single roles
-/workflow agent-commerce-steward
+/workflow agent-commerce-pulse {"prefer_bet": "M7"}
+/workflow agent-commerce-implement {"n": 3, "prefer_bet": "M7"}
+/workflow agent-commerce-pruner
+/workflow agent-commerce-continuous {"max_cycles": 5, "forever": true, "prefer_bet": "M7"}
+/workflow agent-commerce-optimizer
+/workflow agent-commerce-flywheel {"max_cycles": 2, "prefer_bet": "M7", "auto_merge": true}
 /workflow agent-commerce-overseer
-/workflow agent-commerce-scout
-/workflow agent-commerce-flywheel {"prefer_bet": "O.8"}
+/workflow agent-commerce-steward
+/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 3}
 ```
+
+---
 
 ## Active schedules
 
 | Name | Id | Interval |
 |------|-----|----------|
-| Overseer | `019fdfde0212` | 15m |
-| Scout | `019fe0026e7d` | 20m |
-| Steward | `019fdff1fbe4` | 30m |
-| **Conductor** | `019fe25403f2` | **45m** |
-| Flywheel hourly | `019fdfd6c9bf` | 1h |
+| Overseer | `019fdfde0212` | **8m** |
+| **Pruner** | `019fe29d4d61` | **10m** |
+| Conductor | `019fe25403f2` | **12m** |
+| Steward | `019fdff1fbe4` | **15m** |
+| Flywheel | `019fdfd6c9bf` | **20m** |
+| Scout | `019fe0026e7d` | **25m** |
 
-### Conductor — 45m
+### Role briefs
 
-Charter: [`CONDUCTOR.md`](CONDUCTOR.md) · Tick: [`CONDUCTOR_TICK_PROMPT.md`](CONDUCTOR_TICK_PROMPT.md)  
-Writes: `conductor/CURRENT.md`, `TRAJECTORY.md`, `CONFERRAL.md`  
-**Restarts** builder work when queue clear and NEXT is known.
+| Role | Charter | Tick |
+|------|---------|------|
+| Overseer | [`OVERSEER.md`](OVERSEER.md) | [`OVERSEER_TICK_PROMPT.md`](OVERSEER_TICK_PROMPT.md) |
+| **Pruner** | [`PRUNER.md`](PRUNER.md) | [`PRUNER_TICK_PROMPT.md`](PRUNER_TICK_PROMPT.md) |
+| Conductor | [`CONDUCTOR.md`](CONDUCTOR.md) | [`CONDUCTOR_TICK_PROMPT.md`](CONDUCTOR_TICK_PROMPT.md) |
+| Flywheel | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
+| Implement×n | [`IMPLEMENTERS.md`](IMPLEMENTERS.md) | workflow only |
+| Steward | [`STEWARD.md`](STEWARD.md) | [`STEWARD_TICK_PROMPT.md`](STEWARD_TICK_PROMPT.md) |
+| Scout | Idea fuel | [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) |
 
-### Steward — 30m · `019fdff1fbe4`
+---
 
-Card hygiene so Conductor/Overseer do not thrash on stale BLOCKED lies.
+## Era (product)
 
-### Overseer — 15m · `019fdfde0212`
-
-Product honesty only; must read CONFERRAL + steward CURRENT.
-
-### Scout — 20m · `019fe0026e7d`
-
-Seedlings only; never dual product path.
-
-### Flywheel — 1h · `019fdfd6c9bf`
-
-Scheduled backup builder; Conductor may also kick cycles mid-hour.
-
-## Cohesion rules
-
-1. Stock `origin/main` + `gh pr list` before any CURRENT write.  
-2. **CONFERRAL.md** is the organized conference — agents read it first.  
-3. One primary NEXT; dual tracks need explicit park in TRAJECTORY.  
-4. git/gh beat stale cards.  
-5. No auto-merge by default; no settlement fiction; no soft-fail.  
+See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). **NOW: M7** → N0 → C-measure/G9 design.
+On-chain settlements remain **0** until proven.
 
 ## Re-arm
 
@@ -85,4 +131,4 @@ Scheduled backup builder; Conductor may also kick cycles mid-hour.
 Ask Grok: "Re-arm Veritas control-plane schedulers"
 ```
 
-Tasks expire ~7 days.
+Tasks expire ~7 days. Use intervals in the Active schedules table.

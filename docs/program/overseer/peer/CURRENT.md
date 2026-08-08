@@ -1,16 +1,16 @@
 # Peer CURRENT — IDLE
 
-- **Time:** 2026-08-08T17:18:48Z
-- **Role note:** Peer **session review** is **IDLE**. Session branch work landed via **PR #19 → `a4cfc49`**. Multi-agent card hygiene is **Steward** (`docs/program/STEWARD.md`, 30m).
-- **Open PRs:** **#21** is docs-only (steward plane), not a peer product branch — do not treat as peer WATCH.
-- **If a new parallel agent branch appears:** Steward or a future peer tick may set WATCH under GUARDIAN; do not freeze theater on main.
+- **Time:** 2026-08-08T18:16:00Z
+- **Role note:** Peer **session review** is **IDLE**. Session diligence on main via #19; O.8 on main via #22 → `96b9013`. Steward owns cohesion.
+- **Open PRs:** **#21** docs-only (dirty vs main) — not peer WATCH. No product PR.
+- **If a new parallel agent branch appears:** Steward or peer tick may set WATCH under GUARDIAN.
 - **Scrutiny verdict:** **IDLE**
-- **Action:** none on peer surface; builders use main diligence modules; product bet remains **O.8**.
+- **Action:** none; product NEXT is **M7** on main plane.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Peer card idle; diligence on main; steward owns cohesion; #21 is docs not peer
+PROPERTY: Peer idle; no peer product branch; #21 docs dirty not peer WATCH
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main a4cfc49; open PRs [21 docs]; PR #19 MERGED
-NOT PROVEN: Future peer branch quality
+CHECKED ARTIFACT: origin/main 96b9013; open PRs [#21]; #22 MERGED
+NOT PROVEN: Future peer branch quality; M7
 ```

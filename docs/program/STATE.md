@@ -5,20 +5,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, N1.4 Merkle inclusion, or cycle-5
-> ecosystem dogfood). **G10:** never dual-reopen **G9-design surface**,
-> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: N1.4 only (claim building on #49)** —
+> `feat/n1.4-merkle-evidence-log` / PR **#49**. Operator-local Merkle evidence
+> log with inclusion proofs. Rebase onto tip `#48` (`b77339f` — currently
+> CONFLICTING), fix Tests, fresh Pruner G13, merge-on-green only. **G10:**
+> never dual-reopen **G9-design surface**, **cycle-1**, **N1.3**, **P7**,
+> **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**; no parallel cycle-5 /
+> live-RPC G9 close while this claim holds.
 >
 > **G9-design is on main** — `#46` / `6777a92`: `veritas/chain_reconcile.py` +
 > `veritas-ops reconcile-chain` + design doc. Fail-closed without
-> `VERITAS_RPC_URL`. **Does not close constitution G9.** Settlements **0**.
+> `VERITAS_RPC_URL`. **Does not close constitution G9.** Plane closeout
+> `#48` / `b77339f`. Settlements **0**.
 >
 > **Also on main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout
-> `#45` / `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
+> `#45` / `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8; G9-design
+> `#46` + `#48`.
 >
 > Still deliberately not done: SBOM **unsigned**; live RPC confirmation;
-> full Merkle/anchors; cycle-5; settlements **0**.
+> **G9 closed**; full Merkle on main (WIP #49); cycle-5; settlements **0**.
 >
 > Blocked on sandbox externals: **live G9 close** needs RPC; **X1/X3/X6** need
 > facilitator egress.
@@ -28,8 +33,13 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `6777a92` (PR **#46** G9-design fail-closed reconcile).
-> Claim **free**. Settlements: **0**. Gap G9 **still open**.
+> **Tip of `origin/main`:** `b77339f` (PR **#48** G9-design plane closeout).
+> Product G9-design `@6777a92` (#46). Claim **building N1.4** (#49).
+> Settlements: **0**. Gap G9 **still open**. Open product PR: **#49**
+> (CONFLICTING; Tests fail). Docs #50 CONFLICTING vs tip #48.
+>
+> **#48 docs closeout on main @ `b77339f`.** Free claim post-G9 then superseded
+> by #49 claim hygiene this steward tick.
 >
 > **G9-design landed on main @ `6777a92` (PR #46).** `veritas/chain_reconcile.py`
 > + `veritas-ops reconcile-chain`; fail-closed without RPC. **Not proven:**

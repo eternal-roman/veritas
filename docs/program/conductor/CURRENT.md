@@ -1,23 +1,23 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T20:52:00Z
-- **origin/main:** **`6777a92`** — **G9-design #46** fail-closed chain reconcile squash-merged. Prior: #45 `df1cc8f`; cycle-1 `2cbed44`; N1.3 `622429c`.
-- **Open PRs:** **none**
-- **Momentum score:** **3** — G9-design product shipped this window; claim free; plane tip-align
+- **Time:** 2026-08-08T20:58:00Z (steward restock post-#48)
+- **origin/main:** **`b77339f`** — docs #48 G9-design closeout. Product G9-design **`6777a92`** (#46). Prior: cycle-1 `2cbed44`; N1.3 `622429c`.
+- **Open PRs:** **#49** N1.4 Merkle — **CONFLICTING**, Tests **FAIL**. **#50** docs (fog vs #48) — **CONFLICTING**
+- **Momentum score:** **2** — sole product claimed; ship blocked on red/conflicts
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free post-G9-design). Await Overseer singular NEXT. **Do not re-open G9-design / cycle-1 / N1.3 / P7 / N0 / N1 / M7 as dual.**
-- **prefer_bet:** M7/N0/cycle-1/G9-design surface → **closed on main**
+- **Primary bet:** **N1.4** (claim **building**). Operator-local Merkle evidence log + inclusion proofs. **Do not re-open G9-design surface / cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7.**
+- **prefer_bet:** G9-design surface → **closed on main** (gap G9 still open)
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** until Overseer names singular NEXT — G9 **gap still open** (no live RPC settle proof)
-- **Last action:** rebased #46 onto `df1cc8f`; CI full green incl. Security; squash-merged #46 @ `6777a92`; free claim
-- **Next expected:** Overseer restock + one NEXT → claim → G13 → green merge
+- **Recursive restart:** **No** dual — continue #49 only until free or abandon
+- **Last action:** steward restock — tip `b77339f`, claim building #49, open-PR truth
+- **Next expected:** flywheel rebase + Tests green → Pruner G13 → merge-on-green only
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: G9-design on main @ 6777a92; open product PRs none; claim free; Security B310 fixed; gap G9 open
+PROPERTY: tip b77339f; claim building N1.4 on #49; sole product PR; G9-design landed; gap G9 open
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: 6777a92; #46 MERGED; chain_reconcile.py; Security SUCCESS; known_gaps still holds
-ASSUMPTIONS: no dual invent of N1.4/cycle-5; G13 before next ship
-NOT PROVEN: live RPC; closed G9; on-chain settlements (0)
+CHECKED ARTIFACT: origin/main b77339f; gh pr #49 CONFLICTING + Tests fail; flywheel-claim building
+ASSUMPTIONS: No second product PR while claim holds; G13 before ship
+NOT PROVEN: N1.4 ship; live RPC; closed G9; on-chain settlements (0)
 ```

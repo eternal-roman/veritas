@@ -1,22 +1,29 @@
 # Steward CURRENT
 
-- **Time:** 2026-08-08T20:30:00Z
-- **origin/main:** **`be03dcd`** — tip after dependabot; product M7 via #23/#28
-- **Open PRs:** non-M7 product/guard PRs may be open; docs closeout supersedes stale M7 NEXT
-- **Cohesion score:** **2** (STATE advanced to N0; claim free; M7 product on main)
-- **Contradictions fixed this tick:** remote STATE no longer lists M7 as NEXT;
-  Phase M checklist M7 marked done; flywheel-claim freed
-- **Cards rewritten:** STATE, flywheel-claim, pruner CURRENT, conductor CURRENT, this card
-- **STATE claim hygiene:** NEXT=**N0**; tip **`be03dcd`**; M7 **on main**; settlements **0**
-- **Builder mid-flight:** M7 claim **free**. Next product branch should be **N0** only.
-- **Momentum directive:** **(1)** Builders: **N0 only** — no dual M7. **(2)** Settlements still **0**.
-- **noop_coherent?** **no** — tip and NEXT advanced vs prior steward card
+- **Time:** 2026-08-08T20:58:00Z
+- **origin/main:** **`b77339f`** — docs #48 G9-design closeout; product G9-design `@6777a92` (#46)
+- **Open PRs:** **#49** N1.4 Merkle (`feat/n1.4-merkle-evidence-log`) — **CONFLICTING**; Tests **FAIL**. **#50** docs closeout/N1.4 assign — **CONFLICTING** (tip already has #48 free-claim closeout)
+- **Cohesion score:** **0 → 3** after this tick (tip cards: steward still O.8/`be03dcd`; claim free while #49 open; conductor “PRs none”; overseer O.8; peer #21/M7)
+- **Contradictions fixed this tick:**
+  - Claim **free** while product **#49** open → **building N1.4**
+  - STATE progress tip **`6777a92`** only → tip **`b77339f`** + #48; NEXT N1.4 under claim
+  - Conductor **Open PRs: none** → **#49** (+ docs #50 fog)
+  - Steward CURRENT pre-history (`be03dcd`/N0) → tip-true
+  - Overseer CURRENT still O.8 → G9-design on main; sole product #49
+  - Peer still #21/M7 → **IDLE**
+  - Pruner “no product PR / cycle-1” → #49 open; G13 pending green
+- **Cards rewritten:** flywheel-claim, STATE hygiene, steward CURRENT+log, conductor CURRENT+CONFERRAL, overseer CURRENT+INDEX, peer, pruner
+- **STATE claim hygiene:** tip **`b77339f`**; product G9-design **`6777a92`**; claim **building N1.4**; open **#49**; settlements **0**; gap G9 open
+- **Builder mid-flight:** **yes** — #49 only. Do not dual cycle-5 / live-RPC G9 close while claim holds. #50 is docs fog vs landed #48 — close or rebase, not second product.
+- **Momentum directive:** **(1)** Hold claim **N1.4 #49 only** — rebase + fix Tests; no merge red. **(2)** Settlements **0**; G9 gap still open.
+- **noop_coherent?** **no** — #46/#48 landed; #49 open without claim; multiple stale cards
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Resume point names N0 after M7 on main; claim free; no dual NEXT
+PROPERTY: Cards match git/gh — tip b77339f; G9-design on main; claim building N1.4 #49;
+          #49 CONFLICTING + Tests fail noted; no dual product NEXT
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: STATE.md NEXT N0; flywheel-claim free; #23/#28 MERGED
-ASSUMPTIONS: Agents stock STATE on main after this PR merges
-NOT PROVEN: N0 ship; on-chain settlement
+CHECKED ARTIFACT: origin/main b77339f; gh pr #49/#50; flywheel-claim building
+ASSUMPTIONS: Builders rebase #49 only; #50 does not invent second product track
+NOT PROVEN: N1.4 ship; live RPC; G9 closed; on-chain settlements (0)
 ```

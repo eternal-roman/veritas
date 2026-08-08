@@ -8,22 +8,29 @@ committed and pushed survives. Update this file and push after every sub-step.
 > **Do this next: one authorized slice only (claim free)** — Overseer names
 > the bet. Default **hold** unless unblocked (live RPC G9 dogfood if egress;
 > PyPI is human ops, not a dual product bet).
-> **G10:** never dual-reopen **P7-C**, **N1.5**, **0.8.1**, **cycle-5**,
-> **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**, **M7**, or **O.8**.
+> **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **N1.5**,
+> **0.8.1**, **cycle-5**, **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**,
+> **M7**, or **O.8**.
 >
-> **P7-C is on main** — `#69` / `e7f674b`: free re-fetch shares `research_slots`.
-> Closeout `#71` / `e45a2f5` freed the claim. Settlements **0**. Gap G9
-> **still open**. Not PyPI.
->
-> **Also on main:** v0.8.1 `#62`; N1.5 `#60`; v0.8.0; cycle-5; N1.4; G9-design.
+> **On main:** A26/A27 `#75` / `ab728a6`; N0-residue `#77` / `1c56a0b`; Git Agent
+> `#76`; P7-C `#69` / `e7f674b`; v0.8.1 `#62`; N1.5 `#60`. Plane closeouts
+> `#78` / `#81` / `#82`. Settlements **0**. Gap G9 **still open**. Not PyPI.
 >
 > Nothing has settled on-chain.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `64b7a1a` (PR **#72** cycle-7 board after #71). Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**. Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
-> Product tip **`e7f674b`** (#69 P7-C). Claim **free**. Settlements: **0**.
-> Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `48d7703` (PR **#82** conductor cycle-8 final).
+> Prior: `#81` / `458c36a` G10 harvest; free closeout **`2876f0a`** (#78).
+> Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
+> Claim **free**. Settlements: **0**. Gap G9 open. Open product PRs: **none**.
+> Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+>
+> **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /
+> composed standing. **Not proven:** multi-instance survival; on-chain (0).
+>
+> **N0-residue landed on main @ `1c56a0b` (PR #77).** Fail-closed pack/log; drop dead
+> re-exports. **Not proven:** all historical soft-fail paths gone outside claimed surface.
 >
 > **P7-C closeout landed on main @ `e45a2f5` (PR #71).** Claim free; tip-aligned.
 >

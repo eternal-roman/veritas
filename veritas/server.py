@@ -897,7 +897,9 @@ async def notarize(req: NotarizeRequest, request: Request):
     """Paid observe-once notary. Same money-path order as research (N0-B).
 
     Shares the research concurrency semaphore: outbound fetch is the expensive
-    work, not a second payer or engine.
+    work, not a second payer or engine. Credits debit before work, so an
+    unexpected exception after the debit is reversed here (same guard as
+    research — invariant 3).
     """
     if not research_slots.acquire(blocking=False):
         metrics.increment("veritas_research_shed_total")
@@ -910,13 +912,20 @@ async def notarize(req: NotarizeRequest, request: Request):
             ),
             headers={"Retry-After": OVERLOAD_RETRY_AFTER},
         )
+    # Same charge-publish / crash-refund shape as `research`: credits move
+    # before observe, so a raise after debit would bill for our failure.
+    charge: dict[str, str] = {}
     try:
         return await run_in_threadpool(
             _notarize,
             req,
             request.headers.get("X-PAYMENT"),
             request.headers.get(SESSION_HEADER),
+            charge,
         )
+    except Exception:
+        _refund_unfinished_charge(charge)
+        raise
     finally:
         research_slots.release()
 
@@ -925,6 +934,7 @@ def _notarize(
     req: NotarizeRequest,
     payment_header: str | None,
     session_header: str | None = None,
+    charge: dict[str, str] | None = None,
 ):
     """verify → claim → observe → fsync delivery → settle (or credits debit/refund)."""
     cfg = get_payment_config()
@@ -983,6 +993,10 @@ def _notarize(
             )
         credit_account = session.address
         paid_with_credits = True
+        # Debit is committed — publish so a crash after this still reverses it.
+        if charge is not None:
+            charge["account"] = session.address
+            charge["request_id"] = request_id
         deadline = Deadline.after(MAX_WORK_SECONDS)
 
     if cfg.require_payment and not paid_with_credits:

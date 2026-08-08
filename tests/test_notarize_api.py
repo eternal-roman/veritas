@@ -288,3 +288,57 @@ def test_challenge_resource_names_notarize_path(money_client):
     assert accepts, body
     resource = accepts[0].get("resource") or ""
     assert resource.endswith("/v1/notarize")
+
+
+def test_notarize_unexpected_failure_after_credit_debit_refunds(tmp_path, monkeypatch):
+    """Invariant 3 on /v1/notarize: credits debit before observe, crash must reverse.
+
+    Mirrors research's structural guard. Notarize reuses the same charge-publish
+    / crash-refund shape; without it a raise after debit would bill for our failure.
+    """
+    eth_account = pytest.importorskip("eth_account")
+    from eth_account.messages import encode_defunct
+
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "11" * 20)
+    monkeypatch.setenv("VERITAS_NETWORK", "eip155:84532")
+    monkeypatch.setenv("VERITAS_PRICE", "$0.01")
+    monkeypatch.setenv("VERITAS_FACILITATOR", "https://facilitator.test")
+
+    import veritas.server as server
+    importlib.reload(server)
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("unexpected failure after notarize credit debit")
+
+    monkeypatch.setattr(server, "observe", explode)
+
+    client = TestClient(server.app)
+    acct = eth_account.Account.create()
+    ch = client.post("/v1/siwx/challenge", json={"address": acct.address})
+    assert ch.status_code == 200, ch.text
+    body = ch.json()
+    signed = acct.sign_message(encode_defunct(text=body["message"]))
+    sig = signed.signature.hex()
+    if not sig.startswith("0x"):
+        sig = "0x" + sig
+    ver = client.post(
+        "/v1/siwx/verify",
+        json={"message": body["message"], "signature": sig},
+    )
+    assert ver.status_code == 200, ver.text
+    token = ver.json()["session_token"]
+    server.credit_ledger.grant(acct.address, 10_000, note="test_fund")
+
+    with pytest.raises(RuntimeError):
+        client.post(
+            "/v1/notarize",
+            json={"url": "https://example.org/crash"},
+            headers={"X-VERITAS-SESSION": token},
+        )
+
+    assert server.credit_ledger.balance(acct.address) == 10_000
+    kinds = [e.kind for e in server.credit_ledger.entries(acct.address)]
+    assert "debit" in kinds and "refund" in kinds, kinds

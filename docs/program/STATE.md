@@ -5,21 +5,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, PyPI Trusted Publishing setup, N1.6, or
-> hold). **G10:** never dual-reopen **release-0.8.1**, **N1.5**, **release-0.8.0**,
-> **cycle-5**, **N1.4**, **G9-design**, **cycle-1**, **N1.3**, **P7**, **N0–N1.2**,
-> **M7**, or **O.8**.
+> **Do this next: P7-C — free re-fetch takes `research_slots` (building).**
 >
-> **v0.8.1 is on main** — `#62` / `070d4c4` + signed tag `v0.8.1` + GH Release.
-> Labels N1.5 inclusion proof on observe. Install via git tag. **Not** PyPI.
+> Origin/receipt re-fetch on `POST /v1/verify` acquires the same semaphore as
+> research/notarize; full pool → 503 `service_overloaded`. Legacy
+> caller_supplied arithmetic does **not** take a slot. One engine.
+>
+> **On main (do not re-open):** v0.8.1 `#62`; N1.5 `#60`; v0.8.0; cycle-5;
+> N1.4; G9-design; P7 product; N0–N1.3; cycle-1.
+>
 > Settlements **0**. Gap G9 **still open**.
->
-> **Also on main:** N1.5 `#60`; v0.8.0 `#58` / tag `v0.8.0`; cycle-5 `#54`;
-> N1.4 `#49`; G9-design `#46`; cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository.
 
 ## Progress log
 

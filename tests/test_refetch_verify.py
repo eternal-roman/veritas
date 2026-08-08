@@ -164,3 +164,47 @@ def test_verify_source_binds_store_or_refetch():
     verify_body = source.split('@app.post("/v1/verify")')[1].split("@app.")[0]
     assert "store.load" in verify_body
     assert "refetch_verify" in verify_body
+    # P7-C: re-fetch modes share research_slots with research/notarize.
+    assert "research_slots.acquire" in verify_body
+
+
+def test_verify_refetch_sheds_when_research_slots_full(free_client, monkeypatch):
+    """P7-C: free origin re-fetch must not bypass the research semaphore."""
+    import veritas.server as main_module
+
+    expected = compute_content_hash("should not run re-fetch")
+    held = []
+    try:
+        while main_module.research_slots.acquire(blocking=False):
+            held.append(1)
+        assert held, "expected at least one research slot to hold"
+
+        r = free_client.post(
+            "/v1/verify",
+            json={"url": "https://example.org/shed", "content_hash": expected},
+        )
+        assert r.status_code == 503
+        body = r.json()
+        assert body["error"] == "service_overloaded"
+        assert r.headers.get("Retry-After") == main_module.OVERLOAD_RETRY_AFTER
+    finally:
+        for _ in held:
+            main_module.research_slots.release()
+
+
+def test_verify_legacy_caller_supplied_skips_research_slots(free_client, monkeypatch):
+    """Caller-supplied arithmetic is free CPU — must not take research_slots."""
+    import veritas.server as main_module
+
+    text = "no outbound work"
+    h = compute_content_hash(text)
+    held = []
+    try:
+        while main_module.research_slots.acquire(blocking=False):
+            held.append(1)
+        r = free_client.post("/v1/verify", json={"content": text, "content_hash": h})
+        assert r.status_code == 200
+        assert r.json()["binding"] == "caller_supplied"
+    finally:
+        for _ in held:
+            main_module.research_slots.release()

@@ -140,6 +140,21 @@ MAX_CONCURRENT_RESEARCH = max(1, int(os.getenv("VERITAS_MAX_CONCURRENT_RESEARCH"
 research_slots = threading.BoundedSemaphore(MAX_CONCURRENT_RESEARCH)
 OVERLOAD_RETRY_AFTER = "2"
 
+
+def _research_slot_shed_response() -> JSONResponse:
+    """503 when outbound research/re-fetch capacity is full (P7-C)."""
+    metrics.increment("veritas_research_shed_total")
+    return JSONResponse(
+        status_code=503,
+        content=error_envelope(
+            ErrorCode.SERVICE_OVERLOADED,
+            f"all {MAX_CONCURRENT_RESEARCH} research slots are in use; "
+            "nothing was done and nothing is owed",
+        ),
+        headers={"Retry-After": OVERLOAD_RETRY_AFTER},
+    )
+
+
 #: `/v1/verify` re-hashes whatever it is sent, so an unbounded body was an
 #: unbounded amount of work for an unpaid, unauthenticated caller.
 MAX_BODY_BYTES = int(os.getenv("VERITAS_MAX_BODY_BYTES", str(256 * 1024)))
@@ -593,16 +608,7 @@ async def research(req: ResearchRequest, request: Request):
     object crosses into the worker thread.
     """
     if not research_slots.acquire(blocking=False):
-        metrics.increment("veritas_research_shed_total")
-        return JSONResponse(
-            status_code=503,
-            content=error_envelope(
-                ErrorCode.SERVICE_OVERLOADED,
-                f"all {MAX_CONCURRENT_RESEARCH} research slots are in use; "
-                "nothing was done and nothing is owed",
-            ),
-            headers={"Retry-After": OVERLOAD_RETRY_AFTER},
-        )
+        return _research_slot_shed_response()
     # A credit debit is taken *before* the work, so unlike the x402 path it does
     # not fail safe on its own. x402 charges last — an exception before
     # settlement means the buyer is simply not charged. Credits invert that: the
@@ -948,16 +954,7 @@ async def notarize(req: NotarizeRequest, request: Request):
     research — invariant 3).
     """
     if not research_slots.acquire(blocking=False):
-        metrics.increment("veritas_research_shed_total")
-        return JSONResponse(
-            status_code=503,
-            content=error_envelope(
-                ErrorCode.SERVICE_OVERLOADED,
-                f"all {MAX_CONCURRENT_RESEARCH} research slots are in use; "
-                "nothing was done and nothing is owed",
-            ),
-            headers={"Retry-After": OVERLOAD_RETRY_AFTER},
-        )
+        return _research_slot_shed_response()
     # Same charge-publish / crash-refund shape as `research`: credits move
     # before observe, so a raise after debit would bill for our failure.
     charge: dict[str, str] = {}
@@ -1227,6 +1224,10 @@ async def verify(req: VerifyRequest):
     arithmetic on caller-supplied pairs. The legacy ``content``+``content_hash``
     path remains for offline re-hash convenience and is labeled
     ``binding: caller_supplied`` (not independent).
+
+    Origin/receipt re-fetch shares ``research_slots`` with research/notarize
+    (P7-C): free verify must not starve paid outbound work or open unbounded
+    SSRF-grade fetch fan-out under load.
     """
     # --- Independent: receipt → re-fetch stored URL ---
     if req.request_id:
@@ -1268,18 +1269,28 @@ async def verify(req: VerifyRequest):
                     "cannot re-fetch"
                 ),
             }
-        from veritas.notary.refetch import refetch_verify
+        if not research_slots.acquire(blocking=False):
+            return _research_slot_shed_response()
+        try:
+            from veritas.notary.refetch import refetch_verify
 
-        result = await run_in_threadpool(refetch_verify, url, published)
-        result["binding"] = "receipt_refetch"
-        result["request_id"] = req.request_id
-        return result
+            result = await run_in_threadpool(refetch_verify, url, published)
+            result["binding"] = "receipt_refetch"
+            result["request_id"] = req.request_id
+            return result
+        finally:
+            research_slots.release()
 
     # --- Independent: caller names URL + published hash; we re-fetch ---
     if req.url and req.content_hash:
-        from veritas.notary.refetch import refetch_verify
+        if not research_slots.acquire(blocking=False):
+            return _research_slot_shed_response()
+        try:
+            from veritas.notary.refetch import refetch_verify
 
-        return await run_in_threadpool(refetch_verify, req.url, req.content_hash)
+            return await run_in_threadpool(refetch_verify, req.url, req.content_hash)
+        finally:
+            research_slots.release()
 
     # --- Legacy convenience: arithmetic on caller-supplied pair ---
     if req.content is not None and req.content_hash:

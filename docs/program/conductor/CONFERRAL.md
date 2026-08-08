@@ -1,29 +1,26 @@
-# Conferral — 2026-08-08T21:10:00Z (continuous cycle-5)
+# Conferral — 2026-08-08T21:15:00Z (post-cycle-5 #54)
 
 ## From Steward
-Tip **`b253532`** (N1.4 #49). Free claim post-merge. STATE NEXT = **cycle-5** ecosystem dogfood. Docs closeout #53 tip-aligns plane.
+Tip **`bf09a99`**. cycle-5 product on main. Tip claim still said building cycle-5 — free.
 
 ## From Overseer
-Disk CURRENT may lag. Git truth: N1.4 + G9-design + cycle-1 on tip. Single NEXT = **cycle-5** (STATE). Settlements **0**. Gap G9 **open**.
+Log 015 (pre-merge): ship #54 after CI; no dual; G9 open. Disk CURRENT O.8-stale. Post-cycle-5: name **one** NEXT. Settlements **0**.
 
 ## From Pruner (G13)
-#46/#49 landed under green CI (Security + CodeQL). Next product branch (**cycle-5**) needs a **fresh** Pruner ship_ok. No dual N1.4/G9-design/N0.
+#54 product CI SUCCESS assumed (merged). Fresh ship_ok for next product.
 
 ## From Architect / Scout
-cycle-5: independent participant path on published verify/pack/log surfaces (axis F). Scout WATCH. Not live settlement.
+cycle-5 honesty: offline discovery/verify; trust not authz; no outbound. Scout WATCH.
 
 ## From Flywheel / cycles
-**N1.4 complete** @ `b253532`. **G9-design complete** @ `6777a92`. Claim **free**. Product open PRs: **none**. Docs #53 open.
+cycle-5 **landed**. Claim → **free**. Open product PRs: **none**.
 
 ## Conductor synthesis
-- **Trajectory:** M7 → N0 → N1.x → P7 → cycle-1 → G9-design → **N1.4 DONE** → **cycle-5 NEXT**
-- **This-cycle bet:** cycle-5 (restart / claim when builders fire)
-- **Parked:** dual product; re-open N1.4/G9-design/N0; settlement fiction; G9 closed claim
-- **Restart flywheel?** **Yes** — one cycle-5 claim; n_implementers=4; refuse prefer_bet=N0 dual
-- **Blockers (real only):** live G9 needs RPC (parked); settlements **0**
-- **Momentum:** **3**
-- **Settlements:** **0**
-- **n_implementers:** 4 on cycle-5 only
+- **Trajectory:** … → N1.4 DONE → **cycle-5 DONE** → Overseer NEXT
+- **This-cycle bet:** none (post-merge hygiene)
+- **Parked:** live RPC G9 dogfood; N1.5 anchors; re-open cycle-5/N1.4
+- **Restart flywheel?** **No** until singular NEXT
+- **Momentum:** **3** · **Settlements:** **0** · **n_implementers:** idle
 
 ### Message
-**N1.4 on main** (`b253532`). Claim free → **cycle-5**. No dual N0. G13 before ship.
+Tip **`bf09a99`**. Claim free. **Do not re-open cycle-5.** Gap G9 still open. Overseer: name **one** NEXT.

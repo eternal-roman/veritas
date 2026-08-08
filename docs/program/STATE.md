@@ -5,19 +5,28 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: cycle-5 dogfood — ecosystem participant.**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet. **G10:** never dual-reopen **cycle-5**, **N1.4**, **G9-design**,
+> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
 >
-> **On main (do not re-open):** N1.4 `#49` / `b253532` and prior spine.
+> **cycle-5 is on main** — `#54` / `bf09a99`: ecosystem participant dogfood
+> (discovery + offline verify/pack/log). Settlements **0**. Gap G9 **open**.
 >
-> **Cycle-5 scope:** peer discovery + standalone verifier + pack/Merkle offline
-> + trust-not-authz. Settlements **0**.
+> **Also on main:** N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92`;
+> cycle-1 `#44`; N1.3; P7; N0–N1.2; M7; O.8.
+>
+> Blocked on sandbox externals: **live G9 close** needs RPC; **X1/X3/X6** need
+> facilitator egress. On-chain settlements remain **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `b253532` (#49). Claim **cycle-5 building**. Settlements: **0**.
-> Prior closeout `#48` / `b77339f`; G9-design `#46` / `6777a92`. Claim **free**.
-> Settlements: **0**. Open product PRs: **none**.
-
+> **Tip of `origin/main`:** `bf09a99` (PR **#54** cycle-5 ecosystem dogfood).
+> Claim **free**. Settlements: **0**. Gap G9 **still open**.
+>
+> **cycle-5 landed on main @ `bf09a99` (PR #54).** Ecosystem participant
+> dogfood (discovery + offline verify). **Not proven:** live multi-party
+> ecosystem; on-chain (still **0**).
+>
 > **N1.4 landed on main @ `b253532` (PR #49).** `veritas/notary/merkle.py` +
 > `log.py`; append on completed observe; free `GET /v1/log`, `GET /v1/log/proof`,
 > `POST /v1/log/verify`; MCP `verify_log_inclusion`. **Not proven:** public

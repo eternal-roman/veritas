@@ -58,3 +58,62 @@ def test_requirements_cover_pyproject_floors():
             f"{name} pin {pins[name]} in requirements.txt is looser than "
             f"the pyproject floor {floor}"
         )
+
+
+def _pyproject_extras(text: str) -> dict[str, list[str]]:
+    """Every `[project.optional-dependencies]` extra and its requirement strings."""
+    block = re.search(
+        r"^\[project\.optional-dependencies\](.*?)(?=^\[)", text, re.DOTALL | re.MULTILINE
+    )
+    assert block, "pyproject.toml has no [project.optional-dependencies] table"
+    extras: dict[str, list[str]] = {}
+    for match in re.finditer(r"^(\w[\w-]*)\s*=\s*\[(.*?)\]", block.group(1),
+                             re.DOTALL | re.MULTILINE):
+        extras[match.group(1)] = re.findall(r'"([^"]+)"', match.group(2))
+    assert extras, "no extras parsed from [project.optional-dependencies]"
+    return extras
+
+
+def _requirement_clauses(spec: str) -> tuple[str, set[str]]:
+    """('mcp>=1.0,<2') -> ('mcp', {'>=1.0', '<2'})."""
+    from packaging.requirements import Requirement
+
+    parsed = Requirement(spec)
+    return parsed.name.lower().replace("_", "-"), {str(s) for s in parsed.specifier}
+
+
+def test_pin_file_is_never_looser_than_an_optional_dependency_contract():
+    """The direction rule applies to extras too, not only runtime deps.
+
+    This gap shipped a real defect. `pyproject` declared the MCP surface as
+    `mcp>=1.0,<2`, while `requirements-dev.txt` said `mcp>=1.0` with no upper
+    bound. The hashed CI lock then froze `mcp==2.0.0`, which removed
+    `mcp.server.fastmcp` — so `test_tools_register_with_mcp_sdk` began
+    skipping through `importorskip` and kept skipping, leaving STATUS's
+    "tested against the SDK" claim held up by a test that no longer ran.
+
+    A missing upper bound is exactly as loose as a missing floor; the original
+    test only ever checked floors, and only for runtime dependencies.
+    """
+    text = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    pin_clauses: dict[str, set[str]] = {}
+    for line in (REPO / "requirements-dev.txt").read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line or line.startswith("-r"):
+            continue
+        name, clauses = _requirement_clauses(line)
+        pin_clauses[name] = clauses
+
+    for extra, specs in _pyproject_extras(text).items():
+        for spec in specs:
+            name, contract = _requirement_clauses(spec)
+            if name not in pin_clauses:
+                # Not every extra is installed in the dev/CI tree; only the
+                # ones that are must agree with the contract.
+                continue
+            missing = contract - pin_clauses[name]
+            assert not missing, (
+                f"requirements-dev.txt pins {name} without {sorted(missing)}, which "
+                f"pyproject's [{extra}] extra requires. The pin file may be stricter "
+                f"than the install contract, never looser."
+            )

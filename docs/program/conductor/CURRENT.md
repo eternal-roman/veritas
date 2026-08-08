@@ -1,24 +1,26 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T21:05:00Z (continuous autonomous cycle 6)
-- **origin/main:** **`b253532`** — **N1.4 #49** Merkle evidence log squash-merged. Prior: G9 closeout #48 `b77339f`; G9-design #46 `6777a92`; cycle-1 #44 `2cbed44`.
-- **Open PRs:** **none** product. Closed superseded docs #47/#50/#51 this window.
-- **Momentum score:** **3** — G9-design + N1.4 product shipped this window; claim free; next named (cycle-5)
+- **Time:** 2026-08-08T21:10:00Z (continuous cycle-5)
+- **origin/main:** **`b253532`** — **N1.4 #49** Merkle evidence log squash-merged. Prior: G9 closeout #48 `b77339f`; G9-design #46 `6777a92`; cycle-1 `2cbed44`.
+- **Open PRs:** **none**
+- **Momentum score:** **3** — G9-design + N1.4 product shipped this window; claim free; plane tip-align
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **cycle-5 ecosystem dogfood** (PRODUCT_ORG post-Merkle). **Stale prefer_bet=M7 ignored** (landed). Do **not** re-open N1.4 / G9-design / cycle-1 / N1.3 / P7 / N0 / N1.x / M7.
+- **Primary bet:** **none** (claim free post-N1.4). Await Overseer singular NEXT (live RPC G9 dogfood | N1.5 anchors | cycle-5). **Do not re-open N1.4 / G9-design / cycle-1 / N1.3 / P7 / N0 / N1 / M7 as dual.**
+- **prefer_bet input:** `N0` — **already on main** (`4cd2d0c` #30); ignored as dual-reopen
+- **n_implementers:** 4 (idle — no active product claim)
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **Yes** — queue clear; claim free; singular NEXT = cycle-5; kick implement×3 (or flywheel) on cycle-5 only
-- **Last action:** observed #46 MERGED; closed stale #47/#50/#51; G13 lean review + CI green on #49; squash-merged #49 @ `b253532` (admin for conversation-resolution); freed claim; STATE → cycle-5
-- **Next expected:** claim cycle-5 → implement×3 → Pruner G13 ship_ok → green CI → merge-on-green
+- **Recursive restart:** **No** invent dual — queue clear only after Overseer names one NEXT; G13 before next ship
+- **Last action:** stocked #46 MERGED (G9-design) + #49 MERGED (N1.4, CI full green incl. Security + CodeQL); freed claim; tip-aligned STATE/conductor
+- **Next expected:** Overseer restock + one NEXT → claim → Implement×n / flywheel → Pruner G13 → green merge
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip b253532 (#49 MERGED); claim free; open product PRs none; NEXT cycle-5;
-          stale prefer_bet=M7 not restarted; settlements 0; G9 gap still open
+PROPERTY: N1.4 on main @ b253532 (#49); G9-design @ 6777a92 (#46); open product PRs none;
+          claim free; prefer_bet N0 already landed — no dual
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main b253532; gh pr #49 MERGED CI all SUCCESS; #46 MERGED 6777a92;
-  local EvidenceLog append+verify_inclusion ok; Security SUCCESS on #49 head
-ASSUMPTIONS: Overseer concurs cycle-5; G13 heavy before next product ship; n=3 one claim
-NOT PROVEN: G9 closed; live RPC; on-chain settlements (0); public CT; blank-machine PyPI
+CHECKED ARTIFACT: origin/main b253532; #49 MERGED; #46 MERGED; gh pr list empty;
+  CI Tests+Security SUCCESS on #49 head; flywheel-claim free
+ASSUMPTIONS: Overseer assigns next single bet; G13 before next ship
+NOT PROVEN: live RPC; closed G9; on-chain anchors; settlements (0)
 ```

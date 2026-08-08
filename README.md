@@ -151,6 +151,12 @@ Stated plainly, because a truth-telling service should not overstate itself:
   from advertised networks because SPL settlement is not implemented.
 - **Wallet commitments are hiding, not zero-knowledge.** Public verification of
   the opening requires the reveal at settlement.
+- **Self-provisioned wallet files are owner-only on POSIX only.** `os.open(...,
+  0o600)` is ignored on Windows and on filesystems without mode bits, leaving
+  the keystore and its plaintext passphrase readable beyond their owner. The
+  mode is read back after every write and a `WalletPermissionWarning` names any
+  file that is unprotected, so this is reported rather than assumed — but on
+  those platforms treat the wallet as development-only.
 
 ## What we removed, and why
 

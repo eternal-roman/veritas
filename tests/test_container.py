@@ -28,7 +28,7 @@ REPO = Path(__file__).resolve().parents[1]
 def _dockerignore() -> list[str]:
     return [
         line.strip()
-        for line in (REPO / ".dockerignore").read_text().splitlines()
+        for line in (REPO / ".dockerignore").read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
 
@@ -53,7 +53,7 @@ def test_the_dockerfile_copies_named_paths_never_the_whole_tree():
     """`COPY . .` would make the allowlist above the only thing standing
     between a wallet passphrase and a published image. Two defences are one
     too few to rely on the weaker."""
-    dockerfile = (REPO / "Dockerfile").read_text()
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
     copies = re.findall(r"^COPY\s+(.+)$", dockerfile, flags=re.MULTILINE)
     assert copies, "Dockerfile copies nothing"
     for line in copies:
@@ -65,7 +65,7 @@ def test_the_runtime_directory_is_a_declared_volume():
     """The ledger, receipts and trust counters live here. In the writable
     layer they vanish with the container, and with them the record of what
     was earned."""
-    dockerfile = (REPO / "Dockerfile").read_text()
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
     assert "VOLUME" in dockerfile
     runtime = re.search(r"VERITAS_RUNTIME_DIR=(\S+)", dockerfile)
     assert runtime, "the image does not set VERITAS_RUNTIME_DIR"
@@ -73,12 +73,12 @@ def test_the_runtime_directory_is_a_declared_volume():
 
 
 def test_the_container_runs_as_a_non_root_user():
-    dockerfile = (REPO / "Dockerfile").read_text()
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
     assert re.search(r"^USER\s+(?!root)", dockerfile, flags=re.MULTILINE)
 
 
 def test_compose_mounts_a_named_volume_for_the_runtime_directory():
-    compose = (REPO / "docker-compose.yml").read_text()
+    compose = (REPO / "docker-compose.yml").read_text(encoding="utf-8")
     assert "veritas-runtime" in compose
     assert "/home/veritas/runtime" in compose
 
@@ -92,7 +92,7 @@ def test_compose_does_not_ship_a_default_secret():
     """A committed compose file with a working token or key in it is a
     credential that ships with the repository — and a missing credential must
     reach the service's own misconfiguration path, not a baked-in fallback."""
-    compose = (REPO / "docker-compose.yml").read_text()
+    compose = (REPO / "docker-compose.yml").read_text(encoding="utf-8")
     for raw in compose.splitlines():
         line = raw.strip()
         if line.startswith("#") or ":" not in line:

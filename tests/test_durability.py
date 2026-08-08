@@ -112,7 +112,7 @@ def test_a_receipt_is_never_left_half_written(tmp_path):
     })
     assert record["persisted"] is True
     path = tmp_path / "receipts" / "r1.json"
-    assert json.loads(path.read_text())["request_id"] == "r1"
+    assert json.loads(path.read_text(encoding="utf-8"))["request_id"] == "r1"
     # No temporary files left behind for a scraper or a retention pass to trip on.
     assert [p.name for p in (tmp_path / "receipts").iterdir()] == ["r1.json"]
 

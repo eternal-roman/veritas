@@ -62,7 +62,7 @@ def test_apply_to_env_skips_absent_keys(monkeypatch):
 def test_init_bootstraps_config_and_wallet(tmp_path, capsys):
     pytest.importorskip("eth_account")
     assert main(["init"]) == 0
-    config = json.loads((tmp_path / ".veritas_agent" / "config.json").read_text())
+    config = json.loads((tmp_path / ".veritas_agent" / "config.json").read_text(encoding="utf-8"))
     assert config["mode"] == "free"
     assert config["pay_to"], "wallet address was not written into the config"
     assert config["pay_to"].startswith("0x")
@@ -101,7 +101,7 @@ def test_paid_flag_sets_pay_to_from_wallet(tmp_path, monkeypatch):
     pytest.importorskip("eth_account")
     monkeypatch.setattr("veritas.server.main", lambda: None)
     assert main(["up", "--paid"]) == 0
-    config = json.loads((tmp_path / ".veritas_agent" / "config.json").read_text())
+    config = json.loads((tmp_path / ".veritas_agent" / "config.json").read_text(encoding="utf-8"))
     assert config["require_payment"] is True
     assert os.environ["VERITAS_PAY_TO"] == config["pay_to"]
     assert os.environ["VERITAS_REQUIRE_PAYMENT"] == "true"

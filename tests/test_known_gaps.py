@@ -25,7 +25,7 @@ def test_known_gap_settlements_are_never_checked_against_the_chain():
     """
     from veritas import ledger as ledger_module
 
-    source = Path(ledger_module.__file__).read_text()
+    source = Path(ledger_module.__file__).read_text(encoding="utf-8")
     assert "eth_getTransactionReceipt" not in source
     assert not hasattr(ledger_module.Ledger, "reconcile_against_chain")
 
@@ -42,7 +42,7 @@ def test_known_gap_the_trust_score_is_self_reported():
     """
     from veritas import trust
 
-    source = Path(trust.__file__).read_text()
+    source = Path(trust.__file__).read_text(encoding="utf-8")
     # An externally attested score would have to carry a signature from
     # someone other than us, or cite a third-party attestation it verified.
     assert "verify_attestation" not in source

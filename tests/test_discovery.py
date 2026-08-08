@@ -71,7 +71,7 @@ def test_llms_txt_served_and_in_sync_with_repo_root(free_client):
     way CONSTITUTION.md is."""
     served = free_client.get("/llms.txt")
     assert served.status_code == 200
-    assert served.text == (REPO / "llms.txt").read_text()
+    assert served.text == (REPO / "llms.txt").read_text(encoding="utf-8")
 
 
 def test_llms_txt_names_only_real_endpoints(free_client):

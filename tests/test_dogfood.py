@@ -51,7 +51,7 @@ def test_the_committed_reports_match_the_current_code():
         (3, dogfood_cycle3, "probes", "probe", "refused"),
     ):
         path = REPO / "docs" / "dogfood" / f"cycle{cycle}" / "report.json"
-        committed = json.loads(path.read_text())
+        committed = json.loads(path.read_text(encoding="utf-8"))
         fresh = module.run()
         assert {case[name_field] for case in committed[collection]} == {
             case[name_field] for case in fresh[collection]
@@ -66,6 +66,6 @@ def test_no_dogfood_script_performs_an_outbound_request():
     it is why their results describe the product rather than this sandbox's
     egress."""
     for name in ("dogfood_cycle2.py", "dogfood_cycle3.py", "dogfood_cycle4.py"):
-        source = (REPO / "scripts" / name).read_text()
+        source = (REPO / "scripts" / name).read_text(encoding="utf-8")
         for forbidden in ("urlopen(", "requests.get", "requests.post", "httpx.get"):
             assert forbidden not in source, f"{name} may reach the network via {forbidden}"

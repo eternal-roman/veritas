@@ -134,7 +134,7 @@ def test_gated_payment_rejects_a_hostile_challenge(tmp_path):
 def test_gated_payment_writes_the_attempt_journal(tmp_path):
     pay_via_policy(_requirements(), TEST_KEY, policy=_policy(tmp_path), now=NOW)
     lines = [json.loads(x) for x in
-             (tmp_path / "authorization_attempts.jsonl").read_text().splitlines()]
+             (tmp_path / "authorization_attempts.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [x["stage"] for x in lines] == ["pre_sign", "signed"]
 
 

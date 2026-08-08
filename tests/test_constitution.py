@@ -85,8 +85,8 @@ def test_constitution_validates():
 
 
 def test_every_enforcement_pointer_resolves():
-    ci_text = CI_WORKFLOW.read_text()
-    schema_text = SCHEMA_SOURCE.read_text()
+    ci_text = CI_WORKFLOW.read_text(encoding="utf-8")
+    schema_text = SCHEMA_SOURCE.read_text(encoding="utf-8")
     for article in ARTICLES:
         for enforcement in article["enforcement"]:
             kind, pointer = enforcement["kind"], enforcement["pointer"]
@@ -188,7 +188,7 @@ def test_constitution_md_in_sync():
     truth: every article id and verbatim statement must appear in it, and
     every aspirational article must be rendered as such. Rewording an article
     without updating both places breaks this test by design."""
-    text = (REPO / "CONSTITUTION.md").read_text()
+    text = (REPO / "CONSTITUTION.md").read_text(encoding="utf-8")
     assert f"version {CONSTITUTION_VERSION}" in text
     for article in ARTICLES:
         assert article["id"] in text, f"{article['id']} missing from CONSTITUTION.md"
@@ -211,7 +211,7 @@ def test_new_docs_keep_the_register():
     because 'completed' is a legitimate status value."""
     banned = re.compile(r"\b(live-ready|revenue-ready|production-ready|ZK)\b|\bis complete\b")
     for name in ("CONSTITUTION.md", "ECOSYSTEM.md"):
-        text = (REPO / name).read_text()
+        text = (REPO / name).read_text(encoding="utf-8")
         match = banned.search(text)
         assert match is None, f"{name} contains banned bare claim: {match.group(0)!r}"
 

@@ -45,8 +45,8 @@ def test_ddgs_is_not_a_declared_dependency():
     from pathlib import Path
 
     repo = Path(__file__).resolve().parent.parent
-    assert "ddgs" not in (repo / "pyproject.toml").read_text()
-    assert "ddgs" not in (repo / "requirements.txt").read_text()
+    assert "ddgs" not in (repo / "pyproject.toml").read_text(encoding="utf-8")
+    assert "ddgs" not in (repo / "requirements.txt").read_text(encoding="utf-8")
 
 
 def test_static_corpus_is_unreachable_from_the_live_retriever():

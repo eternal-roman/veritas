@@ -89,6 +89,34 @@ def _run_commands() -> list[str]:
                                                             flags=re.MULTILINE)]
 
 
+def test_the_base_image_python_matches_the_lock_target():
+    """The base-image pin and the lock are coupled; nothing else says so.
+
+    `requirements.lock` carries CPython 3.12 wheel hashes, and several are
+    ABI-specific (pydantic_core ships per-interpreter wheels). Moving the base
+    image to another minor makes those hashes unusable, so the build fails deep
+    inside pip with an opaque resolution error.
+
+    Not hypothetical: adding the docker ecosystem to dependabot immediately
+    produced a `python:3.12-slim` → `3.14-slim` bump whose only failing check
+    was the container build. Failing here instead names the cause and the fix.
+    """
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    image = re.search(r"^FROM\s+python:(\d+)\.(\d+)-", dockerfile, flags=re.MULTILINE)
+    assert image, "cannot read a python X.Y tag from the Dockerfile's FROM line"
+
+    lock_header = (REPO / "requirements.lock").read_text(encoding="utf-8")[:2000]
+    target = re.search(r"CPython\s+(\d+)\.(\d+)", lock_header)
+    assert target, "requirements.lock does not declare its CPython target"
+
+    assert image.groups() == target.groups(), (
+        f"the image builds on Python {'.'.join(image.groups())} but "
+        f"requirements.lock pins wheels for CPython {'.'.join(target.groups())}. "
+        "Bump both together: change the base image, then regenerate the lock on "
+        "that interpreter (see SECURITY.md)."
+    )
+
+
 def test_the_base_image_is_pinned_by_digest():
     """A tag is a moving pointer: the same Dockerfile built twice can produce
     different base contents. This is the same mutable-reference problem the

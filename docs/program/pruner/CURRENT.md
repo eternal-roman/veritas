@@ -5,7 +5,7 @@
 - **Branch / HEAD:** tip `origin/main` @ `acc8f2d` (#89; prior #88 `abbfb40`)
 - **Scope:** Stock only — no active claim or product PR to gate
 - **Verdict:** **LEAN** (tip product already pruned)
-- **ship_ok:** **n/a** (nothing product staged to ship; #90 is docs tip-align only)
+- **ship_ok:** **n/a** (nothing product staged to ship; #92 is docs restock only)
 - **Landed (do not re-open):**
   - **#77** N0 residue `1c56a0b` — fail-closed pack/log; drop dead re-exports
   - **#75** A26/A27 `ab728a6` — survival / W0 / standing
@@ -19,7 +19,7 @@
 ```
 PROPERTY: tip has no open product PR; claim free; nothing for Pruner to ship-veto
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main @ acc8f2d; flywheel-claim free; gh pr list open [#90 docs only]
-ASSUMPTIONS: conductor/overseer hold product NEXT; #90 docs-only
+CHECKED ARTIFACT: origin/main @ acc8f2d; flywheel-claim free; gh pr list open [#92 docs only]
+ASSUMPTIONS: conductor/overseer hold product NEXT; #92 docs-only
 NOT PROVEN: on-chain settlement (0); G9 live dogfood
 ```

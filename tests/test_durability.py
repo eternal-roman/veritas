@@ -10,14 +10,17 @@ Two audited defects and one constitution gap:
 * O7 — custody receipts were written with a plain `write_text`. A crash
   mid-write leaves a truncated JSON file, and the receipt is the artifact a
   buyer relies on after the response is gone.
+* O10 / O.6 — receipts and ledger rows grew without bound; pruning without
+  tombstones collapses "we deleted this" into 404 "never existed".
 """
 
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
-from veritas.custody import CustodyStore
+from veritas.custody import CustodyStore, ReceiptPresence
 from veritas.trust import MIN_SAMPLES_FOR_SCORE, OutcomeLog, score_service
 
 
@@ -215,3 +218,87 @@ def test_a_receipt_is_never_written_outside_its_directory(tmp_path):
     assert record["persisted"] is False
     assert not (tmp_path / "escaped.json").exists()
     assert not (tmp_path.parent / "escaped.json").exists()
+
+
+# -- O10 / O.6: retention prune with durable tombstones ---------------------
+
+
+def _save_receipt(store: CustodyStore, request_id: str = "r1") -> dict:
+    return store.save({
+        "request_id": request_id, "query": "q", "status": "completed",
+        "custody_root": "sha256:x", "custody_valid": True, "evidence": [],
+    })
+
+
+def _backdate_receipt(store: CustodyStore, request_id: str, stored_at: str) -> None:
+    path = store.base_dir / f"{request_id}.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    record["stored_at"] = stored_at
+    path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+
+
+def test_expired_receipt_is_pruned_to_gone_with_tombstone(tmp_path):
+    """Expired → body gone + durable tombstone; lookup says gone, not unknown."""
+    store = CustodyStore(str(tmp_path))
+    assert _save_receipt(store, "r-old")["persisted"] is True
+    _backdate_receipt(store, "r-old", "2020-01-01T00:00:00Z")
+    cutoff = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    report = store.prune(cutoff)
+    assert report["deleted"] == 1
+    assert report["tombstoned"] == 1
+    assert store.load("r-old") is None
+    assert store.lookup("r-old") is ReceiptPresence.GONE
+    assert (tmp_path / "receipt_tombstones" / "r-old.json").is_file()
+
+
+def test_unexpired_receipt_survives_prune_and_stays_loadable(tmp_path):
+    store = CustodyStore(str(tmp_path))
+    _save_receipt(store, "r-fresh")
+    # Cutoff in the past: nothing stored after it is expired.
+    cutoff = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    report = store.prune(cutoff)
+    assert report["deleted"] == 0
+    assert store.lookup("r-fresh") is ReceiptPresence.PRESENT
+    assert store.load("r-fresh")["request_id"] == "r-fresh"
+
+
+def test_never_existed_receipt_stays_unknown(tmp_path):
+    store = CustodyStore(str(tmp_path))
+    assert store.lookup("never-seen") is ReceiptPresence.UNKNOWN
+    assert store.load("never-seen") is None
+    # Prune must not invent a tombstone for ids we never held.
+    store.prune(datetime(2099, 1, 1, tzinfo=timezone.utc))
+    assert store.lookup("never-seen") is ReceiptPresence.UNKNOWN
+
+
+def test_reprune_does_not_erase_tombstones(tmp_path):
+    """Re-deleting tombstones would collapse 410 back into 404."""
+    store = CustodyStore(str(tmp_path))
+    _save_receipt(store, "r-old")
+    _backdate_receipt(store, "r-old", "2020-01-01T00:00:00Z")
+    cutoff = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    store.prune(cutoff)
+    store.prune(cutoff)
+    assert store.lookup("r-old") is ReceiptPresence.GONE
+
+
+def test_unsafe_request_id_never_escapes_on_lookup_or_tombstone(tmp_path):
+    """Same path guard on lookup and tombstone paths as on load/save."""
+    store = CustodyStore(str(tmp_path))
+    _save_receipt(store, "r1")
+    (tmp_path / "canary.json").write_text('{"SECRET":"canary"}', encoding="utf-8")
+    for bad in TRAVERSAL_IDS:
+        assert store.lookup(bad) is ReceiptPresence.UNKNOWN, bad
+        assert store._tombstone_path(bad) is None, bad
+    assert store.lookup("r1") is ReceiptPresence.PRESENT
+
+
+def test_trust_counters_stay_one_row_after_volume(tmp_path):
+    """O3 structural bound: OutcomeLog cannot grow with request volume.
+    O.6 does not add a per-request log; prune is a no-op for counters."""
+    log = OutcomeLog(tmp_path)
+    _record(log, 50, paid=True)
+    _record(log, 50, paid=False)
+    assert log.row_count() == 1
+    assert log.stats()["paid_total"] == 50

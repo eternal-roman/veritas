@@ -64,6 +64,15 @@ def test_error_envelope_shape_is_stable():
     assert body["request_id"] == "r1"
 
 
+def test_receipt_gone_is_registered_at_410():
+    """O.6: pruned receipts are 410 receipt_gone, not another 404."""
+    assert ErrorCode.RECEIPT_GONE.value == "receipt_gone"
+    entry = ERROR_REGISTRY[ErrorCode.RECEIPT_GONE.value]
+    assert entry["status"] == 410
+    assert entry["retriable"] is False
+    assert ERROR_REGISTRY[ErrorCode.RECEIPT_NOT_FOUND.value]["status"] == 404
+
+
 def test_422_returns_registered_envelope(free_client):
     r = free_client.post("/v1/research", json={"query": "x"})
     assert r.status_code == 422

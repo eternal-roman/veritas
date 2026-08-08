@@ -5,16 +5,9 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: O.6 — retention and `410 Gone`.** Receipts, ledger rows and
-> trust counters grow without bound and nothing prunes them, so disk is the
-> first thing that fails in production. A pruned receipt must return **410
-> Gone, not 404**: "we deleted this" and "this never existed" are different
-> answers, and only one of them lets a buyer trust the receipt endpoint.
-> Model it on `veritas/ledger.py` — the SQLite machinery is already there.
->
-> Then, in order: **O.8** (supply chain — lockfile with hashes, SHA-pinned
-> actions, SBOM), **M7** (credits via SIWx; the last of Phase M), then
-> **Phase N0** (the notary product, now that the substrate under it is sound).
+> **Do this next: O.8 — supply chain.** Lockfile with hashes, SHA-pinned
+> actions, SBOM, bandit already at `-ll`. After that: **M7** (credits via
+> SIWx; the last of Phase M), then **Phase N0** (the notary product).
 >
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
@@ -69,10 +62,19 @@ committed and pushed survives. Update this file and push after every sub-step.
 > a caller-controlled path cannot forge metric lines. Tracing is still absent
 > and is not claimed.
 >
-> **O.3 landed in part** (O3, O7 closed; O10 retention still open). Trust is
-> now SQLite counters — one row however much the service has been used — and
-> custody receipts are written to a temp file, fsynced, and renamed, so a
-> reader never sees a truncated receipt.
+> **O.3 and O.6 landed** (O3, O7, O10 closed). Trust is SQLite counters — one
+> row however much the service has been used — and custody receipts are written
+> to a temp file, fsynced, and renamed. Retention (`VERITAS_RETENTION_DAYS`,
+> default 30) is ops-scheduled via `veritas-ops prune`: expired receipt bodies
+> are deleted with durable tombstones so `GET /v1/receipts/{id}` returns **410
+> `receipt_gone`**, never-seen stays **404 `receipt_not_found`**; ledger prune
+> deletes only aged settled/abandoned cascades and never rewrites settlement
+> outcomes (indeterminate remains ≠ failed). Tests:
+> `tests/test_durability.py` (lookup/tombstone), `tests/test_api.py`
+> (`test_receipt_pruned_returns_410_gone_not_404`), `tests/test_ledger.py`
+> (prune invariants), `tests/test_ops_cli.py` (`test_prune_reports_json_…`),
+> `tests/test_retention.py`, `tests/test_errors.py`
+> (`test_receipt_gone_is_registered_at_410`).
 >
 > **Constitution 2.2 closes G7 and opens G10.** Only paid requests score:
 > `/v1/trust` is free and unauthenticated, so counting free traffic let anyone
@@ -123,10 +125,9 @@ committed and pushed survives. Update this file and push after every sub-step.
 > from here; wall times are a floor because retrieval ran offline, and the
 > millisecond metering column is too coarse to resolve it at all (reads 0).
 >
-> Next: **O.6** (retention; 410 Gone ≠ 404), **O.8** (supply chain: lockfile
-> with hashes, SHA-pinned actions, SBOM). **M7** (credits via SIWx) is the last
-> of Phase M. Cycles 1 (cold install, gated on N0) and 5 (ecosystem, gated on
-> the standalone verifier) remain.
+> Next: **O.8** (supply chain: lockfile with hashes, SHA-pinned actions, SBOM).
+> **M7** (credits via SIWx) is the last of Phase M. Cycles 1 (cold install,
+> gated on N0) and 5 (ecosystem, gated on the standalone verifier) remain.
 >
 > New gap opened while closing G8: **G9** — recorded settlements are never
 > re-checked against the chain. `settled` currently means "the facilitator told
@@ -140,10 +141,32 @@ committed and pushed survives. Update this file and push after every sub-step.
 > approved plan — building a paid notary on a payment path that charges
 > disconnected buyers (G6/R11) and keeps no ledger (G8/R5) multiplies the defect.
 
+## Innovation loop + overseer + guardian
+
+| Piece | Doc / entry |
+|-------|-------------|
+| Builder loop | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · `/workflow agent-commerce-flywheel` |
+| **Overseer (15m)** | [`OVERSEER.md`](OVERSEER.md) · `/workflow agent-commerce-overseer` · [`overseer/CURRENT.md`](overseer/CURRENT.md) |
+| Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) |
+| Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
+
+```text
+/workflow agent-commerce-overseer
+/workflow agent-commerce-flywheel
+/workflow agent-commerce-flywheel {"prefer_bet": "O.6", "dry_run": true}
+```
+
+**Overseer** runs every 15 minutes: reviews ongoing work for honesty, laziness,
+and A2A commercial value; writes steering to `overseer/CURRENT.md`.  
+**Peer review** every 45 minutes: scrutinizes Claude session branch
+`feat/session-2026-08-08` (`PEER_REVIEW.md`); inherit only what survives GUARDIAN.  
+**Flywheel** hourly builds one bet under GUARDIAN. Neither auto-merges.
+Default bet: **NEXT ACTION** below.
+
 ## Resume protocol
 
 1. `git log --oneline -15` — see what actually landed.
-2. Read **NEXT ACTION** above.
+2. Read **NEXT ACTION** above, `GUARDIAN.md`, and the latest `cycles/` report.
 3. Run the battery to confirm the tree is green before continuing:
    ```bash
    python -m pytest tests/ -q
@@ -151,7 +174,8 @@ committed and pushed survives. Update this file and push after every sub-step.
    python -m veritas.evaluations.harness > /dev/null
    python -m veritas.evaluations.payment_model > /dev/null
    ```
-4. Continue from the first unchecked sub-step below.
+4. Prefer the flywheel for a full cycle; or continue from the first unchecked
+   sub-step below by hand.
 
 ## Program
 
@@ -229,10 +253,10 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 ### Phase O — Operations
 - [x] O.1 Async handlers; research capped and shed rather than queued (O1)
 - [x] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
-- [~] O.3 SQLite-backed trust counters and atomic receipt writes (O3, O4, O7). Retention/pruning (O10) still open — see O.6
+- [x] O.3 SQLite-backed trust counters and atomic receipt writes (O3, O4, O7); retention closed via O.6 (O10)
 - [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
-- [ ] O.6 Retention/pruning; 410 Gone ≠ 404
+- [x] O.6 Retention/pruning; 410 Gone ≠ 404 (`veritas/retention.py`, custody tombstones, `Ledger.prune`, `veritas-ops prune`)
 - [x] O.7 `.dockerignore` allowlist, VOLUME, docker-compose.yml (O12, O13)
 - [ ] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15)
 

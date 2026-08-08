@@ -2,7 +2,7 @@
 
 - **Time:** 2026-08-08T21:45:00Z
 - **origin/main:** **`e7f674b`** — **P7-C #69** free re-fetch `research_slots`. Prior: v0.8.1 `070d4c4`; N1.5 `e089f86`.
-- **Open PRs:** **none** (closed dual #70/#66/#67; #68 was docs under wrong title)
+- **Open PRs:** **#71** docs closeout only (this PR); open product PRs **none**
 - **Momentum score:** **3** — P7-C product shipped this tick
 - **Primary bet:** **none** (claim free post-P7-C)
 - **Recursive restart:** **No** until Overseer names singular NEXT

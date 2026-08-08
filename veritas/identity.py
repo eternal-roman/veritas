@@ -43,11 +43,13 @@ def build_identity(
             "support-counts",
             "refusal",
             "independent-hash-verification",
+            "evidence-record-attestation-verify",
         ],
         "base_url_configured": configured is not None,
         "endpoints": {
             "research": f"{base}/v1/research",
             "verify": f"{base}/v1/verify",
+            "attestations_verify": f"{base}/v1/attestations/verify",
             "receipts": f"{base}/v1/receipts/{{request_id}}",
             "identity": f"{base}/v1/identity",
             "constitution": f"{base}/v1/constitution",

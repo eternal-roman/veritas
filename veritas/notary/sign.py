@@ -167,18 +167,19 @@ def verify_attestation(
     if not isinstance(signature, str):
         return False, "signature_missing"
     # Prefer reconstructing the message so a tampered `message` field cannot
-    # pass when the record fields no longer match.
+    # pass when the record fields no longer match. Reasons are stable codes
+    # only — never exception text on the wire (N0-K / CodeQL).
     try:
         message = canonical_attestation_message(record)
-    except NotarySignError as exc:
-        return False, str(exc)
+    except NotarySignError:
+        return False, "record_incomplete"
     published = attestation.get("message")
     if published is not None and published != message:
         return False, "message_mismatch"
     try:
         recovered = recover_attestation_signer(message, signature)
-    except NotarySignError as exc:
-        return False, str(exc)
+    except NotarySignError:
+        return False, "signature_invalid"
     claimed = attestation.get("signer")
     if isinstance(claimed, str) and claimed.lower() != recovered:
         return False, "signer_mismatch"

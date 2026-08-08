@@ -63,6 +63,7 @@ app = FastAPI(title="Veritas Research", version=__version__)
 
 RESOURCE_PATH = "/v1/research"
 NOTARIZE_PATH = "/v1/notarize"
+ATTESTATION_VERIFY_PATH = "/v1/attestations/verify"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -299,6 +300,19 @@ class NotarizeRequest(BaseModel):
 class VerifyRequest(BaseModel):
     content: str = Field(max_length=MAX_VERIFY_CONTENT_CHARS)
     content_hash: str = Field(max_length=256)
+
+
+class VerifyAttestationRequest(BaseModel):
+    """Buyer-supplied EvidenceRecord fields + optional operator attestation.
+
+    Free to call. Reconstructs the N1.1 canonical message and recovers the
+    EIP-191 signer. Does **not** re-fetch the origin URL and is **not** an
+    on-chain check (P7 product re-fetch and G9 remain separate).
+    """
+
+    evidence_record: dict[str, Any] = Field(min_length=1)
+    attestation: dict[str, Any] = Field(min_length=1)
+    expected_signer: str | None = Field(default=None, max_length=64)
 
 
 @app.get("/health")
@@ -1180,6 +1194,36 @@ async def verify(req: VerifyRequest):
     return {"valid": ok, **detail}
 
 
+@app.post(ATTESTATION_VERIFY_PATH)
+async def verify_attestation_endpoint(req: VerifyAttestationRequest):
+    """Check an N1.1 EIP-191 EvidenceRecord attestation (free, no payment).
+
+    Returns whether the signature recovers to the claimed (or expected)
+    operator address over the bound fields. Honest limits: not proof the
+    origin served this body to others; not an on-chain anchor; settlements
+    remain operator-reported elsewhere.
+    """
+    from veritas.notary.sign import SCHEME, verify_attestation
+
+    ok, reason = verify_attestation(
+        req.evidence_record,
+        req.attestation,
+        expected_signer=req.expected_signer,
+    )
+    body: dict[str, Any] = {
+        "valid": ok,
+        "reason": reason,
+        "scheme": req.attestation.get("scheme") or SCHEME,
+        "note": (
+            "EIP-191 recovery over bound record fields; "
+            "not an on-chain anchor and not a re-fetch of the origin"
+        ),
+    }
+    if isinstance(req.attestation.get("signer"), str):
+        body["claimed_signer"] = req.attestation["signer"]
+    return body
+
+
 @app.get("/v1/receipts/{request_id}")
 async def receipt(request_id: str):
     """Retrieve a stored custody record so results stay auditable after the call.
@@ -1600,6 +1644,8 @@ async def well_known():
             "credits_topup": CREDITS_TOPUP_PATH,
             # Advertised only because POST /v1/notarize exists (N0.5).
             "notarize": NOTARIZE_PATH,
+            # Free N1.2 surface: agents re-check operator EIP-191 attestations.
+            "attestations_verify": ATTESTATION_VERIFY_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

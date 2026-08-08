@@ -49,7 +49,13 @@ dependencies = [
 signing = ["eth_account>=0.13"]
 # MCP stdio surface (veritas-mcp). Optional: the module imports without it;
 # serving requires it.
-mcp = ["mcp>=1.0,<3"]
+#
+# The upper bound is behavioural, not caution. mcp 2.0.0 removed
+# `mcp.server.fastmcp`, the surface veritas-mcp is built on — verified against
+# the published wheel: 128 files, zero fastmcp entries. Admitting 2.x ships an
+# extra that cannot serve. Raise this only after confirming the new major
+# provides that module; tests/test_mcp_server.py enforces both halves.
+mcp = ["mcp>=1.0,<2"]
 dev = [
     "eth_account>=0.13",
     "pytest>=8.0",

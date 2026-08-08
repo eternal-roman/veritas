@@ -61,6 +61,92 @@ def test_the_dockerfile_copies_named_paths_never_the_whole_tree():
         assert "." not in sources, f"Dockerfile copies the whole tree: COPY {line}"
 
 
+def test_the_image_installs_dependencies_from_the_hashed_lock():
+    """Defect O16. `pip install "."` resolved the pyproject floors against
+    PyPI at build time, so the image's dependency set was whatever PyPI served
+    that day: two builds of one commit could ship different trees, and a
+    compromised release of any transitive dependency landed unreviewed. O.8
+    hash-pinned CI and the published wheel but explicitly left the image out;
+    this closes that."""
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    assert "--require-hashes -r requirements.lock" in dockerfile, (
+        "the image must install its dependencies from the hashed lock"
+    )
+
+
+def _run_commands() -> list[str]:
+    """The Dockerfile's RUN commands, comments stripped and continuations joined.
+
+    Reading the raw text would match prose: the comments here discuss
+    `pip install "."` in order to explain why it is gone.
+    """
+    text = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    without_comments = "\n".join(
+        line for line in text.splitlines() if not line.lstrip().startswith("#")
+    )
+    joined = re.sub(r"\\\s*\n\s*", " ", without_comments)
+    return [match.group(1).strip() for match in re.finditer(r"^RUN\s+(.+)$", joined,
+                                                            flags=re.MULTILINE)]
+
+
+def test_the_base_image_is_pinned_by_digest():
+    """A tag is a moving pointer: the same Dockerfile built twice can produce
+    different base contents. This is the same mutable-reference problem the
+    Action SHAs and the dependency lock exist to remove, and the base image is
+    the largest single component of what ships."""
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    from_lines = re.findall(r"^FROM\s+(\S+)", dockerfile, flags=re.MULTILINE)
+    assert from_lines, "Dockerfile has no FROM instruction"
+    for image in from_lines:
+        assert re.search(r"@sha256:[0-9a-f]{64}$", image), (
+            f"base image {image!r} is referenced by tag, not by digest"
+        )
+
+
+def test_pinning_the_base_image_does_not_strand_it_without_updates():
+    """A digest pin without an updater is a base image that stops receiving
+    security patches. Pinning and updating have to ship together."""
+    dependabot = (REPO / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+    assert 'package-ecosystem: "docker"' in dependabot, (
+        "the Dockerfile pins a base-image digest, so dependabot must watch the "
+        "docker ecosystem or that pin silently goes stale"
+    )
+
+
+def test_the_image_never_resolves_dependencies_while_installing_the_package():
+    """Installing the package without --no-deps would re-resolve the floors
+    and silently undo the pinning above."""
+    installs = [cmd for cmd in _run_commands() if re.search(r'pip install .*"\."', cmd)]
+    assert installs, "the Dockerfile no longer installs the package"
+    for command in installs:
+        assert "--no-deps" in command, (
+            "installing the package must use --no-deps; every dependency comes "
+            f"from the lock:\n{command}"
+        )
+
+
+def test_the_image_verifies_the_locked_closure_satisfies_the_package():
+    """--no-deps trusts the lock to be complete. `pip check` is what turns
+    that trust into a build failure rather than a runtime ImportError."""
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    assert "pip check" in dockerfile, (
+        "the image installs with --no-deps and must run `pip check`, or a "
+        "dependency the lock is missing surfaces at a user's first request"
+    )
+
+
+def test_the_lockfile_is_in_the_build_context():
+    """The allowlist is exclusive: a file the Dockerfile COPYs but does not
+    allow back in fails the build."""
+    allowed = {line[1:].rstrip("/") for line in _dockerignore() if line.startswith("!")}
+    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
+    for line in re.findall(r"^COPY\s+(.+)$", dockerfile, flags=re.MULTILINE):
+        for source in line.split()[:-1]:
+            assert source.rstrip("/") in allowed, (
+                f"Dockerfile copies {source!r}, which .dockerignore does not allow back in"
+            )
+
+
 def test_the_runtime_directory_is_a_declared_volume():
     """The ledger, receipts and trust counters live here. In the writable
     layer they vanish with the container, and with them the record of what

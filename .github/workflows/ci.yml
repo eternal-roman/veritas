@@ -262,7 +262,7 @@ jobs:
           PY
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: sbom-cyclonedx
           path: sbom/veritas-artifact.cdx.json
@@ -279,8 +279,11 @@ jobs:
           docker build -t veritas-research:ci .
       # Build-only: pushing to a registry (GHCR) needs a permissions decision
       # a maintainer must make; see ROADMAP P.7.
-      # Note: the Dockerfile still installs from pyproject floors, not the
-      # hashed lock — O.8 does not claim the image path is hash-locked.
+      #
+      # This build is what verifies the image's hash-pinned install path: the
+      # Dockerfile installs requirements.lock with --require-hashes, then the
+      # package with --no-deps, then runs `pip check`. A lock that does not
+      # satisfy the package's declared dependencies fails here.
 
   lint-structure:
     name: Structure checks

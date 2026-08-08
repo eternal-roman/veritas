@@ -12,10 +12,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 > honesty (#20 / `4a3d105`), and O.6 (#18 / `48194ab`) are **on main** —
 > do not re-open them as NEXT.
 >
-> O.8 deliberately did **not** do (separate decisions): Dockerfile still
-> installs from pyproject floors; SBOM is **unsigned** and a workflow artifact
-> rather than release-attached (`contents: write` + `id-token: write` stay
-> apart).
+> **O.8b closes the container gap** (in review): the Dockerfile installs
+> `requirements.lock` with `--require-hashes`, then the package with
+> `--no-deps` plus `pip check`, and pins its base image by digest with
+> Dependabot's docker ecosystem watching it. All three shipping paths — CI,
+> the wheel, the image — now install the same hash-pinned closure. It also
+> extends the pin-file-vs-contract direction rule to **optional
+> dependencies**, the gap that let `mcp>=1.0` sit against a `mcp>=1.0,<2`
+> contract and silently freeze `mcp==2.0.0`, disabling an SDK test.
+>
+> Still deliberately not done: the SBOM is **unsigned** and a workflow
+> artifact rather than release-attached (`contents: write` + `id-token: write`
+> stay apart), and no image is published anywhere.
 >
 > Blocked on things this sandbox cannot provide, not on work: **G9**
 > (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**

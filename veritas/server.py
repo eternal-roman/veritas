@@ -557,21 +557,62 @@ async def research(req: ResearchRequest, request: Request):
             ),
             headers={"Retry-After": OVERLOAD_RETRY_AFTER},
         )
+    # A credit debit is taken *before* the work, so unlike the x402 path it does
+    # not fail safe on its own. x402 charges last — an exception before
+    # settlement means the buyer is simply not charged. Credits invert that: the
+    # money has already moved, so an exception anywhere after the debit would
+    # leave the buyer paying for our crash, which invariant 3 forbids.
+    #
+    # `_research` records the debit here as soon as it takes one, and this
+    # handler reverses it if the request dies on an unexpected exception. Every
+    # *expected* outcome (deadline, unavailable) already refunds inside
+    # `_research`; refund is idempotent, so the two cannot double-refund.
+    #
+    # Today every call after the debit swallows its own failures, so no
+    # reachable path is known — this is the structural guarantee rather than a
+    # fix for an observed bug. Without it the invariant holds only for as long
+    # as every downstream callee stays defensive.
+    charge: dict[str, str] = {}
     try:
         return await run_in_threadpool(
             _research,
             req,
             request.headers.get("X-PAYMENT"),
             request.headers.get(SESSION_HEADER),
+            charge,
         )
+    except Exception:
+        _refund_unfinished_charge(charge)
+        raise
     finally:
         research_slots.release()
+
+
+def _refund_unfinished_charge(charge: dict[str, str]) -> None:
+    """Reverse a credit debit whose request never produced a response.
+
+    Never raises: this runs while an exception is propagating, and masking the
+    original failure with a bookkeeping error would lose the reason the request
+    died. A refund that cannot be written is reported by the credit journal's
+    own records, which still hold the unreversed debit.
+    """
+    if not charge:
+        return
+    try:
+        credit_ledger.refund(
+            charge["account"],
+            request_id=charge["request_id"],
+            note="refund_request_failed",
+        )
+    except Exception:
+        metrics.increment("veritas_credit_refund_failed_total")
 
 
 def _research(
     req: ResearchRequest,
     payment_header: str | None,
     session_header: str | None = None,
+    charge: dict[str, str] | None = None,
 ):
     cfg = get_payment_config()
     payment_payload: dict[str, Any] | None = None
@@ -638,6 +679,12 @@ def _research(
             )
         credit_account = session.address
         paid_with_credits = True
+        # The debit is now committed. Publish it to the caller so that a
+        # request dying on an unexpected exception still reverses the charge
+        # (see `research`); every expected outcome refunds below instead.
+        if charge is not None:
+            charge["account"] = session.address
+            charge["request_id"] = request_id
         # Same work ceiling as x402-paid research; overruns refund the debit
         # (no payment authorization window — credits are already prepaid).
         deadline = Deadline.after(MAX_WORK_SECONDS)

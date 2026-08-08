@@ -575,10 +575,14 @@ def _research(
     if cfg.require_payment and not payment_header and session_header:
         try:
             session = siwx_store.resolve(session_header)
-        except SiwxSessionError as exc:
+        except SiwxSessionError:
+            # Category only — exception text never reaches a buyer (4f2321c).
             return JSONResponse(
                 status_code=401,
-                content=error_envelope(ErrorCode.SESSION_INVALID, str(exc)),
+                content=error_envelope(
+                    ErrorCode.SESSION_INVALID,
+                    "SIWx session missing, unknown, or expired",
+                ),
             )
         try:
             atomic = int(to_atomic_amount(cfg.price, cfg.network))
@@ -597,12 +601,13 @@ def _research(
                 request_id=request_id,
                 note="research_debit",
             )
-        except InsufficientCredits as exc:
+        except InsufficientCredits:
+            # Balance/required are structured fields; do not echo exception text.
             return JSONResponse(
                 status_code=402,
                 content=error_envelope(
                     ErrorCode.CREDITS_INSUFFICIENT,
-                    str(exc),
+                    "prepaid credits insufficient for this research debit",
                     balance=credit_ledger.balance(session.address),
                     required=atomic,
                 ),
@@ -941,10 +946,13 @@ async def siwx_challenge(req: SiwxChallengeRequest):
             chain_id=chain_id,
             address=req.address,
         )
-    except SiwxError as exc:
+    except SiwxError:
         return JSONResponse(
             status_code=422,
-            content=error_envelope(ErrorCode.INVALID_REQUEST, str(exc)),
+            content=error_envelope(
+                ErrorCode.INVALID_REQUEST,
+                "SIWx challenge request rejected",
+            ),
         )
     return challenge
 
@@ -963,15 +971,22 @@ async def siwx_verify(req: SiwxVerifyRequest):
             expected_uri=uri,
             expected_chain_id=chain_id,
         )
-    except SiwxVerifyError as exc:
+    except SiwxVerifyError:
+        # Never surface recovery/parse exception detail to the caller.
         return JSONResponse(
             status_code=401,
-            content=error_envelope(ErrorCode.SIWX_INVALID, str(exc)),
+            content=error_envelope(
+                ErrorCode.SIWX_INVALID,
+                "SIWx signature or challenge verification failed",
+            ),
         )
-    except SiwxError as exc:
+    except SiwxError:
         return JSONResponse(
             status_code=422,
-            content=error_envelope(ErrorCode.INVALID_REQUEST, str(exc)),
+            content=error_envelope(
+                ErrorCode.INVALID_REQUEST,
+                "SIWx verify request rejected",
+            ),
         )
     return session
 
@@ -990,10 +1005,13 @@ async def credits_balance(request: Request):
         )
     try:
         session = siwx_store.resolve(token)
-    except SiwxSessionError as exc:
+    except SiwxSessionError:
         return JSONResponse(
             status_code=401,
-            content=error_envelope(ErrorCode.SESSION_INVALID, str(exc)),
+            content=error_envelope(
+                ErrorCode.SESSION_INVALID,
+                "SIWx session missing, unknown, or expired",
+            ),
         )
     return credit_ledger.summary(session.address)
 
@@ -1030,10 +1048,13 @@ async def credits_topup(request: Request):
         )
     try:
         session = siwx_store.resolve(token)
-    except SiwxSessionError as exc:
+    except SiwxSessionError:
         return JSONResponse(
             status_code=401,
-            content=error_envelope(ErrorCode.SESSION_INVALID, str(exc)),
+            content=error_envelope(
+                ErrorCode.SESSION_INVALID,
+                "SIWx session missing, unknown, or expired",
+            ),
         )
 
     payment_header = request.headers.get("X-PAYMENT")

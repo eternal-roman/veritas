@@ -111,7 +111,7 @@ class EvidenceLog:
             try:
                 proof = inclusion_proof(leaves, index)
             except ValueError as exc:
-                raise EvidenceLogError(str(exc)) from exc
+                raise EvidenceLogError("index out of range") from exc
             proof["note"] = LOG_NOTE
             return proof
 

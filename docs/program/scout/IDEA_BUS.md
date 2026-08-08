@@ -1,4 +1,4 @@
-# Idea bus — steward stamp 2026-08-08T23:10:00Z (tip `f87a467` / #93)
+# Idea bus — steward stamp 2026-08-08T23:46:00Z (tip `bc455c8` / #96)
 
 **Shared feed for every agent** (overseer · flywheel · steward · peer · scout · human).  
 Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
@@ -8,7 +8,7 @@ Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
 ### Program anchors (STATE is source of truth for NEXT)
 
 - **NEXT ACTION: hold** — Overseer names the singular bet when unblocked (default: live-RPC G9 dogfood if egress; else true idle). PyPI is human ops.  
-- **Landed (do not re-open as NEXT):** M7, N0 core + N0-residue, A26/A27, P7-C, N1.5, v0.8.1 / O.8, Git Agent, plane closeouts through #93.  
+- **Landed (do not re-open as NEXT):** M7, N0 core + N0-residue, A26/A27, P7-C, N1.5, v0.8.1 / O.8, Git Agent, plane closeouts through #96.  
 - Open product PRs: **none**. Claim **free**.  
 - **Parked:** dual product tracks; seedling vendoring; settlement fiction; prefer_bet thrash on landed M7/N0.  
 - **Veritas on-chain settlements: still 0.** Foreign “mainnet ready” READMEs are not our evidence.  

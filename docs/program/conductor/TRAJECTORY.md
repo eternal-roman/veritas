@@ -1,7 +1,7 @@
 # Trajectory — agent commerce vision
 
-**Updated:** 2026-08-08T22:26:00Z (post-#82)
-**Main:** `48d7703` (#82) · G10 harvest `458c36a` (#81) · free claim `2876f0a` (#78) · A26/A27 `ab728a6` (#75) · **version:** `0.8.1`
+**Updated:** 2026-08-08T22:40:00Z (continuous cycle 9)
+**Main:** `398e2ac` (#84) · cycle-8 `48d7703` (#82) · G10 harvest `458c36a` (#81) · free claim `2876f0a` (#78) · A26/A27 `ab728a6` (#75) · **version:** `0.8.1`
 
 ## Where we are
 
@@ -14,6 +14,7 @@
 | **N0 residue** | **On main** `1c56a0b` (#77) |
 | **A26/A27** | **On main** `ab728a6` (#75) |
 | G10 harvest docs | **On main** `458c36a` (#81) — gap **still open** |
+| Plane tip-align | **On main** `398e2ac` (#84) |
 | On-chain settlements | **0** |
 | Claim | **free** |
 | Open product PRs | **none** |
@@ -21,14 +22,14 @@
 ## Primary trajectory
 
 ```
-… → A26/A27 DONE → free claim
+… → A26/A27 DONE → free claim → tip-align #84 DONE
   → Overseer singular NEXT only
      candidates (blocked/external): live-RPC G9 | PyPI human ops | W1 after settle
 ```
 
 **This-cycle bet:** none
 
-**Refuse:** prefer_bet=M7; re-open N0 / P7-C / A26-A27 dual.
+**Refuse:** prefer_bet=M7; re-open N0 / P7-C / A26-A27 dual; invent settlement.
 
 ## Parked
 
@@ -37,7 +38,8 @@
 - Claiming G10 closed because A26/docs exist
 - Bond escrow (G12) before proven settlement
 - Settlement fiction
+- PRODUCT_ORG era row still saying M7 NEXT (docs lag vs STATE)
 
 ## Landmass
 
-On-chain: **0**. Hub: **L0 only**. A26/A27 L1 mechanism only. G10/G11/G12 open as registered.
+On-chain: **0**. Hub: **L0 only**. A26/A27 L1 mechanism only. G10/G11/G12 open as registered. G13 required before any product ship.

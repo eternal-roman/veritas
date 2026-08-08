@@ -1,24 +1,23 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T22:35:00Z
-- **Path:** LIGHT / **noop_idle**
-- **Branch / HEAD:** `origin/main` @ **`b253532`** (N1.4 #49; G9-design #46 `6777a92`; G9 closeout #48)
-- **Scope:** Stock only — claim **free** (local + closeout #52); open PRs = **docs #52 only** (no product surface). Prior product ship_ok for #49/#46 already recorded.
-- **Verdict:** LEAN (idle)
-- **ship_ok:** n/a this tick (no active product PR). Last product ship_ok: **true** for N1.4 #49 @ `b253532` and G9-design #46 @ `6777a92`. Next product bet needs **fresh** G13.
+- **Time:** 2026-08-08T21:12:00Z
+- **Path:** STANDBY — product surface open; G13 **pending** green #54
+- **Branch / HEAD:** tip `bedb01e` (#53); product N1.4 `b253532` (#49); WIP **#54**
+- **Scope:** #54 cycle-5 (`feat/cycle5-ecosystem-dogfood`) — claim **building**
+- **Verdict:** HOLD (do not ship_ok while CI incomplete/red)
+- **ship_ok:** **not granted** this tick. Last landed product: N1.4 #49 @ `b253532`
 - **Deleted / pruned:** none
 - **Refined:** none
-- **Battery:** **not run** (G13 light — claim free + no product PR)
+- **Battery:** **not run** (wait for full green CI on #54 before heavy G13)
 - **E2E exercised:** none this tick
-- **Denied:** dual NEXT; re-open N1.4 / G9-design / cycle-1 / N1.3 / P7 / N0 / M7 as product; invent settlement; treat docs #52 as product gate
-- **Directive:** Wait for singular **cycle-5** claim/PR (Overseer/Conductor). Heavy G13 only when product WIP appears. Conductor may land docs #52 for tip-align claim free on main.
+- **Denied:** dual NEXT; merge red/pending #54; invent settlement; re-open N1.4 / G9-design surface as NEXT
+- **Directive:** After #54 is full green on tip, run full G13 battery before merge.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: No product work for Pruner this tick — claim free, open product PRs empty
+PROPERTY: Product PR #54 open under claim; no ship_ok until full green CI
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main b253532 (#49); gh open = docs #52 only (program cards);
-  local flywheel-claim free; last_merged N1.4+G9-design
-ASSUMPTIONS: next ship is cycle-5 ecosystem dogfood; G13 heavy on that PR only
-NOT PROVEN: cycle-5; public CT; on-chain anchors; G9 closed; settlements (0)
+CHECKED ARTIFACT: origin/main bedb01e; gh pr #54; flywheel-claim building
+ASSUMPTIONS: Flywheel completes CI before requesting G13
+NOT PROVEN: on-chain settlement (0); G9 closed; cycle-5 ship
 ```

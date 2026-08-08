@@ -1,12 +1,12 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-08T21:05:00Z
-- **last_merged:** N1.4 #49 @ `b253532`; G9 closeout #48 @ `b77339f`; G9-design #46 @ `6777a92`; cycle-1 #44 @ `2cbed44`
-- **next_micro:** Singular NEXT = **cycle-5 ecosystem dogfood** (PRODUCT_ORG post-Merkle). Do **not** re-open N1.4 / G9-design / cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / **M7** / O.8. Gap G9 still open. Settlements **0**.
+- **bet_id:** cycle-5
+- **branch:** feat/cycle5-ecosystem-dogfood
+- **holder:** flywheel
+- **status:** building
+- **updated:** 2026-08-08T21:12:00Z
+- **last_merged:** docs #53 @ `bedb01e`; N1.4 #49 @ `b253532`; G9 closeout #48 @ `b77339f`; G9-design #46 @ `6777a92`; cycle-1 #44 @ `2cbed44`
+- **next_micro:** #54 only — CI green (Tests/Security still rolling at stock), G13 before merge. Ecosystem participant dogfood (discovery + offline verify). Do not dual live-RPC G9. Settlements **0**. Gap G9 open.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -28,5 +28,6 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | **G9-design fail-closed reconcile** | **`6777a92` / #46** |
 | G9 plane closeout | `b77339f` / #48 |
 | **N1.4 Merkle evidence log** | **`b253532` / #49** |
+| N1.4 plane closeout | `bedb01e` / #53 |
 
-**G10:** Claim **free** after N1.4 merge. Open product PRs: **none**. Gap G9 **still open**. Settlements: **0**.
+**G10:** Claim **building** cycle-5 on `feat/cycle5-ecosystem-dogfood` (#54). Open product PRs: **#54 only**. Settlements: **0**. Gap G9 **still open**.

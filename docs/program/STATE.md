@@ -5,16 +5,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: cycle-5 ecosystem dogfood only** — independent participant
-> path using published verify/pack/log surfaces (axis F). Smallest shippable
-> script + report + CI wire like cycles 1–4. Claim free post-N1.4; one claim
-> when build starts.
+> **Do this next: cycle-5 only (claim building on #54)** —
+> `feat/cycle5-ecosystem-dogfood` / PR **#54**. Independent participant path
+> using published discovery/verify/pack/log surfaces (axis F). Smallest
+> shippable script + report + CI wire like cycles 1–4. Full green CI, fresh
+> Pruner G13, merge-on-green only.
 >
 > **On main (do not re-open):** **N1.4** `#49` / `b253532` (operator-local
 > Merkle evidence log + free `/v1/log*` + MCP inclusion verify — **not** public
-> CT / **not** on-chain); **G9-design** `#46` / `6777a92` + closeout `#48` /
-> `b77339f` (gap G9 **still open**); cycle-1 `#44`; N1.3 `#41`; P7 `#38`;
-> N0–N1.2; **M7**; O.8. Stale `prefer_bet=M7` is landed — never re-claim.
+> CT / **not** on-chain) + closeout `#53` / `bedb01e`; **G9-design** `#46` /
+> `6777a92` + closeout `#48` / `b77339f` (gap G9 **still open**); cycle-1
+> `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; **M7**; O.8. Stale `prefer_bet=M7`
+> is landed — never re-claim.
 >
 > **G10:** never dual-reopen N1.4, G9-design, cycle-1, N1.3, P7, N0, N1.1,
 > N1.2, M7, or O.8. No parallel live-RPC G9 dogfood while cycle-5 claim holds
@@ -24,9 +26,12 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `b253532` (PR **#49** N1.4 Merkle evidence log).
-> Prior closeout `#48` / `b77339f`; G9-design `#46` / `6777a92`. Claim **free**.
-> Settlements: **0**. Open product PRs: **none**.
+> **Tip of `origin/main`:** `bedb01e` (PR **#53** N1.4 plane closeout).
+> Product N1.4 `@b253532` (#49). Claim **building cycle-5** (#54).
+> Settlements: **0**. Gap G9 **still open**. Open product PR: **#54**.
+
+> **#53 docs closeout on main @ `bedb01e`.** Free claim post-N1.4 then
+> superseded by #54 claim hygiene this steward tick.
 
 > **N1.4 landed on main @ `b253532` (PR #49).** `veritas/notary/merkle.py` +
 > `log.py`; append on completed observe; free `GET /v1/log`, `GET /v1/log/proof`,

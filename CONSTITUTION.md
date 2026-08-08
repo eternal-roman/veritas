@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.2.** This file
+**The normative source is `veritas/constitution.py`, version 2.3.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -210,6 +210,19 @@ A facilitator that timed out may still have moved the funds. Recording that as
 a failure would understate revenue and would tell a buyer their payment did not
 go through when we do not know that.
 
+### A26 — Standing is what survives independent audit (L1)
+
+Counterparty standing is computed by the record holder from third-party-signed audit records, never by the audited party: an origin that could not be observed is never scored against a seller, a self-audit carries no independence, and any volume of records signed by one key counts as one auditor.
+
+Enforced by `tests/test_audit.py::test_unobserved_never_counts_for_or_against_a_seller`,
+`tests/test_audit.py::test_self_audit_is_excluded_from_independence_counts`, and
+`tests/test_audit.py::test_record_volume_from_one_key_counts_as_one_auditor`.
+This is the audit-layer form of the same three norms the service holds
+elsewhere: `unavailable` is not `no_evidence`, a self-report is not evidence,
+and independence is counted per witness, not per repetition (`veritas/audit.py`,
+`docs/program/FABLE_INSIGHTS.md`). What it does not establish: that the records
+a report was computed from are all the records that exist — that is G11.
+
 ---
 
 ## Aspirational articles
@@ -330,6 +343,17 @@ raises the cost of manipulation; it does not make the number verifiable by the
 buyer relying on it.
 
 Witness: `tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported`.
+
+### G11 — Survival reports are bounded by what auditors share (open, article A26)
+
+A survival report summarises the audit records provided to it, and nothing
+forces an unfavourable record into that set: whoever assembles the records can
+withhold divergence they observed. Divergence counts are therefore a floor,
+never a ceiling, and a clean report from a curated set is not proof of a clean
+history. Removing this requires auditor-side publication the seller cannot
+filter (the Merkle/anchor axis named in later N1 work).
+
+Witness: `tests/test_known_gaps.py::test_known_gap_survival_reports_are_bounded_by_what_auditors_share`.
 
 ### G8 — No financial ledger (closed, article A13)
 

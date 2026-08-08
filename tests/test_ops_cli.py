@@ -200,3 +200,52 @@ def test_reconcile_reports_one_problem_once(tmp_path, capsys):
     report = _run(capsys, "--runtime-dir", str(tmp_path), "reconcile")
     reasons = [item["reason"] for item in report["needs_attention"]]
     assert reasons == ["settlement_indeterminate"]
+
+
+def test_prune_reports_json_counts_against_tmp_runtime(tmp_path, capsys):
+    """O.6: veritas-ops prune ages custody + ledger with one cutoff; JSON only,
+    never claims chain contact."""
+    import json
+    import sqlite3
+    from datetime import datetime
+
+    from veritas.custody import CustodyStore, ReceiptPresence
+
+    ledger = Ledger(tmp_path)
+    _settled(ledger, "req-old", NONCE)
+    conn = sqlite3.connect(ledger.path)
+    conn.execute(
+        "UPDATE authorizations SET claimed_at = ?, updated_at = ? WHERE request_id = ?",
+        ("2020-01-01T00:00:00Z", "2020-01-01T00:00:00Z", "req-old"),
+    )
+    conn.commit()
+    conn.close()
+
+    store = CustodyStore(str(tmp_path))
+    store.save({
+        "request_id": "req-old", "query": "q", "status": "completed",
+        "custody_root": "sha256:r", "custody_valid": True, "evidence": [],
+    })
+    path = store.base_dir / "req-old.json"
+    body = json.loads(path.read_text(encoding="utf-8"))
+    body["stored_at"] = "2020-01-01T00:00:00Z"
+    path.write_text(json.dumps(body, indent=2), encoding="utf-8")
+
+    report = _run(capsys, "--runtime-dir", str(tmp_path), "prune", "--days", "30")
+    assert report["chain_checked"] is False
+    assert "G9" in report["limitation"]
+    assert report["custody"]["deleted"] == 1
+    assert report["ledger"]["authorizations_deleted"] == 1
+    assert store.lookup("req-old") is ReceiptPresence.GONE
+    assert ledger.authorization(NONCE) is None
+    # Fresh cutoff math is exercised; days is echoed for the operator.
+    assert report["retention_days"] == 30
+    datetime.fromisoformat(report["cutoff"].replace("Z", "+00:00"))
+
+
+def test_prune_rejects_nonsense_retention_without_mass_delete(tmp_path, capsys, monkeypatch):
+    monkeypatch.setenv("VERITAS_RETENTION_DAYS", "0")
+    code = main(["--runtime-dir", str(tmp_path), "prune"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["error"] == "retention_misconfigured"

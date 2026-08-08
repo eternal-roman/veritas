@@ -111,7 +111,50 @@ def test_query_validation_rejects_empty(free_client):
 
 
 def test_receipt_missing_returns_404(free_client):
-    assert free_client.get("/v1/receipts/does-not-exist").status_code == 404
+    r = free_client.get("/v1/receipts/does-not-exist")
+    assert r.status_code == 404
+    assert r.json()["error"] == "receipt_not_found"
+
+
+def test_receipt_pruned_returns_410_gone_not_404(free_client, tmp_path):
+    """O.6: known-but-pruned is 410 receipt_gone; never-seen stays 404.
+
+    Distinct envelopes so a buyer can trust the receipt endpoint after
+    retention has run — collapsing both to 404 makes audit impossible.
+    """
+    import json
+    from datetime import datetime, timezone
+
+    import veritas.server as main_module
+
+    store = main_module.store
+    record = store.save({
+        "request_id": "req-kept-then-pruned",
+        "query": "q",
+        "status": "completed",
+        "custody_root": "sha256:x",
+        "custody_valid": True,
+        "evidence": [],
+    })
+    assert record["persisted"] is True
+    assert free_client.get("/v1/receipts/req-kept-then-pruned").status_code == 200
+
+    path = store.base_dir / "req-kept-then-pruned.json"
+    body = json.loads(path.read_text(encoding="utf-8"))
+    body["stored_at"] = "2020-01-01T00:00:00Z"
+    path.write_text(json.dumps(body, indent=2), encoding="utf-8")
+    store.prune(datetime(2024, 1, 1, tzinfo=timezone.utc))
+
+    gone = free_client.get("/v1/receipts/req-kept-then-pruned")
+    assert gone.status_code == 410
+    assert gone.json()["error"] == "receipt_gone"
+    assert gone.json()["request_id"] == "req-kept-then-pruned"
+
+    missing = free_client.get("/v1/receipts/never-existed-at-all")
+    assert missing.status_code == 404
+    assert missing.json()["error"] == "receipt_not_found"
+    # Envelopes must stay distinct — same status family is not enough.
+    assert gone.json()["error"] != missing.json()["error"]
 
 
 def test_schema_endpoint_matches_real_pipeline_output(free_client):

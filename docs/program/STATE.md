@@ -140,10 +140,30 @@ committed and pushed survives. Update this file and push after every sub-step.
 > approved plan — building a paid notary on a payment path that charges
 > disconnected buyers (G6/R11) and keeps no ledger (G8/R5) multiplies the defect.
 
+## Innovation loop + overseer + guardian
+
+| Piece | Doc / entry |
+|-------|-------------|
+| Builder loop | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · `/workflow agent-commerce-flywheel` |
+| **Overseer (15m)** | [`OVERSEER.md`](OVERSEER.md) · `/workflow agent-commerce-overseer` · [`overseer/CURRENT.md`](overseer/CURRENT.md) |
+| Anti-handwave | [`GUARDIAN.md`](GUARDIAN.md) |
+| Schedules | [`CONTINUOUS.md`](CONTINUOUS.md) |
+
+```text
+/workflow agent-commerce-overseer
+/workflow agent-commerce-flywheel
+/workflow agent-commerce-flywheel {"prefer_bet": "O.6", "dry_run": true}
+```
+
+**Overseer** runs every 15 minutes: reviews ongoing work for honesty, laziness,
+and A2A commercial value; writes steering to `overseer/CURRENT.md`.  
+**Flywheel** hourly builds one bet under GUARDIAN. Neither auto-merges.
+Default bet: **NEXT ACTION** below.
+
 ## Resume protocol
 
 1. `git log --oneline -15` — see what actually landed.
-2. Read **NEXT ACTION** above.
+2. Read **NEXT ACTION** above, `GUARDIAN.md`, and the latest `cycles/` report.
 3. Run the battery to confirm the tree is green before continuing:
    ```bash
    python -m pytest tests/ -q
@@ -151,7 +171,8 @@ committed and pushed survives. Update this file and push after every sub-step.
    python -m veritas.evaluations.harness > /dev/null
    python -m veritas.evaluations.payment_model > /dev/null
    ```
-4. Continue from the first unchecked sub-step below.
+4. Prefer the flywheel for a full cycle; or continue from the first unchecked
+   sub-step below by hand.
 
 ## Program
 

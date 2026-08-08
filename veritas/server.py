@@ -27,7 +27,7 @@ from starlette.concurrency import run_in_threadpool
 
 from veritas import __version__
 from veritas.constitution import build_constitution
-from veritas.custody import CustodyStore
+from veritas.custody import CustodyStore, ReceiptPresence
 from veritas.deadline import (
     MIN_USABLE_SECONDS,
     SETTLEMENT_MARGIN_SECONDS,
@@ -720,13 +720,26 @@ async def verify(req: VerifyRequest):
 
 @app.get("/v1/receipts/{request_id}")
 async def receipt(request_id: str):
-    """Retrieve a stored custody record so results stay auditable after the call."""
-    record = store.load(request_id)
-    if record is None:
-        return JSONResponse(status_code=404, content=error_envelope(
-            ErrorCode.RECEIPT_NOT_FOUND, request_id=request_id,
+    """Retrieve a stored custody record so results stay auditable after the call.
+
+    200 — body present. 410 receipt_gone — we held it and retention deleted it.
+    404 receipt_not_found — never seen. Collapsing pruned ids into 404 would
+    make the endpoint unusable as an audit surface (O.6 / O10).
+    """
+    presence = store.lookup(request_id)
+    if presence is ReceiptPresence.PRESENT:
+        record = store.load(request_id)
+        if record is not None:
+            return record
+        # Race: pruned between lookup and load → gone, not unknown.
+        presence = store.lookup(request_id)
+    if presence is ReceiptPresence.GONE:
+        return JSONResponse(status_code=410, content=error_envelope(
+            ErrorCode.RECEIPT_GONE, request_id=request_id,
         ))
-    return record
+    return JSONResponse(status_code=404, content=error_envelope(
+        ErrorCode.RECEIPT_NOT_FOUND, request_id=request_id,
+    ))
 
 
 @app.get("/v1/trust")

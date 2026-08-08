@@ -269,3 +269,112 @@ def test_settled_amounts_sum_atomic_units_not_floats(tmp_path):
         ledger.record_settlement(rid, outcome="settled", transaction=f"0x{i}")
     key = "eip155:84532/" + OFFER["asset"]
     assert ledger.summary()["settled_amounts"][key] == "2"
+
+
+# -- O.6 retention prune ----------------------------------------------------
+
+
+def _backdate_auth(ledger: Ledger, request_id: str, when: str = "2020-01-01T00:00:00Z") -> None:
+    import sqlite3
+
+    conn = sqlite3.connect(ledger.path)
+    try:
+        conn.execute(
+            "UPDATE authorizations SET claimed_at = ?, updated_at = ? WHERE request_id = ?",
+            (when, when, request_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def test_prune_deletes_aged_settled_and_abandoned_cascades(tmp_path):
+    """Settled and abandoned past the cutoff are removed with deliveries,
+    settlements and usage. Fresh settled rows survive."""
+    from datetime import datetime, timezone
+
+    from veritas.metering import Usage
+
+    ledger = Ledger(tmp_path)
+    _delivered(ledger, "req-old", NONCE)
+    ledger.record_settlement("req-old", outcome="settled", transaction="0xold")
+    ledger.record_usage(Usage(
+        request_id="req-old", status="completed", billable=True, paid=True,
+        provider_calls={"serper": 1}, evidence_bytes=1, duration_ms=1,
+    ))
+    _backdate_auth(ledger, "req-old")
+
+    ledger.claim(OTHER_NONCE, "req-abandoned", **OFFER)
+    ledger.record_delivery(
+        "req-abandoned", status="unavailable", billable=False,
+        custody_root="sha256:r", query="q", response={},
+    )
+    _backdate_auth(ledger, "req-abandoned")
+
+    fresh_nonce = "0x" + "11" * 32
+    _delivered(ledger, "req-fresh", fresh_nonce)
+    ledger.record_settlement("req-fresh", outcome="settled", transaction="0xfresh")
+
+    report = ledger.prune(datetime(2024, 1, 1, tzinfo=timezone.utc))
+    assert report["authorizations_deleted"] == 2
+    assert report["deliveries_deleted"] == 2
+    assert ledger.authorization(NONCE) is None
+    assert ledger.authorization(OTHER_NONCE) is None
+    assert ledger.authorization(fresh_nonce) is not None
+    assert ledger.deliverable("req-fresh") is not None
+    assert ledger.summary()["settled_count"] == 1
+
+
+def test_prune_leaves_indeterminate_untouched_and_still_not_failed(tmp_path):
+    """Indeterminate is exposure, not a terminal settled row. Prune must not
+    invent failure or drop the row."""
+    from datetime import datetime, timezone
+
+    ledger = Ledger(tmp_path)
+    _delivered(ledger)
+    ledger.record_settlement("req-1", outcome="indeterminate", reason="timeout")
+    _backdate_auth(ledger, "req-1")
+
+    report = ledger.prune(datetime(2024, 1, 1, tzinfo=timezone.utc))
+    assert report["authorizations_deleted"] == 0
+    auth = ledger.authorization(NONCE)
+    assert auth is not None
+    assert auth.state == NonceState.INDETERMINATE
+    assert auth.state != NonceState.SETTLEMENT_FAILED
+    summary = ledger.summary()
+    assert summary["indeterminate_count"] == 1
+    assert summary["failed_count"] == 0
+
+
+def test_prune_never_updates_settlement_outcomes(tmp_path):
+    """Retention deletes rows; it does not rewrite outcomes on retained ones."""
+    from datetime import datetime, timezone
+
+    ledger = Ledger(tmp_path)
+    _delivered(ledger)
+    ledger.record_settlement("req-1", outcome="indeterminate", reason="timeout")
+    before = ledger.settlements("req-1")
+    ledger.prune(datetime(2024, 1, 1, tzinfo=timezone.utc))
+    after = ledger.settlements("req-1")
+    assert after == before
+    assert after[0]["outcome"] == "indeterminate"
+
+
+def test_prune_leaves_delivered_and_settlement_failed(tmp_path):
+    from datetime import datetime, timezone
+
+    ledger = Ledger(tmp_path)
+    _delivered(ledger, "req-d", NONCE)
+    _backdate_auth(ledger, "req-d")
+    ledger.claim(OTHER_NONCE, "req-f", **OFFER)
+    ledger.record_delivery(
+        "req-f", status="completed", billable=True, custody_root="sha256:r",
+        query="q", response={},
+    )
+    ledger.record_settlement("req-f", outcome="failed", reason="x")
+    _backdate_auth(ledger, "req-f")
+
+    report = ledger.prune(datetime(2024, 1, 1, tzinfo=timezone.utc))
+    assert report["authorizations_deleted"] == 0
+    assert ledger.authorization(NONCE).state == NonceState.DELIVERED
+    assert ledger.authorization(OTHER_NONCE).state == NonceState.SETTLEMENT_FAILED

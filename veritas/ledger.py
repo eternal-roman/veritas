@@ -68,6 +68,7 @@ from pathlib import Path
 from typing import Any
 
 from .metering import UNPRICED, CostTable, Usage, cost_of
+from .retention import is_expired
 from .x402 import NONCE_RE, USDC_ASSETS
 
 _DEFAULT_RUNTIME_DIR = ".veritas_runtime"
@@ -84,6 +85,14 @@ class NonceState(str, Enum):
     SETTLEMENT_FAILED = "settlement_failed"
     ABANDONED = "abandoned"
 
+
+#: Authorization states that may be deleted after the retention window.
+#: Open exposure (delivered / indeterminate / settlement_failed / claimed)
+#: is never pruned: redelivery and operator reconcile still need those rows.
+_PRUNABLE_STATES = frozenset({
+    NonceState.SETTLED.value,
+    NonceState.ABANDONED.value,
+})
 
 #: States in which a replayed authorization is answered with the deliverable
 #: it already bought rather than a 409. `indeterminate` is included on
@@ -697,6 +706,111 @@ class Ledger:
             "unsettled_count": states[NonceState.DELIVERED.value],
             "settled_amounts": {k: str(v) for k, v in sorted(amounts.items())},
             "states": dict(states),
+        }
+
+    # -- retention ----------------------------------------------------------
+
+    def prune(self, cutoff: datetime | str) -> dict[str, int]:
+        """Delete aged settled/abandoned authorizations and their cascades.
+
+        Never rewrites settlement outcomes: indeterminate stays distinguishable
+        from failed, and rows in open-exposure states are left alone so
+        redelivery and reconcile still work. Orphan free-mode usage rows older
+        than the cutoff are removed so metering cannot grow unbounded either.
+
+        Returns counts only. Not for the request path.
+        """
+        empty = {
+            "authorizations_deleted": 0,
+            "deliveries_deleted": 0,
+            "settlements_deleted": 0,
+            "usage_deleted": 0,
+        }
+        if isinstance(cutoff, str):
+            from .retention import parse_utc
+
+            parsed = parse_utc(cutoff)
+            if parsed is None:
+                raise ValueError(f"unusable prune cutoff: {cutoff!r}")
+            cutoff_dt = parsed
+        else:
+            cutoff_dt = cutoff
+            if cutoff_dt.tzinfo is None:
+                cutoff_dt = cutoff_dt.replace(tzinfo=timezone.utc)
+            else:
+                cutoff_dt = cutoff_dt.astimezone(timezone.utc)
+
+        try:
+            conn = self._connect()
+        except LedgerUnavailable:
+            return empty
+        authorizations_deleted = 0
+        deliveries_deleted = 0
+        settlements_deleted = 0
+        usage_deleted = 0
+        try:
+            with conn:
+                conn.execute("BEGIN IMMEDIATE")
+                # Select candidates in Python so is_expired's unparseable-skip
+                # rule matches custody; SQLite text compare would delete them.
+                rows = conn.execute(
+                    "SELECT request_id, state, updated_at FROM authorizations"
+                    " WHERE state IN (?, ?)",
+                    tuple(_PRUNABLE_STATES),
+                ).fetchall()
+                doomed = [
+                    row["request_id"] for row in rows
+                    if is_expired(row["updated_at"], cutoff_dt)
+                ]
+
+                if doomed:
+                    placeholders = ",".join("?" * len(doomed))
+                    deliveries_deleted = conn.execute(
+                        f"DELETE FROM deliveries WHERE request_id IN ({placeholders})",  # nosec B608
+                        doomed,
+                    ).rowcount
+                    settlements_deleted = conn.execute(
+                        f"DELETE FROM settlements WHERE request_id IN ({placeholders})",  # nosec B608
+                        doomed,
+                    ).rowcount
+                    usage_deleted = conn.execute(
+                        f"DELETE FROM usage WHERE request_id IN ({placeholders})",  # nosec B608
+                        doomed,
+                    ).rowcount
+                    authorizations_deleted = conn.execute(
+                        f"DELETE FROM authorizations WHERE request_id IN ({placeholders})",  # nosec B608
+                        doomed,
+                    ).rowcount
+
+                # Free-mode usage has no authorization row; age it on its own
+                # timestamp so the metering table cannot grow without bound.
+                orphan_usage = conn.execute(
+                    "SELECT request_id, recorded_at FROM usage u"
+                    " WHERE NOT EXISTS ("
+                    "   SELECT 1 FROM authorizations a"
+                    "   WHERE a.request_id = u.request_id"
+                    " )"
+                ).fetchall()
+                orphan_ids = [
+                    r["request_id"] for r in orphan_usage
+                    if is_expired(r["recorded_at"], cutoff_dt)
+                ]
+                if orphan_ids:
+                    placeholders = ",".join("?" * len(orphan_ids))
+                    usage_deleted += conn.execute(
+                        f"DELETE FROM usage WHERE request_id IN ({placeholders})",  # nosec B608
+                        orphan_ids,
+                    ).rowcount
+        except (sqlite3.Error, OSError):
+            return empty
+        finally:
+            conn.close()
+
+        return {
+            "authorizations_deleted": max(0, authorizations_deleted),
+            "deliveries_deleted": max(0, deliveries_deleted),
+            "settlements_deleted": max(0, settlements_deleted),
+            "usage_deleted": max(0, usage_deleted),
         }
 
 

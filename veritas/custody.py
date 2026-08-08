@@ -8,8 +8,11 @@ import os
 import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from enum import Enum
 from pathlib import Path
 from typing import Any
+
+from .retention import is_expired
 
 
 def _now() -> str:
@@ -149,6 +152,19 @@ def is_safe_request_id(request_id: object) -> bool:
     return isinstance(request_id, str) and _SAFE_REQUEST_ID.match(request_id) is not None
 
 
+class ReceiptPresence(str, Enum):
+    """What `lookup` knows about a request id.
+
+    `present` — body on disk and loadable.
+    `gone`    — we once held it and retention deleted it (tombstone remains).
+    `unknown` — never seen, or the id is not a safe filename.
+    """
+
+    PRESENT = "present"
+    GONE = "gone"
+    UNKNOWN = "unknown"
+
+
 class CustodyStore:
     """Durable custody receipts.
 
@@ -156,10 +172,19 @@ class CustodyStore:
     fact, which defeats the point of custody: the buyer's verification step in
     the workflow happens *after* the response is returned. Receipts are written
     as JSON so a result stays checkable for its retention window.
+
+    When that window ends, `prune` deletes the body and leaves a durable
+    tombstone so `GET /v1/receipts/{id}` can answer 410 Gone rather than
+    collapsing "we deleted this" into 404 "never existed". Tombstones are never
+    pruned: re-deleting them would reintroduce the 410→404 collapse.
     """
 
     def __init__(self, base_dir: str | None = None):
-        self.base_dir = Path(base_dir or os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime")) / "receipts"
+        runtime = Path(base_dir or os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
+        self.base_dir = runtime / "receipts"
+        # Sibling of receipts, not a child: a recursive wipe of the receipt
+        # directory must not take the tombstones with it.
+        self.tombstone_dir = runtime / "receipt_tombstones"
 
     def save(self, result: dict[str, Any]) -> dict[str, Any]:
         record = {
@@ -180,6 +205,10 @@ class CustodyStore:
             if path is None:
                 raise ValueError("unsafe request_id")
             _atomic_write(path, json.dumps(record, indent=2))
+            # A re-saved id is live again; drop any prior gone mark.
+            tomb = self._tombstone_path(record["request_id"])
+            if tomb is not None:
+                tomb.unlink(missing_ok=True)
             record["persisted"] = True
         except ValueError:
             record["persisted"] = False
@@ -193,20 +222,20 @@ class CustodyStore:
             record["error"] = f"receipt_not_persisted_{type(exc).__name__}"
         return record
 
-    def _receipt_path(self, request_id: object) -> Path | None:
-        """The path a receipt id names, or None if it does not name one.
+    def _contained_path(self, directory: Path, request_id: object, suffix: str) -> Path | None:
+        """Filename under `directory` for a safe request id, or None.
 
-        Two independent guards, because they fail differently. The allowlist
-        rejects anything that is not a filename we would mint, and runs before
-        a path exists at all. The containment check then re-derives the name
-        with `basename` and requires the resolved result to sit directly in the
-        receipt directory — so even if the pattern were later loosened, or a
-        symlink were planted in the directory, the read still cannot leave it.
+        Same two guards as the original receipt path helper: allowlist first,
+        then containment after realpath, so no wire id can name a file outside
+        the intended directory on any platform. Does not create directories:
+        lookup must not mkdir on attacker-controlled ids.
         """
         if not is_safe_request_id(request_id):
             return None
-        name = os.path.basename(f"{request_id}.json")
-        base = os.path.realpath(self.base_dir)
+        name = os.path.basename(f"{request_id}{suffix}")
+        # realpath on a not-yet-created directory still yields a stable parent
+        # path on every platform we support; missing files just fail the open.
+        base = os.path.realpath(directory)
         candidate = os.path.realpath(os.path.join(base, name))
         # Compare as normalised strings with the separator appended: a bare
         # prefix test would accept a sibling directory whose name merely starts
@@ -216,6 +245,28 @@ class CustodyStore:
         if os.path.dirname(candidate) != base or os.path.basename(candidate) != name:
             return None
         return Path(candidate)
+
+    def _receipt_path(self, request_id: object) -> Path | None:
+        """The path a receipt id names, or None if it does not name one."""
+        return self._contained_path(self.base_dir, request_id, ".json")
+
+    def _tombstone_path(self, request_id: object) -> Path | None:
+        """The path a tombstone for this id would occupy, or None if unsafe."""
+        return self._contained_path(self.tombstone_dir, request_id, ".json")
+
+    def lookup(self, request_id: str) -> ReceiptPresence:
+        """Classify an id as present, gone (pruned), or unknown (never seen).
+
+        Unsafe ids are unknown: they never name a receipt we would mint, so
+        they are not "gone" either. Path guards still run on every branch.
+        """
+        path = self._receipt_path(request_id)
+        if path is not None and path.is_file():
+            return ReceiptPresence.PRESENT
+        tomb = self._tombstone_path(request_id)
+        if tomb is not None and tomb.is_file():
+            return ReceiptPresence.GONE
+        return ReceiptPresence.UNKNOWN
 
     def load(self, request_id: str) -> dict[str, Any] | None:
         # Resolve before opening, never after: a check that runs after the read
@@ -227,3 +278,77 @@ class CustodyStore:
             return json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None
+
+    def prune(self, cutoff: datetime | str) -> dict[str, int]:
+        """Delete receipt bodies older than `cutoff`; leave durable tombstones.
+
+        Returns counts only. Unparseable `stored_at` values are skipped, not
+        deleted. Tombstones already on disk are never removed. Not for the
+        request path — call from ops on a schedule.
+        """
+        if isinstance(cutoff, str):
+            from .retention import parse_utc
+
+            parsed = parse_utc(cutoff)
+            if parsed is None:
+                raise ValueError(f"unusable prune cutoff: {cutoff!r}")
+            cutoff_dt = parsed
+        else:
+            cutoff_dt = cutoff
+            if cutoff_dt.tzinfo is None:
+                cutoff_dt = cutoff_dt.replace(tzinfo=timezone.utc)
+            else:
+                cutoff_dt = cutoff_dt.astimezone(timezone.utc)
+
+        deleted = 0
+        tombstoned = 0
+        skipped = 0
+        if not self.base_dir.is_dir():
+            return {"deleted": 0, "tombstoned": 0, "skipped": 0}
+
+        try:
+            self.tombstone_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return {"deleted": 0, "tombstoned": 0, "skipped": 0}
+
+        for path in list(self.base_dir.iterdir()):
+            if not path.is_file() or not path.name.endswith(".json"):
+                continue
+            if path.name.startswith("."):
+                continue
+            request_id = path.name[: -len(".json")]
+            if not is_safe_request_id(request_id):
+                skipped += 1
+                continue
+            # Refuse to act on a path that fails containment for this id —
+            # same guard as load/lookup.
+            if self._receipt_path(request_id) is None:
+                skipped += 1
+                continue
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                skipped += 1
+                continue
+            if not is_expired(record.get("stored_at"), cutoff_dt):
+                skipped += 1
+                continue
+            tomb_path = self._tombstone_path(request_id)
+            if tomb_path is None:
+                skipped += 1
+                continue
+            marker = {
+                "request_id": request_id,
+                "stored_at": record.get("stored_at"),
+                "pruned_at": _now(),
+                "status": "gone",
+            }
+            try:
+                _atomic_write(tomb_path, json.dumps(marker, indent=2))
+                path.unlink(missing_ok=True)
+            except OSError:
+                skipped += 1
+                continue
+            deleted += 1
+            tombstoned += 1
+        return {"deleted": deleted, "tombstoned": tombstoned, "skipped": skipped}

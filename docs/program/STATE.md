@@ -5,26 +5,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: cycle-5 ecosystem dogfood only** — independent participant
-> path using published verify/pack/log surfaces (axis F). Smallest shippable
-> script + report + CI wire like cycles 1–4. Claim free post-N1.4; one claim
-> when build starts.
+> **Do this next: cycle-5 dogfood — ecosystem participant.**
 >
-> **On main (do not re-open):** **N1.4** `#49` / `b253532` (operator-local
-> Merkle evidence log + free `/v1/log*` + MCP inclusion verify — **not** public
-> CT / **not** on-chain); **G9-design** `#46` / `6777a92` + closeout `#48` /
-> `b77339f` (gap G9 **still open**); cycle-1 `#44`; N1.3 `#41`; P7 `#38`;
-> N0–N1.2; **M7**; O.8. Stale `prefer_bet=M7` is landed — never re-claim.
+> **On main (do not re-open):** N1.4 `#49` / `b253532` and prior spine.
 >
-> **G10:** never dual-reopen N1.4, G9-design, cycle-1, N1.3, P7, N0, N1.1,
-> N1.2, M7, or O.8. No parallel live-RPC G9 dogfood while cycle-5 claim holds
-> unless Overseer severity outranks in writing.
->
-> **Parked:** live RPC G9 dogfood; bazaar; settlements **0**.
+> **Cycle-5 scope:** peer discovery + standalone verifier + pack/Merkle offline
+> + trust-not-authz. Settlements **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `b253532` (PR **#49** N1.4 Merkle evidence log).
+> **Tip of `origin/main`:** `b253532` (#49). Claim **cycle-5 building**. Settlements: **0**.
 > Prior closeout `#48` / `b77339f`; G9-design `#46` / `6777a92`. Claim **free**.
 > Settlements: **0**. Open product PRs: **none**.
 

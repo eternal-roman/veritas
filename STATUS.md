@@ -38,7 +38,7 @@ file described a system that did not import.
 | Evidence notary (N0 observe + /v1/notarize) | Working, L1+CI: one engine, SSRF-safe fetch, inv.3 on notarize. Not live facilitator notarize settle; not on-chain |
 | EIP-191 attestation (N1.1) + free verify (N1.2) | Working, L1+CI: optional operator sign; free /v1/attestations/verify. Not multi-party origin proof; not on-chain |
 | Origin re-fetch verify (P7 product) | Working, L1+CI: url+hash or receipt request_id re-fetches via observe. Legacy content+hash labeled caller_supplied |
-| Portable EvidencePack (N1.3) + Merkle log (N1.4) | Working, L1+CI: pack_hash handoff; operator-local inclusion proofs. Not public CT; not on-chain |
+| Portable EvidencePack (N1.3) + Merkle log (N1.4/N1.5 inclusion on observe) + inclusion on observe (N1.5) | Working, L1+CI: pack_hash handoff; operator-local inclusion proofs. Not public CT; not on-chain |
 | Dogfood cycles 1-5 | Working, CI-gated: first-boot, paying buyer, hostile, operator economics, ecosystem peer. Offline / no chain |
 | G9 chain reconcile design | Design + fail-closed ops surface shipped. Gap G9 open; no production RPC required by default |
 

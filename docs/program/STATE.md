@@ -5,18 +5,15 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: N1.5 — embed Merkle inclusion proof on completed observe.**
+> **Do this next: version 0.8.1 prep** (patch for N1.5 on observe).
 >
-> **On main (do not re-open):** v0.8.0 `#58` / `58beccc` + closeout `#59` /
-> `e5092ca`; N1.4 `#49`; cycle-5 `#54`; G9-design; P7; N0–N1.3.
+> **On main:** N1.5 `#60` / `e089f86`; v0.8.0 `#58` / `58beccc`.
 >
-> **N1.5 scope:** `evidence_log.inclusion_proof` on observe/notarize envelope
-> so peers verify membership offline without GET /v1/log/proof. **Not** public
-> CT; **not** on-chain. Settlements **0**.
+> **Scope:** `veritas.__version__ = 0.8.1` + CHANGELOG. Settlements **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `e5092ca` (#59). Claim **N1.5 building**. Settlements: **0**.
+> **Tip of `origin/main`:** `e089f86` (#60 N1.5). Claim **0.8.1 prep**. Settlements: **0**.
 > Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
 >
 > **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;

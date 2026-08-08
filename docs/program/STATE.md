@@ -5,32 +5,29 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, N1.5 anchors, or other singular).
-> **G10:** never dual-reopen **cycle-5**, **N1.4**, **G9-design surface**,
-> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: claim free — Overseer singular NEXT only.** Default parked
+> candidate is **live-RPC G9 dogfood** (needs `VERITAS_RPC_URL` / chain egress
+> this sandbox lacks). Do **not** invent dual product. Do **not** re-open
+> **cycle-5**, **N1.4**, **G9-design surface**, **cycle-1**, **N1.3**, **P7**,
+> **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**. Stale `prefer_bet=M7` is landed.
 >
-> **cycle-5 is on main** — `#54` / `bf09a99`: ecosystem participant dogfood
-> (discovery + offline verify path, pack/Merkle, trust-not-authz). **Not**
-> foreign live venue; **not** on-chain. Settlements **0**.
+> **On main this window:** cycle-5 `#54` / `bf09a99` (7/7 offline ecosystem
+> dogfood); N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap still open);
+> spine through cycle-1. Settlements **0**.
 >
-> **Also on main:** N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap
-> G9 **still open**); cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
->
-> Still deliberately not done: live RPC confirmation; SBOM unsigned;
-> settlements **0**.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository, and no amount of local green changes it.
+> **Parked:** live RPC G9 close; bazaar/X1/X3/X6; public CT; multi-instance log.
 
 ## Progress log
 
 > **Tip of `origin/main`:** `bf09a99` (PR **#54** cycle-5 ecosystem dogfood).
-> Claim **free**. Settlements: **0**. Gap G9 **still open**.
->
-> **cycle-5 landed on main @ `bf09a99` (PR #54).** Offline ecosystem participant
-> dogfood (discovery + verify path). **Not proven:** live multi-venue; on-chain (0).
->
+> Claim **free**. Settlements: **0**. Open product PRs: **none**.
+
+> **cycle-5 landed on main @ `bf09a99` (PR #54).** Offline ecosystem peer path:
+> discovery traversal, constitution G9 disclosed, standalone verifier, pack +
+> Merkle inclusion offline, trust-not-authz, diligence import, no outbound in
+> script. Report 7/7 `docs/dogfood/cycle5/report.json`. **Not proven:** live
+> foreign venue; blank-machine PyPI; on-chain settlements (still **0**).
+
 > **N1.4 landed on main @ `b253532` (PR #49).** Operator-local Merkle log.
 > **Not proven:** public CT; multi-operator; on-chain (still **0**).
 >

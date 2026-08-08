@@ -1,36 +1,23 @@
 """Evidence notary: observe-once records of what a URL served at time T.
 
-N0 ships fetch, extract, record, licence/robots policy, and observe compose.
-N1.1 adds optional EIP-191 attestation of bound record fields when an
-operator signing key is configured. Merkle log, anchors, and re-fetch
-verify remain later N1 work — not claimed here.
-
-Import observation from the submodule so package attributes never shadow
-module paths used by pipeline, server, and tests::
+Import from submodules only — do not bind submodule names on this package
+object (that shadows ``veritas.notary.<submodule>`` and breaks imports /
+monkeypatch targets)::
 
     from veritas.notary.observe import observe
     from veritas.notary.fetch import fetch
 
-Research routes URL observation through ``observe`` when
-``observe_urls=True`` (one engine — never a second scraper).
+Surface map (one engine; research ``observe_urls`` routes through observe):
+
+* N0 — fetch, extract, record, licence/robots, observe, POST /v1/notarize
+* N1.1 — optional EIP-191 attestation (``sign``)
+* N1.2 — free attestation verify
+* N1.3 — portable EvidencePack (``pack``)
+* N1.4 — operator-local Merkle evidence log (``log`` / ``merkle``)
+* N1.5 — inclusion proof embedded on completed observe
+* P7 — origin re-fetch verify (``refetch``)
+
+Public transparency log and on-chain anchors remain unclaimed.
 """
 
-# Do not re-export symbols whose names match submodule names (fetch, observe,
-# extract, record, license, robots). Binding those on the package object
-# shadows `veritas.notary.<submodule>` attribute access and breaks
-# `from veritas.notary.observe import observe` / monkeypatch targets.
-from .fetch import (
-    DEFAULT_TIMEOUT_SECONDS,
-    MAX_BODY_BYTES,
-    USER_AGENT,
-    FetchError,
-    FetchResult,
-)
-
-__all__ = [
-    "DEFAULT_TIMEOUT_SECONDS",
-    "MAX_BODY_BYTES",
-    "USER_AGENT",
-    "FetchError",
-    "FetchResult",
-]
+__all__: list[str] = []

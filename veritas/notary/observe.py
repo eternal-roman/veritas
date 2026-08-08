@@ -208,13 +208,11 @@ def observe(
         )
 
     # --- fetch ---------------------------------------------------------------
-    try:
-        fetched = fetch_impl(url, **fetch_kwargs)
-    except UnsafeUrlError as exc:
+    def _fetch_unavailable(reason: str, exc: BaseException) -> dict[str, Any]:
         # Type name only — no exception text on the wire (CodeQL / 4f2321c).
         err_type = type(exc).__name__
         ledger.append("unavailable", "notary.observe", {
-            "reason": "url_refused",
+            "reason": reason,
             "detail": err_type,
         })
         meta = {
@@ -239,62 +237,15 @@ def observe(
             refusal_reason="fetch_unavailable",
             retrieval_meta=meta,
         )
+
+    try:
+        fetched = fetch_impl(url, **fetch_kwargs)
+    except UnsafeUrlError as exc:
+        return _fetch_unavailable("url_refused", exc)
     except FetchError as exc:
-        err_type = type(exc).__name__
-        ledger.append("unavailable", "notary.observe", {
-            "reason": "fetch_failed",
-            "detail": err_type,
-        })
-        meta = {
-            **empty_retrieval,
-            "errors": [{
-                "provider": "notary",
-                "error_type": err_type,
-                "detail": err_type,
-            }],
-            "degraded": True,
-            "unavailable": True,
-        }
-        return _envelope(
-            request_id=request_id,
-            url=url,
-            status="unavailable",
-            billable=False,
-            ledger=ledger,
-            policy=policy,
-            evidence_record=None,
-            evidence=[],
-            refusal_reason="fetch_unavailable",
-            retrieval_meta=meta,
-        )
+        return _fetch_unavailable("fetch_failed", exc)
     except Exception as exc:  # noqa: BLE001 - converted to unavailable
-        err_type = type(exc).__name__
-        ledger.append("unavailable", "notary.observe", {
-            "reason": "fetch_failed",
-            "detail": err_type,
-        })
-        meta = {
-            **empty_retrieval,
-            "errors": [{
-                "provider": "notary",
-                "error_type": err_type,
-                "detail": err_type,
-            }],
-            "degraded": True,
-            "unavailable": True,
-        }
-        return _envelope(
-            request_id=request_id,
-            url=url,
-            status="unavailable",
-            billable=False,
-            ledger=ledger,
-            policy=policy,
-            evidence_record=None,
-            evidence=[],
-            refusal_reason="fetch_unavailable",
-            retrieval_meta=meta,
-        )
+        return _fetch_unavailable("fetch_failed", exc)
 
     content_type = fetched.headers.get("content-type")
     extracted = extract_body(fetched.body, content_type=content_type)
@@ -368,32 +319,25 @@ def observe(
             "signer": attestation.get("signer"),
             "content_hash": content_hash,
         })
-    # N1.4: append content_hash to operator-local Merkle log before envelope
-    # so custody can record the log event; leaf is the stable record hash
-    # (not pack_hash, which depends on custody_root).
-    # N1.5: include the full inclusion proof so a peer agent can verify
-    # membership offline without a second GET /v1/log/proof hop.
-    evidence_log_meta: dict[str, Any] | None = None
-    try:
-        from veritas.notary.log import EvidenceLogError, default_evidence_log
+    # N1.4/N1.5: append content_hash + embed inclusion proof. Fail closed —
+    # content_hash is always sha256: on this path; soft-omit was multi-worker residue.
+    from veritas.notary.log import default_evidence_log
 
-        log = default_evidence_log()
-        log_entry = log.append(content_hash)
-        proof = log.proof(int(log_entry["index"]))
-        evidence_log_meta = {
-            "index": log_entry["index"],
-            "root": log_entry["root"],
-            "leaf": log_entry["leaf"],
-            "note": log_entry["note"],
-            "inclusion_proof": proof,
-        }
-        ledger.append("logged", "notary.log", {
-            "index": log_entry["index"],
-            "root": log_entry["root"],
-            "leaf": log_entry["leaf"],
-        })
-    except EvidenceLogError:
-        evidence_log_meta = None
+    log = default_evidence_log()
+    log_entry = log.append(content_hash)
+    proof = log.proof(int(log_entry["index"]))
+    evidence_log_meta = {
+        "index": log_entry["index"],
+        "root": log_entry["root"],
+        "leaf": log_entry["leaf"],
+        "note": log_entry["note"],
+        "inclusion_proof": proof,
+    }
+    ledger.append("logged", "notary.log", {
+        "index": log_entry["index"],
+        "root": log_entry["root"],
+        "leaf": log_entry["leaf"],
+    })
     envelope = _envelope(
         request_id=request_id,
         url=url,
@@ -408,14 +352,11 @@ def observe(
         evidence_hashes_valid=hashes_valid,
         attestation=attestation,
     )
-    try:
-        from veritas.notary.pack import EvidencePackError, pack_from_observation
+    # N1.3: completed observations always carry a pack. Fail closed.
+    from veritas.notary.pack import pack_from_observation
 
-        envelope["evidence_pack"] = pack_from_observation(envelope)
-    except EvidencePackError:
-        pass
-    if evidence_log_meta is not None:
-        envelope["evidence_log"] = evidence_log_meta
+    envelope["evidence_pack"] = pack_from_observation(envelope)
+    envelope["evidence_log"] = evidence_log_meta
     return envelope
 
 

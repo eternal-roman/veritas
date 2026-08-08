@@ -1,22 +1,24 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T20:40:00Z (cycle-1 post-merge closeout)
-- **origin/main:** **`2cbed44`** — **cycle-1 #44** cold install dogfood squash-merged. Prior: N1.3 `622429c`, docs #39 `330bf68`, P7 `4697c8d`, N1.2 `32d1054`, N1.1 `db04ae2`, N0 `4cd2d0c`.
-- **Open PRs:** **none**
-- **Momentum score:** **3** — cycle-1 product shipped this window; claim free; plane tip-aligned
+- **Time:** 2026-08-08T21:00:00Z (continuous autonomous cycle 6)
+- **origin/main:** **`6777a92`** — **G9-design #46** fail-closed chain reconcile on tip. Prior: docs #45 `df1cc8f`, cycle-1 #44 `2cbed44`, N1.3 `622429c`, P7 `4697c8d`.
+- **Open PRs:** **none** product. Docs #47 closed superseded (CONFLICTING post-#46).
+- **Momentum score:** **3** — product G9-design shipped this window; claim free; next bet named (N1.4 Merkle)
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free post-cycle-1). Await Overseer single NEXT (G9 design | Merkle anchors | other). **Do not re-open cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7.**
+- **Primary bet:** **N1.4 Merkle / inclusion anchors** (PRODUCT_ORG #2 post-G9-design). **Stale prefer_bet=M7 ignored** (M7 landed `#23`/`#28`). Do **not** re-open G9-design / cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** until Overseer names singular NEXT — no invent dual
-- **Last action:** stocked #44 MERGED @ `2cbed44`; freed claim; advanced STATE NEXT past cycle-1; restocked conductor cards
-- **Next expected:** Overseer restock + one NEXT → one claim → Pruner G13 → green merge
+- **Recursive restart:** **Yes** — queue clear, claim free, singular NEXT = N1.4; kick implement×3 (or flywheel) on Merkle only
+- **Last action:** stocked #46 MERGED @ `6777a92` (CI all SUCCESS); closed stale #47; local G13 post-confirm (chain_reconcile 9/9, reconcile-chain fail-closed, payment_model I1–I7); freed claim; advanced STATE to N1.4
+- **Next expected:** claim N1.4 → implement×3 integrate → Pruner G13 ship_ok → green CI → merge-on-green
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: cycle-1 on main @ 2cbed44 (#44 MERGED); open product PRs none; claim free; STATE NEXT claim-free
+PROPERTY: tip 6777a92 (#46 MERGED); claim free; open product PRs none; NEXT N1.4 Merkle;
+          stale prefer_bet=M7 not restarted; settlements 0; G9 gap still open
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: 2cbed44; #44 MERGED; gh pr list empty; flywheel-claim free; scripts/dogfood_cycle1.py; docs/dogfood/cycle1/report.json 7/7
-ASSUMPTIONS: Overseer assigns next single bet; G13 before next ship
-NOT PROVEN: blank-machine PyPI cold install (package job owns that); on-chain settlements (0)
+CHECKED ARTIFACT: origin/main 6777a92; gh pr #46 MERGED; #47 closed; flywheel-claim free;
+  tests/test_chain_reconcile.py 9 passed; veritas-ops reconcile-chain rpc_not_configured
+ASSUMPTIONS: Overseer concurs N1.4; G13 heavy before next product ship; n=3 on one claim only
+NOT PROVEN: G9 closed; live RPC; on-chain settlements (0); Merkle not yet built
 ```

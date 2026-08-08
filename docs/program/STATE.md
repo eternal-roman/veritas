@@ -5,25 +5,32 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: G9 design — chain reconcile fail-closed surface (#46 only).**
+> **Do this next: N1.4 Merkle / inclusion anchors only** — append-only evidence
+> log + RFC-6962-style Merkle batches + inclusion proofs for EvidencePack /
+> notary records. Smallest shippable product-worth slice (axis D). Claim free
+> post-G9-design; one claim when build starts.
 >
-> **On main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout `#45` /
-> `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
+> **On main (do not re-open):** **G9-design** `#46` / `6777a92` (fail-closed
+> `veritas/chain_reconcile.py` + `veritas-ops reconcile-chain` — gap G9 **still
+> open** without RPC); cycle-1 `#44` / `2cbed44` + closeout `#45` / `df1cc8f`;
+> N1.3 `#41`; P7 `#38`; N0–N1.2; **M7**; O.8. Stale `prefer_bet=M7` is landed —
+> never re-claim.
 >
-> **G9 scope:** design doc + `veritas/chain_reconcile.py` +
-> `veritas-ops reconcile-chain`. Without `VERITAS_RPC_URL` →
-> `rpc_not_configured`. Injectable transport for L1 tests. **Does not** close
-> constitution G9; **does not** rewrite ledger revenue. Settlements **0**.
+> **G10:** never dual-reopen G9-design, cycle-1, N1.3, P7, N0, N1.1, N1.2, M7,
+> or O.8. No parallel cycle-5 / live-RPC G9 dogfood while Merkle claim holds.
 >
-> **G10:** never dual-reopen cycle-1, N1.3, P7, N0, N1.1, N1.2, M7, or O.8.
-> Do not dual Merkle/cycle-5 while G9 claim holds.
->
-> **Parked:** live RPC dogfood; N1.4 Merkle log; cycle-5; settlements still **0**.
+> **Parked:** live RPC dogfood (G9 close); cycle-5; bazaar; settlements **0**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `df1cc8f` (PR **#45** cycle-1 closeout). Product
-> cycle-1 @ `2cbed44` (#44). Claim **building G9-design** on #46. Settlements: **0**.
+> **Tip of `origin/main`:** `6777a92` (PR **#46** G9-design fail-closed
+> reconcile surface). Product cycle-1 @ `2cbed44` (#44). Claim **free**.
+> Settlements: **0**. Open product PRs: **none** (#47 docs closed superseded).
+
+> **G9-design landed on main @ `6777a92` (PR #46).** `veritas/chain_reconcile.py`
+> + `veritas-ops reconcile-chain`; without `VERITAS_RPC_URL` →
+> `rpc_not_configured` / `chain_checked: false`; injectable transport L1.
+> **Does not close G9.** **Not proven:** live RPC; on-chain settlements (still **0**).
 
 > **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
 > (7 checks), committed report, CI wire-up. **Not proven:** blank-machine

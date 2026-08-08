@@ -1,12 +1,12 @@
 # flywheel-claim
 
-- **bet_id:** G9-design
-- **branch:** feat/g9-chain-reconcile-design
-- **holder:** flywheel
-- **status:** building
-- **updated:** 2026-08-08T21:10:00Z
-- **last_merged:** docs #45 @ `df1cc8f`; cycle-1 #44 @ `2cbed44`; N1.3 #41 @ `622429c`; docs #39 @ `330bf68`; P7 #38 @ `4697c8d`; N1.2 #34 @ `32d1054`; N1.1 #33 @ `db04ae2`; N0 @ `4cd2d0c`
-- **next_micro:** #46 only — rebased onto `df1cc8f`; B310 nosec; Pruner G13 before green merge. Does **not** close G9. Settlements 0.
+- **bet_id:** (none)
+- **branch:** (none)
+- **holder:** (none)
+- **status:** free
+- **updated:** 2026-08-08T21:00:00Z
+- **last_merged:** G9-design #46 @ `6777a92`; docs #45 @ `df1cc8f`; cycle-1 #44 @ `2cbed44`; N1.3 #41 @ `622429c`; P7 #38 @ `4697c8d`
+- **next_micro:** Singular NEXT = **N1.4 Merkle / inclusion anchors** (PRODUCT_ORG priority 2 post-G9-design). Do **not** re-open G9-design / cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / **M7** / O.8. Gap G9 still open (RPC). Settlements **0**.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -25,5 +25,6 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | **N1.3 portable EvidencePack** | **`622429c` / #41** |
 | **cycle-1 cold install dogfood** | **`2cbed44` / #44** |
 | cycle-1 plane closeout | `df1cc8f` / #45 |
+| **G9-design fail-closed reconcile** | **`6777a92` / #46** |
 
-**G10:** Claim **building** G9-design on `feat/g9-chain-reconcile-design` (#46). Open product PRs: **#46 only**. Settlements: **0**.
+**G10:** Claim **free** after G9-design merge. Open product PRs: **none**. Gap G9 **still open**. Settlements: **0**.

@@ -6,27 +6,32 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, N1.5 anchors, or other singular).
-> **G10:** never dual-reopen **cycle-5**, **N1.4**, **G9-design surface**,
-> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> the bet (e.g. live RPC G9 dogfood, N1.5 anchors, PyPI publish, or other
+> singular). **G10:** never dual-reopen **release-0.8.0 prep**, **cycle-5**,
+> **N1.4**, **G9-design surface**, **cycle-1**, **N1.3**, **P7**, **N0**,
+> **N1.1**, **N1.2**, **M7**, or **O.8**.
 >
-> **cycle-5 is on main** — `#54` / `bf09a99`: ecosystem participant dogfood
-> (discovery + offline verify path, pack/Merkle, trust-not-authz). **Not**
-> foreign live venue; **not** on-chain. Settlements **0**.
+> **v0.8.0 prep is on main** — `#58` / `58beccc`: version bump + CHANGELOG/
+> STATUS for A2A notary spine cut. **Not** PyPI publish. Settlements **0**.
 >
-> **Also on main:** N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap
-> G9 **still open**); cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
+> **Also on main:** cycle-5 `#54` / `bf09a99` (offline ecosystem dogfood);
+> N1.4 `#49` / `b253532`; G9-design `#46` / `6777a92` (gap G9 **still open**);
+> cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
 >
-> Still deliberately not done: live RPC confirmation; SBOM unsigned;
-> settlements **0**.
+> Still deliberately not done: live RPC confirmation; SBOM unsigned; PyPI
+> publish; settlements **0**.
 >
 > Nothing has settled on-chain. That is still the single largest unproven
 > claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `bf09a99` (PR **#54** cycle-5 ecosystem dogfood).
-> Claim **free**. Settlements: **0**. Gap G9 **still open**.
+> **Tip of `origin/main`:** `58beccc` (PR **#58** v0.8.0 release prep).
+> Claim **free**. Settlements: **0**. Gap G9 **still open**. **Not** on PyPI.
+>
+> **v0.8.0 prep landed on main @ `58beccc` (PR #58).** `__version__` = 0.8.0;
+> CHANGELOG + STATUS for N0–N1.4 / P7 / G9-design / dogfood 1–5. **Not proven:**
+> PyPI publish; on-chain (0).
 >
 > **cycle-5 landed on main @ `bf09a99` (PR #54).** Offline ecosystem participant
 > dogfood (discovery + verify path). **Not proven:** live multi-venue; on-chain (0).

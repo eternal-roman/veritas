@@ -85,6 +85,7 @@ def test_tools_register_with_mcp_sdk():
         "research",
         "verify",
         "verify_attestation",
+        "verify_pack",
         "trust",
         "constitution",
     }

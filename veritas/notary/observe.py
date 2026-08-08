@@ -368,7 +368,7 @@ def observe(
             "signer": attestation.get("signer"),
             "content_hash": content_hash,
         })
-    return _envelope(
+    envelope = _envelope(
         request_id=request_id,
         url=url,
         status="completed",
@@ -382,6 +382,13 @@ def observe(
         evidence_hashes_valid=hashes_valid,
         attestation=attestation,
     )
+    try:
+        from veritas.notary.pack import EvidencePackError, pack_from_observation
+
+        envelope["evidence_pack"] = pack_from_observation(envelope)
+    except EvidencePackError:
+        pass
+    return envelope
 
 
 __all__ = ["observe", "ATTESTS"]

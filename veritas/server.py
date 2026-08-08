@@ -64,6 +64,7 @@ app = FastAPI(title="Veritas Research", version=__version__)
 RESOURCE_PATH = "/v1/research"
 NOTARIZE_PATH = "/v1/notarize"
 ATTESTATION_VERIFY_PATH = "/v1/attestations/verify"
+PACK_VERIFY_PATH = "/v1/packs/verify"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -327,6 +328,12 @@ class VerifyAttestationRequest(BaseModel):
     evidence_record: dict[str, Any] = Field(min_length=1)
     attestation: dict[str, Any] = Field(min_length=1)
     expected_signer: str | None = Field(default=None, max_length=64)
+
+
+class VerifyPackRequest(BaseModel):
+    """Portable N1.3 EvidencePack to integrity-check (free)."""
+
+    pack: dict[str, Any] = Field(min_length=1)
 
 
 @app.get("/health")
@@ -1319,6 +1326,18 @@ async def verify_attestation_endpoint(req: VerifyAttestationRequest):
     return body
 
 
+@app.post(PACK_VERIFY_PATH)
+async def verify_pack_endpoint(req: VerifyPackRequest):
+    """Check an N1.3 portable EvidencePack (free, no payment).
+
+    Verifies pack_hash integrity and, when present, optional body and
+    EIP-191 attestation. Not a Merkle inclusion proof and not on-chain.
+    """
+    from veritas.notary.pack import verify_evidence_pack
+
+    return verify_evidence_pack(req.pack)
+
+
 @app.get("/v1/receipts/{request_id}")
 async def receipt(request_id: str):
     """Retrieve a stored custody record so results stay auditable after the call.
@@ -1741,6 +1760,7 @@ async def well_known():
             "notarize": NOTARIZE_PATH,
             # Free N1.2 surface: agents re-check operator EIP-191 attestations.
             "attestations_verify": ATTESTATION_VERIFY_PATH,
+            "packs_verify": PACK_VERIFY_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

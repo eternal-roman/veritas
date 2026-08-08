@@ -65,6 +65,13 @@ def tool_verify_attestation(
     }
 
 
+def tool_verify_pack(pack: dict[str, Any]) -> dict[str, Any]:
+    """Check an N1.3 portable EvidencePack (pack_hash + optional attestation)."""
+    from veritas.notary.pack import verify_evidence_pack
+
+    return verify_evidence_pack(pack)
+
+
 def tool_trust() -> dict[str, Any]:
     """Behaviour-derived trust score; UNPROVEN below the sample floor."""
     from veritas.trust import score_service
@@ -110,6 +117,7 @@ def build_server():
     server.tool(name="research")(tool_research)
     server.tool(name="verify")(tool_verify)
     server.tool(name="verify_attestation")(tool_verify_attestation)
+    server.tool(name="verify_pack")(tool_verify_pack)
     server.tool(name="trust")(tool_trust)
     server.tool(name="constitution")(tool_constitution)
     return server

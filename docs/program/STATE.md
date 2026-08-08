@@ -5,37 +5,42 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: Phase N0 — evidence notary core** (after Phase M closed).
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. cycle-1 cold install dogfood, N1 remaining, or G9 design).
+> **G10:** never dual-reopen **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
 >
-> **M7 is on main** — do **not** re-open credits/SIWx as NEXT. Landed as
-> `#23` (`2171bfa`) with exception-path refund hardening `#28` (`386efff`).
-> Prepaid credits via SIWx (challenge/session, debit-before-work, refund on
-> non-billable and unexpected failure, top-up only after settled x402) are L1
-> tested. This is **not** on-chain refund of a top-up tx and **not** a second
-> payer path.
+> **N0 is on main** — `#30` / `4cd2d0c`: `veritas/notary` observe +
+> `POST /v1/notarize` + inv.3 credits parity. Pruner **ship_ok** recorded.
 >
-> **Also on main (do not re-open as NEXT):** O.8 `#22` / `96b9013`, O.8b
-> `#24` / `5d6492f` (container hash-lock + extras direction rule), diligence
-> `#19`, P7 honesty `#20`, O.6 `#18`.
+> **N1.1 / N1.2 are on main** — `#33` / `db04ae2` optional EIP-191
+> attestation; `#34` / `32d1054` free `POST /v1/attestations/verify` + MCP.
+> **Not** on-chain anchors; settlements still **0**.
 >
-> Still deliberately not done: SBOM is **unsigned** and a workflow artifact
-> rather than release-attached; no image is published anywhere.
+> **Also on main:** integrity `#32` / `#29`; M7 `#23`/`#28`; O.8 `#22`;
+> O.8b `#24`; diligence `#19`; P7 `#20`; O.6 `#18`.
 >
-> Blocked on things this sandbox cannot provide, not on work: **G9**
-> (reconciling settlements against the chain) needs an RPC endpoint; **X1/X3/X6**
-> (official SDK, `/supported` preflight, Bazaar discovery) need facilitator
-> egress; **cycle 1** is gated on N0; **cycle 5** remains open (ecosystem
-> dogfood — standalone verifier module is on main via #19, full cycle not closed).
+> Still deliberately not done: SBOM unsigned / no registry publish; N1
+> Merkle/anchors if still desired; non-circular re-fetch verify (P7 product);
+> G9 chain reconcile; cycle-1 cold install; cycle 5 ecosystem full close.
+>
+> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
+> egress.
 >
 > Nothing has settled on-chain. That is still the single largest unproven
 > claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `be03dcd` (dependabot upload-artifact). Product
-> tip for Phase M: **M7** on main via `#23` + `#28`. Open product PRs at
-> closeout time may include dependency-guard work — do not freeze **N0** on
-> docs plane; do not re-open **M7**.
+> **Tip of `origin/main`:** `32d1054` (PR **#34** N1.2 attestation verify).
+> Prior product: N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`; integrity
+> `#32`/`#29`; M7 `#23`/`#28`. Claim: **free**. Settlements: **0**.
+>
+> **N0 landed on main @ `4cd2d0c` (PR #30).** SSRF-safe fetch, extract/record
+> with full-body `content_hash`, license/robots, `observe` compose, pipeline
+> URL observation via one engine, `POST /v1/notarize` (x402 + SIWx credits)
+> with inv.3 unexpected-failure refund shared with research. Tests:
+> `tests/test_notary_*.py`, `tests/test_notarize_api.py`. **Not proven:** live
+> facilitator notarize settle, on-chain (still **0**), cold install cycle-1.
 >
 > **M7 landed on main @ `2171bfa` (PR #23) + `386efff` (PR #28).**
 > `veritas/credits.py` double-entry journal; `veritas/siwx.py` EIP-4361/EIP-191

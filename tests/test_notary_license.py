@@ -61,7 +61,11 @@ def test_cc_by_sa_requires_attribution():
     assert label.reuse == ReuseClass.ATTRIBUTION
     assert label.may_reuse is True
     assert label.attribution_required is True
-    assert label.url and "spdx.org" in label.url
+    from urllib.parse import urlparse
+
+    assert label.url
+    # Host equality — not a substring match (CodeQL py/incomplete-url-substring-sanitization).
+    assert urlparse(label.url).hostname == "spdx.org"
 
 
 def test_cc_by_is_attribution():

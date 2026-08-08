@@ -1,23 +1,23 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T22:05:00Z
-- **Path:** LIGHT / **noop_idle**
-- **Branch / HEAD:** product tip `2cbed44` (cycle-1 #44); plane closeout via docs PR
-- **Scope:** Stock only — no open product PR to prune; claim **free** after cycle-1
-- **Verdict:** LEAN (idle — nothing to prune this tick)
-- **ship_ok:** n/a (no active product surface). Last landed product: cycle-1 #44 @ `2cbed44`
-- **Deleted / pruned:** none
-- **Refined:** none
-- **Battery:** **not run** (G13 light path — claim free + no product PR; do not burn full battery)
-- **E2E exercised:** none this tick
-- **Denied:** dual NEXT; re-open cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7; invent settlement
-- **Directive:** Claim free; tip-aligned STATE/conductor. Wait for Overseer single NEXT → G13 heavy on that ship.
+- **Time:** 2026-08-08T21:05:00Z
+- **Path:** POST-SHIP (#49) → STANDBY for cycle-5
+- **Branch / HEAD:** tip **`b253532`** (#49 N1.4); product surface landed
+- **Scope:** G13 confirm N1.4; prior #46 G9-design also green this window
+- **Verdict:** LEAN — merkle/log stdlib; one observe path; fixed error tokens; honesty notes
+- **ship_ok:** **true** for #49 @ `b253532` and #46 @ `6777a92`. Next bet needs **fresh** ship_ok
+- **Deleted / pruned:** none this tick
+- **Refined:** none (builders fixed CodeQL exception exposure before final green)
+- **Battery:** CI Tests/Security/Package/Container/Structure SUCCESS on #49 head `889efeb`; local EvidenceLog append + verify_inclusion ok
+- **E2E exercised:** EvidenceLog append/proof/verify path (path-injected); not full suite re-run (CI owns that)
+- **Denied:** dual NEXT; re-open N1.4/M7/G9-design as product; invent settlement; merge red
+- **Directive:** Claim free; NEXT = cycle-5 when builders claim. Heavy G13 on that PR before ship.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: No product work for Pruner this tick — claim free, no product PR open
+PROPERTY: #49 on main b253532; ship_ok true; next ship needs fresh G13; settlements 0
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 2cbed44 (#44); open product PRs empty; flywheel-claim free
-ASSUMPTIONS: Overseer names one NEXT before next ship; G13 heavy only on claim/PR
-NOT PROVEN: on-chain settlement (0); blank-machine PyPI cold install (out of cycle-1)
+CHECKED ARTIFACT: origin/main b253532; gh pr #49 MERGED CI green; notary/merkle.py + log.py
+ASSUMPTIONS: Conductor holds singular cycle-5; no dual while next claim holds
+NOT PROVEN: public CT; on-chain anchors; G9 closed; settlements (0)
 ```

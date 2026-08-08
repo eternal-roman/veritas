@@ -5,32 +5,34 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. live RPC G9 dogfood, cycle-5 ecosystem dogfood, or other
-> singular). **G10:** never dual-reopen **N1.4**, **G9-design surface**,
-> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: cycle-5 ecosystem dogfood only** — independent participant
+> path using published verify/pack/log surfaces (axis F). Smallest shippable
+> script + report + CI wire like cycles 1–4. Claim free post-N1.4; one claim
+> when build starts.
 >
-> **N1.4 is on main** — `#49` / `b253532`: operator-local Merkle evidence log
-> (`veritas/notary/merkle.py`, `log.py`); free `/v1/log` surfaces. **Not**
-> public CT; **not** on-chain. Settlements **0**.
+> **On main (do not re-open):** **N1.4** `#49` / `b253532` (operator-local
+> Merkle evidence log + free `/v1/log*` + MCP inclusion verify — **not** public
+> CT / **not** on-chain); **G9-design** `#46` / `6777a92` + closeout `#48` /
+> `b77339f` (gap G9 **still open**); cycle-1 `#44`; N1.3 `#41`; P7 `#38`;
+> N0–N1.2; **M7**; O.8. Stale `prefer_bet=M7` is landed — never re-claim.
 >
-> **Also on main:** G9-design `#46` / `6777a92` (gap G9 **still open**);
-> cycle-1 `#44`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
+> **G10:** never dual-reopen N1.4, G9-design, cycle-1, N1.3, P7, N0, N1.1,
+> N1.2, M7, or O.8. No parallel live-RPC G9 dogfood while cycle-5 claim holds
+> unless Overseer severity outranks in writing.
 >
-> Still deliberately not done: live RPC confirmation; SBOM unsigned; cycle-5;
-> settlements **0**.
->
-> Nothing has settled on-chain. That is still the single largest unproven
-> claim in this repository, and no amount of local green changes it.
+> **Parked:** live RPC G9 dogfood; bazaar; settlements **0**.
 
 ## Progress log
 
 > **Tip of `origin/main`:** `b253532` (PR **#49** N1.4 Merkle evidence log).
-> Claim **free**. Settlements: **0**. Gap G9 **still open**.
->
-> **N1.4 landed on main @ `b253532` (PR #49).** Operator-local Merkle log +
-> inclusion proofs. **Not proven:** public CT; multi-operator; on-chain (0).
->
+> Prior closeout `#48` / `b77339f`; G9-design `#46` / `6777a92`. Claim **free**.
+> Settlements: **0**. Open product PRs: **none**.
+
+> **N1.4 landed on main @ `b253532` (PR #49).** `veritas/notary/merkle.py` +
+> `log.py`; append on completed observe; free `GET /v1/log`, `GET /v1/log/proof`,
+> `POST /v1/log/verify`; MCP `verify_log_inclusion`. **Not proven:** public
+> transparency log; on-chain anchors; multi-instance log; settlements (still **0**).
+
 > **G9-design landed on main @ `6777a92` (PR #46).** Fail-closed reconcile.
 > **Not proven:** live RPC; G9 closed; on-chain (still **0**).
 >

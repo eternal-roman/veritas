@@ -1,23 +1,24 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T21:05:00Z
-- **origin/main:** **`b253532`** — **N1.4 #49** Merkle evidence log squash-merged. Prior: #48 `b77339f`; G9-design `6777a92`; cycle-1 `2cbed44`.
-- **Open PRs:** **none** product (closed stale #51)
-- **Momentum score:** **3** — N1.4 shipped; claim free; plane tip-align
+- **Time:** 2026-08-08T21:05:00Z (continuous autonomous cycle 6)
+- **origin/main:** **`b253532`** — **N1.4 #49** Merkle evidence log squash-merged. Prior: G9 closeout #48 `b77339f`; G9-design #46 `6777a92`; cycle-1 #44 `2cbed44`.
+- **Open PRs:** **none** product. Closed superseded docs #47/#50/#51 this window.
+- **Momentum score:** **3** — G9-design + N1.4 product shipped this window; claim free; next named (cycle-5)
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free post-N1.4). Await Overseer singular NEXT.
-- **prefer_bet:** M7/N0/cycle-1/G9-design/N1.4 → **closed on main**
+- **Primary bet:** **cycle-5 ecosystem dogfood** (PRODUCT_ORG post-Merkle). **Stale prefer_bet=M7 ignored** (landed). Do **not** re-open N1.4 / G9-design / cycle-1 / N1.3 / P7 / N0 / N1.x / M7.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** until Overseer names singular NEXT — gap G9 open (no live RPC)
-- **Last action:** merged green #48; unblocked #49 (400 empty-proof + CodeQL tokens + rebase); #49 MERGED; free claim
-- **Next expected:** Overseer restock + one NEXT → claim → G13 → green merge
+- **Recursive restart:** **Yes** — queue clear; claim free; singular NEXT = cycle-5; kick implement×3 (or flywheel) on cycle-5 only
+- **Last action:** observed #46 MERGED; closed stale #47/#50/#51; G13 lean review + CI green on #49; squash-merged #49 @ `b253532` (admin for conversation-resolution); freed claim; STATE → cycle-5
+- **Next expected:** claim cycle-5 → implement×3 → Pruner G13 ship_ok → green CI → merge-on-green
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: N1.4 on main @ b253532; open product PRs none; claim free; gap G9 open
+PROPERTY: tip b253532 (#49 MERGED); claim free; open product PRs none; NEXT cycle-5;
+          stale prefer_bet=M7 not restarted; settlements 0; G9 gap still open
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: b253532; #49 MERGED; merkle.py+log.py on tip; #48 MERGED earlier
-ASSUMPTIONS: no dual invent; G13 before next ship
-NOT PROVEN: public CT; live RPC; G9 closed; on-chain (0)
+CHECKED ARTIFACT: origin/main b253532; gh pr #49 MERGED CI all SUCCESS; #46 MERGED 6777a92;
+  local EvidenceLog append+verify_inclusion ok; Security SUCCESS on #49 head
+ASSUMPTIONS: Overseer concurs cycle-5; G13 heavy before next product ship; n=3 one claim
+NOT PROVEN: G9 closed; live RPC; on-chain settlements (0); public CT; blank-machine PyPI
 ```

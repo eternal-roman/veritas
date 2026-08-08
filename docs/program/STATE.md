@@ -5,26 +5,36 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: G9 design — chain reconcile fail-closed surface (#46 only).**
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the bet (e.g. live RPC G9 dogfood, N1.4 Merkle inclusion, or cycle-5
+> ecosystem dogfood). **G10:** never dual-reopen **G9-design surface**,
+> **cycle-1**, **N1.3**, **P7**, **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
 >
-> **On main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout `#45` /
-> `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
+> **G9-design is on main** — `#46` / `6777a92`: `veritas/chain_reconcile.py` +
+> `veritas-ops reconcile-chain` + design doc. Fail-closed without
+> `VERITAS_RPC_URL`. **Does not close constitution G9.** Settlements **0**.
 >
-> **G9 scope:** design doc + `veritas/chain_reconcile.py` +
-> `veritas-ops reconcile-chain`. Without `VERITAS_RPC_URL` →
-> `rpc_not_configured`. Injectable transport for L1 tests. **Does not** close
-> constitution G9; **does not** rewrite ledger revenue. Settlements **0**.
+> **Also on main (do not re-open):** cycle-1 `#44` / `2cbed44` + closeout
+> `#45` / `df1cc8f`; N1.3 `#41`; P7 `#38`; N0–N1.2; M7; O.8.
 >
-> **G10:** never dual-reopen cycle-1, N1.3, P7, N0, N1.1, N1.2, M7, or O.8.
-> Do not dual Merkle/cycle-5 while G9 claim holds.
+> Still deliberately not done: SBOM **unsigned**; live RPC confirmation;
+> full Merkle/anchors; cycle-5; settlements **0**.
 >
-> **Parked:** live RPC dogfood; N1.4 Merkle log; cycle-5; settlements still **0**.
+> Blocked on sandbox externals: **live G9 close** needs RPC; **X1/X3/X6** need
+> facilitator egress.
+>
+> Nothing has settled on-chain. That is still the single largest unproven
+> claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `df1cc8f` (PR **#45** cycle-1 closeout). Product
-> cycle-1 @ `2cbed44` (#44). Claim **building G9-design** on #46. Settlements: **0**.
-
+> **Tip of `origin/main`:** `6777a92` (PR **#46** G9-design fail-closed reconcile).
+> Claim **free**. Settlements: **0**. Gap G9 **still open**.
+>
+> **G9-design landed on main @ `6777a92` (PR #46).** `veritas/chain_reconcile.py`
+> + `veritas-ops reconcile-chain`; fail-closed without RPC. **Not proven:**
+> live RPC; G9 closed; on-chain settlements (still **0**).
+>
 > **cycle-1 landed on main @ `2cbed44` (PR #44).** Offline first-boot dogfood
 > (7 checks), committed report, CI wire-up. **Not proven:** blank-machine
 > PyPI cold install; on-chain (still **0**).

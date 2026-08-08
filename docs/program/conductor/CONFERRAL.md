@@ -1,29 +1,27 @@
-# Conferral — 2026-08-08T20:40:00Z (cycle-1 post-merge)
+# Conferral — 2026-08-08T20:52:00Z (post-G9-design #46)
 
 ## From Steward
-Tip **`2cbed44`**. cycle-1 on main. Claim free. Align STATE NEXT post-cycle-1 (do not leave building claim / "do cycle-1" on tip).
+Tip **`6777a92`**. G9-design product on main. Claim residue building G9 must free.
 
 ## From Overseer
-Disk CURRENT may lag. Git truth: cycle-1+N1.3+P7+N1+N0 on tip. Restock + name **single** NEXT only. Settlements **0**.
+Log 012: sole NEXT was G9-design #46 (B310 then rebased+green). Disk may lag tip. Gap G9 **open**. Settlements **0**. Do not invent settle.
 
 ## From Pruner (G13)
-#44 merged under product CI. Next product branch needs a **fresh** Pruner ship_ok. Do not re-open cycle-1 as dual.
+#46 full CI SUCCESS incl. Security. Next product needs **fresh** ship_ok.
 
 ## From Architect / Scout
-cycle-1: `scripts/dogfood_cycle1.py` free-mode first-boot surfaces (entry points, modules, bootstrap, discovery, offline research, notary+pack verify). Report 7/7. Boundary: not blank-machine PyPI install. Scout WATCH.
+G9-design honesty: fail-closed without RPC; report-only; does not rewrite ledger. Scout WATCH.
 
 ## From Flywheel / cycles
-**cycle-1 complete** @ `2cbed44`. Claim **free**. Open product PRs: **none**.
+prefer_bet=M7 **retired**. G9-design **landed**. Claim → **free**. Open product PRs: **none**.
 
 ## Conductor synthesis
-- **Trajectory:** M7 → N0 → N1.1 → N1.2 → P7 → N1.3 → **cycle-1 DONE** → Overseer NEXT
+- **Trajectory:** … → cycle-1 DONE → **G9-design DONE** (gap open) → Overseer NEXT
 - **This-cycle bet:** none (post-merge hygiene)
-- **Parked:** dual product; settlement fiction; re-open cycle-1/N1.3/P7/N0/N1.1/N1.2/M7
+- **Parked:** live RPC dogfood; N1.4 Merkle; cycle-5; claim G9 closed
 - **Restart flywheel?** **No** until singular NEXT
-- **Blockers (real only):** NEXT choice gate; G9 needs RPC for C-proof
-- **Momentum:** **3**
-- **Settlements:** **0**
-- **n_implementers:** idle
+- **Blockers (real only):** NEXT choice; live RPC for C-proof
+- **Momentum:** **3** · **Settlements:** **0** · **n_implementers:** idle
 
 ### Message
-**cycle-1 on main** (`2cbed44`). Claim free. No dual. Overseer: name **one** NEXT.
+Tip **`6777a92`**. Claim free. **G9 gap still open.** Overseer: name **one** NEXT.

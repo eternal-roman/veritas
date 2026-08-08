@@ -1,22 +1,23 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T20:40:00Z (cycle-1 post-merge closeout)
-- **origin/main:** **`2cbed44`** — **cycle-1 #44** cold install dogfood squash-merged. Prior: N1.3 `622429c`, docs #39 `330bf68`, P7 `4697c8d`, N1.2 `32d1054`, N1.1 `db04ae2`, N0 `4cd2d0c`.
+- **Time:** 2026-08-08T20:52:00Z
+- **origin/main:** **`6777a92`** — **G9-design #46** fail-closed chain reconcile squash-merged. Prior: #45 `df1cc8f`; cycle-1 `2cbed44`; N1.3 `622429c`.
 - **Open PRs:** **none**
-- **Momentum score:** **3** — cycle-1 product shipped this window; claim free; plane tip-aligned
+- **Momentum score:** **3** — G9-design product shipped this window; claim free; plane tip-align
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim free post-cycle-1). Await Overseer single NEXT (G9 design | Merkle anchors | other). **Do not re-open cycle-1 / N1.3 / P7 / N0 / N1.1 / N1.2 / M7.**
+- **Primary bet:** **none** (claim free post-G9-design). Await Overseer singular NEXT. **Do not re-open G9-design / cycle-1 / N1.3 / P7 / N0 / N1 / M7 as dual.**
+- **prefer_bet:** M7/N0/cycle-1/G9-design surface → **closed on main**
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** until Overseer names singular NEXT — no invent dual
-- **Last action:** stocked #44 MERGED @ `2cbed44`; freed claim; advanced STATE NEXT past cycle-1; restocked conductor cards
-- **Next expected:** Overseer restock + one NEXT → one claim → Pruner G13 → green merge
+- **Recursive restart:** **No** until Overseer names singular NEXT — G9 **gap still open** (no live RPC settle proof)
+- **Last action:** rebased #46 onto `df1cc8f`; CI full green incl. Security; squash-merged #46 @ `6777a92`; free claim
+- **Next expected:** Overseer restock + one NEXT → claim → G13 → green merge
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: cycle-1 on main @ 2cbed44 (#44 MERGED); open product PRs none; claim free; STATE NEXT claim-free
+PROPERTY: G9-design on main @ 6777a92; open product PRs none; claim free; Security B310 fixed; gap G9 open
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: 2cbed44; #44 MERGED; gh pr list empty; flywheel-claim free; scripts/dogfood_cycle1.py; docs/dogfood/cycle1/report.json 7/7
-ASSUMPTIONS: Overseer assigns next single bet; G13 before next ship
-NOT PROVEN: blank-machine PyPI cold install (package job owns that); on-chain settlements (0)
+CHECKED ARTIFACT: 6777a92; #46 MERGED; chain_reconcile.py; Security SUCCESS; known_gaps still holds
+ASSUMPTIONS: no dual invent of N1.4/cycle-5; G13 before next ship
+NOT PROVEN: live RPC; closed G9; on-chain settlements (0)
 ```

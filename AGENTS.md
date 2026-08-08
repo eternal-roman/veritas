@@ -60,9 +60,12 @@ package — CI's package job asserts this.
 7. **Misconfiguration never silently becomes free service.** Invalid payment
    config → `mode: misconfigured` → 503.
 8. **One buyer payment path.** `veritas.payer` owns challenge validation,
-   spend caps, the attempt journal, and the `Signer` seam. Signing backends
-   adapt to that seam (`veritas.buyer_payment.LocalAccountSigner` is the
-   testnet one); never add a second path that signs without the gate.
+   counterparty diligence, spend caps, the attempt journal, and the `Signer`
+   seam. Signing backends adapt to that seam
+   (`veritas.buyer_payment.LocalAccountSigner` is the testnet one); never add a
+   second path that signs without the gate. Diligence verdicts come from
+   `veritas.diligence` and are opt-in per client (`require_diligence=True`);
+   with the gate off, a spend cap is the only bound on a hostile seller.
 9. **Version is single-sourced.** `veritas.__version__` feeds pyproject
    (dynamic), the server, the identity document, and the retrieval user-agent.
    Bump it in exactly one place: `veritas/__init__.py`.

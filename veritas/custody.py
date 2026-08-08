@@ -206,11 +206,16 @@ class CustodyStore:
         if not is_safe_request_id(request_id):
             return None
         name = os.path.basename(f"{request_id}.json")
-        base = Path(os.path.realpath(self.base_dir))
-        candidate = Path(os.path.realpath(base / name))
-        if candidate.parent != base or candidate.name != name:
+        base = os.path.realpath(self.base_dir)
+        candidate = os.path.realpath(os.path.join(base, name))
+        # Compare as normalised strings with the separator appended: a bare
+        # prefix test would accept a sibling directory whose name merely starts
+        # with ours (".../receipts_public").
+        if not candidate.startswith(base + os.sep):
             return None
-        return candidate
+        if os.path.dirname(candidate) != base or os.path.basename(candidate) != name:
+            return None
+        return Path(candidate)
 
     def load(self, request_id: str) -> dict[str, Any] | None:
         # Resolve before opening, never after: a check that runs after the read

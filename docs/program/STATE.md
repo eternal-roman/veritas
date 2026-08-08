@@ -300,7 +300,7 @@ Updated as they are measured, never estimated in this table.
 
 | Metric | Value | Measured at |
 |--------|-------|-------------|
-| Tests passing | 309 | Phase X (X2, X4, X5, X7 done) |
+| Tests passing | 420 (+2 skipped) | 2026-08-07, Windows/py3.12, after W1/W2/O16 |
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |
@@ -318,3 +318,5 @@ Updated as they are measured, never estimated in this table.
 | 2026-08-05 | T9–T10: constitution 2.0, three open gaps witnessed, pointers resolved by pytest collection | 86ad917 |
 | 2026-08-06 | X2 + X5(part): EIP-712 domains pinned with provenance, unverified networks refused, default network → Base Sepolia | 6413382 |
 | 2026-08-06 | Bandit gate extended to scripts/; unguarded fetch in the settlement script fixed | 74dfb1b |
+| 2026-08-07 | W1/W2/O16: suite made portable off-Linux; wallet now verifies the mode it claims and warns when the OS will not grant it | d998da9 |
+| 2026-08-07 | Repo presentation: GitHub About + 17 topics, README hook and badges, CONTRIBUTING.md; banned-claims gate extended to README.md and STATUS.md | (this commit) |

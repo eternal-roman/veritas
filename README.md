@@ -1,7 +1,31 @@
 # Veritas Research
 
-Evidence-grounded research service for agents: hash-chained custody delivered
-with every response, explicit refusal, per-source licensing, and x402 payment.
+**A research API for AI agents that refuses to guess — and never charges you
+when it fails.**
+
+[![CI](https://github.com/eternal-roman/veritas/actions/workflows/ci.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Tests](https://img.shields.io/badge/tests-420%20passing-brightgreen.svg)](tests/)
+[![x402](https://img.shields.io/badge/payments-x402-8A2BE2.svg)](https://x402.org)
+
+Every answer arrives with a hash-chained custody record the caller can verify
+themselves, per-source licence and attribution, and a status that distinguishes
+*"I looked and found nothing"* from *"I could not look."* Payment is
+machine-native over [x402](https://x402.org), so an agent can buy a single
+query without an account, an API key, or a human.
+
+**Status: working software, unproven economics.** The invariants below are
+tested and CI-gated. No payment has ever settled on-chain, and retrieval is
+snippet-grade today. Both are stated plainly in
+[Known limitations](#known-limitations) and sequenced in [ROADMAP.md](ROADMAP.md)
+— we would rather you find that here than discover it later.
+
+```bash
+pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
+veritas-agent up     # config + wallet + server, zero human input
+```
 
 ## Core guarantee
 
@@ -15,6 +39,26 @@ Veritas distinguishes three outcomes, and the distinction is the product:
 
 A service that reports "no evidence exists" when it simply could not reach the
 network is not a research service. Veritas never bills for its own outage.
+
+## Why an agent would choose this
+
+**You can check our work without trusting us.** Every response carries its own
+hash-chained custody record. Run `veritas.custody.verify_chain_records` on what
+you received, or re-check any published hash at `POST /v1/verify` — verification
+does not route back through our goodwill.
+
+**We wrote down the rules we can be held to.** The
+[venue constitution](CONSTITUTION.md) states each norm this service commits to,
+and every article either points at the test that enforces it or is explicitly
+marked aspirational — a test rejects any article that tries to be neither. The
+open gaps are enumerated in the document itself, including the uncomfortable
+one: our trust score is still computed by us, from our own records.
+
+**An agent can adopt it without a human in the loop.** Discovery at
+`/.well-known/x402` reaches every other surface; the wire contract is served as
+JSON Schema at `/v1/schema` and the error codes at `/v1/errors`; payment is
+x402, so there is no signup, no key issuance, and no dashboard. `veritas-agent
+up` provisions its own config and wallet and starts serving.
 
 ## Capabilities
 

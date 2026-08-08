@@ -210,7 +210,11 @@ def test_new_docs_keep_the_register():
     unambiguous in prose; 'complete' is only checked as a bare claim phrase
     because 'completed' is a legitimate status value."""
     banned = re.compile(r"\b(live-ready|revenue-ready|production-ready|ZK)\b|\bis complete\b")
-    for name in ("CONSTITUTION.md", "ECOSYSTEM.md"):
+    # README.md and STATUS.md are in the list because they are the sales
+    # surface: the place where a claim is most tempting and least checked.
+    # ROADMAP.md and AGENTS.md are deliberately excluded — they quote these
+    # very words to prohibit them.
+    for name in ("CONSTITUTION.md", "ECOSYSTEM.md", "README.md", "STATUS.md"):
         text = (REPO / name).read_text(encoding="utf-8")
         match = banned.search(text)
         assert match is None, f"{name} contains banned bare claim: {match.group(0)!r}"

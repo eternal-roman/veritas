@@ -27,7 +27,9 @@ CONFIG_NAME = "config.json"
 
 
 def _write_config(base_dir: str, config: dict[str, Any]) -> None:
-    (Path(base_dir) / CONFIG_NAME).write_text(json.dumps(config, indent=2))
+    (Path(base_dir) / CONFIG_NAME).write_text(
+        json.dumps(config, indent=2), encoding="utf-8"
+    )
 
 
 def _provision(

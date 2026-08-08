@@ -194,7 +194,7 @@ def _persisted_ledger(base: Path) -> dict | None:
     """Read the implementation's own spend ledger from disk, or None."""
     path = base / "spend_policy.json"
     try:
-        raw = json.loads(path.read_text())
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
     if not isinstance(raw, dict):

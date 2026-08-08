@@ -38,7 +38,7 @@ def bootstrap_free_mode(agent_id: str = "default", base_dir: str = ".veritas_age
     }
 
     config_path = path / "config.json"
-    config_path.write_text(json.dumps(config, indent=2))
+    config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
     return config
 
 def apply_to_env(config: dict) -> None:
@@ -71,8 +71,11 @@ def load_config(base_dir: str = ".veritas_agent") -> dict:
     config_path = Path(base_dir) / "config.json"
     if config_path.exists():
         try:
-            return json.loads(config_path.read_text())
+            return json.loads(config_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
+            # Corrupt or unreadable config: re-bootstrap rather than crash the
+            # agent path. Callers that need to distinguish corruption from a
+            # missing file should inspect the path themselves.
             pass
     return bootstrap_free_mode(base_dir=base_dir)
 

@@ -378,7 +378,7 @@ class SpendPolicy:
             self._state_corrupt = None
             return self._today(), 0, {}
         try:
-            raw = json.loads(self._state_path.read_text())
+            raw = json.loads(self._state_path.read_text(encoding="utf-8"))
             date = raw["date"]
             spent = raw["spent"]
             per_counterparty = raw["per_counterparty"]

@@ -54,6 +54,21 @@ def test_identity_without_public_url_is_relative_and_flagged(free_client):
         assert "veritas.example" not in path
 
 
+def test_identity_does_not_advertise_removed_bayesian_surface(free_client):
+    """Phase T removed the posterior from the served path. Identity still
+    claimed 'Bayesian belief updating' / bayesian-updating after that retract,
+    which is a discovery-document lie. Capabilities must match pipeline +
+    support counts."""
+    body = free_client.get("/v1/identity").json()
+    caps = body["capabilities"]
+    assert "bayesian-updating" not in caps
+    assert "Bayesian" not in body["description"]
+    assert "bayesian" not in body["description"].lower()
+    assert "support-counts" in caps
+    assert "custody-chain" in caps
+    assert "refusal" in caps
+
+
 def test_identity_with_public_url_is_absolute(free_client, tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://research.example.org")

@@ -55,17 +55,22 @@ class SelfCalibrator:
     def save(self) -> None:
         RUNTIME.mkdir(parents=True, exist_ok=True)
         serializable = {str(k): v for k, v in self.bins.items()}
-        STATE_PATH.write_text(json.dumps({"n_bins": self.n_bins, "bins": serializable}, indent=2))
+        STATE_PATH.write_text(
+            json.dumps({"n_bins": self.n_bins, "bins": serializable}, indent=2),
+            encoding="utf-8",
+        )
 
     def _load(self) -> None:
         if not STATE_PATH.exists():
             return
         try:
-            data = json.loads(STATE_PATH.read_text())
+            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))
             self.n_bins = data.get("n_bins", 10)
             for k, v in data.get("bins", {}).items():
                 self.bins[int(k)] = v
-        except Exception:
+        except (json.JSONDecodeError, OSError, TypeError, ValueError):
+            # Unreadable or corrupt state: stay empty (passthrough) rather than
+            # crash feedback recording. Broad Exception was swallowing bugs.
             pass
 
     def summary(self) -> dict[str, Any]:

@@ -26,17 +26,21 @@ def build_identity(
     configured = base_url or os.getenv("VERITAS_PUBLIC_URL") or None
     base = configured.rstrip("/") if configured else ""
 
+    # Capabilities and description must match the served path (pipeline +
+    # custody + support counts). Bayesian belief updating was removed from the
+    # product surface (see veritas/support.py and pipeline.py) — advertising it
+    # here was a discovery-document lie that survived the Phase T retract.
     doc: dict[str, Any] = {
         "name": "Veritas Research",
         "description": (
             "Evidence-grounded research with a hash-chained custody ledger, "
-            "Bayesian belief updating, and explicit refusal."
+            "recomputable support counts, and explicit refusal."
         ),
         "paymentAddress": pay_to,
         "capabilities": [
             "evidence-grounded-research",
-            "bayesian-updating",
             "custody-chain",
+            "support-counts",
             "refusal",
             "independent-hash-verification",
         ],

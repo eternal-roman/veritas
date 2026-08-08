@@ -35,6 +35,12 @@ file described a system that did not import.
 | MCP tools (`veritas-mcp`: research/verify/trust/constitution) | Working, tested against the SDK; local free-mode engine only, no payment path over MCP |
 | Container + release workflow (`Dockerfile`, `release.yml`) | Dockerfile CI-built; release workflow inert until a maintainer configures PyPI Trusted Publishing |
 | Prepaid credits via SIWx (`veritas/credits.py`, `veritas/siwx.py`, HTTP wire) | Working, L1 tests: double-entry topup/grant/debit/refund in atomic units; SIWx challenge+session offline (EIP-4361 message, EIP-191 recover; no RPC); live research with `X-VERITAS-SESSION` and no `X-PAYMENT` debits before work and refunds on non-billable `unavailable` / deadline; insufficient balance returns registered `credits_insufficient`. **Top-up grants only after settled x402** — free/misconfigured refuse inventing credits; failed or indeterminate settlement does not grant. This is **not** on-chain refund of the buyer's original payment and **not** a second payer: credits are prepaid balance only; `X-PAYMENT` still uses the existing verify→claim→work→fsync→settle path when present. Single-instance SQLite; multi-instance credits are open |
+| Evidence notary (N0 observe + /v1/notarize) | Working, L1+CI: one engine, SSRF-safe fetch, inv.3 on notarize. Not live facilitator notarize settle; not on-chain |
+| EIP-191 attestation (N1.1) + free verify (N1.2) | Working, L1+CI: optional operator sign; free /v1/attestations/verify. Not multi-party origin proof; not on-chain |
+| Origin re-fetch verify (P7 product) | Working, L1+CI: url+hash or receipt request_id re-fetches via observe. Legacy content+hash labeled caller_supplied |
+| Portable EvidencePack (N1.3) + Merkle log (N1.4) | Working, L1+CI: pack_hash handoff; operator-local inclusion proofs. Not public CT; not on-chain |
+| Dogfood cycles 1-5 | Working, CI-gated: first-boot, paying buyer, hostile, operator economics, ecosystem peer. Offline / no chain |
+| G9 chain reconcile design | Design + fail-closed ops surface shipped. Gap G9 open; no production RPC required by default |
 
 ## What was found false and fixed (2026-08-05 audit)
 
@@ -92,7 +98,7 @@ All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 | Quality benchmark vs strong baselines | High | Harness proves invariants, not quality |
 | Rate limiting across instances | Medium | Per-IP limiting, body caps and a concurrency cap are in and tested, but all are in-process: each node behind a balancer has its own budget |
 | Shared ledger/spend state across instances | Medium | Both are local disk; a second instance does not see them, so a replay routed elsewhere still fails (roadmap 6.2) |
-| Reconciling recorded settlements against the chain | High | The ledger records what the facilitator said; no RPC check exists (gap G9) |
+| Reconciling recorded settlements against the chain | High | G9 design surface exists (chain_reconcile + reconcile-chain); fail-closed without VERITAS_RPC_URL. Gap G9 still open; on-chain settlements proven: 0 |
 | Bazaar / registry auto-registration | Medium | Manual |
 | Durable evidence re-fetch (IPFS pinning) | Medium | Receipts store hashes, not content |
 | Solana settlement | Low | Deliberately excluded from advertised networks |
@@ -102,14 +108,10 @@ All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 The payment path is real code rather than a header check, and after the
 2026-08-05 audit the served path no longer makes claims it cannot support.
 
-What remains between this and revenue **is** partly architecture, and saying
-otherwise (as this section previously did) was wrong. Specifically: there is no
-financial ledger, so a settled payment leaves no durable record; a buyer whose
-connection drops after settlement is charged and receives nothing, with no
-idempotent retry; every handler is synchronous with no request deadline; and
-nothing is deployed, nothing has settled on-chain, and the deliverable is still
-snippet-grade. The programme addressing these, in order, is tracked in
-`docs/program/STATE.md`.
+What remains between this and revenue is still largely operational, not only
+code: nothing has settled on-chain (0), retrieval is still snippet-grade, PyPI
+publish needs Trusted Publishing, and G9 chain reconcile is design-level until
+operators configure RPC. The programme is tracked in `docs/program/STATE.md`.
 
 ## Security / CI
 

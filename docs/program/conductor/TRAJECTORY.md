@@ -1,6 +1,6 @@
 # Trajectory — agent commerce vision
 
-**Updated:** 2026-08-08T20:35:00Z (N1.3 post-merge)
+**Updated:** 2026-08-08T20:36:00Z  
 **Main:** `622429c`
 
 ## Where we are
@@ -9,9 +9,7 @@
 |-------|--------|
 | M7 credits/SIWx | **On main** — do not re-open |
 | N0 notary | **On main** `4cd2d0c` (#30) |
-| N1.1 EIP-191 attest | **On main** `db04ae2` (#33) |
-| N1.2 free attest verify | **On main** `32d1054` (#34) |
-| Plane docs | **On main** `330bf68` (#39) |
+| N1.1 / N1.2 | **On main** |
 | P7 re-fetch verify | **On main** `4697c8d` (#38) |
 | **N1.3 EvidencePack** | **On main `622429c` (#41)** |
 | On-chain settlements | **0** |
@@ -19,21 +17,18 @@
 ## Primary trajectory
 
 ```
-M7 DONE → N0 DONE → N1.1 DONE → N1.2 DONE → P7 DONE → N1.3 DONE
-  → Overseer NEXT (cycle-1 dogfood | G9 design | Merkle anchors)
+… → P7 DONE → N1.3 DONE → cycle-1 cold install (building) → (parked) G9
 ```
 
-**This-cycle bet:** none (claim free). Continuous prefer_bet closed for landed product.
+**This-cycle bet:** **cycle-1**.
 
 ## Parked
 
-- Re-opening N1.3 / P7 / N0 / N1.1 / N1.2 / M7 / O.8 as product NEXT
-- Dual product claims
+- G9 chain reconcile (RPC)
+- Re-open N1.3 / P7 / N0 / N1 / M7 / O.8
 - Settlement fiction without tx hash
-- Full Merkle/anchors until explicit unpark
-- G9 live chain reconcile (needs RPC)
+- Full Merkle inclusion log (beyond pack_hash)
 
 ## Landmass
 
-On-chain settlements: **0**. Multi-billion A2A hub: **L0 aspiration only**.
-Pack `pack_hash` is transit integrity, not multi-party origin proof.
+On-chain settlements: **0**. Hub multi-billion: **L0 aspiration only**.

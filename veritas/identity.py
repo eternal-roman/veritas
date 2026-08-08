@@ -43,6 +43,7 @@ def build_identity(
             "support-counts",
             "refusal",
             "independent-hash-verification",
+            "origin-refetch-verification",
             "evidence-record-attestation-verify",
         ],
         "base_url_configured": configured is not None,

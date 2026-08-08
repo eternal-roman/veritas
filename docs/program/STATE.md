@@ -5,33 +5,27 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet (e.g. cycle-1 cold install dogfood, N1 remaining, or G9 design).
-> **G10:** never dual-reopen **N0**, **N1.1**, **N1.2**, **M7**, or **O.8**.
+> **Do this next: P7 product — origin re-fetch on `POST /v1/verify`.**
 >
-> **N0 is on main** — `#30` / `4cd2d0c`: `veritas/notary` observe +
-> `POST /v1/notarize` + inv.3 credits parity. Pruner **ship_ok** recorded.
+> **On main (do not re-open):** N0 `#30` / `4cd2d0c`; N1.1 `#33` / `db04ae2`;
+> N1.2 `#34` / `32d1054`; tip docs `#36` / `a679b76`; M7; O.8/O.8b; integrity
+> `#29`/`#32`.
 >
-> **N1.1 / N1.2 are on main** — `#33` / `db04ae2` optional EIP-191
-> attestation; `#34` / `32d1054` free `POST /v1/attestations/verify` + MCP.
-> **Not** on-chain anchors; settlements still **0**.
+> **P7 scope:** bind verification to origin re-fetch via `notary.observe`
+> (`url`+`content_hash`) or custody receipt (`request_id` then re-fetch).
+> Legacy `content`+`content_hash` labeled `binding: caller_supplied` only.
+> One engine. Not on-chain. Page may diverge after notarization.
 >
-> **Also on main:** integrity `#32` / `#29`; M7 `#23`/`#28`; O.8 `#22`;
-> O.8b `#24`; diligence `#19`; P7 `#20`; O.6 `#18`.
+> **Parked (not dual):** N1.3 Merkle/inclusion; G9 design (RPC); cycle-1 dogfood.
 >
-> Still deliberately not done: SBOM unsigned / no registry publish; N1
-> Merkle/anchors if still desired; non-circular re-fetch verify (P7 product);
-> G9 chain reconcile; cycle-1 cold install; cycle 5 ecosystem full close.
->
-> Blocked on sandbox externals: **G9** needs RPC; **X1/X3/X6** need facilitator
-> egress.
+> Still deliberately not done: SBOM **unsigned**; no image registry; settlements **0**.
 >
 > Nothing has settled on-chain. That is still the single largest unproven
 > claim in this repository, and no amount of local green changes it.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `32d1054` (PR **#34** N1.2 attestation verify).
+> **Tip of `origin/main`:** `a679b76` (#36 docs). Product N1.2 @ `32d1054` (#34). Claim **P7 building**. Settlements: **0**.
 > Prior product: N1.1 `#33` / `db04ae2`; **N0** `#30` / `4cd2d0c`; integrity
 > `#32`/`#29`; M7 `#23`/`#28`. Claim: **free**. Settlements: **0**.
 >

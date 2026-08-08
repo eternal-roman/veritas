@@ -51,48 +51,7 @@ def test_known_gap_the_trust_score_is_self_reported():
     assert "self_reported" in source
 
 
-def test_known_gap_the_verify_endpoint_is_circular():
-    """P7. `POST /v1/verify` takes both the content and the hash from the
-    caller, hashes the content, and reports whether they match. The caller
-    supplied both sides, so the answer is arithmetic they could have done
-    themselves — and asking us routes the check entirely through our goodwill,
-    which is the opposite of what a verification endpoint is for. A dishonest
-    server answers `valid: true` and nothing detects it.
-
-    Nothing binds the content to a source: the endpoint never re-fetches the
-    URL, never consults a stored receipt, and never checks the hash against
-    anything this service previously published. It cannot distinguish a hash
-    we issued from one the caller invented a moment ago.
-
-    If this test fails, the gap has been fixed — close P7 and delete this test.
-    Closing it means binding verification to something the caller does not
-    control: a re-fetch of the source, or a lookup against the custody records
-    we actually issued (ROADMAP N1.4).
-    """
-    from fastapi.testclient import TestClient
-
-    from veritas import server as server_module
-    from veritas.hashing import compute_content_hash
-    from veritas.server import app
-
-    client = TestClient(app)
-    invented = "text this service has never seen, from no source at all"
-    fabricated_hash = compute_content_hash(invented)
-
-    response = client.post(
-        "/v1/verify",
-        json={"content": invented, "content_hash": fabricated_hash},
-    )
-
-    assert response.status_code == 200
-    # The witness: a hash we never issued, over content we never retrieved,
-    # is reported valid — because the endpoint only compares the caller's two
-    # inputs to each other.
-    assert response.json()["valid"] is True
-
-    # And the served module never binds verification to anything the caller
-    # does not control.
-    source = Path(server_module.__file__).read_text(encoding="utf-8")
-    verify_body = source.split('@app.post("/v1/verify")')[1].split("@app.")[0]
-    assert "store.load" not in verify_body, "verify now consults stored receipts"
-    assert "fetch" not in verify_body, "verify now re-fetches the source"
+# P7 closed: POST /v1/verify binds origin re-fetch (url+content_hash) and
+# receipt re-fetch (request_id → store.load → re-fetch). See
+# tests/test_refetch_verify.py. Legacy content+content_hash remains labeled
+# binding: caller_supplied and is not claimed as independent.

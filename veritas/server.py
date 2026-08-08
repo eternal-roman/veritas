@@ -298,8 +298,22 @@ class NotarizeRequest(BaseModel):
 
 
 class VerifyRequest(BaseModel):
-    content: str = Field(max_length=MAX_VERIFY_CONTENT_CHARS)
-    content_hash: str = Field(max_length=256)
+    """Verification request. Prefer origin re-fetch (P7 product) over arithmetic.
+
+    Independent modes (caller does not supply both sides of the comparison):
+
+    * ``url`` + ``content_hash`` — re-fetch the origin via notary.observe
+    * ``request_id`` — load the custody receipt, re-fetch its stored URL,
+      compare to the receipt's published evidence hash
+
+    Legacy convenience (non-independent): ``content`` + ``content_hash`` —
+    pure arithmetic on caller inputs; labeled ``binding: caller_supplied``.
+    """
+
+    content: str | None = Field(default=None, max_length=MAX_VERIFY_CONTENT_CHARS)
+    content_hash: str | None = Field(default=None, max_length=256)
+    url: str | None = Field(default=None, max_length=2000)
+    request_id: str | None = Field(default=None, max_length=128)
 
 
 class VerifyAttestationRequest(BaseModel):
@@ -307,7 +321,7 @@ class VerifyAttestationRequest(BaseModel):
 
     Free to call. Reconstructs the N1.1 canonical message and recovers the
     EIP-191 signer. Does **not** re-fetch the origin URL and is **not** an
-    on-chain check (P7 product re-fetch and G9 remain separate).
+    on-chain check (use POST /v1/verify with url for re-fetch; G9 separate).
     """
 
     evidence_record: dict[str, Any] = Field(min_length=1)
@@ -1189,9 +1203,90 @@ def _notarize(
 
 @app.post("/v1/verify")
 async def verify(req: VerifyRequest):
-    """Let any agent independently re-check an evidence hash we published."""
-    ok, detail = verify_content_hash(req.content, req.content_hash)
-    return {"valid": ok, **detail}
+    """Verify a content hash — with origin re-fetch when bound (P7 product).
+
+    Prefer ``url``+``content_hash`` or ``request_id`` so the check is not pure
+    arithmetic on caller-supplied pairs. The legacy ``content``+``content_hash``
+    path remains for offline re-hash convenience and is labeled
+    ``binding: caller_supplied`` (not independent).
+    """
+    # --- Independent: receipt → re-fetch stored URL ---
+    if req.request_id:
+        presence = store.lookup(req.request_id)
+        if presence is ReceiptPresence.GONE:
+            return JSONResponse(
+                status_code=410,
+                content=error_envelope(
+                    ErrorCode.RECEIPT_GONE, request_id=req.request_id
+                ),
+            )
+        if presence is not ReceiptPresence.PRESENT:
+            return JSONResponse(
+                status_code=404,
+                content=error_envelope(
+                    ErrorCode.RECEIPT_NOT_FOUND, request_id=req.request_id
+                ),
+            )
+        record = store.load(req.request_id)
+        if record is None:
+            return JSONResponse(
+                status_code=404,
+                content=error_envelope(
+                    ErrorCode.RECEIPT_NOT_FOUND, request_id=req.request_id
+                ),
+            )
+        url = record.get("query")
+        hashes = record.get("evidence_hashes") or []
+        published = req.content_hash or (hashes[0] if hashes else None)
+        if not isinstance(url, str) or not url or not published:
+            return {
+                "valid": False,
+                "binding": "receipt_refetch",
+                "match": False,
+                "reason": "receipt_incomplete",
+                "request_id": req.request_id,
+                "note": (
+                    "receipt lacked a URL or published content_hash; "
+                    "cannot re-fetch"
+                ),
+            }
+        from veritas.notary.refetch import refetch_verify
+
+        result = await run_in_threadpool(refetch_verify, url, published)
+        result["binding"] = "receipt_refetch"
+        result["request_id"] = req.request_id
+        return result
+
+    # --- Independent: caller names URL + published hash; we re-fetch ---
+    if req.url and req.content_hash:
+        from veritas.notary.refetch import refetch_verify
+
+        return await run_in_threadpool(refetch_verify, req.url, req.content_hash)
+
+    # --- Legacy convenience: arithmetic on caller-supplied pair ---
+    if req.content is not None and req.content_hash:
+        ok, detail = verify_content_hash(req.content, req.content_hash)
+        return {
+            "valid": ok,
+            "binding": "caller_supplied",
+            "note": (
+                "hashes content you supplied against a hash you supplied; "
+                "not an origin re-fetch — prefer url+content_hash or request_id"
+            ),
+            **detail,
+        }
+
+    return JSONResponse(
+        status_code=422,
+        content=error_envelope(
+            ErrorCode.INVALID_REQUEST,
+            (
+                "provide url+content_hash (origin re-fetch), "
+                "request_id (receipt re-fetch), or content+content_hash "
+                "(legacy non-independent arithmetic)"
+            ),
+        ),
+    )
 
 
 @app.post(ATTESTATION_VERIFY_PATH)

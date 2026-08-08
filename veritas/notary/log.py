@@ -31,7 +31,15 @@ LOG_NOTE = (
 
 
 class EvidenceLogError(ValueError):
-    """Evidence log operation could not proceed."""
+    """Evidence log operation could not proceed.
+
+    ``code`` is a fixed token safe to return to clients; never put paths or
+    stack details in it.
+    """
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
 
 
 class EvidenceLog:

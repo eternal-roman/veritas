@@ -1354,15 +1354,14 @@ async def evidence_log_proof(index: int = 0):
     try:
         return default_evidence_log().proof(index)
     except EvidenceLogError as exc:
-        # 400 not 404: route exists; empty log / bad index are client errors.
-        # Discovery treats 404 as "dead path" in llms.txt checks.
+        # 400 not 404: route exists; empty/out-of-range is a client error.
+        # Fixed tokens only (CodeQL: no exception text to client).
+        msg = exc.code if exc.code in {"log_empty", "index out of range", "proof_unavailable"} else "proof_unavailable"
         return JSONResponse(
             status_code=400,
-            content=error_envelope(
-                ErrorCode.INVALID_REQUEST,
-                str(exc) if str(exc) in {"log_empty", "index out of range"} else "proof_unavailable",
-            ),
+            content=error_envelope(ErrorCode.INVALID_REQUEST, msg),
         )
+
 
 
 @app.post(LOG_VERIFY_PATH)

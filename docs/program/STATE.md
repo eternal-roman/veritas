@@ -5,27 +5,26 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet. Default **hold** unless unblocked (live RPC G9 dogfood if egress;
-> PyPI is human ops, not a dual product bet).
+> **Do this next: one authorized slice only (claim building)** — open product
+> PR **#98** (`feat/ecosystem-advance-agents`: plane ecosystem tracks + VAAT +
+> plane visas). Land or abandon **#98** only. Do **not** open a second product
+> PR. **#98 is not x402 on-chain settle** (`not_x402_settlement`).
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **N1.5**,
 > **0.8.1**, **cycle-5**, **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**,
 > **M7**, or **O.8**.
 >
 > **On main:** A26/A27 `#75` / `ab728a6`; N0-residue `#77` / `1c56a0b`; Git Agent
 > `#76`; P7-C `#69` / `e7f674b`; v0.8.1 `#62`; N1.5 `#60`. Plane closeouts
-> `#78` / `#81` / `#82` / `#84` / `#85` / `#86` / `#89` / `#91` / `#93` / `#94` / `#95` / `#96`. Settlements **0**. Gap G9
-> **still open**. Not PyPI.
+> through `#97` / `d39eee4`. Settlements **0**. Gap G9 **still open**. Not PyPI.
 >
 > Nothing has settled on-chain.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `bc455c8` (PR **#96** conductor post-#95 idle hold).
-> Prior: `#95` / `301f5b2`; `#94` / `827813a`; `#93` / `f87a467`; `#91` / `03d7401`;
-> `#89` / `acc8f2d`; free closeout **`2876f0a`** (#78).
+> **Tip of `origin/main`:** `d39eee4` (PR **#97** steward restock post-#95/#96).
+> Prior: `#96` / `bc455c8`; `#95` / `301f5b2`; `#94` / `827813a`; `#93` / `f87a467`.
 > Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
-> Claim **free**. Settlements: **0**. Gap G9 open. Open product PRs: **none**.
+> Claim **building** for open product **#98**. Settlements: **0**. Gap G9 open.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 >
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /

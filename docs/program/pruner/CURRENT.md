@@ -1,25 +1,25 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-08T23:46:00Z
-- **Path:** LIGHT / **noop_idle** (claim free · open product PRs: **none**)
-- **Branch / HEAD:** tip `origin/main` @ `bc455c8` (#96; prior #95 `301f5b2`; #94 `827813a`)
-- **Scope:** Stock only — no active claim or product PR to gate
-- **Verdict:** **LEAN** (tip product already pruned)
-- **ship_ok:** **n/a** (nothing product staged to ship)
+- **Time:** 2026-08-08T23:58:00Z
+- **Path:** LIGHT / **watch** (claim building · open product **#98**)
+- **Branch / HEAD:** tip `origin/main` @ `d39eee4` (#97); product WIP **#98**
+- **Scope:** Stock only — full battery/ship_ok when #98 seeks land
+- **Verdict:** **WATCH** (product staged on #98; not yet ship-gated this tick)
+- **ship_ok:** **not yet** (CI in progress at stock; G13 before merge)
 - **Landed (do not re-open):**
-  - **#77** N0 residue `1c56a0b` — fail-closed pack/log; drop dead re-exports
-  - **#75** A26/A27 `ab728a6` — survival / W0 / standing
-  - Pruner cards `#86` / `d4769ca` and light `#89` / `acc8f2d`; plane `#78`–`#96`
-- **Battery this tick:** **not run** (light path; prior HEAVY on #77 still valid)
+  - **#77** N0 residue `1c56a0b`
+  - **#75** A26/A27 `ab728a6`
+  - Plane `#78`–`#97`
+- **Battery this tick:** **not run** (light path)
 - **Deleted / pruned:** none
-- **Denied:** dual re-open N0-residue / A26-A27 / P7-C / M7; settlement fiction; full battery on idle; ship_ok theater on free claim
-- **Directive:** Stay idle until Overseer names a singular NEXT and claim is building. G9 only if live-RPC egress unblocked. Settlements **0**.
+- **Denied:** second product PR; settlement fiction; ship_ok without CI+G13
+- **Directive:** Before #98 merge, HEAVY/G13 as required. Settlements **0**.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip has no open product PR; claim free; nothing for Pruner to ship-veto
+PROPERTY: open product #98; claim building; ship_ok not asserted
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main @ bc455c8; flywheel-claim free; gh pr list open []
-ASSUMPTIONS: conductor/overseer hold product NEXT
-NOT PROVEN: on-chain settlement (0); G9 live dogfood
+CHECKED ARTIFACT: origin/main d39eee4; gh pr #98 open; flywheel-claim building
+ASSUMPTIONS: G13 applies before product land
+NOT PROVEN: on-chain (0); CI green; G9 live dogfood
 ```

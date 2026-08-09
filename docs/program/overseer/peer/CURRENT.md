@@ -1,15 +1,15 @@
-# Peer CURRENT — IDLE
+# Peer CURRENT — watch open product PR
 
-- **Time:** 2026-08-08T23:46:00Z
-- **Role note:** Peer **IDLE**. Product plane past A26/A27 / N0-residue / P7-C. Steward owns cohesion.
-- **Open PRs:** **none**.
-- **Scrutiny verdict:** **IDLE**
-- **Action:** none; claim free; await Overseer singular NEXT.
+- **Time:** 2026-08-08T23:58:00Z
+- **Role note:** Peer **WATCH** on open product **#98** (not IDLE while product mid-flight). Steward owns cohesion.
+- **Open PRs:** product **#98** (`feat/ecosystem-advance-agents`).
+- **Scrutiny verdict:** **WATCH** — plane substrate + honesty label `not_x402_settlement`; no deep review this tick.
+- **Action:** none merge; claim must stay single-path on #98.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: Peer idle; no open PRs; tip bc455c8
+PROPERTY: peer watch #98; tip d39eee4; claim building sole path
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main bc455c8; gh pr list empty; flywheel-claim free
-NOT PROVEN: next product ship; on-chain settlement
+CHECKED ARTIFACT: origin/main d39eee4; gh pr #98 open; flywheel-claim building
+NOT PROVEN: #98 correctness; on-chain settlement
 ```

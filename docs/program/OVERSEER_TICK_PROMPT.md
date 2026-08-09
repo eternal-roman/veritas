@@ -40,6 +40,8 @@ Git helper if present: `.\\scripts\\with-git-bash.cmd "single-line"`.
 - **`docs/program/conductor/CONFERRAL.md`** + `TRAJECTORY.md`
 - **`docs/program/steward/CURRENT.md`** (git/gh wins on conflict)
 - **`docs/program/scout/IDEA_BUS.md`** (always skim; mandatory deep read if vision≤1)
+- **`docs/program/ECOSYSTEM_ADVANCE.md`** + **`ecosystem/BUS.md`** + **`ecosystem/OVERSEER_CONFERRAL.md`**
+  (mark track proposals accept/hold/kill; never dual product claim for track work)
 - latest `docs/program/cycles/*`
 - `git status -sb`, `git log origin/main --oneline -8`, open PRs (`gh pr list`)
 

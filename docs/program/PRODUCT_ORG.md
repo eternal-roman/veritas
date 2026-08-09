@@ -77,11 +77,30 @@ writes why).
 | **T1c Self-improve** | **Optimizer** | Every **5 product cycles** forever; edits org/cadence/workflows (Overseer veto thrash) |
 | **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart |
 | **T3 Build** | Flywheel **or** Implement×**n** | **1 product bet**; N workers share one claim |
-| **T4 Support** | Steward, Scout, **Git Agent** | Parallel OK; no product code (Git Agent may open salvage PRs only) |
+| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks** | Parallel OK; tracks may ship plane substrate (`agent_money` / `agent_identity`) + research docs; **no dual product NEXT** |
 | **T5 Burst** | continuous / pulse | Multi-cycle under budget cap |
 
-**Scale agents by fan-out of *support, audit, and implementer workers*, never by dual product NEXT.**  
-See [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md).
+**Scale agents by fan-out of *support, audit, track research, and implementer workers*, never by dual product NEXT.**  
+See [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md) · [`ECOSYSTEM_ADVANCE.md`](ECOSYSTEM_ADVANCE.md).
+
+### Ecosystem track agents (T4)
+
+Cooperative loops under Overseer strategy (not product claim):
+
+| Track | Cadence | Charter tick |
+|-------|---------|--------------|
+| money_loop | 20m | `TRACK_MONEY_LOOP_TICK_PROMPT.md` |
+| multiparty_trust | 25m | `TRACK_MULTIPARTY_TRUST_TICK_PROMPT.md` |
+| product_worth | 25m | `TRACK_PRODUCT_WORTH_TICK_PROMPT.md` |
+| discovery_density | 30m | `TRACK_DISCOVERY_DENSITY_TICK_PROMPT.md` |
+| multi_tenant | 30m | `TRACK_MULTI_TENANT_TICK_PROMPT.md` |
+| legal_identity | 25m | `TRACK_LEGAL_IDENTITY_TICK_PROMPT.md` |
+| network_effects | 30m | `TRACK_NETWORK_EFFECTS_TICK_PROMPT.md` |
+| **mesh_runner** | 5-cycle / demand | `TRACK_MESH_RUNNER_TICK_PROMPT.md` — offline kernel |
+| **unblock** | on demand | `TRACK_UNBLOCK.md` — human ops for Phase 0.1 |
+
+Bus: `ecosystem/BUS.md`. Conferral: `ecosystem/OVERSEER_CONFERRAL.md`.  
+Kernel: `python -m veritas.ecosystem_cycle --cycles 5`.
 
 ---
 

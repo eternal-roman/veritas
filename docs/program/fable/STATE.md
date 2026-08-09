@@ -74,8 +74,13 @@ after token exhaustion; do not lose state.
       tx receipt (`onchain_tx_receipt.json`), and the confirmed reconcile
       (`chain_reconcile_confirmed.json`). Throwaway testnet keys in session
       scratchpad `testnet_keys.json` — testnet only, no real value ever.
-- [ ] Synthesis: `docs/program/fable/REFOUNDING.md` — pending.
-- [ ] PR opened — pending.
+- [x] Synthesis: `docs/program/fable/REFOUNDING.md` committed (evaluation,
+      missed-issue class, staged falsifiable path, kill criteria). README /
+      STATUS / AGENTS "never settled" claims retired for the narrow truth.
+      Wire-contract witness tests added to `tests/test_payment.py`, teeth
+      verified by bug-reintroduction. Gates run locally in the isolated venv:
+      ruff clean, bandit clean, payment_model OK, harness OK.
+- [~] PR opened — pending full-suite green on the final tree.
 
 ## Resume protocol
 

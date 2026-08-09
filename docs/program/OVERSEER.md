@@ -155,7 +155,9 @@ The Overseer is expected to be top-tier on strategy. When it is not (thin
 evidence, stuck axis, empty trajectory):
 
 1. Read `docs/program/evolver/IDEA_BUS.md` this tick (WATCH patterns only).  
-2. Set on CURRENT: `confer_evolver: true` (or `confer_scout: true`),
+2. Read `docs/program/evolver/outbox/overseer/` (INDEX + new reports) — each
+   report names **origin sender_agent**; do not drop identity when synthesizing.  
+3. Set on CURRENT: `confer_evolver: true` (or `confer_scout: true`),
    `evolver_question: "..."`.  
 3. Synthesize evolutionary blueprints / seedlings into the strategic note as
    **hypotheses**, never as approved dependencies. Structural evolution scores

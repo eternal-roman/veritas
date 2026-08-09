@@ -12,10 +12,12 @@ committed and pushed survives. Update this file and push after every sub-step.
 > **G10:** do not dual-reopen **#136** PS9 thrash, **#135** 0.1-R/n=3 thrash,
 > **#134** VISION thrash, **#131** evolver thrash, **#129** existence thrash.
 >
-> **On main:** settlements **3 testnet** · mainnet **0** · unsolicited **0**
-> (first live green composed 0.1-R —
-> `fable/settlement/money_loop_20260809T073637Z.json`). Tip **`694626a`** /
-> **#136**. Gap **G9** production-routine open. Not PyPI.
+> **On main:** settlements **4 testnet** · mainnet **0** · unsolicited **0**
+> (n=4 is the **first live session-commerce loop** — SIWx → x402 topup settle
+> → credit-paid research → honest empty-balance refusal;
+> `fable/settlement/settlement_credits_session_20260809T124500Z.json`; n=3
+> composed 0.1-R `money_loop_20260809T073637Z.json`). Tip: see progress log.
+> Gap **G9** production-routine open. Not PyPI.
 
 ## Progress log
 
@@ -23,8 +25,16 @@ committed and pushed survives. Update this file and push after every sub-step.
 > status + catalog seed one-shot). Prior: `#135` / `816a465` 0.1-R n=3;
 > `#134` / `7861c2b` VISION + hooks; `#133` / `be0e0c7` evolver journal;
 > `#131` / `ac68cc9` evolver; `#129` / `b2420ce` existence. Claim **free**.
-> Settlements: **3 testnet** · mainnet **0** · unsolicited **0**. Gap G9 open.
+> Settlements: **4 testnet** · mainnet **0** · unsolicited **0**. Gap G9 open.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Session commerce ran live 2026-08-09 (M7 path):** SIWx challenge→sign→
+> session; topup 402→pay→settled tx `0xa21d6aea…19f6` (credits granted
+> 10000 atomic); research paid by credits (honest `refused`, billable,
+> custody root; balance→0); empty-balance request refused
+> `credits_insufficient`. Both server-ledger settlements chain-confirmed via
+> unset-env default RPC. Transient facilitator lesson recorded in the
+> transcript: `invalid_exact_evm_transaction_simulation_failed` can pass on
+> retry with a fresh authorization.
 > **#136 journey ran live 2026-08-09:** `veritas-buy` against a live-mode
 > seller — exit 0, all four diligence checks pass incl.
 > challenge_matches_discovery; `not_settled` honest. First live transcript:

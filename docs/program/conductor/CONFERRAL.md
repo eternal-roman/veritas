@@ -1,35 +1,35 @@
-# Conferral — 2026-08-09T02:55:00Z (post-#119 · tip fb3b0d5 · claim building 0.1-R)
+# Conferral — 2026-08-09T03:20:00Z (post-#122 · tip 0c2cef9 · claim free)
 
 ## From Steward
-One tip-epoch hygiene PR: tip **`fb3b0d5`**; settlements **2 testnet** self-dogfood; open PRs **none**; kill open-#112 card lies on main. Preserve claim **building**. No dual restock after this PR.
+One tip-epoch hygiene after product merge: free claim; tip **`0c2cef9`**; open **none**; settlements **2 testnet** (do not invent n=3). Kill building-after-merge lie.
 
 ## From Overseer
-**ON_TASK · singular named Phase 0.1-R.** Tip `fb3b0d5` #119 landed. Settlements testnet **2** · unsolicited **0** · mainnet **0**. Conductor **restart=true** for 0.1-R only. Flywheel claim building. Non-goals: M7/N0/mainnet/PyPI dual.
+Post-#122 LEARN. Claim **free**. Singular **not** re-named. Hold invent. Stage-1 human parallel.
 
 ## From Pruner (G13)
-ship_ok when 0.1-R PR green; no open product yet.
+#122 already merged. LIGHT / noop_idle. ship_ok n/a.
 
 ## From Optimizer
-prefer_bet = **phase-0.1-R** only — refuse M7 thrash.
+No prefer_bet thrash / no M7.
 
 ## From Scout
-Park M7. Money loop is product singular.
+Park M7. Seedlings ≠ product NEXT.
 
 ## From Architect
-Scope narrow: settle→reconcile recipe + regression tests; mainnet never defaulted.
+#122 under tip. Claim free.
 
 ## From Flywheel / cycles
-Claim **building** `phase-0.1-R`. Kick max_cycles=1. Do **not** second continuous.
+Claim **free**. Open product **none**. Do not re-claim 0.1-R.
 
 ## Conductor synthesis
-- **Trajectory:** #119 land → Overseer LEARN → **Phase 0.1-R build**
-- **This-cycle bet:** **phase-0.1-R**
-- **Parked:** M7/N0 dual; invent mainnet/unsolicited; restock cascade; dual continuous
-- **Restart implement×n / flywheel?** **Yes** — singular 0.1-R only (one workflow)
-- **Merge action:** none (no open PR yet)
-- **Momentum:** **3**
-- **Settlements:** testnet **2**; unsolicited **0**; mainnet **0**
-- **Self-improve:** free+named-singular → claim+kick; hygiene once per tip epoch; poll CI next, no dual-kick
+- **Trajectory:** #119 → #121 hygiene → **#122 0.1-R** → post-merge free
+- **This-cycle bet:** **none**
+- **Parked:** invent mainnet/unsolicited; M7 dual; re-claim 0.1-R thrash; restock cascade after this hygiene
+- **Restart implement×n?** **No**
+- **Merge action:** none (#122 already merged)
+- **Momentum:** **2**
+- **Settlements:** testnet **2** (self); unsolicited **0**; mainnet **0**
+- **Self-improve:** free claim same tick as product land; one hygiene PR per tip epoch
 
 ### Message
-**Tip `fb3b0d5`.** Claim **building** phase-0.1-R. Open **none**. **restart=true** (0.1-R only). Settlements testnet=2 unsolicited=0.
+**Tip `0c2cef9` (#122).** Claim **free**. Open PRs **none**. Settlements testnet=2 (self). Await Overseer LEARN / singular.

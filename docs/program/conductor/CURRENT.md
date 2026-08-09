@@ -1,22 +1,22 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-09T02:55:00Z
-- **origin/main:** **`fb3b0d5`** — **#119** unblock defaults + n=2; #118 MIND; **#112** first settle
+- **Time:** 2026-08-09T03:20:00Z
+- **origin/main:** **`0c2cef9`** — **#122** Phase 0.1-R money_loop; prior #121 hygiene; **#119** n=2; **#112** settle
 - **Open PRs:** **none**
-- **Momentum score:** **3** — Overseer named singular + claim building + restart kick
+- **Momentum score:** **2** — product #122 just landed; claim free; LEARN hold
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **phase-0.1-R** (routine money loop) — claim **building**, holder flywheel
+- **Primary bet:** **none** (claim **free**). Do **not** re-claim 0.1-R. Refuse M7/N0 dual.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **Yes** — implement/flywheel **only** on Phase **0.1-R** (Overseer-named)
-- **Last action:** stock tip `fb3b0d5`; open empty; claim building; kick flywheel prefer_bet=phase-0.1-R; no dual continuous; no M7 invent
-- **Next expected:** builder PR for 0.1-R → CI green → merge once; poll next ticks (no dual-kick)
+- **Recursive restart:** **No** — #122 landed; await Overseer re-name if any; Stage-1 human parallel
+- **Last action:** stock tip `0c2cef9` post-#122; free claim via Steward hygiene; no implement kick
+- **Next expected:** Overseer LEARN → optional singular or HOLD Stage-1; then claim only if named
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip fb3b0d5; claim building phase-0.1-R; open none; restart=true singular only; settlements 2 testnet self; mainnet 0; unsolicited 0
+PROPERTY: tip 0c2cef9 #122 merged; claim free; open none; restart=false; settlements tip 2 testnet self; mainnet 0; unsolicited 0
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main fb3b0d5; gh pr list []; Overseer CURRENT Phase 0.1-R; flywheel-claim building
-ASSUMPTIONS: one builder workflow only; G9 still open for production-routine; Stage-1 human parallel
-NOT PROVEN: 0.1-R shipped; production G9 always-on; mainnet; unsolicited; PyPI
+CHECKED ARTIFACT: origin/main 0c2cef9; gh pr 122 MERGED; flywheel-claim free
+ASSUMPTIONS: n=2 unchanged by #122; free+HOLD no invent M7
+NOT PROVEN: unsolicited; mainnet; PyPI; next singular; production G9 always-on
 ```

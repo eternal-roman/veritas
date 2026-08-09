@@ -1,4 +1,4 @@
-# Idea bus — steward stamp 2026-08-09T01:36:00Z (tip `4aa6c61` / #111)
+# Idea bus — steward stamp 2026-08-09T02:55:00Z (tip `fb3b0d5` / #119)
 
 **Shared feed for every agent** (overseer · flywheel · steward · peer · scout · human).  
 Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
@@ -7,11 +7,11 @@ Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
 
 ### Program anchors (STATE is source of truth for NEXT)
 
-- **NEXT ACTION:** claim free; open product **#112** (testnet settle+refounding, CI green) — merge gate via G13/Conductor. Seedlings ≠ second track.  
-- **Landed on main:** **#111** plane org-loops v4 (`4aa6c61`); **#106** plane v3; **#110** plugin-settings; **#109** restock; **#98** mesh; M7/N0/A26/A27/P7-C.  
-- Open product PRs: **#112**. Claim **free**.  
-- **Parked:** dual claim thrash; inventing on-main settlement from open PR body; prefer_bet thrash on landed ladder.  
-- **Veritas on-chain settlements on main: still 0.** #112 claims L1-live in PR — not tip truth until merge.  
+- **NEXT ACTION:** claim **building** **phase-0.1-R** (routine money loop). Seedlings ≠ second track.  
+- **Landed on main:** **#119** unblock defaults + n=2 (`fb3b0d5`); **#118** MIND; **#112** first testnet settle (`367a3aa`); **#111** plane v4; **#98** mesh; M7/N0/A26/A27/P7-C.  
+- Open product PRs: **none** yet. Claim **building**.  
+- **Parked:** #112 thrash; invent mainnet/unsolicited; dual product; M7 re-claim.  
+- **Veritas settlements on main: 2 testnet · mainnet 0 · unsolicited 0** (self-dogfood).  
 - **Note:** Seedling tables below may still mention M7 as harvest context — that is **not** authorization to re-claim M7.
 
 ### Top seedlings (<10★, tool-backed this tick)

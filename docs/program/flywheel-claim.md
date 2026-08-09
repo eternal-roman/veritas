@@ -1,13 +1,13 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-09T01:42:00Z
-- **last_merged:** docs #113 @ `76fe090` (stale restock — superseded by this tip-true); product **#112** @ `367a3aa` first **testnet** settle; plane #111 @ `4aa6c61`; docs #110 @ `0ab5d36`
-- **settlements:** **1 testnet** (tx `0xdad0…2361`, Base Sepolia, chain_checked confirmed=1) · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free**. Product HOLD unless Overseer names Stage-1 slice or non-money singular. Do **not** re-open #112 thrash / M7 / N0 / #98 dual. G9 constitutionally open (ops). Parked: PyPI/TLS/mainnet human ops. #114 Pruner charter when green.
+- **bet_id:** phase-0.1-R
+- **branch:** (pending — flywheel/implement)
+- **holder:** agent-commerce-flywheel
+- **status:** building
+- **updated:** 2026-08-09T02:55:00Z
+- **last_merged:** product **#119** @ `fb3b0d5` (unblock defaults + n=2 settle artifacts); docs #118 @ `bc0bba3` MIND; plane #117 @ `a3a52c3`; docs #116 @ `42a4378`; docs #115 @ `270fb42`; docs #114 @ `efd5dfd`; product **#112** @ `367a3aa` first testnet settle; plane #111 @ `4aa6c61`
+- **settlements:** **2 testnet** self-dogfood on tip · mainnet **0** · unsolicited **0**
+- **next_micro:** **Phase 0.1-R — routine money loop** (Overseer-named singular; claim held). Scope: agent-clearable settle → chain reconcile (testnet defaults ok); pin tests so defaults/UA cannot regress; exit-honest evidence; mainnet never defaulted. Non-goals: mainnet, PyPI, TLS, M7, N0, dual product. Do not dual-kick second continuous.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -15,36 +15,21 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
-| **First testnet settlement + refounding** | **`367a3aa` / #112** — L1-live **one** self-dogfood; not mainnet; not unsolicited |
-| **Plane org loops v4 — stock protocol** | **`4aa6c61` / #111** |
-| Plugin-settings pattern gitignore + .claude guide | `0ab5d36` / #110 |
-| Steward tip f5e060f free restock post-#106/#108 | `4a3c112` / #109 |
-| Prune researcher inbox thrash + gitignore | `f5e060f` / #108 |
+| **Unblock defaults + settlement n=2 + default-path G9 reconcile** | **`fb3b0d5` / #119** — testnet-only public RPC defaults; self-dogfood n=2; not mainnet; not unsolicited |
+| MIND.md shared operating core / unblock ladder | `bc0bba3` / #118 |
+| Visa binary secret strip fix (CI flaky) | `a3a52c3` / #117 |
+| Field notes first settlement lessons | `270fb42` / #115 |
+| Tip-true post-#112 settle honesty | `42a4378` / #116 |
+| Pruner comprehensive sweep | `efd5dfd` / #114 |
+| **First on-chain settlement (testnet) + refounding** | **`367a3aa` / #112** |
+| Org loops v4 stock protocol | `4aa6c61` / #111 |
 | **Plane org loops v3 / Researcher / limited VAAT economy** | **`4d15033` / #106** |
 | Workflow hygiene idle-true / Unblock-only | `b66901f` / #105 |
-| Steward tip 5c02edb free restock post-#102/#103 | `11482c9` / #104 |
-| Steward tip 72119b4 free restock post-#100/#101 | `5c02edb` / #103 |
-| TRACK VT corruption fix | `b74b0af` / #102 |
-| Steward tip 9359b79 free restock post-#98 | `72119b4` / #101 |
-| Conductor post-#98 free claim tip-align | `7011bdf` / #100 |
 | **Ecosystem advance / VAAT / plane visas** | **`9359b79` / #98** |
-| Steward free restock post-#95/#96 | `d39eee4` / #97 |
-| Conductor post-#95 tip-align | `bc455c8` / #96 |
-| Conductor idle tip-align | `301f5b2` / #95 |
-| Steward post-#91 free restock | `f87a467` / #93 |
-| Steward tip restock + conductor N0-hold tip-align | `03d7401` / #91 |
-| Pruner light noop_idle tip-align | `acc8f2d` / #89 |
-| Post-merge tip d4769ca STATE/conductor refresh | `abbfb40` / #88 |
-| Pruner post-#77/#75 ship evidence + noop_idle | `d4769ca` / #86 |
-| Conductor continuous cycle-9 hold | `232efac` / #85 |
-| Conductor cycle-9 tip-align stock | `398e2ac` / #84 |
-| Conductor cycle-8 final board | `48d7703` / #82 |
-| G10 survival-reputation consensus docs | `458c36a` / #81 |
-| N0 residue closeout | `2876f0a` / #78 |
 | **A26/A27** survival / warranty W0 / standing | **`ab728a6` / #75** |
 | **N0 residue** fail-closed pack/log | **`1c56a0b` / #77** |
 | **Git Agent** | **`e78a7a9` / #76** |
 | **P7-C** re-fetch research_slots | **`e7f674b` / #69** |
 | **v0.8.1** / N1.5 / v0.8.0 / prior ladder | through tags `v0.8.1` / `v0.8.0` |
 
-**G10:** Claim **free**. Open product PRs: **#112** (settle+refounding; CI green). Settlements **on main: 0**. Not on PyPI. G9 open on main. #111/#106 plane L1 — not x402 settle on tip until #112 merges.
+**G10:** Claim **building** `phase-0.1-R`. Open product PRs: **none** yet. Settlements: testnet **2** (self-dogfood); unsolicited **0**; mainnet **0**. Not on PyPI. #119 narrow truth — env-unset ≠ block on testnet defaults; not platform scale.

@@ -1270,6 +1270,28 @@ async def verify(req: VerifyRequest):
                     "cannot re-fetch"
                 ),
             }
+        if not url.startswith(("http://", "https://")):
+            # A research receipt stores the buyer's question in `query` and
+            # per-evidence content hashes — there is no single origin to
+            # re-fetch. Before this guard the question itself was fetched as
+            # a URL and the refusal came back `robots_unknown`: a claim about
+            # an origin's robots policy for something that was never an
+            # origin. Could-not-check must not impersonate a specific
+            # failure (the same separation the diligence/audit exit codes
+            # hold), and no research slot or outbound fetch is owed to it.
+            return {
+                "valid": False,
+                "binding": "receipt_refetch",
+                "match": False,
+                "reason": "receipt_not_refetchable",
+                "request_id": req.request_id,
+                "note": (
+                    "this receipt binds a research query to evidence content "
+                    "hashes, not to one origin URL; re-verify per evidence "
+                    "via url+content_hash, or run the offline chain check "
+                    "(veritas-verify / veritas.custody.verify_chain_records)"
+                ),
+            }
         if not research_slots.acquire(blocking=False):
             return _research_slot_shed_response()
         try:

@@ -1,0 +1,43 @@
+{
+  "captured_at": "2026-08-09T11:39:21.812055Z",
+  "subject": "live verify/receipt closure on the paid n=3 deliverable (request d149c149...)",
+  "receipt_fetch_live": {
+    "error": null,
+    "keys": [
+      "request_id",
+      "query",
+      "status",
+      "custody_root",
+      "custody_valid",
+      "evidence_hashes",
+      "stored_at"
+    ],
+    "ok": true,
+    "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8",
+    "status": 200,
+    "step": "receipt"
+  },
+  "verify_refetch_before_fix": {
+    "valid": false,
+    "binding": "receipt_refetch",
+    "match": false,
+    "status": "refused",
+    "reason": "robots_unknown",
+    "expected": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+    "actual": null,
+    "url": "What is the x402 payment protocol?",
+    "refetch_request_id": "00ce74f4-17d7-4e3b-976b-a59736c4d811",
+    "note": "re-fetched origin at call time through notary.observe; page may have changed since notarization; not multi-party origin proof and not an on-chain anchor",
+    "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8"
+  },
+  "verify_refetch_after_fix": {
+    "valid": false,
+    "binding": "receipt_refetch",
+    "match": false,
+    "reason": "receipt_not_refetchable",
+    "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8",
+    "note": "this receipt binds a research query to evidence content hashes, not to one origin URL; re-verify per evidence via url+content_hash, or run the offline chain check (veritas-verify / veritas.custody.verify_chain_records)"
+  },
+  "finding": "receipt re-fetch fetched the research QUERY as an origin URL and refused as robots_unknown - a claim about an origin robots policy for something that was never an origin. Fixed: non-URL receipts refuse as receipt_not_refetchable before any slot or outbound fetch.",
+  "not_proven": "per-evidence origin re-fetch for research receipts (receipts store content hashes, not per-evidence URLs)"
+}

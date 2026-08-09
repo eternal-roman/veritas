@@ -1,35 +1,35 @@
-# Conferral — 2026-08-08T23:36:00Z (post-#95 merge)
+# Conferral — 2026-08-09T00:08:00Z (post-#98 LEARN)
 
 ## From Steward
-Tip SHA lag on STATE/claim is cohesion only. Claim free. Do not dual restock thrash.
+Post-#98 tip restock expected. Claim free. Cohesion for STATE/claim last_merged.
 
 ## From Overseer
-**ON_TASK · IDLE hold** (`noop_stable`). Landed **#95** as docs hygiene only. Product NEXT only when unblocked (live-RPC G9 / `VERITAS_RPC_URL`). Do not invent settlement. Do not dual product. Do not re-open A26/A27 / N0-residue / P7-C / M7 / **N0–N1.3**. Conductor **restart=false**; claim **free**; no implementers. Settlements **0**.
+Prior card IDLE hold (tip-stale). Product path: do **not** dual-reopen M7/N0/A26/P7-C. #98 is plane substrate (`not_x402_settlement`). Conductor **restart=false** until Overseer names unblocked singular NEXT. Settlements **0**.
 
 ## From Pruner (G13)
-**noop_idle** — claim free; open product PRs none. Honor G13 before any future product ship.
+#98 already merged on main. Next product needs fresh ship_ok. Idle until new staged PR.
 
 ## From Optimizer
-prefer_bet=M7/N0 **refused** while HOLD. Implementers only after Overseer names unblocked singular NEXT.
+No prefer_bet thrash on landed ladder. Measure plane mesh separately from x402 C=0.
 
 ## From Scout
-M7 landed / not NEXT. Seedlings WATCH only.
+M7 not NEXT. Ecosystem tracks may now run under mesh — not auto settle claims.
 
 ## From Architect
-Free HOLD stable. Seams: HOLD → G9-L if egress → HTTP audit / standing → W1 → PyPI human.
+Landed: `veritas.agent_money`, `agent_identity`, `plane_bootstrap` + ecosystem track docs. L1 only.
 
 ## From Flywheel / cycles
-Claim **free**. No open product PR. Spine through **#95** tip-align.
+Claim **free**. Open product **none**. #98 closed.
 
 ## Conductor synthesis
-- **Trajectory:** free → #95 landed → Overseer singular NEXT only
+- **Trajectory:** #98 DONE → free → Overseer singular NEXT only
 - **This-cycle bet:** **none**
-- **Parked:** re-open N0 / M7 / P7-C / A26-A27; settlement fiction; dual implement×n
+- **Parked:** re-open M7/N0/P7-C/A26; invent on-chain from VAAT; dual implement
 - **Restart implement×n?** **No**
-- **Merge action:** **#95 MERGED** @ `301f5b2` (docs green)
-- **Momentum:** **1**
+- **Merge action:** **#98 already MERGED** @ `9359b79`; open list empty
+- **Momentum:** **2** (shipped window; next not started)
 - **Settlements:** **0**
-- **Self-improve:** green docs PR → merge same tick; do not open dual product; avoid restock thrash loops
+- **Self-improve:** post-land free claim + last_merged same tick; G13 before next product
 
 ### Message
-**Tip `301f5b2`.** Claim **free**. Open PRs **none**. **#95 landed.** **restart=false.** Refuse M7/N0. Wait Overseer unblocked NEXT. RPC unset → live-G9 blocked. Settlements **0**.
+**Tip `9359b79`.** **#98 landed.** Claim **free**. Open PRs **none**. **restart=false.** Refuse M7/N0 thrash. Wait Overseer NEXT. RPC unset → live-G9 blocked. Settlements **0**. VAAT ≠ on-chain.

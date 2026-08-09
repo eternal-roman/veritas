@@ -27,7 +27,10 @@ scalable momentum (L0 multi-billion *direction* — never claim proven).
 **Shared truth:** `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md` ·
 `conductor/TRAJECTORY.md` · `steward/CURRENT.md` · `ecosystem/BUS.md`  
 **Claim:** `flywheel-claim.md` (one product builder)  
-**Plane money / visa:** local VAAT + plane visas (`python -m veritas.plane_bootstrap`) — **not** x402 settle
+**Plane money / visa:** local VAAT + plane visas (`python -m veritas.plane_bootstrap`) — **not** x402 settle  
+**Workflow hygiene (binding):** [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) —
+idle truly · one hygiene PR/epoch · Unblock when money blocked · product NEXT
+only if unblocked · **never dual continuous workflows**
 
 Orchestrators:
 
@@ -80,7 +83,15 @@ event: idle | CI green | merge | LEARN
 3. **I ≥ ~2× p95** write roles; **I ≥ ~5×** pure review roles.  
 4. **Docs-only dirty PRs** do not freeze product.  
 5. **No `await_user`** on commerce workflows.  
-6. **noop_*** when facts unchanged.
+6. **noop_*** when facts unchanged.  
+7. **Idle truly** — if claim free + no product PR + Overseer HOLD → support
+   agents **noop**; no new tip-restock docs PRs (see `WORKFLOW_HYGIENE.md` §1).  
+8. **One hygiene PR max per tip epoch** — not conductor + steward dual (§2).  
+9. **Unblock Agent** is the only active track while money is bottleneck and
+   RPC/wallet unset (§3).  
+10. **Product NEXT only when unblocked** (0.1/G9) or Overseer names explicit
+    non-money singular bet — not more mesh without buyer path (§4).  
+11. **Never dual continuous/forever workflows** — Access Denied budget race (§5).
 
 ---
 
@@ -97,6 +108,10 @@ event: idle | CI green | merge | LEARN
 /workflow agent-commerce-steward
 /workflow agent-commerce-conductor {"continuous": true, "max_cycles": 3}
 ```
+
+**Continuous rule:** run **at most one** continuous/forever workflow at a time.
+If one dies with `Access is denied` on budget reservation, fix host path before
+resume; do **not** start a second continuous in parallel.
 
 ---
 

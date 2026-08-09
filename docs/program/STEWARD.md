@@ -62,6 +62,10 @@ under Steward when a foreign branch reappears.
 - Deleting GUARDIAN / constitution / dogfood pins
 - Claiming on-chain settlement
 - Thrashing the same file every tick with no fact change (use `noop_coherent`)
+- **Opening a tip-restock docs PR** when claim is free, no product PR is open,
+  and Overseer is HOLD (`WORKFLOW_HYGIENE.md` §1) — rewrite CURRENT in-place or
+  **skip**
+- **Second hygiene PR** in the same tip epoch if one restock PR already exists (§2)
 
 ## Cadence
 

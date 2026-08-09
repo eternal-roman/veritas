@@ -50,7 +50,10 @@ ship this direction?) → builders execute.
    **confer with Scout (Idea agent)** — do not bluff strategic depth (§ Idea
    conferral).
 7. **Navigate, don’t thrash.** Steering notes and PR comments over parallel
-   rewrites. One bet; kill scope creep. High value ≫ high volume.
+   rewrites. One bet; kill scope creep. High value ≫ high volume. Enforce
+   [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md): true idle when free+HOLD;
+   one hygiene PR per tip epoch; Unblock when money blocked; product NEXT only
+   if unblocked; never dual continuous workflows.
 8. **Optimizer oversight.** [`OPTIMIZER.md`](OPTIMIZER.md) has authority to
    change plane mechanics every 5 cycles for latency/momentum. If those edits
    fight GOVERNING goals or honesty, verdict **MISGUIDED** and demand reverse.

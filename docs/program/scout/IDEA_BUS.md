@@ -1,4 +1,4 @@
-# Idea bus — steward stamp 2026-08-09T03:20:00Z (tip `0c2cef9` / #122)
+# Idea bus — steward stamp 2026-08-09T03:48:00Z (tip `0eb4ac1` / #125)
 
 **Shared feed for every agent** (overseer · flywheel · steward · peer · scout · human).  
 Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
@@ -7,12 +7,13 @@ Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
 
 ### Program anchors (STATE is source of truth for NEXT)
 
-- **NEXT ACTION:** claim **free**; post-**#122** LEARN hold — Overseer names next singular. Seedlings ≠ second track.  
-- **Landed on main:** **#122** Phase 0.1-R money_loop (`0c2cef9`); **#119** unblock + n=2 (`fb3b0d5`); **#118** MIND; **#112** first settle; **#111** plane v4; **#98** mesh.  
+- **NEXT ACTION:** claim **free**; post-**#125** LEARN hold — Overseer names next singular. Seedlings ≠ second track.  
+- **Landed on main:** **#125** product-worth baseline (`0eb4ac1`); **#124** org v5 (`d57311c`); **#122** 0.1-R; **#119** n=2; **#112** first settle.  
 - Open product PRs: **none**. Claim **free**.  
-- **Parked:** re-claim 0.1-R thrash; invent n=3/mainnet/unsolicited; dual product; M7 re-claim.  
+- **Parked:** commercial product-worth thrash; invent n=3/mainnet/unsolicited; M7 re-claim; 0.1-R thrash.  
 - **Veritas settlements on main: 2 testnet · mainnet 0 · unsolicited 0** (self-dogfood).  
-- **Note:** Seedling tables below may still mention M7 as harvest context — that is **not** authorization to re-claim M7.
+- **Note:** Seedling tables may mention M7 as harvest context — **not** authorization to re-claim M7.
+
 
 
 ### Top seedlings (<10★, tool-backed this tick)

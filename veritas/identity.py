@@ -39,6 +39,7 @@ def build_identity(
         "paymentAddress": pay_to,
         "capabilities": [
             "evidence-grounded-research",
+            "evidence-notarization",
             "custody-chain",
             "support-counts",
             "refusal",
@@ -47,10 +48,15 @@ def build_identity(
             "evidence-record-attestation-verify",
             "portable-evidence-pack",
             "merkle-evidence-log",
+            "prepaid-credit-sessions",
         ],
         "base_url_configured": configured is not None,
+        # The complete surface lives at /v1/hooks; these are the endpoints an
+        # identity consumer most needs, and a sync test keeps every one of
+        # them registered there (no phantom, no omission of a paid product).
         "endpoints": {
             "research": f"{base}/v1/research",
+            "notarize": f"{base}/v1/notarize",
             "verify": f"{base}/v1/verify",
             "attestations_verify": f"{base}/v1/attestations/verify",
             "packs_verify": f"{base}/v1/packs/verify",
@@ -58,9 +64,18 @@ def build_identity(
             "evidence_log_proof": f"{base}/v1/log/proof",
             "evidence_log_verify": f"{base}/v1/log/verify",
             "receipts": f"{base}/v1/receipts/{{request_id}}",
+            "trust": f"{base}/v1/trust",
+            "schema": f"{base}/v1/schema",
+            "errors": f"{base}/v1/errors",
+            "payment_config": f"{base}/v1/payment-config",
+            "siwx_challenge": f"{base}/v1/siwx/challenge",
+            "siwx_verify": f"{base}/v1/siwx/verify",
+            "credits": f"{base}/v1/credits",
+            "credits_topup": f"{base}/v1/credits/topup",
             "identity": f"{base}/v1/identity",
             "constitution": f"{base}/v1/constitution",
             "hooks": f"{base}/v1/hooks",
+            "llms": f"{base}/llms.txt",
             "wellKnown": f"{base}/.well-known/x402",
         },
         "x402": {"network": network, "price": price},

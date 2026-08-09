@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.0"
+HOOKS_VERSION = "1.1"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -195,7 +195,9 @@ HOOKS: tuple[dict[str, Any], ...] = (
          "reconcile-chain, existence, usage, pricing, authorization, prune.",
          _EXIT_OK),
     _cli("veritas-money-loop",
-         "Compose one settle-then-reconcile pass and report it.", _EXIT_OK),
+         "Compose one settle-then-reconcile pass and report it.",
+         {"0": "confirmed_on_chain", "1": "transport_error",
+          "2": "honest_incomplete", "3": "bad_input"}),
     _cli("veritas-diligence",
          "Vet an x402 seller off its published documents; the verdict is "
          "also the exit code.",
@@ -216,7 +218,11 @@ HOOKS: tuple[dict[str, Any], ...] = (
          {"0": "confirmed", "1": "diverged", "2": "unobserved", "3": "bad_input"}),
     _cli("veritas-verify",
          "Single-file zero-dependency receipt verifier (vendor by copying "
-         "veritas/verifier.py).", _EXIT_OK),
+         "veritas/verifier.py).",
+         # 2 is "your input was unreadable", NOT "the receipt is invalid" —
+         # flattening these re-created the could-not-check/failed conflation
+         # the whole exit-code family exists to prevent.
+         {"0": "valid", "1": "invalid", "2": "input_unreadable"}),
     _cli("veritas-evolver",
          "Evolutionary idea engine for the Evolver role: journaled "
          "first-principles recombination; WATCH output, never approval.",
@@ -234,6 +240,14 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _hook("header_veritas_session", "header", "X-VERITAS-SESSION",
           "SIWx credit-session token spending prepaid credits.",
           "free", {"header": "X-VERITAS-SESSION", "direction": "request"}),
+    _hook("header_metrics_bearer", "header", "Authorization",
+          "Bearer token for /metrics (value: Bearer $VERITAS_METRICS_TOKEN); "
+          "no other surface reads it.",
+          "token-gated", {"header": "Authorization", "direction": "request"}),
+    _hook("header_retry_after", "header", "Retry-After",
+          "Suggested wait in seconds, sent with 429 rate limits and 503 "
+          "shed responses.",
+          "free", {"header": "Retry-After", "direction": "response"}),
     # ------------------------------------------- durable signal stores —
     _hook("store_receipts", "store", "custody receipts",
           "One JSON custody receipt per request, durable until retention "

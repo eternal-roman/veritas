@@ -1,11 +1,19 @@
-# PyPI release via Trusted Publishing (OIDC — no long-lived token secret).
+# Release pipeline: build once, publish the GitHub release, and (when a human
+# has configured PyPI Trusted Publishing) publish to PyPI from the same build.
 #
-# INERT UNTIL A HUMAN ACTS: this workflow can only succeed after a
-# maintainer creates the `veritas-research` project on PyPI and configures
-# this repository/workflow as a trusted publisher (ROADMAP P.5 — the name
-# is currently unreserved). Until then, pushing a tag runs the build and
-# fails at the publish step with an authorization error, which is the
-# honest behaviour: no silent skip, no fake success.
+# Honesty model:
+# - `build` gates the tag against the single-sourced package version, builds
+#   sdist+wheel, and generates the SBOM. Green means "this tag is buildable".
+# - `github-release` holds only `contents: write` and never sees the OIDC
+#   token; it attaches the artifacts and the CHANGELOG section for the tag,
+#   and fails if the CHANGELOG has no entry for the version — a release
+#   without release notes is not a release.
+# - `publish-pypi` runs ONLY when the repository variable
+#   PYPI_TRUSTED_PUBLISHER is set to `configured` — a maintainer flips it
+#   after creating the PyPI project and the trusted-publisher binding
+#   (ROADMAP P.5; the `veritas-research` name is currently unreserved).
+#   Until then the job is skipped with the condition visible in the run: a
+#   declared precondition, not a silent soft-fail of a step that ran.
 name: Release
 
 on:
@@ -16,11 +24,9 @@ permissions:
   contents: read
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      id-token: write  # Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -70,19 +76,68 @@ jobs:
             --output-reproducible \
             --output-file "sbom/veritas-research-${GITHUB_REF_NAME}.cdx.json"
 
-      # Uploaded as a workflow artifact, NOT attached to the GitHub release:
-      # `gh release upload` needs `contents: write`, and this job already holds
-      # the PyPI publishing identity (`id-token: write`). Granting both to one
-      # job widens the blast radius of the most sensitive job in the repository
-      # for a distribution convenience. Attaching the SBOM to releases is worth
-      # doing in a separate job that never sees the OIDC token — a maintainer
-      # decision, like the GHCR push in ci.yml.
-      - name: Upload the release SBOM as a workflow artifact
+      - name: Upload build artifacts for the publish jobs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          name: sbom-release
-          path: sbom/*.cdx.json
+          name: release-dist
+          path: |
+            dist/*
+            sbom/*.cdx.json
           if-no-files-found: error
+
+  # Publishes the GitHub release. Deliberately isolated from the PyPI job so
+  # the token that can write repository contents and the OIDC identity that
+  # can publish packages never coexist in one job (see the SBOM note above).
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          name: release-dist
+
+      - name: Extract this version's CHANGELOG section
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          awk -v ver="$ver" '
+            $0 ~ "^## \\[" ver "\\]" {p=1; next}
+            /^## \[/ {p=0}
+            p' CHANGELOG.md > notes.md
+          if ! [ -s notes.md ]; then
+            echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME} — a release without notes is not a release."
+            exit 1
+          fi
+
+      - name: Create the GitHub release with artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/* sbom/*.cdx.json \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md
+
+  publish-pypi:
+    # Skipped (visibly) until a maintainer configures PyPI Trusted Publishing
+    # and sets the repository variable PYPI_TRUSTED_PUBLISHER=configured.
+    if: vars.PYPI_TRUSTED_PUBLISHER == 'configured'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write  # Trusted Publishing (OIDC)
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          name: release-dist
 
       - name: Publish to PyPI (Trusted Publishing)
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2

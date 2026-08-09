@@ -301,12 +301,9 @@ def classify_exit(
             for row in results:
                 if row.get("transaction") == settle_tx and row.get("status") == "confirmed":
                     return EXIT_OK
-            # Settled on facilitator view but chain did not confirm this run.
-            if any(
-                row.get("transaction") == settle_tx and row.get("chain_checked")
-                for row in results
-            ):
-                return EXIT_HONEST
+            # Settled on facilitator view but the chain did not confirm this
+            # run (whether or not the check could even be made): honest
+            # incomplete, never a fabricated green.
             return EXIT_HONEST
 
         confirmed = int((reconcile.get("counts") or {}).get("confirmed") or 0)
@@ -428,11 +425,14 @@ def run_money_loop(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
+    from .cli import VerdictArgumentParser
+
+    p = VerdictArgumentParser(
         prog="veritas-money-loop",
         description=(
             "Phase 0.1-R: settle then chain-reconcile (compose only). "
-            "Exit 0=confirmed, 2=honest incomplete, 1=transport failure."
+            "Exit 0=confirmed, 2=honest incomplete, 1=transport failure, "
+            "3=bad input."
         ),
     )
     p.add_argument(

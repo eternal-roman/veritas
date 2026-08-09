@@ -28,14 +28,11 @@ import os
 import urllib.request
 from typing import Any
 
-from veritas import __version__
-
-from .retrieval import RetrievalError, RetrievalResult, classify_transport_error
+from .retrieval import USER_AGENT, RetrievalError, RetrievalResult, classify_transport_error
 from .safeurl import require_http_url
 
 SERPER_ENDPOINT = "https://google.serper.dev/search"
 TIMEOUT_SECONDS = 8
-USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
 
 
 def serper_api_key() -> str:

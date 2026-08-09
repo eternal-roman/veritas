@@ -2,8 +2,7 @@
 
 Uses only free, no-API-key sources:
 - Wikipedia REST API
-- DuckDuckGo via the optional `ddgs` package, falling back to the Instant
-  Answer endpoint
+- DuckDuckGo Instant Answer API (keyless)
 
 Every failure path records a RetrievalError instead of silently returning an
 empty list. The previous version wrapped all network access in bare
@@ -21,16 +20,15 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from veritas import __version__
 from veritas.retrieval import (
     UNKNOWN_LICENSE,
+    USER_AGENT,
     RetrievalError,
     RetrievalResult,
     classify_transport_error,
 )
 from veritas.safeurl import require_http_url
 
-USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
 TIMEOUT_SECONDS = 8
 
 
@@ -180,15 +178,6 @@ class ZeroKeyRetriever:
 
         merged.sources = merged.sources[:max_results]
         return merged
-
-
-def free_retrieve(query: str, max_results: int = 5) -> list[dict[str, Any]]:
-    """Backwards-compatible entry point returning bare source dicts.
-
-    Prefer ZeroKeyRetriever.retrieve() — this helper discards the error
-    channel, which is exactly the information the pipeline needs.
-    """
-    return ZeroKeyRetriever().retrieve(query, max_results=max_results).sources
 
 
 if __name__ == "__main__":

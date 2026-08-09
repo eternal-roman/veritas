@@ -74,9 +74,13 @@ def _provision(
         "deployment remain external steps."
     )
     _write_config(base_dir, config)
-    print(f"config: {Path(base_dir) / CONFIG_NAME}")
-    print(wallet_note)
-    print(f"mode requested: {'paid' if paid else 'free'}")
+    # JSON on stdout, like every sibling CLI: the first consumer is an agent.
+    print(json.dumps({
+        "config_path": str(Path(base_dir) / CONFIG_NAME),
+        "wallet": wallet_note,
+        "mode_requested": "paid" if paid else "free",
+        "note": "funding the wallet and public TLS deployment remain external",
+    }, indent=2))
     return config
 
 
@@ -86,7 +90,8 @@ def _serve(base_dir: str) -> None:
 
     import veritas.server
 
-    veritas.server.main()
+    # Empty argv: the server must not re-parse veritas-agent's own arguments.
+    veritas.server.main([])
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -106,7 +106,7 @@ def _default_observer(url: str, **kwargs: Any) -> dict[str, Any]:
 
 
 def _apply_observation(src: dict[str, Any], observation: dict[str, Any]) -> dict[str, Any]:
-    """Merge a notary observation into a retrieval source dict in place."""
+    """Return the source dict with a notary observation merged in (a copy)."""
     record = observation.get("evidence_record") or {}
     body = (record.get("body") or "").strip()
     if observation.get("status") == "completed" and body:
@@ -114,9 +114,6 @@ def _apply_observation(src: dict[str, Any], observation: dict[str, Any]) -> dict
         src["text"] = body
         src["title"] = record.get("title") or src.get("title")
         src["observed"] = True
-        src["observe_content_hash"] = record.get("content_hash")
-        src["extract_version"] = record.get("extract_version")
-        src["retention_class"] = record.get("retention_class")
         policy = observation.get("policy") or {}
         if policy.get("license"):
             src["license"] = policy["license"]

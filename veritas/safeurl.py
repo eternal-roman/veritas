@@ -64,6 +64,13 @@ def assert_public_destination(url: str, resolver=socket.getaddrinfo) -> str:
     """
     require_http_url(url)
     host = urlsplit(url).hostname or ""
+    # None means "use the default resolver". Callers that thread an optional
+    # resolver through (diligence, buyer journey) pass None when the caller
+    # did not inject one; treating that as an override crashed both installed
+    # buyer CLIs on every un-injected invocation — with exit code 1, which
+    # reads as a seller-failed verdict. Found in review 2026-08-09.
+    if resolver is None:
+        resolver = socket.getaddrinfo
     try:
         infos = resolver(host, None)
     except OSError as exc:

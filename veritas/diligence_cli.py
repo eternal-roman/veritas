@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 
+from .cli import VerdictArgumentParser
 from .counterparty import evaluate_seller
 from .diligence import DiligencePolicy, Verdict
 from .safeurl import UnsafeUrlError
@@ -45,9 +46,12 @@ _EXIT_FOR = {
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = VerdictArgumentParser(
         prog="veritas-diligence",
         description="Vet an x402 seller from the documents it publishes.",
+        epilog="exit codes: 0 pass · 1 fail · 2 unverifiable · 3 bad input "
+               "(1 and 2 are different on purpose: could-not-check is not "
+               "seller-failed)",
     )
     parser.add_argument("url", help="Base URL of the seller, e.g. https://seller.example")
     parser.add_argument(

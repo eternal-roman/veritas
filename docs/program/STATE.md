@@ -12,11 +12,11 @@ committed and pushed survives. Update this file and push after every sub-step.
 > **G10:** do not dual-reopen **#136** PS9 thrash, **#135** 0.1-R/n=3 thrash,
 > **#134** VISION thrash, **#131** evolver thrash, **#129** existence thrash.
 >
-> **On main:** settlements **4 testnet** · mainnet **0** · unsolicited **0**
-> (n=4 is the **first live session-commerce loop** — SIWx → x402 topup settle
-> → credit-paid research → honest empty-balance refusal;
-> `fable/settlement/settlement_credits_session_20260809T124500Z.json`; n=3
-> composed 0.1-R `money_loop_20260809T073637Z.json`). Tip: see progress log.
+> **On main:** settlements **5 testnet** · mainnet **0** · unsolicited **0**
+> (n=5 is the **first live evidence-notary arc** — paid notarize → attested
+> pack → independent-key audit **confirmed** → survival report → Merkle
+> inclusion; `fable/settlement/settlement_notary_arc_20260809T153700Z.json`;
+> n=4 session commerce; n=3 composed 0.1-R). Tip: see progress log.
 > Gap **G9** production-routine open. Not PyPI.
 
 ## Progress log
@@ -25,8 +25,15 @@ committed and pushed survives. Update this file and push after every sub-step.
 > status + catalog seed one-shot). Prior: `#135` / `816a465` 0.1-R n=3;
 > `#134` / `7861c2b` VISION + hooks; `#133` / `be0e0c7` evolver journal;
 > `#131` / `ac68cc9` evolver; `#129` / `b2420ce` existence. Claim **free**.
-> Settlements: **4 testnet** · mainnet **0** · unsolicited **0**. Gap G9 open.
+> Settlements: **5 testnet** · mainnet **0** · unsolicited **0**. Gap G9 open.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Evidence-notary arc ran live 2026-08-09 (N/A26 path):** paid notarize of
+> a real URL settled (tx `0xd3c9c8b2…0b6a`, third distinct settle handler
+> live), operator EIP-191 attestation verified, pack integrity verified,
+> **independent-key audit re-observed the origin and confirmed**, survival
+> report counts it (A26 exclusions honest), Merkle inclusion proof valid.
+> Key-level independence only — both keys ours (G11 scope stated in the
+> bundle).
 > **Session commerce ran live 2026-08-09 (M7 path):** SIWx challenge→sign→
 > session; topup 402→pay→settled tx `0xa21d6aea…19f6` (credits granted
 > 10000 atomic); research paid by credits (honest `refused`, billable,

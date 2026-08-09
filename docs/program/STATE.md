@@ -5,29 +5,30 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Building:** **stage1-existence-scorecard** — `veritas.existence` /
-> `veritas-ops existence` measures Stage-1 landmass from on-disk settlement
-> evidence (testnet confirmed count, unsolicited/mainnet never invented,
-> human residues listed). Branch `feat/stage1-existence-scorecard`.
-> **Not:** n=3 invent, mainnet, unsolicited fiction, PyPI auto-publish.
-> **Stage-1 human minutes (parallel):** PyPI trusted publisher · public TLS ·
-> mainnet pay-to · registry listing.
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the next bet after **#129** LEARN. Default **hold invent**. Landed: **#129**
+> Stage-1 existence scorecard (`veritas.existence` / `veritas-ops existence` —
+> measures settlement evidence; **not** n=3 invent, unsolicited, mainnet, or
+> PyPI publish); **#127** dogfood tooling; **#122** Phase 0.1-R. Do **not**
+> re-claim existence thrash or invent commercial grade.
+> **Stage-1 human minutes:** PyPI trusted publisher · public TLS · mainnet pay-to.
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
-> **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**, or
-> commercial product-worth thrash.
+> **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**,
+> **#129 thrash**, or commercial product-worth thrash.
 >
-> **Base tip:** `a1ec8fe` (#128 hygiene on #127). Settlements **2 testnet**
-> self-dogfood · mainnet **0** · unsolicited **0**. Gap **G9** production
-> routine open. Not PyPI.
+> **On main:** settlements **2 testnet** · mainnet **0** · unsolicited **0**.
+> **#129** / `b2420ce` existence scorecard; **#127** / `6809580` dogfood;
+> **#125** / `0eb4ac1` product-worth; **#122** / `0c2cef9` 0.1-R; **#119** /
+> `fb3b0d5` n=2; **#112** / `367a3aa`. Gap **G9** production-routine open.
+> Not PyPI. Claim **free**. Open product: **none**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `a1ec8fe` (PR **#128** docs tip post-#127).
-> Prior: `#127` / `6809580` dogfood harness; `#125` / `0eb4ac1` product-worth;
-> `#124` / `d57311c` org v5; `#122` / `0c2cef9` 0.1-R.
-> Claim **building** stage1-existence-scorecard until product PR merges.
-> Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
-> Gap G9 open (production-routine). Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `b2420ce` (PR **#129** Stage-1 existence scorecard).
+> Prior: `#128` / `a1ec8fe` hygiene; `#127` / `6809580` dogfood; `#125` / `0eb4ac1` product-worth; `#122` / `0c2cef9` 0.1-R.
+> Claim **free**. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
+> Gap G9 open (production-routine). Open product PRs: **none**.
+> Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 
 
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /

@@ -27,6 +27,8 @@ import urllib.request
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from veritas import __version__
+
 ENV_RPC_URL = "VERITAS_RPC_URL"
 ENV_RPC_TIMEOUT = "VERITAS_RPC_TIMEOUT_SECONDS"
 DEFAULT_TIMEOUT = 15.0
@@ -65,10 +67,20 @@ def _default_transport(url: str, method: str, params: list[Any]) -> Any:
     payload = json.dumps(
         {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
     ).encode("utf-8")
+    # The User-Agent is load-bearing, not cosmetic: public RPC endpoints
+    # (observed live 2026-08-08 on sepolia.base.org, Cloudflare-fronted)
+    # reject the default ``Python-urllib/x.y`` agent outright, which made
+    # every reconcile attempt report ``rpc_transport_error:HTTPError`` while
+    # curl against the same endpoint succeeded. Same defect class as the
+    # facilitator client's error-1010 ban; both money-path HTTP clients now
+    # identify themselves the way the retrieval clients always have.
     request = urllib.request.Request(
         url,
         data=payload,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": f"veritas-chain-reconcile/{__version__}",
+        },
         method="POST",
     )
     timeout = rpc_timeout_from_env()

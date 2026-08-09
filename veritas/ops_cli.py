@@ -7,6 +7,7 @@ there was no way to ask any of them:
     veritas-ops owed                     what did I deliver and never get paid for?
     veritas-ops reconcile                what needs my attention?
     veritas-ops reconcile-chain          G9 design: check settled tx hashes via RPC
+    veritas-ops existence                Stage-1 landmass + human residues (evidence dir)
     veritas-ops usage                    what did serving actually consume?
     veritas-ops authorization <nonce>    one payment, end to end
     veritas-ops pricing                  what price are new entries stamped with?
@@ -225,6 +226,18 @@ def build_parser() -> argparse.ArgumentParser:
             "pinned public default for known testnets (mainnet needs the env)."
         ),
     )
+    existence = sub.add_parser(
+        "existence",
+        help=(
+            "Stage-1 existence scorecard: confirmed testnet settlements from "
+            "on-disk evidence, unsolicited/mainnet never invented, human residues."
+        ),
+    )
+    existence.add_argument(
+        "--evidence-dir",
+        default=None,
+        help="Settlement transcript directory (default: docs/program/fable/settlement).",
+    )
     sub.add_parser("usage", help="What serving consumed, priced where possible.")
     sub.add_parser("pricing", help="The price new ledger entries are stamped with.")
     one = sub.add_parser("authorization", help="One payment authorization, end to end.")
@@ -266,6 +279,13 @@ def main(argv: list[str] | None = None) -> int:
         payload["candidates"] = len(candidates)
         payload["settled_without_transaction"] = len(missing)
         payload["chain_checked"] = bool(payload.get("chain_checked"))
+    elif args.command == "existence":
+        from pathlib import Path
+
+        from veritas.existence import build_existence_report
+
+        evidence = Path(args.evidence_dir) if args.evidence_dir else None
+        payload = build_existence_report(evidence_dir=evidence)
     elif args.command == "usage":
         payload = ledger.usage_summary(costs)
     elif args.command == "pricing":

@@ -5,30 +5,29 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the next bet after **#127** LEARN. Default **hold invent**. Landed: **#127**
-> testnet commerce dogfood tooling (Playwright faucet + harness — **not** n=3
-> settle, **not** unsolicited demand); **#125** product-worth skeleton
-> (`commercial_grade=false`); **#122** Phase 0.1-R money_loop. Do **not**
-> invent n=3 from #127, re-claim 0.1-R, or dual M7.
-> **Stage-1 human minutes:** PyPI trusted publisher · public TLS · mainnet pay-to.
+> **Building:** **stage1-existence-scorecard** — `veritas.existence` /
+> `veritas-ops existence` measures Stage-1 landmass from on-disk settlement
+> evidence (testnet confirmed count, unsolicited/mainnet never invented,
+> human residues listed). Branch `feat/stage1-existence-scorecard`.
+> **Not:** n=3 invent, mainnet, unsolicited fiction, PyPI auto-publish.
+> **Stage-1 human minutes (parallel):** PyPI trusted publisher · public TLS ·
+> mainnet pay-to · registry listing.
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
 > **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**, or
 > commercial product-worth thrash.
 >
-> **On main:** settlements **2 testnet** · mainnet **0** · unsolicited **0**.
-> **#127** / `6809580` dogfood harness; **#125** / `0eb4ac1` product-worth;
-> **#124** / `d57311c` org v5; **#122** / `0c2cef9` 0.1-R; **#119** / `fb3b0d5`
-> n=2; **#112** / `367a3aa`. Gap **G9** production-routine open. Not PyPI.
-> Claim **free**. Open product: **none**.
+> **Base tip:** `a1ec8fe` (#128 hygiene on #127). Settlements **2 testnet**
+> self-dogfood · mainnet **0** · unsolicited **0**. Gap **G9** production
+> routine open. Not PyPI.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `6809580` (PR **#127** testnet commerce dogfood harness).
-> Prior: `#126` / `a4c8d0e` hygiene; `#125` / `0eb4ac1` product-worth; `#124` / `d57311c` org v5; `#122` / `0c2cef9` 0.1-R.
-> Claim **free**. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
-> Gap G9 open (production-routine). Open product PRs: **none**.
-> Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `a1ec8fe` (PR **#128** docs tip post-#127).
+> Prior: `#127` / `6809580` dogfood harness; `#125` / `0eb4ac1` product-worth;
+> `#124` / `d57311c` org v5; `#122` / `0c2cef9` 0.1-R.
+> Claim **building** stage1-existence-scorecard until product PR merges.
+> Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
+> Gap G9 open (production-routine). Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 
 
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /
@@ -369,7 +368,9 @@ Updated as they are measured, never estimated in this table.
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |
-| On-chain settlements | **0** | never executed |
+| On-chain settlements (testnet self-dogfood) | **2** | 2026-08-09; evidence `docs/program/fable/settlement/`; scorecard `veritas-ops existence` |
+| Unsolicited settlements | **0** | never observed |
+| Mainnet settlements | **0** | never executed |
 
 ## Session log
 

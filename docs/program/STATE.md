@@ -6,26 +6,30 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: one authorized slice only (claim free)** — Overseer names
-> the next bet after **#129** LEARN. Default **hold invent**. Landed: **#129**
-> Stage-1 existence scorecard (`veritas.existence` / `veritas-ops existence` —
-> measures settlement evidence; **not** n=3 invent, unsolicited, mainnet, or
-> PyPI publish); **#127** dogfood tooling; **#122** Phase 0.1-R. Do **not**
-> re-claim existence thrash or invent commercial grade.
+> the next bet after **#131** LEARN. Default **hold invent**. Landed: **#131**
+> evolver (`veritas.evolver` / Scout → Evolver; IDEA_BUS **WATCH only** — not
+> commercial fitness or STATE NEXT); **#129** Stage-1 existence scorecard
+> (`veritas.existence` / `veritas-ops existence` — measures settlement evidence;
+> **not** n=3 invent, unsolicited, mainnet, or PyPI publish); **#127** dogfood;
+> **#122** Phase 0.1-R. Do **not** re-claim existence thrash, evolver thrash,
+> or invent commercial grade.
 > **Stage-1 human minutes:** PyPI trusted publisher · public TLS · mainnet pay-to.
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
 > **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**,
-> **#129 thrash**, or commercial product-worth thrash.
+> **#129 thrash**, **#131 thrash**, or commercial product-worth thrash.
 >
 > **On main:** settlements **2 testnet** · mainnet **0** · unsolicited **0**.
-> **#129** / `b2420ce` existence scorecard; **#127** / `6809580` dogfood;
-> **#125** / `0eb4ac1` product-worth; **#122** / `0c2cef9` 0.1-R; **#119** /
-> `fb3b0d5` n=2; **#112** / `367a3aa`. Gap **G9** production-routine open.
-> Not PyPI. Claim **free**. Open product: **none**.
+> Tip **`ac68cc9`** / **#131** evolver; **#129** / `b2420ce` existence;
+> **#127** / `6809580` dogfood; **#125** / `0eb4ac1` product-worth; **#122** /
+> `0c2cef9` 0.1-R; **#119** / `fb3b0d5` n=2; **#112** / `367a3aa`. Gap **G9**
+> production-routine open. Not PyPI. Claim **free**. Open product: **none**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `b2420ce` (PR **#129** Stage-1 existence scorecard).
-> Prior: `#128` / `a1ec8fe` hygiene; `#127` / `6809580` dogfood; `#125` / `0eb4ac1` product-worth; `#122` / `0c2cef9` 0.1-R.
+> **Tip of `origin/main`:** `ac68cc9` (PR **#131** evolver / Scout → Evolver).
+> Prior: `#130` / `ba24552` hygiene; `#129` / `b2420ce` existence; `#128` /
+> `a1ec8fe` hygiene; `#127` / `6809580` dogfood; `#125` / `0eb4ac1` product-worth;
+> `#122` / `0c2cef9` 0.1-R.
 > Claim **free**. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
 > Gap G9 open (production-routine). Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.

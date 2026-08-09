@@ -36,7 +36,9 @@ Git helper if present: `.\\scripts\\with-git-bash.cmd "single-line"`.
    Pruner may open a prune PR **only** after your ack.
 3. **Quality gate** — functioning / necessary / pursuant. Fail or fake → LAZY/MISGUIDED.
 4. **Honesty** — cite paths; no settlement fiction; plane VAAT ≠ x402; n=testnet only with evidence.
-5. **Vision + strategy (0–3)** — confer Evolver only if either ≤ 1; strategy fuel:
+5. **Vision + strategy (0–3)** — confer Evolver only if either ≤ 1; also skim
+   `docs/program/evolver/outbox/overseer/` for origin-tagged WATCH reports.
+   Strategy fuel:
    `ecosystem/STRATEGY_EVAL_AND_PLAN.md` (accept/hold, does not set NEXT alone).
 6. **Navigate** — one directive; GUARDIAN; no dual bets; WORKFLOW_HYGIENE §7–§9 + ORG_LOOPS v5.
 

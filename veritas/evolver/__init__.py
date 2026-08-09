@@ -14,6 +14,8 @@ from veritas.evolver.engine import (
     write_report,
 )
 from veritas.evolver.graph import MAX_GENERATIONS, SCORE_THRESHOLD, evolution_check
+from veritas.evolver.journal import Problem, ProblemJournal, workflow_phase
+from veritas.evolver.workflow import run_full_cycle, run_tick
 
 __all__ = [
     "run_creativity_engine",
@@ -22,4 +24,9 @@ __all__ = [
     "evolution_check",
     "SCORE_THRESHOLD",
     "MAX_GENERATIONS",
+    "Problem",
+    "ProblemJournal",
+    "workflow_phase",
+    "run_full_cycle",
+    "run_tick",
 ]

@@ -7,7 +7,8 @@
 - **updated:** 2026-08-09T04:35:00Z
 - **last_merged:** docs **#128** @ `a1ec8fe` tip hygiene; product **#127** @ `6809580` testnet commerce dogfood; product **#125** @ `0eb4ac1` product-worth; plane **#124** @ `d57311c`; product **#122** @ `0c2cef9` Phase 0.1-R; product **#119** @ `fb3b0d5`; product **#112** @ `367a3aa`
 - **settlements:** **2 testnet** self-dogfood on tip · mainnet **0** · unsolicited **0**
-- **next_micro:** Ship `veritas.existence` + `veritas-ops existence` (measure Stage-1 landmass from evidence; never invent unsolicited/mainnet). Free claim on merge.
+- **pr:** https://github.com/eternal-roman/veritas/pull/129
+- **next_micro:** Product PR **#129** open. Free claim on merge.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.

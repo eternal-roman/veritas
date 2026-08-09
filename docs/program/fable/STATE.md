@@ -17,13 +17,17 @@ after token exhaustion; do not lose state.
 - [x] Session-start branch `docs/g10-survival-consensus-only` concluded —
       merged as PR #81, now the tip of origin/main (458c36a). Nothing to do.
 - [x] Isolated worktree + branch created (this file's commit).
-- [~] Multi-agent audit workflow launched — run ID `wf_dc7565b5-d86`, script
-      at `~/.claude/projects/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/workflows/scripts/veritas-refounding-audit-wf_dc7565b5-d86.js`,
-      journal in the sibling `subagents/workflows/wf_dc7565b5-d86/` dir.
-      8 auditors (money-path, trust-verification, core-product, agent-surfaces,
-      ops-scale, tests-evidence, program-governance, claims-market) → top-12
-      issue refutation ∥ 5 strategy lenses (marketplace, protocol, economics,
-      red-team, rebuild) → 3 judges.
+- [x] FAILED, resumable: multi-agent audit workflow `wf_dc7565b5-d86` — all 16
+      spawned agents (8 auditors, 5 strategists, 3 judges) died on the Claude
+      session usage limit ("resets 8pm America/Chicago") after ~1.09M subagent
+      tokens and 267 tool uses. Zero structured results; journal empty. The
+      script survives at
+      `~/.claude/projects/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/workflows/scripts/veritas-refounding-audit-wf_dc7565b5-d86.js`
+      — a future session after the limit reset can re-launch it verbatim with
+      `Workflow({scriptPath: ...})` (cache is empty, it re-runs fresh).
+      THIS session continues inline: no more subagents; synthesis is written
+      from the primary docs already read (ROADMAP, STATUS, ECOSYSTEM,
+      FABLE_INSIGHTS, FALSIFIABLE_COMMERCE, PRODUCT_ORG, program STATE).
 - [ ] Adversarial verification of top findings — pending.
 - [ ] First-principles strategy panel (5 lenses) + judging — pending.
 - [ ] Synthesis: `docs/program/fable/REFOUNDING.md` — pending.

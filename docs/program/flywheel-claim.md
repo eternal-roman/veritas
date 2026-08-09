@@ -4,10 +4,10 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-09T01:42:00Z
-- **last_merged:** docs #113 @ `76fe090` (stale restock — superseded by this tip-true); product **#112** @ `367a3aa` first **testnet** settle; plane #111 @ `4aa6c61`; docs #110 @ `0ab5d36`
-- **settlements:** **1 testnet** (tx `0xdad0…2361`, Base Sepolia, chain_checked confirmed=1) · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free**. Product HOLD unless Overseer names Stage-1 slice or non-money singular. Do **not** re-open #112 thrash / M7 / N0 / #98 dual. G9 constitutionally open (ops). Parked: PyPI/TLS/mainnet human ops. #114 Pruner charter when green.
+- **updated:** 2026-08-09T02:34:00Z
+- **last_merged:** docs #118 @ `bc0bba3` MIND.md; plane #117 @ `a3a52c3`; docs #116 @ `42a4378` tip-true post-#112; docs #115 @ `270fb42`; docs #114 @ `efd5dfd`; product **#112** @ `367a3aa` first **testnet** settle; plane #111 @ `4aa6c61`
+- **settlements:** **1 testnet** on main (tx `0xdad0…2361`, Base Sepolia, chain_checked confirmed=1) · mainnet **0** · unsolicited **0** — do **not** invent n=2 until #119 merges
+- **next_micro:** Open product **#119** (unblock defaults + settlement n=2 claims; CI not green — Security scan failed). Claim **free**. Do **not** re-open #112 thrash / M7 / N0 / #98 dual. G9 constitutionally open (ops). Parked: PyPI/TLS/mainnet human ops.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -47,4 +47,4 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | **P7-C** re-fetch research_slots | **`e7f674b` / #69** |
 | **v0.8.1** / N1.5 / v0.8.0 / prior ladder | through tags `v0.8.1` / `v0.8.0` |
 
-**G10:** Claim **free**. Open product PRs: **#112** (settle+refounding; CI green). Settlements **on main: 0**. Not on PyPI. G9 open on main. #111/#106 plane L1 — not x402 settle on tip until #112 merges.
+**G10:** Claim **free**. Open product PRs: **#119** (unblock defaults / n=2 claims; CI incomplete). Settlements **on main: 1 testnet** · mainnet **0**. Not on PyPI. G9 open (ops). #112 landed — do not re-open thrash.

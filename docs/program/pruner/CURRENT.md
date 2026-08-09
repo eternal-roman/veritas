@@ -1,24 +1,20 @@
 # Pruner CURRENT
 
-- **Time:** 2026-08-09T01:36:00Z
-- **Path:** prepare **HEAVY** for **#112** (claim free · open product: **#112**)
-- **Branch / HEAD:** tip `origin/main` @ `4aa6c61` (#111 plane v4 landed)
-- **Scope:** Open product **#112** first testnet settle + refounding (CI green)
-- **Verdict:** **LEAN** stock; **ship_ok not issued this steward tick**
-- **ship_ok:** **pending** Pruner battery on #112 — do not invent green from PR body alone
-- **Landed (do not re-open):**
-  - **#111** plane org-loops v4 `4aa6c61`
-  - **#110** plugin-settings; **#109** steward restock
-  - **#106** plane v3 `4d15033` — not x402 settle on main alone
-  - **#98** mesh; **#77** N0; **#75** A26/A27
+- **Time:** 2026-08-09T02:34:00Z
+- **Path:** prepare **HEAVY** for **#119** when CI complete
+- **Branch / HEAD:** tip `origin/main` @ `bc0bba3` (#118; #112 on main)
+- **Scope:** Open product **#119** unblock defaults + n=2 settle claims
+- **Verdict:** **LEAN** stock; **ship_ok not issued** (CI incomplete — Security failed)
+- **ship_ok:** **pending** full green + battery
+- **Landed:** **#112** first testnet settle `367a3aa`; **#118** MIND; **#117** plane fix; **#111** plane v4
 - **Battery this tick:** **not run** (steward docs-only)
-- **Denied:** merge without G13; settlement fiction on main before merge; soft-fail battery
-- **Directive:** Run battery + ship_ok before #112 merge. Settlements on main **0** until then.
+- **Denied:** merge without CI+G13; invent n=2 on main; soft-fail battery; #112 thrash
+- **Directive:** Hold ship_ok until #119 Security + Tests green. Settlements on main **1 testnet**.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 4aa6c61; open #112 CI green; claim free; no ship_ok this tick
+PROPERTY: tip bc0bba3; open #119; claim free; no ship_ok this tick
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 4aa6c61; gh pr list [#112]
-NOT PROVEN: ship_ok; #112 on main; settle count > 0 on tip
+CHECKED ARTIFACT: origin/main bc0bba3; gh pr list [#119 Security FAILURE]
+NOT PROVEN: ship_ok; #119 on main; n=2 on tip
 ```

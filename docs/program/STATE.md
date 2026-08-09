@@ -13,18 +13,19 @@ committed and pushed survives. Update this file and push after every sub-step.
 >
 > **On main:** **#112** / `367a3aa` — first **testnet** settlement L1-live
 > (tx `0xdad0…2361`, chain_checked confirmed=1) + refounding docs; **not**
-> mainnet; **not** unsolicited buyer. **#111** / `4aa6c61` plane org-loops v4.
-> Gap **G9 still open** constitutionally (ops must configure RPC in production).
-> Settlements: **1 testnet** · mainnet **0** · unsolicited **0**. Not PyPI.
-> Open product PRs: **none** (docs #114 Pruner charter may be open).
+> mainnet; **not** unsolicited buyer. **#111** / `4aa6c61` plane org-loops v4;
+> **#118** MIND.md; **#117** plane visa-secret fix. Gap **G9 still open**
+> constitutionally (ops). Settlements: **1 testnet** · mainnet **0** ·
+> unsolicited **0**. Not PyPI. Open product PR **#119** (unblock defaults +
+> n=2 settle claims — **not stock until merge**; CI not fully green).
 
 ## Progress log
 
-> **Tip of `origin/main`:** `76fe090` (PR **#113** stale restock — cards were
-> wrong about #112; this tip-true restock corrects). Product tip truth is
-> **#112** / `367a3aa` under it. Prior: `#111` / `4aa6c61`; `#110` / `0ab5d36`.
+> **Tip of `origin/main`:** `bc0bba3` (PR **#118** MIND.md shared operating core).
+> Prior: `#117` / `a3a52c3`; `#116` / `42a4378` tip-true post-#112; product
+> `#112` / `367a3aa`; `#111` / `4aa6c61`.
 > Claim **free**. Settlements: **1 testnet** · mainnet **0**. Gap G9 open.
-> Open product PRs: **none**. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> Open product PRs: **#119**. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 >
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /
 > composed standing. **Not proven:** multi-instance survival; on-chain (0).

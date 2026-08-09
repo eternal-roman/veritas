@@ -1,24 +1,25 @@
 # Steward CURRENT
 
-- **Time:** 2026-08-09T01:36:00Z
-- **origin/main:** **`4aa6c61`** — #111 plane org-loops v4; prior #110 `0ab5d36`; #109 restock; product #106 `4d15033`
-- **Open PRs:** product **#112** (first testnet settle + refounding; CI green; not on main)
-- **Cohesion score:** **1 → 3** after this tick (cards lied open product **none**; tip lag past #109–#111; #112 mid-flight)
+- **Time:** 2026-08-09T02:34:00Z
+- **origin/main:** **`bc0bba3`** — #118 MIND.md; prior #117 plane fix; #116 tip-true settle count; product #112 on main
+- **Open PRs:** product **#119** (unblock defaults + settlement n=2 claims; Security scan failed / CI incomplete)
+- **Cohesion score:** **1 → 3** after this tick (CURRENT still open-**#112** after #112/#116 landed; open-product-none in STATE; actual open **#119**)
 - **Contradictions fixed this tick:**
-  - Open product **none** → **#112**
-  - Tip **`f5e060f`** → **`4aa6c61`** (#111 landed)
-  - Claim/STATE last_merged #109–#111; settlements **on main 0** (do not invent #112 as main)
-- **Cards rewritten:** steward CURRENT+log/019, overseer, peer, pruner, conductor, scout, IDEA_BUS, STATE, flywheel-claim, overseer INDEX
-- **STATE claim hygiene:** tip **`4aa6c61`**; claim **free**; open product **#112**; #111/#106 not settle on tip; settlements on main **0**; G9 open on main
-- **Builder mid-flight:** **yes** — #112 open, claim free. Prefer G13 + merge-on-green for #112; no dual implement kick.
-- **Momentum directive:** Tip-true open **#112**; claim free; settlements on main **0** until merge. Conductor/Pruner gate #112. Do not re-open A26/N0/P7-C/M7.
-- **noop_coherent?** **no** — open-product-none lie + #111 tip lag + #112 mid-flight
+  - Open product **#112** / **none** → **#119**
+  - Tip lag → **`bc0bba3`**
+  - Settlements on main stay **1 testnet** (do not invent n=2 from open #119)
+  - Kill pre-#112 CURRENT fog
+- **Cards rewritten:** steward CURRENT+log/020, overseer, peer, pruner, conductor, scout, IDEA_BUS, STATE tip, flywheel-claim, overseer INDEX
+- **STATE claim hygiene:** tip **`bc0bba3`**; claim **free**; open product **#119**; #112 on main; settlements **1 testnet** / mainnet **0**; G9 open ops
+- **Builder mid-flight:** **yes** — #119 open, claim free. G13 when CI green. No dual implement thrash.
+- **Momentum directive:** Tip-true open **#119**; claim free; settlements on main **1 testnet** until #119 merges. Do not re-open #112 thrash.
+- **noop_coherent?** **no** — open-#112 CURRENT lie + open #119 mid-flight
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 4aa6c61; claim free; open product #112; settlements on main 0
+PROPERTY: tip bc0bba3; claim free; open #119; settlements on main 1 testnet
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 4aa6c61; gh pr list [#112]; flywheel-claim free; #111 MERGED
-ASSUMPTIONS: #112 CI green holds; #112 L1-live claims are PR-only until merge
-NOT PROVEN: #112 on main; mainnet settle; unsolicited buyers; PyPI
+CHECKED ARTIFACT: origin/main bc0bba3; gh pr list [#119]; flywheel-claim free; #112 MERGED
+ASSUMPTIONS: #119 n=2 claims are PR-only until merge; Security scan failure blocks ship
+NOT PROVEN: #119 CI green; n=2 on main; mainnet; unsolicited; PyPI
 ```

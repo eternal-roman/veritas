@@ -1,18 +1,17 @@
 # Scout CURRENT — pointer (steward hygiene)
 
-- **Time:** 2026-08-08T23:46:00Z
+- **Time:** 2026-08-09T00:10:00Z
 - **Role:** Scout harvests seedlings into `IDEA_BUS.md`. **Does not** set product NEXT.
-- **origin/main:** **`bc455c8`** (#96; prior #95 `301f5b2`; #94 `827813a`)
+- **origin/main:** **`9359b79`** (#98 ecosystem advance on main)
 - **Claim:** **free**. Open product PRs: **none**.
-- **NEXT authority:** `docs/program/STATE.md` + Overseer CURRENT — default **hold** unless unblocked (live-RPC G9 egress). **M7 is landed** — not NEXT.
-- **Do not:** treat this card or stale IDEA_BUS seedling-context lines as dual product bet; re-open M7 / N0 / P7-C / A26-A27 / O.8.
-- **IDEA_BUS:** header stamped tip-true; seedling tables may lag — harvest is not authorization.
-- **Settlements:** **0**. Gap G9 open. Not PyPI.
+- **NEXT authority:** STATE + Overseer — default **hold** unless unblocked. **#98 landed** — do not dual-reopen as NEXT thrash.
+- **Do not:** treat seedlings as dual product authorization; re-open M7 / N0 / P7-C / A26 / #98.
+- **Settlements:** **0**. Gap G9 open. Not PyPI. #98 ≠ on-chain settle.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: scout is pointer only; STATE/Overseer own NEXT=hold; claim free; open PRs none; tip bc455c8
+PROPERTY: scout pointer; tip 9359b79; #98 on main; claim free; open product none
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main bc455c8; gh pr list empty; flywheel-claim free; STATE NEXT hold
+CHECKED ARTIFACT: origin/main 9359b79; gh pr product empty; flywheel-claim free
 NOT PROVEN: next product ship; live RPC; on-chain (0)
 ```

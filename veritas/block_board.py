@@ -290,9 +290,14 @@ def seed_known_blocks(board: BlockBoard) -> list[Block]:
     seeds = [
         (
             "money_loop",
-            "VERITAS_RPC_URL unset — Phase 0.1 blocked",
-            "Product G9/0.1 needs RPC + facilitator + funded wallet. "
-            "Run python -m veritas.unblock_probe; update checklist in place.",
+            "Money-path env unset — probe the defaults before declaring blocked",
+            "G9/0.1 needs RPC + facilitator + funded wallet, but an unset env "
+            "var is not a block: pinned public testnet defaults ship in code "
+            "(chain_reconcile.DEFAULT_PUBLIC_RPC_URLS; unblock_probe probes "
+            "them), testnet funding is permissionless (Circle faucet), and "
+            "the recipe is proven (docs/program/fable/settlement/). Run "
+            "python -m veritas.unblock_probe; 'blocked' requires a dated "
+            "failing probe (MIND §3).",
             "money_egress",
             3,
         ),

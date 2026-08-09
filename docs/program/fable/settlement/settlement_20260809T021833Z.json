@@ -1,0 +1,190 @@
+{
+  "run_id": "20260809T021833Z",
+  "started_at": "2026-08-09T02:18:33.680389Z",
+  "base_url": "http://127.0.0.1:8000",
+  "query": "What is EIP-3009 transferWithAuthorization?",
+  "steps": [
+    {
+      "step": "health",
+      "http_status": 200,
+      "body": {
+        "status": "ok",
+        "service": "veritas",
+        "version": "0.8.1",
+        "payment_mode": "live",
+        "live_ready": true
+      }
+    },
+    {
+      "step": "unpaid_challenge",
+      "http_status": 402,
+      "body": {
+        "x402Version": 1,
+        "error": "X-PAYMENT header is required",
+        "accepts": [
+          {
+            "scheme": "exact",
+            "network": "eip155:84532",
+            "maxAmountRequired": "10000",
+            "resource": "http://127.0.0.1:8000/v1/research",
+            "description": "High-assurance evidence-backed research via Veritas",
+            "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+            "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+            "mimeType": "application/json",
+            "maxTimeoutSeconds": 60,
+            "extra": {
+              "name": "USDC",
+              "version": "2"
+            }
+          }
+        ]
+      },
+      "payment_required_header": null
+    },
+    {
+      "step": "build_payment",
+      "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+      "network": "eip155:84532",
+      "gated_by": "veritas.payer: validate_accepts + SpendPolicy + attempt journal"
+    },
+    {
+      "step": "paid_request",
+      "http_status": 200,
+      "body": {
+        "request_id": "a4b72748-6a66-4ce0-8c2e-b140aac6fb64",
+        "status": "refused",
+        "query": "What is EIP-3009 transferWithAuthorization?",
+        "claims": [],
+        "evidence": [],
+        "support": {
+          "n_evidence": 0,
+          "independent_domains": 0,
+          "domains": [],
+          "distinct_providers": 0,
+          "verdict": "unsupported",
+          "agreement": "not_assessed",
+          "method": "veritas.support.v1"
+        },
+        "custody_root": "sha256:418e0851b888caf7d6d9bde50469ce0bdb8ca5c2515055433ca78e85a996e8f2",
+        "custody_valid": true,
+        "custody_chain": [
+          {
+            "event_type": "created",
+            "actor": "pipeline",
+            "timestamp": "2026-08-09T02:18:34.895468Z",
+            "prev_hash": null,
+            "payload": {
+              "query": "What is EIP-3009 transferWithAuthorization?",
+              "request_id": "a4b72748-6a66-4ce0-8c2e-b140aac6fb64"
+            },
+            "event_hash": "sha256:09e6058dd51b0718c7067f89164487c0556dd0b1e9e4a3f1a5bdf39778c369b2"
+          },
+          {
+            "event_type": "evidence_discarded",
+            "actor": "wikipedia",
+            "timestamp": "2026-08-09T02:18:35.784873Z",
+            "prev_hash": "sha256:09e6058dd51b0718c7067f89164487c0556dd0b1e9e4a3f1a5bdf39778c369b2",
+            "payload": {
+              "reason": "below_min_relevance",
+              "relevance": 0.0,
+              "threshold": 0.34,
+              "url": "https://en.wikipedia.org/wiki/X402"
+            },
+            "event_hash": "sha256:65e8e5c4f77db62c1a74dccd2be03923f884bb1d4c54a238e3278e84f9582f33"
+          },
+          {
+            "event_type": "refused",
+            "actor": "pipeline",
+            "timestamp": "2026-08-09T02:18:35.784873Z",
+            "prev_hash": "sha256:65e8e5c4f77db62c1a74dccd2be03923f884bb1d4c54a238e3278e84f9582f33",
+            "payload": {
+              "reason": "irrelevant_evidence",
+              "discarded_irrelevant": 1
+            },
+            "event_hash": "sha256:418e0851b888caf7d6d9bde50469ce0bdb8ca5c2515055433ca78e85a996e8f2"
+          }
+        ],
+        "attests": "what this service received from these sources at this time; not what those sources served to any other party",
+        "retrieval": {
+          "n_sources": 1,
+          "providers_attempted": [
+            "wikipedia",
+            "duckduckgo_instant_answer"
+          ],
+          "providers_succeeded": [
+            "wikipedia",
+            "duckduckgo_instant_answer"
+          ],
+          "degraded": false,
+          "unavailable": false,
+          "errors": []
+        },
+        "refusal_reason": "irrelevant_evidence",
+        "billable": true,
+        "timestamp": "2026-08-09T02:18:35.784873Z",
+        "custody_receipt": {
+          "request_id": "a4b72748-6a66-4ce0-8c2e-b140aac6fb64",
+          "query": "What is EIP-3009 transferWithAuthorization?",
+          "status": "refused",
+          "custody_root": "sha256:418e0851b888caf7d6d9bde50469ce0bdb8ca5c2515055433ca78e85a996e8f2",
+          "custody_valid": true,
+          "evidence_hashes": [],
+          "stored_at": "2026-08-09T02:18:35.794001Z",
+          "persisted": true
+        },
+        "payment": {
+          "settled": true,
+          "success": true,
+          "state": "settled",
+          "transaction": "0x9ec7edd5bd0a14496f72dd24b78ec65778b7afca600aa06025971ca46a5d352c",
+          "network": "eip155:84532",
+          "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+          "error_reason": null
+        }
+      },
+      "payment_response_header": null
+    }
+  ],
+  "acceptance": {
+    "criterion": "Base Sepolia USDC transfer buyer \u2192 VERITAS_PAY_TO from unattended request",
+    "met": true,
+    "transaction": "0x9ec7edd5bd0a14496f72dd24b78ec65778b7afca600aa06025971ca46a5d352c",
+    "notes": [
+      "on-chain transaction field present"
+    ]
+  },
+  "requirements": {
+    "scheme": "exact",
+    "network": "eip155:84532",
+    "maxAmountRequired": "10000",
+    "resource": "http://127.0.0.1:8000/v1/research",
+    "description": "High-assurance evidence-backed research via Veritas",
+    "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+    "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "mimeType": "application/json",
+    "maxTimeoutSeconds": 60,
+    "extra": {
+      "name": "USDC",
+      "version": "2"
+    }
+  },
+  "proof": {
+    "request_id": "a4b72748-6a66-4ce0-8c2e-b140aac6fb64",
+    "status": "refused",
+    "billable": true,
+    "custody_root": "sha256:418e0851b888caf7d6d9bde50469ce0bdb8ca5c2515055433ca78e85a996e8f2",
+    "settlement": {
+      "settled": true,
+      "success": true,
+      "state": "settled",
+      "transaction": "0x9ec7edd5bd0a14496f72dd24b78ec65778b7afca600aa06025971ca46a5d352c",
+      "network": "eip155:84532",
+      "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+      "error_reason": null
+    },
+    "transaction": "0x9ec7edd5bd0a14496f72dd24b78ec65778b7afca600aa06025971ca46a5d352c",
+    "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+    "network": "eip155:84532"
+  },
+  "finished_at": "2026-08-09T02:18:36.666744Z"
+}

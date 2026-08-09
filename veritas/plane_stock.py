@@ -122,8 +122,8 @@ def stock(repo_root: Path | None = None) -> dict[str, Any]:
         "claim": claim,
         "open_prs": prs,
         "env": {
-            "VERITAS_RPC_URL": "set" if rpc else "unset",
-            "facilitator": "set" if fac else "unset",
+            "VERITAS_RPC_URL": "set" if rpc else "unset (public testnet default available)",
+            "facilitator": "set" if fac else "unset (public default available)",
         },
         "idle_true_candidate": free_hold,
         "not_x402_settlement": True,

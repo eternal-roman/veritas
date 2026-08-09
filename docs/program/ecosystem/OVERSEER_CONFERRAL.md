@@ -1,5 +1,13 @@
 # Ecosystem → Overseer conferral (post 5-cycle mesh)
 
+**2026-08-09 — Unblock:** required automated rows are **yes** from a bare
+environment (RPC `eth_chainId=0x14a34`, facilitator `/supported` 200, both
+via pinned public defaults, sources labelled — `unblock/CHECKLIST.md`).
+Settle→reconcile proven **n=2** (`../fable/settlement/`). Recommend singular
+product NEXT = **Phase 0.1-R routine money loop**; full ladder transcript for
+the five reported blockers: `unblock/LADDER-2026-08-09.md`. Overseer owns
+the claim.
+
 **When:** after mesh LEARN 005. **Claim:** free (T4; no dual product NEXT).
 
 | Track | Status | Latest recommend | Overseer mark |

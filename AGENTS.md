@@ -20,6 +20,7 @@ veritas-mcp                              # serve the engine as local MCP tools (
 VERITAS_METRICS_TOKEN=... veritas-server # /metrics exists only when a token is set
 veritas-ops revenue                      # operator reports from the ledger (JSON)
 veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
+veritas-ops reconcile-chain              # G9: check settled txs on-chain; env RPC wins, testnet default otherwise
 veritas-diligence https://seller.example # vet a counterparty; exit 0 pass / 1 fail / 2 unverifiable
 veritas-audit run pack.json              # audit an attested pack against its origin; 0 confirmed / 1 diverged / 2 unobserved
 veritas-audit report r1.json r2.json     # survival report (counts) over audit records you hold

@@ -96,8 +96,14 @@ after token exhaustion; do not lose state.
 3. The x402 v2 adapter is a boundary shim; a full v2 migration (server
    challenge shape, payer, schema) is a follow-up bet once the ecosystem
    direction is confirmed.
-4. Buyer wallet still holds ~19.99 testnet USDC for repeat runs (throwaway
+4. Buyer wallet still holds ~19.98 testnet USDC for repeat runs (throwaway
    key in the session scratchpad; regenerate + re-faucet if lost).
+5. **Settlement n=2 (2026-08-09):** run 2 settled unattended
+   (`settlement/settlement_20260809T021833Z.json`, tx `0x9ec7edd5…d352c`,
+   honest `refused` verdict, billable, custody root delivered) and **both**
+   runs were chain-confirmed via the pinned-default RPC path with the env
+   unset (`settlement/chain_reconcile_default_run1.json` / `…run2.json`) —
+   the fable/unblock-defaults PR made env-unset a non-block.
 
 ## Resume protocol
 

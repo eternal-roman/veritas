@@ -59,10 +59,15 @@ All three are fixed and pinned by tests; see `docs/program/STATE.md`.
 
 ## What is built but unproven
 
-- **Live settlement.** The verify/settle calls are implemented against the
-  x402 facilitator API but have never run against a real facilitator with a
-  funded wallet. Until that happens, "live mode works" is a code claim, not an
-  operational one. On-chain settlements observed from this codebase: **0**.
+- **Live settlement.** Exercised once, end to end, against the real x402.org
+  facilitator on Base Sepolia (2026-08-09): unattended 402 → sign → verify →
+  research delivered → settle; USDC moved buyer → pay-to at the exact request
+  price, and `veritas-ops reconcile-chain` confirmed the ledger record
+  against the public chain. Evidence: `docs/program/fable/settlement/`
+  (tx `0xdad0…2361`, block 45234918). On-chain settlements observed from this
+  codebase: **1 (testnet)**. Mainnet: 0. Unsolicited buyers: 0. Getting there
+  required two client fixes (facilitator user-agent, x402 v2 wire shape) —
+  the previous client could not reach the reference facilitator at all.
 - **Credits top-up under a real facilitator.** Grant-on-settled and
   refuse-on-failed/indeterminate are tested with a controlled facilitator
   double. No real x402 top-up has funded a credit balance in production.
@@ -109,9 +114,12 @@ The payment path is real code rather than a header check, and after the
 2026-08-05 audit the served path no longer makes claims it cannot support.
 
 What remains between this and revenue is still largely operational, not only
-code: nothing has settled on-chain (0), retrieval is still snippet-grade, PyPI
-publish needs Trusted Publishing, and G9 chain reconcile is design-level until
-operators configure RPC. The programme is tracked in `docs/program/STATE.md`.
+code: one testnet settlement is chain-confirmed (see above) but mainnet is
+untouched and no buyer we did not operate has ever paid; retrieval is still
+snippet-grade; PyPI publish needs Trusted Publishing; and G9 chain reconcile,
+though now exercised against a real chain once, still needs production
+operators to configure RPC and act on it. The programme is tracked in
+`docs/program/STATE.md`.
 
 ## Security / CI
 

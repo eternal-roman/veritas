@@ -151,7 +151,10 @@ package — CI's package job asserts this.
 
 ## Current state, honestly
 
-Structural invariants above are tested and green. Not yet proven: no payment
-has ever settled on-chain (fail-closed paths are exercised; success is not),
-retrieval is snippet-grade, and the package is not yet published to PyPI. See
-ROADMAP.md for the full evaluation and sequencing.
+Structural invariants above are tested and green. One payment has settled
+on-chain: a testnet (Base Sepolia) end-to-end run against the real x402.org
+facilitator — tx recorded and chain-confirmed by `reconcile-chain`; evidence
+in `docs/program/fable/settlement/`. Not yet proven: mainnet settlement, any
+buyer we did not operate ourselves, sustained volume. Retrieval is
+snippet-grade and the package is not yet published to PyPI. See ROADMAP.md
+for the full evaluation and sequencing.

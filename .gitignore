@@ -14,3 +14,7 @@ docs/program/researcher/inbox/
 # Claude/Grok plugin per-project settings (user-local, never commit)
 .claude/*.local.md
 .claude/*.local.json
+
+# Local dogfood wallets / faucet transcripts (testnet only)
+.veritas_dogfood/
+

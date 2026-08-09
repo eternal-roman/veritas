@@ -24,15 +24,21 @@ Git helper if present: `.\\scripts\\with-git-bash.cmd "single-line"`.
 ### Mission (in order)
 1. **Stock** — `git fetch` + `python -m veritas.plane_stock`. Never invent empty
    open PRs if `open_prs.ok` is false. Early-exit `noop_stable` if idle_true and
-   no green PR / no product WIP (still refresh CURRENT tip SHA if changed).
-2. **Quality gate** — functioning / necessary / pursuant. Fail or fake → LAZY/MISGUIDED.
-3. **Honesty** — cite paths; no settlement fiction; #plane VAAT ≠ x402.
-4. **Vision + strategy (0–3)** — confer Scout only if either ≤ 1.
-5. **Navigate** — one directive; GUARDIAN; no dual bets; enforce WORKFLOW_HYGIENE + ORG_LOOPS v4.
+   no green PR / no product WIP **and** no Pruner `overseer_ack: pending`
+   (still refresh CURRENT tip SHA if changed).
+2. **Pruner agreement (required when pending)** — read `pruner/CURRENT.md`.
+   If `overseer_ack: pending` and `cut_list` non-empty: set
+   `accepted` | `rejected` | `partial` + optional `do_not_touch` + one-line
+   `overseer_note`. Reject cuts that risk product function or agent workflow.
+   Pruner may open a prune PR **only** after your ack.
+3. **Quality gate** — functioning / necessary / pursuant. Fail or fake → LAZY/MISGUIDED.
+4. **Honesty** — cite paths; no settlement fiction; plane VAAT ≠ x402.
+5. **Vision + strategy (0–3)** — confer Scout only if either ≤ 1.
+6. **Navigate** — one directive; GUARDIAN; no dual bets; WORKFLOW_HYGIENE + ORG_LOOPS v4.
 
 ### Read first (required when not early-exit)
-- `WORKFLOW_HYGIENE.md` · `ORG_LOOPS.md` · `GOVERNING.md` · `GUARDIAN.md`
-- `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md`
+- `WORKFLOW_HYGIENE.md` · `ORG_LOOPS.md` · `PRUNER.md` · `GOVERNING.md` · `GUARDIAN.md`
+- `STATE.md` · `overseer/CURRENT.md` · `pruner/CURRENT.md` · `conductor/CONFERRAL.md`
 - `ecosystem/BUS.md` if ecosystem noise; checklist if RPC unset
 - plane_stock JSON is authoritative for tip / PRs / claim
 
@@ -46,12 +52,12 @@ registry-before-settlement, docs-only progress, banned claim words without evide
 skipping battery while claiming green, strategically empty green, dual product PRs.
 
 ### Write (always)
-1. Overwrite `docs/program/overseer/CURRENT.md` per OVERSEER.md output contract
-   (include vision/strategy scores, quality gate, confer_scout, scout_question).  
-2. Append `docs/program/overseer/log/NNN-brief.md`.  
-3. If open PR is LAZY/DRIFT/MISGUIDED and `gh` works, short factual PR comment.  
-4. **Do not merge. Do not force-push main.** (Conductor/Flywheel own autonomous merge.)  
-5. Guardian-class one-line integrity fix + test only if you can finish this tick.
+1. Overwrite `docs/program/overseer/CURRENT.md` (vision/strategy, quality gate,
+   confer_scout, **Pruner ack** if pending: `pruner_ack` / `pruner_do_not_touch`).
+2. Append `docs/program/overseer/log/NNN-brief.md`.
+3. If open PR is LAZY/DRIFT/MISGUIDED and `gh` works, short factual PR comment.
+4. **Do not merge. Do not force-push main.**
+5. Guardian-class one-line integrity fix + test only if finishable this tick.
 
 ### Noop
 If tree idle and cards accurate: still refresh CURRENT with vision/strategy scores

@@ -88,7 +88,10 @@ def test_the_score_states_that_it_counts_paid_requests_only(tmp_path):
     log = OutcomeLog(tmp_path)
     _record(log, MIN_SAMPLES_FOR_SCORE, paid=True)
     basis = score_service(log).basis
-    assert basis["counts"] == "settled paid requests only"
+    assert basis["counts"] == (
+        "verified-payment requests, recorded at delivery time — before "
+        "the settlement outcome is known"
+    )
     assert basis["free_total"] == 0
 
 

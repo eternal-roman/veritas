@@ -1,5 +1,87 @@
 # Changelog
 
+## [0.9.1] - 2026-08-09
+
+Review-driven cleanup, debloat and polish: a six-territory adversarial
+review of the whole repository, then fixes.
+
+### Fixed
+- **Buyer CLIs crashed on every real invocation**: `veritas-diligence` and
+  `veritas-buy` passed `resolver=None` into the SSRF guard (TypeError), and
+  the crash's exit 1 read as a seller-failed verdict. Every test injected a
+  resolver, so the suite stayed green — found by running the installed CLI.
+- Live mode with a settleable-but-domain-unverified network (10 of 12) now
+  fails closed as `misconfigured` instead of 500ing every paid request and
+  `/.well-known/x402`.
+- `DEFAULT_FACILITATOR` single-sourced on the only facilitator this codebase
+  has settled through (`https://x402.org/facilitator`); the bootstrap and
+  the unblock probe no longer name a never-exercised counterparty, and the
+  probe reads the env names the money path actually reads.
+- Top-up replay during a replay-store outage now serves a retriable 503
+  instead of a false 409 "already used"; settlement-failed top-up bodies
+  carry the registered `error` code; payment blocks expose both `settled`
+  and `success` on every path.
+- `/metrics` 404/401 and log-proof errors now use codes at their registered
+  statuses (`not_found` / `unauthorized` added to `/v1/errors`).
+- Served JSON Schema gains the `license` / `attribution` / `observed`
+  evidence properties the pipeline has always emitted; `notary.observe`
+  provenance registered; `veritas-ops revenue` degrades structurally instead
+  of crashing when the ledger is unreachable.
+- Metering docstring example now prices `duckduckgo_instant_answer` (the
+  name requests actually report); copying the old example made every request
+  permanently UNPRICED.
+
+### Changed
+- `/v1/hooks` 1.1: corrected exit-code maps for `veritas-money-loop` and
+  `veritas-verify` (2 = could-not-check, never "error"), registered the
+  metrics bearer and `Retry-After` headers.
+- Verdict-bearing CLIs exit 3 on usage errors (argparse's 2 collided with
+  the semantic "unverifiable"); `veritas-agent` provision output is JSON;
+  `veritas-server` / `veritas-mcp` answer `--help` instead of booting.
+- Notarize traffic counted as `veritas_notarize_total` (was research);
+  request-counter label cardinality bounded via the hooks registry.
+- Release workflow restructured: build once, publish the GitHub release
+  (artifacts + this file's section as notes) from a job that never sees the
+  OIDC token; PyPI publish runs only when a maintainer sets the
+  `PYPI_TRUSTED_PUBLISHER=configured` repository variable.
+
+### Removed
+- `veritas/bayesian.py` (nothing imported it; package metadata no longer
+  advertises "Bayesian updating" — completing the 2026-08-05 retraction),
+  the never-instantiated schema dataclasses, the unreachable retrieval
+  fallback seam, `free_retrieve`, dead x402/ops/notary code.
+- Stale root docs `ANALYSIS.md`, `WORKFLOW.md`, `DISTRIBUTABLE.md`,
+  `LIVE_PAYMENTS.md` (they still claimed Bayesian updating and "no
+  settlement ever"); `JIT_PACKET.md` / `ZK_WALLET.md` moved to
+  `docs/design/`.
+
+### Honesty
+- All settlements to date are operator-run testnet arcs; count and evidence
+  live at `docs/program/STATE.md` (header) and `docs/program/fable/settlement/`.
+  Mainnet: none. Buyers we did not operate: none. PyPI: not yet published.
+
+## [0.9.0] - 2026-08-09
+
+North star + integration registry + first live product arcs (PRs #134-#142).
+
+### Added
+- **VISION.md** (root): the single north star; program docs point at it.
+- **`GET /v1/hooks`** (constitution 2.5, A28): machine-readable integration
+  registry — every HTTP route, MCP tool, CLI exit-code contract, payment
+  header and durable store; states plainly that no push delivery exists.
+- Buyer journey CLI (`veritas-buy`), Stage-1 status in `veritas-agent
+  status`, catalog seed (#136).
+- Honest refusal class for research-receipt re-fetch
+  (`receipt_not_refetchable`, #139).
+
+### Live evidence (operator-run, Base Sepolia, chain-confirmed)
+- First composed money loop (`veritas-money-loop` exit 0), first live buyer
+  journey (4/4 diligence checks), first live session-commerce loop
+  (SIWx → x402 top-up settle → credit-paid research), first live
+  evidence-notary arc (paid notarize → attestation → pack → independent-key
+  audit CONFIRMED → survival report → Merkle inclusion). Evidence:
+  `docs/program/fable/settlement/`.
+
 ## [0.8.1] - 2026-08-08
 
 ### Added
@@ -7,7 +89,8 @@
 
 ### Honesty
 - Still operator-local log (not public CT, not on-chain)
-- On-chain settlements: **0**; G9 still open; not a new PyPI publish by itself
+- On-chain settlements at release time: **0**; G9 still open; not a new PyPI publish by itself
+
 ## [0.8.0] - 2026-08-08
 
 Agent-to-agent commerce **substrate** cut: notary spine + dogfood 1–5 + G9 design.
@@ -25,7 +108,7 @@ Agent-to-agent commerce **substrate** cut: notary spine + dogfood 1–5 + G9 des
 
 ### Honesty (not claimed in 0.8.0)
 
-- On-chain settlements from this codebase: **0**
+- On-chain settlements at release time: **0**
 - Constitution gap **G9** remains open until operators configure RPC and production uses it
 - Package **not** published to PyPI by this bump alone (release workflow needs Trusted Publishing)
 - Multi-billion A2A revenue is direction only, not measured

@@ -12,18 +12,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 > **0.8.1**, **cycle-5**, **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**,
 > **M7**, **O.8**, or **#98** ecosystem-advance thrash.
 >
-> **On main:** **#98** / `9359b79` ecosystem advance (VAAT + plane visas + track
-> mesh) — **not** x402 on-chain settle; A26/A27 `#75` / `ab728a6`; N0-residue
-> `#77` / `1c56a0b`; P7-C `#69` / `e7f674b`. Settlements **0**. Gap G9
-> **still open**. Not PyPI.
+> **On main:** **#106** / `4d15033` plane org-loops v3 + Researcher + limited
+> VAAT economy — **not** x402 on-chain settle; **#98** / `9359b79` ecosystem
+> mesh; A26/A27 `#75` / `ab728a6`; N0-residue `#77` / `1c56a0b`; P7-C `#69` /
+> `e7f674b`. Settlements **0**. Gap G9 **still open**. Not PyPI.
 >
 > Nothing has settled on-chain.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `5c02edb` (PR **#103** steward restock post-#100/#101).
-> Prior: `#102` / `b74b0af` TRACK VT fix; `#101` / `72119b4`; `#100` / `7011bdf`;
-> `#98` / `9359b79` ecosystem advance.
+> **Tip of `origin/main`:** `f5e060f` (PR **#108** prune researcher inbox).
+> Prior product: `#106` / `4d15033` plane org loops / Researcher / limited VAAT
+> economy — **not** x402 settle; `#105` / `b66901f`; `#98` / `9359b79`.
 > Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
 > Claim **free**. Settlements: **0**. Gap G9 open. Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.

@@ -1,0 +1,197 @@
+{
+  "captured_at": "2026-08-09T15:37:27.629261Z",
+  "subject": "first live evidence-notary arc: paid notarize -> attested pack -> independent audit CONFIRMED -> survival report -> Merkle inclusion",
+  "acceptance": {
+    "met": true,
+    "transaction": "0xd3c9c8b25fe5b9229164a041faca64dc6ae144f9f008dacaf9608242a0d10b6a",
+    "criterion": "notarize settled on-chain; pack integrity + EIP-191 attestation verified; independent-key audit re-observed origin and confirmed; inclusion proof valid"
+  },
+  "transcript": {
+    "subject": "live evidence-notary arc on https://en.wikipedia.org/wiki/HTTP_402",
+    "steps": [
+      {
+        "step": "notarize_challenge",
+        "http": 402,
+        "accepts_count": 1
+      },
+      {
+        "step": "notarize_paid",
+        "http": 200,
+        "status": "completed",
+        "billable": true,
+        "custody_root": "sha256:45b2e8110e1ce9008bf082520180f6eae77009d6eab5ab9d47d47cf012649505",
+        "request_id": "51bcfe04-55fd-4510-ba19-440e32c7de0f",
+        "attested": true,
+        "settlement": "0xd3c9c8b25fe5b9229164a041faca64dc6ae144f9f008dacaf9608242a0d10b6a",
+        "payment": {
+          "settled": true,
+          "success": true,
+          "state": "settled",
+          "transaction": "0xd3c9c8b25fe5b9229164a041faca64dc6ae144f9f008dacaf9608242a0d10b6a",
+          "network": "eip155:84532",
+          "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+          "error_reason": null
+        }
+      },
+      {
+        "step": "pack_built",
+        "pack_hash": "sha256:2ffb75521df344e92553ede5688f76b305673a266183603e6fb58e5297ad6104",
+        "attested": true,
+        "wrote": "C:/Users/elamj/AppData/Local/Temp/claude/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/scratchpad/evidence_pack.json"
+      },
+      {
+        "step": "packs_verify",
+        "http": 200,
+        "body": {
+          "valid": true,
+          "reason": "ok",
+          "pack_hash": "sha256:2ffb75521df344e92553ede5688f76b305673a266183603e6fb58e5297ad6104",
+          "content_hash": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+          "attestation_ok": true,
+          "attestation_reason": "ok",
+          "note": "portable evidence pack with pack_hash integrity; optional EIP-191 attestation; not a Merkle log inclusion proof and not an on-chain anchor"
+        }
+      },
+      {
+        "step": "attestations_verify",
+        "http": 200,
+        "body": {
+          "valid": true,
+          "reason": "ok",
+          "scheme": "eip191",
+          "note": "EIP-191 recovery over bound record fields; not an on-chain anchor and not a re-fetch of the origin",
+          "claimed_signer": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364"
+        }
+      },
+      {
+        "step": "log_status",
+        "http": 200,
+        "body": {
+          "count": 1,
+          "root": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+          "note": "operator-local Merkle evidence log; inclusion proves membership in this instance's leaf list at the stated root \u2014 not a public transparency log and not an on-chain anchor"
+        }
+      },
+      {
+        "step": "log_proof",
+        "http": 200,
+        "keys": [
+          "index",
+          "leaf",
+          "leaf_count",
+          "note",
+          "path",
+          "root"
+        ]
+      },
+      {
+        "step": "log_inclusion_verify",
+        "http": 422,
+        "body": {
+          "error": "invalid_request",
+          "detail": [
+            {
+              "type": "missing",
+              "loc": [
+                "body",
+                "proof"
+              ],
+              "msg": "Field required",
+              "input": {
+                "leaf": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+                "index": 0,
+                "root": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+                "path": [],
+                "leaf_count": 1,
+                "note": "operator-local Merkle evidence log; inclusion proves membership in this instance's leaf list at the stated root \u2014 not a public transparency log and not an on-chain anchor"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "evidence_pack": {
+    "pack_version": "veritas-evidence-pack-v1",
+    "url": "https://en.wikipedia.org/wiki/HTTP_402",
+    "content_hash": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+    "observed_at": "2026-08-09T15:36:08.324512Z",
+    "extract_version": "veritas.extract.v1",
+    "request_id": "51bcfe04-55fd-4510-ba19-440e32c7de0f",
+    "custody_root": "sha256:45b2e8110e1ce9008bf082520180f6eae77009d6eab5ab9d47d47cf012649505",
+    "attestation": {
+      "scheme": "eip191",
+      "signer": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+      "signature": "0xd93fafa4f81898fd70c3de3c990a5af6b3c45918e873ecada7be4ed6796143c135df960a428ddf22fc6630ba505ff74d1f742293cd9b5bc8643690f923e66a081c",
+      "message": "veritas-evidence-record-v1\nurl: https://en.wikipedia.org/wiki/HTTP_402\ncontent_hash: sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b\nobserved_at: 2026-08-09T15:36:08.324512Z\nextract_version: veritas.extract.v1\nrequest_id: 51bcfe04-55fd-4510-ba19-440e32c7de0f",
+      "attests": "operator EIP-191 personal_sign over the bound fields; not an on-chain anchor and not proof the origin served this to others"
+    },
+    "note": "portable evidence pack with pack_hash integrity; optional EIP-191 attestation; not a Merkle log inclusion proof and not an on-chain anchor",
+    "pack_hash": "sha256:2ffb75521df344e92553ede5688f76b305673a266183603e6fb58e5297ad6104"
+  },
+  "audit_record": {
+    "attested_signer": "0xbbee7f8b2f691d276c44767b7358de61e4e99364",
+    "audit_version": "veritas-audit-record-v1",
+    "audited_at": "2026-08-09T15:36:31.971474Z",
+    "auditor": {
+      "message": "veritas-audit-record-v1\npack_hash: sha256:2ffb75521df344e92553ede5688f76b305673a266183603e6fb58e5297ad6104\nurl: https://en.wikipedia.org/wiki/HTTP_402\ncontent_hash: sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b\nattested_signer: 0xbbee7f8b2f691d276c44767b7358de61e4e99364\nverdict: confirmed\naudited_at: 2026-08-09T15:36:31.971474Z",
+      "scheme": "eip191",
+      "signature": "0xb549bd50b0830df52b1e8ecab167649958e0b7fad5611db0c2be29479f80f54e3cf1d981ec61591e4e5748ca5cf7a872bbdd29c2abaef14bc264cb0c454690d01c",
+      "signer": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599"
+    },
+    "content_hash": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+    "method": "veritas.audit.v1",
+    "note": "auditor re-fetched the origin through notary.observe and compared the attested content_hash; confirmed/diverged describe that one observation; unobserved is evidence of nothing and is never scored; not an on-chain anchor and not proof of what the origin serves others",
+    "pack_hash": "sha256:2ffb75521df344e92553ede5688f76b305673a266183603e6fb58e5297ad6104",
+    "reason": "match",
+    "refetch_request_id": "fa5c72cf-aeab-4c12-93f5-11970f3cfcc3",
+    "url": "https://en.wikipedia.org/wiki/HTTP_402",
+    "verdict": "confirmed"
+  },
+  "audit_record_verify": {
+    "reason": "ok",
+    "valid": true
+  },
+  "survival_report": {
+    "confirmed_auditors": 1,
+    "countable_records": 1,
+    "distinct_auditors": 1,
+    "diverged_auditors": 0,
+    "foreign_excluded": 0,
+    "invalid_excluded": 0,
+    "method": "veritas.audit.v1",
+    "n_records": 1,
+    "note": "counts over the records provided; independence is per distinct auditor key, self-audits excluded; unobserved reported, never scored; records may have been withheld by whoever assembled the set (gap G11), so divergence counts are a floor, not a ceiling",
+    "packs_audited": 1,
+    "self_audits_excluded": 0,
+    "seller": null,
+    "unobserved_reported": 0,
+    "verdict": "surviving"
+  },
+  "log_inclusion": {
+    "proof_keys": [
+      "index",
+      "leaf",
+      "leaf_count",
+      "note",
+      "path",
+      "root"
+    ],
+    "inclusion": {
+      "valid": true,
+      "reason": "ok",
+      "root": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+      "leaf": "sha256:62f8ea424b6f94d8cceff94ca5a5d9b4ad8401d83a1a54fa8a32c78fbf26432b",
+      "note": "operator-local Merkle evidence log; inclusion proves membership in this instance's leaf list at the stated root \u2014 not a public transparency log and not an on-chain anchor"
+    }
+  },
+  "chain_reconcile": {
+    "chain_checked": true,
+    "counts": {
+      "confirmed": 3
+    },
+    "rpc_source": "default_public_rpc:eip155:84532"
+  },
+  "independence_note": "attester (seller key) and auditor (buyer key) are distinct keys, so A26 key-level independence holds and the record counts; both keys are operated by us this run \u2014 a survival report cannot know that, which is exactly gap G11 scope. Not a third party audit.",
+  "not_proven": "third-party auditors; unsolicited buyers; mainnet; public transparency log"
+}

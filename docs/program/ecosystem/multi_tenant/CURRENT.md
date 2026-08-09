@@ -1,15 +1,17 @@
-# Multi-Tenant Ops CURRENT
+# multi_tenant CURRENT
 
-- **Track:** multi_tenant
+- **Track:** `multi_tenant`
 - **Status:** open
-- **Cycle:** 0
-- **Last action:** bootstrap (plane agents installed)
-- **Mission:** Shared ledger/receipts; balancer-safe ops
-- **Next micro:** first research tick
+- **Cycle:** 5
+- **Time:** 2026-08-09T00:02Z
+- **Last action:** mesh cycle kernel advance
+- **Mission:** Shared ledger/receipts multi-instance
+- **Next micro:** Multi-tenant checklist for G9 reconcile per-instance
+- **Bottleneck score:** 0.450
 - **Overseer mark:** pending
 
-`
-PROPERTY: track multi_tenant bootstrapped; not resolved
-EVIDENCE LEVEL: L0
-NOT PROVEN: track outcome
-`
+```
+PROPERTY: track multi_tenant cycle 5; mesh-driven
+EVIDENCE LEVEL: L1 (ecosystem_cycle kernel)
+NOT PROVEN: track resolved; product commercial success
+```

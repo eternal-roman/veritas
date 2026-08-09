@@ -96,8 +96,11 @@ Cooperative loops under Overseer strategy (not product claim):
 | multi_tenant | 30m | `TRACK_MULTI_TENANT_TICK_PROMPT.md` |
 | legal_identity | 25m | `TRACK_LEGAL_IDENTITY_TICK_PROMPT.md` |
 | network_effects | 30m | `TRACK_NETWORK_EFFECTS_TICK_PROMPT.md` |
+| **mesh_runner** | 5-cycle / demand | `TRACK_MESH_RUNNER_TICK_PROMPT.md` — offline kernel |
+| **unblock** | on demand | `TRACK_UNBLOCK.md` — human ops for Phase 0.1 |
 
-Bus: `ecosystem/BUS.md`. Conferral: `ecosystem/OVERSEER_CONFERRAL.md`.
+Bus: `ecosystem/BUS.md`. Conferral: `ecosystem/OVERSEER_CONFERRAL.md`.  
+Kernel: `python -m veritas.ecosystem_cycle --cycles 5`.
 
 ---
 

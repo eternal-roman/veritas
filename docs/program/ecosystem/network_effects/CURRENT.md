@@ -1,15 +1,17 @@
-# Network Effects CURRENT
+# network_effects CURRENT
 
-- **Track:** network_effects
+- **Track:** `network_effects`
 - **Status:** open
-- **Cycle:** 0
-- **Last action:** bootstrap (plane agents installed)
-- **Mission:** Multi-seller embed substrate and ecosystem math
-- **Next micro:** first research tick
+- **Cycle:** 5
+- **Time:** 2026-08-09T00:02Z
+- **Last action:** mesh cycle kernel advance
+- **Mission:** Multi-seller embed substrate
+- **Next micro:** Network effect KPI: distinct seller_ids with packs (0)
+- **Bottleneck score:** 0.390
 - **Overseer mark:** pending
 
-`
-PROPERTY: track network_effects bootstrapped; not resolved
-EVIDENCE LEVEL: L0
-NOT PROVEN: track outcome
-`
+```
+PROPERTY: track network_effects cycle 5; mesh-driven
+EVIDENCE LEVEL: L1 (ecosystem_cycle kernel)
+NOT PROVEN: track resolved; product commercial success
+```

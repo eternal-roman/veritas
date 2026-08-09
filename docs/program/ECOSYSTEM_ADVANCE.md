@@ -1,7 +1,7 @@
 # Ecosystem Advance — discovery + cooperative track agents
 
-**Status:** active plane (T4 research / substrate tracks).
-**Does not dual product NEXT.** Overseer remains singular strategy gate.
+**Status:** active plane (T4 research / substrate tracks) — **v2 mesh optimized**.  
+**Does not dual product NEXT.** Overseer remains singular strategy gate.  
 **Does not invent on-chain x402 settlement.** Product settlements remain **0**
 until Phase 0.1 is proven. Local **plane money** is explicitly *not* that.
 
@@ -23,47 +23,68 @@ until Phase 0.1 is proven. Local **plane money** is explicitly *not* that.
 |--------|---------------------|
 | Agent identity / KYA | SPIFFE/SPIRE, Entra agent identity, DID+VC agents, in-tree SIWx |
 | Agent wallets | agent-wallet topics, spend-limit SDKs, x402 multi-sig |
-| Multi-agent ledgers | Hash-chained journals; in-tree eritas.credits + gent_money |
+| Multi-agent ledgers | Hash-chained journals; in-tree `veritas.credits` + `agent_money` |
 | Discovery | MCP registries, A2A directories, well-known x402 |
 | Multi-tenant | Shared store patterns; lease-based nonces |
 
 ## Org chart
 
-`
+```
                          OVERSEER (strategy gate)
                               │
               ┌───────────────┼───────────────┐
               ▼               ▼               ▼
          CONFERRAL      ECOSYSTEM BUS    track CURRENT/*
               │
-    T4 Ecosystem tracks (research + plane code; cooperative)
-    money_loop · multiparty_trust · product_worth
-    discovery_density · multi_tenant · legal_identity · network_effects
+         MESH RUNNER (offline cycle kernel) ← scale heartbeat
+              │
+    T4 tracks + Unblock Agent (when human ops gate money)
               │ proposals only
     CONDUCTOR / FLYWHEEL (one product NEXT) → PRUNER
-`
+```
 
 | Rule | Detail |
 |------|--------|
 | **Overseer** | Accepts / holds / kills track proposals; may set prefer_track |
-| **Tracks** | Loop until 
-esolved or Overseer parked |
-| **Plane money** | eritas.agent_money VAAT — never written as x402 settle |
-| **Plane visa** | eritas.agent_identity |
+| **Tracks** | Loop until `resolved` or Overseer `parked` |
+| **Mesh Runner** | Executes cycles offline so progress is not stuck on LLM ticks |
+| **Plane money** | `veritas.agent_money` VAAT — never written as x402 settle |
+| **Plane visa** | `veritas.agent_identity` |
 | **Product claim** | Still one flywheel-claim |
+
+## v2 scale (after 5-cycle optimize)
+
+**Stuck found:** tick prompts without an executor → cycles stayed 0.  
+**Fix:**
+
+```bash
+python -m veritas.plane_bootstrap
+python -m veritas.ecosystem_cycle --cycles 5
+```
+
+| Rule | Detail |
+|------|--------|
+| **Bottleneck rank** | weight × (1 − progress); discovery_density low until money |
+| **VAAT tax** | 1 VAAT per track per cycle → overseer |
+| **LEARN every 5** | `ecosystem/learn/NNN-mesh-optimize.md` |
+| **LLM fan-out** | Deep research only for top-3 ranked tracks |
+| **Unblock Agent** | Human-ops checklist when money_loop #1 but RPC/wallet missing |
+| **Scale** | Raise `--cycles` or schedule Mesh Runner; never dual product NEXT |
 
 ## Paths
 
 | Artifact | Path |
 |----------|------|
-| Charter | docs/program/ECOSYSTEM_ADVANCE.md |
-| Bus | docs/program/ecosystem/BUS.md |
-| Conferral | docs/program/ecosystem/OVERSEER_CONFERRAL.md |
-| Plane money | eritas/agent_money.py |
-| Plane visa | eritas/agent_identity.py |
+| Charter | `docs/program/ECOSYSTEM_ADVANCE.md` |
+| Bus | `docs/program/ecosystem/BUS.md` |
+| Conferral | `docs/program/ecosystem/OVERSEER_CONFERRAL.md` |
+| Mesh Runner | `TRACK_MESH_RUNNER.md` + `veritas/ecosystem_cycle.py` |
+| Unblock | `TRACK_UNBLOCK.md` |
+| Plane money | `veritas/agent_money.py` |
+| Plane visa | `veritas/agent_identity.py` |
 
-`
-PROPERTY: cooperative track plane advances ecosystem gaps without dual product NEXT or fake settlement
-EVIDENCE LEVEL: L0 (direction) + L1 (plane money/visa tests)
+```
+PROPERTY: cooperative track plane + mesh kernel; no dual product NEXT; no fake settlement
+EVIDENCE LEVEL: L0 (direction) + L1 (plane money/visa/cycle tests)
 NOT PROVEN: billion-dollar EV; product on-chain settle; G10–G12 closed
-`
+```

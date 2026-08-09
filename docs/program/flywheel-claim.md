@@ -2,7 +2,7 @@
 
 - **bet_id:** stage1-existence-probes
 - **branch:** feat/stage1-existence-probes
-- **pr:** (pending)
+- **pr:** https://github.com/eternal-roman/veritas/pull/141
 - **holder:** flywheel
 - **status:** building
 - **updated:** 2026-08-09T15:30:00Z

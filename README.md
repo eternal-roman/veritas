@@ -17,8 +17,10 @@ machine-native over [x402](https://x402.org), so an agent can buy a single
 query without an account, an API key, or a human.
 
 **Status: working software, unproven economics.** The invariants below are
-tested and CI-gated. No payment has ever settled on-chain, and retrieval is
-snippet-grade today. Both are stated plainly in
+tested and CI-gated. Exactly one payment has settled on-chain — a testnet
+end-to-end run against the real facilitator, chain-confirmed
+(`docs/program/fable/settlement/`); no buyer we did not operate has ever
+paid, and retrieval is snippet-grade today. All of this is stated plainly in
 [Known limitations](#known-limitations) and sequenced in [ROADMAP.md](ROADMAP.md)
 — we would rather you find that here than discover it later.
 
@@ -235,8 +237,11 @@ Stated plainly, because a truth-telling service should not overstate itself:
 
 - **Retrieval quality is thin.** Wikipedia and Instant Answer snippets are not
   competitive with a paid search/extraction stack for general queries.
-- **Nothing has ever settled on-chain.** Fail-closed payment paths are
-  exercised; a successful settlement is not.
+- **On-chain settlement has happened exactly once, on testnet.** One
+  end-to-end run against the real facilitator settled and was
+  chain-confirmed (evidence: `docs/program/fable/settlement/`). Mainnet
+  settlement, repeat volume, and any buyer other than our own harness remain
+  unexercised; fail-closed paths stay the tested norm.
 - **Claims are extractive, not synthesised.** A "claim" is a grounded excerpt,
   not an answer composed across sources.
 - **The calibrator is untrained and unused.** It reports `passthrough_untrained`,

@@ -8,29 +8,32 @@
 Primary objective: **agent-to-agent autonomous commerce** substrate with
 scalable momentum (L0 multi-billion *direction* — never claim proven).
 
-## Active cadence (v2 — progress + scale)
+## Active cadence (v3 — cooperative scale + anti-thrash)
+
+**Full layer map:** [`ORG_LOOPS.md`](ORG_LOOPS.md) (7 watchers, Researcher protocol).
 
 | Loop | Interval | Job |
 |------|----------|-----|
-| **Overseer** | **8m** | Quality + vision + strategy gate; Scout confer if vision≤1 |
-| **Pruner** | **10m** | Aggressive clean/prune; battery + E2E; **ship_ok veto** (G13) |
-| **Conductor** | **12m** | Merge green product PRs; restart single NEXT bet |
-| **Steward** | **15m** | Card/STATE cohesion (lags Overseer to cut thrash) |
-| **Flywheel** | **20m** | Full build cycle backup; Pruner gate; auto-merge on green |
-| **Scout (Idea)** | **25m** | Pattern fuel for Overseer; answers `scout_question` |
-| **Git Agent** | on demand / ~6–12h | Branch archaeology, salvage, local prune; Overseer conferral on remotes |
-| **Ecosystem tracks** | 20–30m each | T4 research (LLM optional) — `ECOSYSTEM_ADVANCE.md` |
-| **Mesh Runner** | every 5 cycles / on demand | `python -m veritas.ecosystem_cycle --cycles 5` — bottleneck rank + VAAT tax + LEARN |
-| **Unblock Agent** | on demand | Human-ops checklist when money_loop blocked on RPC/wallet |
+| **Conductor** | **8m** | Merge green product PRs; restart only if unblocked singular NEXT |
+| **Overseer** | **10m** | Quality + vision + strategy; Scout if vision≤1; enforce hygiene |
+| **Researcher** | **12m** | **Autonomous:** claim block board · research · solve/escalate · inbox report |
+| **Pruner** | **12m** | Aggressive clean/prune; battery + E2E; **ship_ok veto** (G13) |
+| **Scout (Idea)** | **15m** | Pattern fuel; may seed blocks for Researcher |
+| **Steward** | **20m** | Card cohesion **in-place** (no restock PR under idle-true) |
+| **Flywheel** | **30m** | Backup builder only when claim/unblocked; else idle_true noop |
+| **Git Agent** | on demand / ~6–12h | Branch archaeology, salvage, local prune |
+| **Ecosystem tracks** | offline mesh | T4 — prefer Mesh Runner over 7 LLM track timers |
+| **Mesh Runner** | every 5 cycles / demand | `python -m veritas.ecosystem_cycle --cycles 5` |
+| **Unblock Agent** | on demand / Researcher | `python -m veritas.unblock_probe` |
 | **Implement×n** | on demand | `/workflow agent-commerce-implement {"n":3}` — scale workers |
 
 **Shared truth:** `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md` ·
-`conductor/TRAJECTORY.md` · `steward/CURRENT.md` · `ecosystem/BUS.md`  
+`conductor/TRAJECTORY.md` · `steward/CURRENT.md` · `ecosystem/BUS.md` ·
+`researcher/inbox/*` · block board (`.veritas/block_board.sqlite3`)  
 **Claim:** `flywheel-claim.md` (one product builder)  
-**Plane money / visa:** local VAAT + plane visas (`python -m veritas.plane_bootstrap`) — **not** x402 settle  
-**Workflow hygiene (binding):** [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) —
-idle truly · one hygiene PR/epoch · Unblock when money blocked · product NEXT
-only if unblocked · **never dual continuous workflows**
+**Plane money / identity / pay:** `python -m veritas.agent_economy` — **not** x402  
+**Workflow hygiene (binding):** [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md)  
+**Org loops (binding):** [`ORG_LOOPS.md`](ORG_LOOPS.md)
 
 Orchestrators:
 
@@ -42,38 +45,37 @@ Orchestrators:
 
 ---
 
-## Progress tree (autonomous)
+## Progress tree (autonomous v3)
 
 ```
-event: idle | CI green | merge | LEARN
+event: idle | CI green | merge | LEARN | block post
         │
-        ▼
-   Overseer (8m) ── quality / vision / strategy
-        │                 │
-        │                 └── vision≤1 → Scout (25m) Idea fuel
-        ▼
-   Steward (15m) ── cards ≡ git/gh (parallel OK)
-        ▼
-   Conductor (12m)
-        ├── green product PR → squash-merge → LEARN → advance NEXT
-        ├── CI pending → poll once → next tick
-        └── queue clear → kick one bet (STATE NEXT / M7)
-                ▼
-        Implement×n  OR  Flywheel (20m)
-                │
-                └── battery → PRUNER ship_ok → PR → auto-merge → LEARN
+   ┌────┴────┬──────────────┐
+   ▼         ▼              ▼
+Overseer  Researcher     Pruner
+ (10m)      (12m)         (12m)
+   │    claim/solve/inbox    │
+   └─────────┬───────────────┘
+             ▼
+        Conductor (8m)
+        ├── green product PR → squash-merge → LEARN
+        ├── CI pending → poll once
+        └── unblocked singular NEXT → Implement×n OR Flywheel (30m)
+                └── battery → ship_ok → PR → auto-merge
 
-   Pruner (10m) ── continuous deny bloat on open PR / claim (may comment; no dual NEXT)
+   Steward (20m) ── in-place cards; idle-true → no restock PR
+   Scout (15m) ── IDEA_BUS + optional block seeds
 ```
 
 ### Latency targets
 
 | Path | Target |
 |------|--------|
-| Green PR → merged | ≤ 12m |
-| Merge → coherent cards | ≤ 15m |
-| Idle → build start | ≤ 12m |
-| Thin vision → idea harvest | ≤ 25m |
+| Green PR → merged | ≤ **8m** |
+| Block → Researcher claim | ≤ **12m** |
+| Merge → coherent cards | ≤ **20m** |
+| Idle → true noop (no PR) | immediate |
+| Thin vision → idea harvest | ≤ **15m** |
 
 ### Design rules
 
@@ -115,22 +117,24 @@ resume; do **not** start a second continuous in parallel.
 
 ---
 
-## Active schedules
+## Active schedules (v3 targets — re-arm host to match)
 
-| Name | Id | Interval |
-|------|-----|----------|
-| Overseer | `019fdfde0212` | **8m** |
-| **Pruner** | `019fe29d4d61` | **10m** |
-| Conductor | `019fe25403f2` | **12m** |
-| Steward | `019fdff1fbe4` | **15m** |
-| Flywheel | `019fdfd6c9bf` | **20m** |
-| Scout | `019fe0026e7d` | **25m** |
+| Name | Prior id (may lag) | Interval |
+|------|--------------------|----------|
+| Conductor | `019fe25403f2` | **8m** |
+| Overseer | `019fdfde0212` | **10m** |
+| **Researcher** | *(new)* | **12m** |
+| **Pruner** | `019fe29d4d61` | **12m** |
+| Scout | `019fe0026e7d` | **15m** |
+| Steward | `019fdff1fbe4` | **20m** |
+| Flywheel | `019fdfd6c9bf` | **30m** |
 
 ### Role briefs
 
 | Role | Charter | Tick |
 |------|---------|------|
 | Overseer | [`OVERSEER.md`](OVERSEER.md) | [`OVERSEER_TICK_PROMPT.md`](OVERSEER_TICK_PROMPT.md) |
+| **Researcher** | [`RESEARCHER.md`](RESEARCHER.md) | [`RESEARCHER_TICK_PROMPT.md`](RESEARCHER_TICK_PROMPT.md) |
 | **Pruner** | [`PRUNER.md`](PRUNER.md) | [`PRUNER_TICK_PROMPT.md`](PRUNER_TICK_PROMPT.md) |
 | Conductor | [`CONDUCTOR.md`](CONDUCTOR.md) | [`CONDUCTOR_TICK_PROMPT.md`](CONDUCTOR_TICK_PROMPT.md) |
 | Flywheel | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
@@ -142,13 +146,14 @@ resume; do **not** start a second continuous in parallel.
 
 ## Era (product)
 
-See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). **NOW: M7** → N0 → C-measure/G9 design.
-On-chain settlements remain **0** until proven.
+See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). **HOLD** until Unblock/0.1 **or** Overseer
+non-money singular. On-chain settlements **0** until proven. Plane economy is T4.
 
 ## Re-arm
 
 ```text
-Ask Grok: "Re-arm Veritas control-plane schedulers"
+Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v3 intervals"
 ```
 
-Tasks expire ~7 days. Use intervals in the Active schedules table.
+Tasks expire ~7 days. Use **v3** intervals above. Add Researcher 12m tick with
+`RESEARCHER_TICK_PROMPT.md`. At most one continuous/forever.

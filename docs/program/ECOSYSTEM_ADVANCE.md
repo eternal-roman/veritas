@@ -96,9 +96,12 @@ ready **or** Overseer names an explicit non-money singular bet
 | Mesh Runner | `TRACK_MESH_RUNNER.md` + `veritas/ecosystem_cycle.py` |
 | Unblock | `TRACK_UNBLOCK.md` + `TRACK_UNBLOCK_TICK_PROMPT.md` |
 | Unblock probe | `veritas/unblock_probe.py` → `ecosystem/unblock/CHECKLIST.md` |
-| Workflow hygiene | `WORKFLOW_HYGIENE.md` (idle · one hygiene PR · Unblock · dual continuous ban) |
-| Plane money | `veritas/agent_money.py` |
+| Workflow hygiene | `WORKFLOW_HYGIENE.md` |
+| Org loops v3 | `ORG_LOOPS.md` · `RESEARCHER.md` |
+| Block board | `veritas/block_board.py` · `veritas/researcher.py` |
+| Plane money | `veritas/agent_money.py` (limited supply) |
 | Plane visa | `veritas/agent_identity.py` |
+| Agent economy | `veritas/agent_economy.py` |
 
 ```
 PROPERTY: cooperative track plane + mesh kernel; Unblock-only when money blocked; no dual product NEXT; no fake settlement

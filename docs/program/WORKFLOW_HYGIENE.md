@@ -102,8 +102,8 @@ when dual runs race the same budget journal.
 | **Pruner** | LIGHT noop_idle if no product PR. |
 | **Scout** | Freshness stamp only; no seedlings-as-NEXT. |
 | **Mesh Runner** | May run offline cycles without PR. |
-| **Unblock** | Only active track under rule 3. |
-
+| **Unblock** | Only active track under rule 3 for *product money*; plane Researcher may still clear blocks. |
+| **Researcher** | Always allowed under free+HOLD: claim block board, local solve, inbox report. **No** tip-restock PRs. Product PR only if §4. |
 ---
 
 ## Self-check (every support tick)

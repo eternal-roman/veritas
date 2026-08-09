@@ -12,14 +12,17 @@
 | legal_identity | open c6 | Visa L1 + SIWx map | **accept plane** |
 | network_effects | open c5 | GMV×take vs SDK seats | **accept research** |
 | **mesh_runner** | live | Offline cycle kernel | **accept** (infra) |
-| **unblock** | ready | Human ops checklist | **accept** when money_loop blocked |
+| **unblock** | ready | Human ops checklist + probe | **accept** when money_loop blocked |
+| **agent_economy** | L1 | Limited VAAT + quality pay + full roster identity | **accept plane** |
+| **researcher / ORG_LOOPS v3** | L1 | 7-watcher cadence + block board autonomous unblock | **accept plane** |
 
 ## Standing rules
 
 1. Never accept a proposal that claims product x402 settle without tx evidence.
-2. Accept plane VAAT / visa / mesh kernel L1 freely (not product NEXT).
+2. Accept plane VAAT / visa / mesh / economy / researcher L1 freely (not product NEXT).
 3. Prefer one micro-advance per track per cycle (kernel guarantees floor).
 4. Continuous improvement: LEARN every 5 mesh cycles; raise weights if stuck.
+5. Watchers under free+HOLD: noop restock; Researcher still clears blocks.
 
 ```
 PROPERTY: Overseer gates ecosystem tracks; mesh advances without dual product claim

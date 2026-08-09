@@ -13,14 +13,20 @@ from pathlib import Path
 from veritas.agent_identity import bootstrap_plane_roster
 from veritas.agent_money import AgentMoneyLedger
 
-# Default roster: coordinating + ecosystem tracks.
+# Default roster: 7 watchers + tracks. Prefer ``python -m veritas.agent_economy``.
 DEFAULT_ROSTER: dict[str, str] = {
     "overseer": "overseer",
     "conductor": "conductor",
     "steward": "steward",
     "scout": "scout",
     "pruner": "pruner",
+    "flywheel": "flywheel",
+    "researcher": "researcher",
+    "architect": "architect",
     "git_agent": "git_agent",
+    "optimizer": "optimizer",
+    "mesh_runner": "mesh_runner",
+    "unblock": "unblock",
     "money_loop": "money_loop",
     "multiparty_trust": "multiparty_trust",
     "product_worth": "product_worth",

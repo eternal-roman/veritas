@@ -24,12 +24,17 @@
 
 ## Cross-track proposals (newest first)
 
-1. **Mesh Runner:** offline cycle kernel unblocks zero-tick stall.
-2. **Bottleneck rank:** money_loop + product_worth lead; discovery_density held.
-3. **VAAT tax:** 1 VAAT/track/cycle to overseer for coordination accounting.
+1. **ORG_LOOPS v3 + Researcher:** 7 watchers retimed; autonomous block board
+   (`veritas.researcher`) clears blocked agents without being asked; anti-thrash.
+2. **Agent economy:** limited-supply VAAT + identity + quality pay
+   (`veritas.agent_economy`) — plane compensation gap; not x402.
+3. **Mesh Runner:** offline cycle kernel unblocks zero-tick stall.
+4. **Bottleneck rank:** money_loop + product_worth lead; discovery_density held.
+5. **VAAT tax:** 1 VAAT/track/cycle to overseer for coordination accounting.
 
 ## Response to Overseer
 
-Ran **5** mesh cycles. Accept plane substrate + mesh kernel as T4 infra.
-Do not dual product claim. Prefer singular NEXT = Phase 0.1 when RPC/wallet unblocked.
+Accept ORG_LOOPS v3 + Researcher + agent economy as T4 infra. Mesh kernel remains.
+Do not dual product claim. Prefer singular NEXT = Phase 0.1 when RPC/wallet
+unblocked. Watchers: re-arm to v3 intervals; idle-true noop restock.
 

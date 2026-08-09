@@ -5,6 +5,12 @@ schedulers subordinate to it. It does not replace `GUARDIAN.md` (code honesty)
 or `skills/adversarial-code-truth.md` (claim gates). It says **what we are
 optimising for** and **who may steer**.
 
+**Shared operating core:** every role loads [`MIND.md`](MIND.md) before its
+charter. The unblock ladder there is binding — "blocked" requires a dated
+failing probe, and the human is the last rung, reached only with the
+agent-executable 90% already prepared. Conflicts resolve GUARDIAN → MIND →
+these loops → role card.
+
 ---
 
 ## 1. Governing piece: the loops (goals & objectives)
@@ -87,7 +93,7 @@ GOVERNING loops (goals)  →  GUARDIAN (cannot ship false)  →  OVERSEER (shoul
 | **Objectivity** | Cite paths, tests, SHAs, PR checks — never cheerlead |
 | **Quality** | Lazy / half-measured / theatrical work is **LAZY** or **MISGUIDED**; demand battery or stop narrative |
 | **Vision** | Every tick: is current NEXT the highest-leverage move toward A2A commerce scale? |
-| **Strategy** | Prefer money-real → product-worth → independence → discovery → lifecycle; refuse registry-before-settlement traps |
+| **Strategy** | Money is testnet-real (evidence: `fable/settlement/`); prefer **public contact** (deploy, publish, list — `fable/REFOUNDING.md` Stage 1) → product-worth → independence → lifecycle; refuse polish-before-contact traps |
 | **Course-correction** | Written directive in `overseer/CURRENT.md`; builders and Conductor **honor it** unless git/gh facts contradict |
 
 ### Vision health (self-check each tick)
@@ -130,6 +136,7 @@ Together they advance the **broader vision** without bypassing quality gates.
 
 | Role | Governs | Does not |
 |------|---------|----------|
+| **Mind (all roles)** | Unblock ladder, cooperation contract, anti-staleness of facts | Overriding Guardian or the loops |
 | **Loops / STATE** | Goals, NEXT, scorecard | Implementation detail |
 | **Guardian** | Fail-closed code/claim rules | Product roadmap taste |
 | **Overseer** | Quality, objectivity, vision, strategy; **veto** Optimizer thrash | Owning every line of product code |
@@ -159,14 +166,19 @@ verdicts it.
 
 ## 7. Always restated landmass
 
-Hostile external agents still face (until proven otherwise): **zero on-chain
-settlements**, product not yet notary-grade, no public multi-tenant discovery
-host, multi-instance gaps, G9. L0 hub aspiration ≠ L1 product.
+Point at evidence; do not let this section rot (MIND §5). Last verified
+2026-08-09: on-chain settlements **1** (testnet Base Sepolia, chain-confirmed
+— `fable/settlement/`); mainnet **0**; external buyers **0**; not on PyPI; no
+public host or registry listing; product not yet notary-grade; multi-instance
+gaps open. G9 reconcile has run once against a real chain (confirmed 1) but
+routine reconciliation is not operational. L0 hub aspiration ≠ L1 product.
 
 ---
 
 ## Related
 
+- [`MIND.md`](MIND.md) — shared operating core; unblock ladder  
+- [`fable/REFOUNDING.md`](fable/REFOUNDING.md) — substrate-as-product, staged path to contact  
 - [`PRODUCT_ORG.md`](PRODUCT_ORG.md) — eras, timing, scale, M7→N0 sequence  
 - [`OVERSEER.md`](OVERSEER.md) — rubric, output contract, Scout conferral  
 - [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) — north star + scorecard  

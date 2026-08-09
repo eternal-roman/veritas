@@ -1,5 +1,7 @@
 # Flywheel 20-minute tick prompt
 
+**Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
+
 Canonical text for the durable **20m** scheduler (backup builder; Conductor
 is primary at 12m). Keep in sync with CONTINUOUS.md, PRODUCT_ORG.md, GUARDIAN.md,
 AUTONOMOUS.md.

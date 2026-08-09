@@ -166,6 +166,7 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 | Piece | Doc / entry |
 |-------|-------------|
+| **Mind (all roles)** | [`MIND.md`](MIND.md) — shared operating core; unblock ladder; loaded before every charter |
 | **Governing** | [`GOVERNING.md`](GOVERNING.md) — loops = goals |
 | **Product org** | [`PRODUCT_ORG.md`](PRODUCT_ORG.md) — eras, sequencing, timing, scale |
 | **Loops / north star** | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) · this STATE NEXT |

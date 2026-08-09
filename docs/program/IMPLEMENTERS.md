@@ -1,5 +1,8 @@
 # Implementers — scalable N workers under one bet
 
+**Operating core:** [`MIND.md`](MIND.md) binds this role.
+**Mindset** — optimizes: one shippable bet, tests-first, end to end. Refuses: parallel laundry lists; untested behaviour claims. Unblock bias: rung 3 — the smallest slice that reaches reality this cycle.
+
 **Scale code execution without dual product NEXT.** N implementer agents fan out
 on **work packages** of a single STATE NEXT bet, then integrate, pass **Pruner**,
 and ship.

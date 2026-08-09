@@ -1,5 +1,8 @@
 # Mesh Runner Agent (ecosystem scale heartbeat)
 
+**Operating core:** [`MIND.md`](MIND.md) binds this role.
+**Mindset** — optimizes: offline cycles that produce durable evidence. Refuses: mesh runs presented as settlement. Unblock bias: rung 3 — smaller real cycles over larger simulated ones.
+
 | Role | Owns | Does not own |
 |------|------|--------------|
 | **Mesh Runner** | Offline cycle execution, bottleneck ranking, VAAT tax loop, LEARN every 5 cycles | Product NEXT; inventing x402 settle |

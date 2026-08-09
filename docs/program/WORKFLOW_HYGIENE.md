@@ -48,8 +48,11 @@ A **tip epoch** starts when `origin/main` advances by a **product** merge
 
 ### 3. Unblock Agent is the only active track while money is blocked
 
-**When:** mesh ranks **money_loop** high **and** `VERITAS_RPC_URL` is unset
-(or funded wallet missing).
+**When:** mesh ranks **money_loop** high **and** a **dated probe from this
+environment fails** (`python -m veritas.unblock_probe`). An unset env var or
+an inherited sandbox note is a hypothesis, not a block (MIND §3/§5): egress,
+facilitator reachability, and testnet funding all fell to probes on
+2026-08-09 (`fable/settlement/`). Re-probe before declaring blocked.
 
 **Then:**
 
@@ -67,7 +70,9 @@ from unknown→yes/no with evidence). Prefer no PR for “still unknown”.
 Product flywheel / implement may start **only if**:
 
 1. **Money path unblocked:** RPC + facilitator + funded test wallet ready for
-   Phase **0.1 / G9** dogfood, **or**
+   Phase **0.1 / G9** dogfood — all three proven agent-clearable on this
+   machine (`fable/settlement/`), so this condition defaults to *satisfiable*
+   until a dated probe says otherwise, **or**
 2. Overseer names an **explicit non-money singular bet** (e.g. retrieval eval
    harness) with claim free → building.
 

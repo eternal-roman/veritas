@@ -1,5 +1,7 @@
 # Steward 15-minute tick prompt
 
+**Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
+
 Charter: `STEWARD.md` · `PRODUCT_ORG.md` · Rules: `GUARDIAN.md` · Cadence: `CONTINUOUS.md`
 
 ---

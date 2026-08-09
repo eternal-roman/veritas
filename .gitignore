@@ -10,3 +10,7 @@ build/
 *.egg-info/
 settlement_runs/
 docs/program/researcher/inbox/
+
+# Claude/Grok plugin per-project settings (user-local, never commit)
+.claude/*.local.md
+.claude/*.local.json

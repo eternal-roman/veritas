@@ -1,0 +1,245 @@
+{
+  "run_id": "20260809T011519Z",
+  "started_at": "2026-08-09T01:15:19.176739Z",
+  "base_url": "http://127.0.0.1:8000",
+  "query": "What is the x402 payment protocol?",
+  "steps": [
+    {
+      "step": "health",
+      "http_status": 200,
+      "body": {
+        "status": "ok",
+        "service": "veritas",
+        "version": "0.8.1",
+        "payment_mode": "live",
+        "live_ready": true
+      }
+    },
+    {
+      "step": "unpaid_challenge",
+      "http_status": 402,
+      "body": {
+        "x402Version": 1,
+        "error": "X-PAYMENT header is required",
+        "accepts": [
+          {
+            "scheme": "exact",
+            "network": "eip155:84532",
+            "maxAmountRequired": "10000",
+            "resource": "http://127.0.0.1:8000/v1/research",
+            "description": "High-assurance evidence-backed research via Veritas",
+            "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+            "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+            "mimeType": "application/json",
+            "maxTimeoutSeconds": 60,
+            "extra": {
+              "name": "USDC",
+              "version": "2"
+            }
+          }
+        ]
+      },
+      "payment_required_header": null
+    },
+    {
+      "step": "build_payment",
+      "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+      "network": "eip155:84532",
+      "gated_by": "veritas.payer: validate_accepts + SpendPolicy + attempt journal"
+    },
+    {
+      "step": "paid_request",
+      "http_status": 200,
+      "body": {
+        "request_id": "965fdc17-5800-43d2-a5b0-43803b11726c",
+        "status": "completed",
+        "query": "What is the x402 payment protocol?",
+        "claims": [
+          {
+            "id": "c1",
+            "statement": "X402: x402 is an open, neutral payment standard for internet-native transactions built on the HTTP protocol. It repurposes the long-unused HTTP 402 \"Payment Required\" status code to enable peer-to-peer payments directly within",
+            "evidence_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+            "source_url": "https://en.wikipedia.org/wiki/X402",
+            "provenance": "live_fetch",
+            "relevance": 1.0
+          }
+        ],
+        "evidence": [
+          {
+            "url": "https://en.wikipedia.org/wiki/X402",
+            "title": "X402",
+            "excerpt": "x402 is an open, neutral payment standard for internet-native transactions built on the HTTP protocol. It repurposes the long-unused HTTP 402 \"Payment Required\" status code to enable peer-to-peer payments directly within HTTP request-response cycles. Payments can be made in supported cryptocurrencies like USDC and through supported fiat money facilitators like payment cards.",
+            "content_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+            "provider": "wikipedia",
+            "provenance": "live_fetch",
+            "relevance": 1.0,
+            "license": {
+              "id": "CC-BY-SA-4.0",
+              "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "attribution": {
+              "required": true,
+              "text": "Wikipedia contributors, \"X402\", https://en.wikipedia.org/wiki/X402"
+            }
+          }
+        ],
+        "support": {
+          "n_evidence": 1,
+          "independent_domains": 1,
+          "domains": [
+            "wikipedia.org"
+          ],
+          "distinct_providers": 1,
+          "verdict": "single_source",
+          "agreement": "not_assessed",
+          "method": "veritas.support.v1"
+        },
+        "custody_root": "sha256:4263f74ae83ff32bb26bcbb4be593ffd490c9aeabf2aac0fca79d6e624216788",
+        "custody_valid": true,
+        "custody_chain": [
+          {
+            "event_type": "created",
+            "actor": "pipeline",
+            "timestamp": "2026-08-09T01:15:20.033678Z",
+            "prev_hash": null,
+            "payload": {
+              "query": "What is the x402 payment protocol?",
+              "request_id": "965fdc17-5800-43d2-a5b0-43803b11726c"
+            },
+            "event_hash": "sha256:2df1efe8d7b219d71de0bf6885506b278bf17c79a91227866ae2bf9d233406a4"
+          },
+          {
+            "event_type": "evidence_created",
+            "actor": "wikipedia",
+            "timestamp": "2026-08-09T01:15:21.106202Z",
+            "prev_hash": "sha256:2df1efe8d7b219d71de0bf6885506b278bf17c79a91227866ae2bf9d233406a4",
+            "payload": {
+              "content_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+              "url": "https://en.wikipedia.org/wiki/X402",
+              "title": "X402",
+              "provenance": "live_fetch"
+            },
+            "event_hash": "sha256:67908eec56adc8d56122f5f688e306db5dffa45b5628f2e433b630e0ee357311"
+          },
+          {
+            "event_type": "evidence_discarded",
+            "actor": "wikipedia",
+            "timestamp": "2026-08-09T01:15:21.106202Z",
+            "prev_hash": "sha256:67908eec56adc8d56122f5f688e306db5dffa45b5628f2e433b630e0ee357311",
+            "payload": {
+              "reason": "below_min_relevance",
+              "relevance": 0.333,
+              "threshold": 0.34,
+              "url": "https://en.wikipedia.org/wiki/Payment_system"
+            },
+            "event_hash": "sha256:1e6dc76308da63fd8226fa26b5ae42e6d425a40289afffd165f3603d8f911f35"
+          },
+          {
+            "event_type": "claim_created",
+            "actor": "pipeline",
+            "timestamp": "2026-08-09T01:15:21.106202Z",
+            "prev_hash": "sha256:1e6dc76308da63fd8226fa26b5ae42e6d425a40289afffd165f3603d8f911f35",
+            "payload": {
+              "claim_id": "c1",
+              "evidence_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+              "relevance": 1.0
+            },
+            "event_hash": "sha256:42156930859dfa940345ac9b6e8f455d33f08ff4c5b2f9600811903af045552d"
+          },
+          {
+            "event_type": "completed",
+            "actor": "pipeline",
+            "timestamp": "2026-08-09T01:15:21.106202Z",
+            "prev_hash": "sha256:42156930859dfa940345ac9b6e8f455d33f08ff4c5b2f9600811903af045552d",
+            "payload": {
+              "n_claims": 1
+            },
+            "event_hash": "sha256:4263f74ae83ff32bb26bcbb4be593ffd490c9aeabf2aac0fca79d6e624216788"
+          }
+        ],
+        "attests": "what this service received from these sources at this time; not what those sources served to any other party",
+        "retrieval": {
+          "n_sources": 2,
+          "providers_attempted": [
+            "wikipedia",
+            "duckduckgo_instant_answer"
+          ],
+          "providers_succeeded": [
+            "wikipedia",
+            "duckduckgo_instant_answer"
+          ],
+          "degraded": false,
+          "unavailable": false,
+          "errors": []
+        },
+        "refusal_reason": null,
+        "billable": true,
+        "timestamp": "2026-08-09T01:15:21.106202Z",
+        "custody_receipt": {
+          "request_id": "965fdc17-5800-43d2-a5b0-43803b11726c",
+          "query": "What is the x402 payment protocol?",
+          "status": "completed",
+          "custody_root": "sha256:4263f74ae83ff32bb26bcbb4be593ffd490c9aeabf2aac0fca79d6e624216788",
+          "custody_valid": true,
+          "evidence_hashes": [
+            "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d"
+          ],
+          "stored_at": "2026-08-09T01:15:21.118518Z",
+          "persisted": true
+        },
+        "payment": {
+          "settled": true,
+          "success": true,
+          "state": "settled",
+          "transaction": "0xdad0a00eedeeb606d5e693384f0e6021167287280c765db95570302b41452361",
+          "network": "eip155:84532",
+          "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+          "error_reason": null
+        }
+      },
+      "payment_response_header": null
+    }
+  ],
+  "acceptance": {
+    "criterion": "Base Sepolia USDC transfer buyer \u2192 VERITAS_PAY_TO from unattended request",
+    "met": true,
+    "transaction": "0xdad0a00eedeeb606d5e693384f0e6021167287280c765db95570302b41452361",
+    "notes": [
+      "on-chain transaction field present"
+    ]
+  },
+  "requirements": {
+    "scheme": "exact",
+    "network": "eip155:84532",
+    "maxAmountRequired": "10000",
+    "resource": "http://127.0.0.1:8000/v1/research",
+    "description": "High-assurance evidence-backed research via Veritas",
+    "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+    "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "mimeType": "application/json",
+    "maxTimeoutSeconds": 60,
+    "extra": {
+      "name": "USDC",
+      "version": "2"
+    }
+  },
+  "proof": {
+    "request_id": "965fdc17-5800-43d2-a5b0-43803b11726c",
+    "status": "completed",
+    "billable": true,
+    "custody_root": "sha256:4263f74ae83ff32bb26bcbb4be593ffd490c9aeabf2aac0fca79d6e624216788",
+    "settlement": {
+      "settled": true,
+      "success": true,
+      "state": "settled",
+      "transaction": "0xdad0a00eedeeb606d5e693384f0e6021167287280c765db95570302b41452361",
+      "network": "eip155:84532",
+      "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+      "error_reason": null
+    },
+    "transaction": "0xdad0a00eedeeb606d5e693384f0e6021167287280c765db95570302b41452361",
+    "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+    "network": "eip155:84532"
+  },
+  "finished_at": "2026-08-09T01:15:22.254046Z"
+}

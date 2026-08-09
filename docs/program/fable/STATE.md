@@ -50,15 +50,30 @@ after token exhaustion; do not lose state.
          path cryptographically confirmed against the real facilitator.**
          Refusal: `invalid_exact_evm_insufficient_balance` (buyer holds 0
          USDC), surfaced to the buyer as a 402, not an outage. Correct.
-      5. Remaining: fund the buyer with Base Sepolia USDC (Circle faucet →
-         `0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599`), re-run
-         `scripts/testnet_settlement.py`, record the tx hash, then reconcile
-         via `veritas.chain_reconcile` with `VERITAS_RPC_URL=https://sepolia.base.org`
-         (first-ever G9 exercise).
-      Payment-path test subset: 87 passed with the adapter. Evidence:
-      `docs/program/fable/settlement/settlement_*.json` (403 run, 500 run,
-      insufficient-balance run). Throwaway testnet keys in session scratchpad
-      `testnet_keys.json` — testnet only, never funded with real value.
+      5. **DONE — Phase 0.1 acceptance MET, first settlement in project
+         history.** Circle faucet funded the buyer (20 testnet USDC,
+         permissionless web faucet, no account). Unattended run:
+         402 → sign → facilitator verify → research `completed`/billable
+         (custody root delivered) → settle → HTTP 200.
+         **Tx `0xdad0a00eedeeb606d5e693384f0e6021167287280c765db95570302b41452361`**,
+         Base Sepolia block 45234918, status success, USDC Transfer of
+         10000 atomic ($0.01, the exact request price) from buyer
+         `0xF355…8599` to pay-to `0xbbeE…9364`. Independently confirmed by
+         `eth_getTransactionReceipt` against the public RPC.
+      6. **G9 reconcile ran against a real chain for the first time** and
+         found its own defect on the way: `chain_reconcile.py` also sent no
+         User-Agent (same Cloudflare-ban class as the facilitator client) —
+         `rpc_transport_error:HTTPError` on an endpoint curl could reach.
+         Fixed; re-run: `chain_checked: true, counts: {confirmed: 1}` — the
+         ledger's settlement record matches the chain.
+      Payment-path test subset: 87 passed with the adapter; 17
+      chain_reconcile/facilitator tests passed after the UA fix. Evidence in
+      `docs/program/fable/settlement/`: the three failed-run reports (403 UA
+      ban, 500 v1-routing, insufficient-balance refusal), the successful run
+      `settlement_20260809T011519Z.json`, the custody receipt, the on-chain
+      tx receipt (`onchain_tx_receipt.json`), and the confirmed reconcile
+      (`chain_reconcile_confirmed.json`). Throwaway testnet keys in session
+      scratchpad `testnet_keys.json` — testnet only, no real value ever.
 - [ ] Synthesis: `docs/program/fable/REFOUNDING.md` — pending.
 - [ ] PR opened — pending.
 

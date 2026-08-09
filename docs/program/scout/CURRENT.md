@@ -1,17 +1,9 @@
-# Scout CURRENT — pointer (steward hygiene)
+# Scout CURRENT → superseded
 
-- **Time:** 2026-08-09T04:40:00Z
-- **Role:** Scout harvests seedlings. **Does not** set product NEXT.
-- **origin/main:** **`b2420ce`** (#129 existence; #127 dogfood; #122 0.1-R)
-- **Claim:** **free**. Open product PRs: **none**.
-- **NEXT authority:** STATE + Overseer — post-#129 LEARN HOLD; seedlings ≠ second track.
-- **Do not:** invent n=3; M7 dual; 0.1-R thrash; commercial product-worth thrash; #129 thrash.
-- **Settlements on main:** **2 testnet** · mainnet **0** · unsolicited **0**.
-- **PROPERTY / EVIDENCE / NOT PROVEN:**
+**Scout (Idea) has been renamed to [Evolver](../EVOLVER.md).**
 
-```
-PROPERTY: scout pointer; tip b2420ce; claim free; open none; settlements testnet=2
-EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main b2420ce; gh pr list []
-NOT PROVEN: n=3; next singular; mainnet; PyPI
-```
+- Active cards: [`../evolver/CURRENT.md`](../evolver/CURRENT.md)
+- Idea bus: [`../evolver/IDEA_BUS.md`](../evolver/IDEA_BUS.md)
+- Tick prompt: [`../EVOLVER_TICK_PROMPT.md`](../EVOLVER_TICK_PROMPT.md)
+
+`confer_scout` remains a valid Overseer alias for `confer_evolver` for one migration epoch.

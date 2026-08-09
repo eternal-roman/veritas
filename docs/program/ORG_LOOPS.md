@@ -34,7 +34,7 @@ surfaces**, singular product NEXT, **minimum wall-clock** from “green PR” or
 | 2 | **Researcher** | **10m** | +2m | claim blocks; probe; inbox | **yes** (unblock) |
 | 3 | **Overseer** | **12m** | +1m | HOLD / enforce hygiene + stall **LAZY** | strategy |
 | 4 | **Pruner** | **15m** | +3m | SWEEP; HEAVY on product PR | lean gate |
-| 5 | **Scout** | **25m** | +5m | freshness stamp only | no |
+| 5 | **Evolver** (ex-Scout) | **25m** | +5m | freshness stamp; evolve on confer | no |
 | 6 | **Steward** | **30m** | +4m | in-place; **one** tip-epoch free-claim hygiene | claim truth |
 | 7 | **Flywheel** | **45m** | +6m | idle_true **or** backup noop if primary shipped | only if claim |
 
@@ -93,7 +93,7 @@ L0  GOVERNING · GUARDIAN · MIND · STATE · plane_stock
 L1  Overseer · Researcher · Pruner
 L2  Conductor (merge + stall clock + restart)
 L3  Steward · Flywheel / Implement×n
-L4  Scout · Mesh · Unblock probe · Architect (seams only)
+L4  Evolver · Mesh · Unblock probe · Architect (seams only)
 L5  Pulse / Continuous (≤1 forever)
 ```
 
@@ -134,7 +134,7 @@ Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v5 (same interva
 | Researcher | 10m |
 | Overseer | 12m |
 | Pruner | 15m |
-| Scout | 25m |
+| Evolver | 25m |
 | Steward | 30m |
 | Flywheel | 45m (20m when claim building + product PR) |
 

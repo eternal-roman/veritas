@@ -67,7 +67,7 @@ Advance agent independence, scalable agent commerce, and lifecycle enrichment
    - `docs/program/CONTINUOUS.md`
    - **`docs/program/conductor/CONFERRAL.md`** + `TRAJECTORY.md` (primary bet / parks)
    - **`docs/program/steward/CURRENT.md`** (cohesion / real NEXT — git wins if cards lag)
-   - **`docs/program/scout/IDEA_BUS.md`** if present (patterns only)
+   - **`docs/program/evolver/IDEA_BUS.md`** if present (WATCH patterns only; legacy `scout/IDEA_BUS.md` is a pointer)
    - `docs/program/ecosystem/unblock/CHECKLIST.md` if money path blocked
    - latest `docs/program/cycles/*.md` + `000-baseline.md`
    - `skills/adversarial-code-truth.md`

@@ -26,7 +26,7 @@ strategy rename of NEXT (Overseer), dual restock PRs.
 2. Read Overseer CURRENT + flywheel-claim + ARCHITECTURE.md
 3. **building / pr_open** → constraints for *that* bet; update map; builder_directive
 4. **free** → prepare seams for named NEXT only (no invent)
-5. Stuck → confer Scout; wedge/experiment; never await_user
+5. Stuck → confer Evolver; wedge/experiment; never await_user
 6. Emit PROPERTY block; short status for main agent
 
 **Law:** GUARDIAN G3 one engine/payer · WORKFLOW_HYGIENE idle-true · G10 claim.

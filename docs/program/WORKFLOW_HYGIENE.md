@@ -175,7 +175,7 @@ When Conductor sets `restart=true` / kicks flywheel for a singular NEXT:
 | **Flywheel / Implement** | Claim building only with product path; open PR same cycle (§7/§9). Free claim in merge payload (§8). |
 | **Flywheel backup** | `noop` if free + no product PR **or** `primary_shipped_same_bet`. |
 | **Pruner** | LIGHT noop_idle if no product PR. |
-| **Scout** | Freshness stamp only; no seedlings-as-NEXT. |
+| **Evolver** | Freshness stamp only under idle; evolve on confer; no blueprints-as-NEXT. |
 | **Mesh Runner** | May run offline cycles without PR. |
 | **Unblock** | Only active track under rule 3 for *product money*; plane Researcher may still clear blocks. |
 | **Researcher** | Always allowed under free+HOLD: claim block board, local solve, inbox report. **No** tip-restock PRs. Product PR only if §4. |

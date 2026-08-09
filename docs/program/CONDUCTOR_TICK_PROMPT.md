@@ -1,5 +1,7 @@
 # Conductor 12-minute tick prompt
 
+**Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
+
 Charter: `CONDUCTOR.md` · `PRODUCT_ORG.md` · `GOVERNING.md` · Rules: `GUARDIAN.md` · `AUTONOMOUS.md`
 
 ---

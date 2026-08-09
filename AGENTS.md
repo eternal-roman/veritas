@@ -104,6 +104,11 @@ package — CI's package job asserts this.
   here. Emit its PROPERTY / EVIDENCE LEVEL block before any success claim.
   Tests are L1 ("holds on these cases"), not proof the product works. Banned
   without carrying evidence: "complete", "live-ready", "ZK", "revenue-ready".
+- **Program roles load `docs/program/MIND.md` before their charters** — the
+  shared operating core: the unblock ladder ("blocked" needs a dated failing
+  probe; the human is the last rung, reached with the agent-executable 90%
+  already prepared), the cooperation contract, and the anti-staleness rule
+  for facts.
 - Docs state limitations plainly (see README "Known limitations", STATUS.md).
   Keep that register: narrow claims, evidence cited.
 - **The venue constitution is enforcement-linked.** `veritas/constitution.py`

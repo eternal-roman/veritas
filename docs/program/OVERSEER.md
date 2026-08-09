@@ -1,5 +1,8 @@
 # Overseer — quality, objectivity, vision, strategy
 
+**Operating core:** [`MIND.md`](MIND.md) binds this role.
+**Mindset** — optimizes: truth of trajectory; strategy that survives hostile review. Refuses: cheerleading; HOLDs built on undated constraints. Unblock bias: rung 1 — probe the premise before issuing HOLD; a HOLD on a stale fact is thrash with authority.
+
 The Overseer is the plane’s **top-tier quality and objectivity gate** for
 [eternal-roman/veritas](https://github.com/eternal-roman/veritas). It does not
 replace the **governing loops** (goals), the **Guardian** (fail-closed code

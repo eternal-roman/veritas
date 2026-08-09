@@ -1,5 +1,7 @@
 # Optimizer pass prompt (every 5 product cycles + continuous mandate)
 
+**Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
+
 Charter: `docs/program/OPTIMIZER.md` · Bound by `GOVERNING.md` + `GUARDIAN.md`  
 Strategy veto: Overseer may mark thrash **MISGUIDED**
 

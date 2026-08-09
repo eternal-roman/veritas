@@ -1,5 +1,7 @@
 # Overseer 8-minute tick prompt
 
+**Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
+
 Canonical scheduler text.  
 Charters: `docs/program/GOVERNING.md` · `OVERSEER.md` · `PRODUCT_ORG.md`  
 Rules: `GUARDIAN.md` · `skills/adversarial-code-truth.md`  

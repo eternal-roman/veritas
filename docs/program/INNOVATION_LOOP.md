@@ -32,6 +32,11 @@ are measured ones (tests, dogfood reports, settlement hashes, request volume).
 `skills/adversarial-code-truth.md` remains a locked gate: no "complete",
 "live-ready", "ZK", or "revenue-ready" without evidence.
 
+The substrate — receipts, custody, settlement, reconciliation, diligence,
+standing — is the platform asset; the research payload is its first
+demonstration (`fable/REFOUNDING.md`). Cycles that grow the substrate's
+public surface outrank cycles that polish the demo.
+
 ---
 
 ## What already makes Veritas excellent (pride, with evidence)
@@ -53,12 +58,11 @@ Hold these. Improve around them. Do not dilute them for speed.
 
 | Gap | Blocks |
 |-----|--------|
-| **Zero on-chain settlements** | Every commercial claim downstream |
+| **Zero external buyers; zero public surface** (no deploy, no PyPI, no listing) | Any evidence of demand — the frontier (`fable/REFOUNDING.md` Stage 1). Settlements: 1 testnet, 0 mainnet (last verified 2026-08-09, `fable/settlement/`) |
 | Snippet-grade retrieval / notary not built | Willingness to pay |
-| No public deployment or registry listing | Discovery by strangers |
 | Multi-instance prune still open | Scale beyond one process retention |
 | Shared state across instances missing | Scale beyond one process |
-| Chain reconciliation missing (G9) | "settled" means "facilitator said so" |
+| G9 reconcile ran once (confirmed 1), not routine | "settled" at volume still means "facilitator said so" |
 
 ---
 
@@ -114,9 +118,13 @@ STOCK → SCORE → SELECT → PLAN → BUILD → AUDIT → VERIFY → SHIP → 
    axis or closes a critical gap.
 4. **Never invent a parallel product.** One engine. One buyer payment path.
    One wire contract discipline.
-5. **Human remains for what the constitution leaves human:** funded wallets,
-   mainnet money, TLS/public DNS, PyPI trusted publisher, and any change that
-   weakens an L1 article without a replacement enforcement pointer.
+5. **Human residues stay human — but ship with the prepared 90%.** Mainnet
+   money, PyPI account, TLS/public DNS, and any change weakening an L1
+   article remain human calls. Everything up to those minutes is agent work
+   (MIND §3 rung 6): config written, workflows ready to fire, verification
+   documented. Testnet funding is **not** a human residue (permissionless
+   faucet — proven, `fable/settlement/`), and "blocked on human" without a
+   ladder transcript is a gate failure.
 
 ### Ship rules
 

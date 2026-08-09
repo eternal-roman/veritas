@@ -109,6 +109,59 @@ python -m veritas.plane_stock
 | Early-exit noop | free + no product PR + HOLD + no green merge target → ≤15 tools, `noop_*` |
 | Merge green docs/plane | Conductor may merge green non-product PRs without counting as dual product NEXT |
 | Tip epoch for restock | Starts on **product or plane-code** merge, not every docs restock |
+| Stall fields | Read `stall.claim_stale_building` / `stall.stall_action` (`plane_stock` v2) |
+
+### 7. Claim stall clock (no building theater)
+
+**Observed failure (2026-08-09):** claim flipped `building` and flywheel was
+kicked while **no product branch commits and no open product PR** existed for
+multiple Conductor ticks. That is narrative, not progress.
+
+| Signal (`plane_stock.stall`) | Meaning | Required action |
+|------------------------------|---------|-----------------|
+| `claim_stale_building` | status=building and **zero** open product PRs | **free_or_ship** this tick |
+| `building_without_branch` | building and claim `branch` empty/pending | set real branch **or** free |
+| `stall_action: poll_ci_or_merge` | building **with** product PR | poll CI / merge green; **no dual-kick** |
+
+**Clock:**
+
+1. Kick / claim building **must** open a product PR (or land ≥1 product-code
+   commit on a named remote branch **and** open PR) **within the same builder
+   cycle** that took the claim.
+2. Conductor: if `stall_clock_active` for **>2 consecutive Conductor polls**
+   (~12m+), **same tick** either (a) complete WIP → open product PR, or
+   (b) **free claim with reason**. Do **not** leave building empty.
+3. Overseer: third empty poll → verdict **LAZY** until free or PR exists.
+4. Flywheel BACKUP: if primary already shipped the same `bet_id` →
+   `noop` / `primary_shipped_same_bet` — **never** open a second PR.
+
+**Not a stall:** building + open product PR (even CI red) — fix CI, do not free.
+
+### 8. Free claim on product merge (no post-merge lie)
+
+**Observed failure:** product PR merged; tip advanced; `flywheel-claim.md` on
+main still said `building` until a Steward hygiene PR one tip-epoch later.
+
+| Who | Duty |
+|-----|------|
+| **Merge payload** | Product merge PR **should** set claim `status: free`, clear `bet_id`/`branch`/`holder`, set `last_merged` to the new tip — **in the same PR** when practical |
+| **Conductor** | If tip has product merge and claim still building **and** no product PR open → free claim in-place (or ensure #8 hygiene includes free) **before** invent restart |
+| **Steward** | Tip-epoch hygiene **must** free a stale building claim (allowed under §2 once per product epoch) |
+| **Flywheel post-merge** | Before exit LEARN, claim must be free |
+
+Settlements / landmass counts still only change with **evidence**, never with
+hygiene.
+
+### 9. One continuous kick = one ship surface
+
+When Conductor sets `restart=true` / kicks flywheel for a singular NEXT:
+
+| Required | Forbidden |
+|----------|-----------|
+| One workflow instance | Dual continuous / dual flywheel forever |
+| Claim building + real `branch:` + product PR path | Claim building with only Architect map / docs |
+| Prefer implement code over card rewrites | Kick that only flips claim file |
+| Auto_merge when green + ship_ok | Merge red Security/Tests |
 
 ---
 
@@ -117,9 +170,10 @@ python -m veritas.plane_stock
 | Agent | Idle true behavior |
 |-------|-------------------|
 | **Steward** | If rule 1 holds → `noop_coherent` (score cards only if rewriting in-place without PR). **No new restock PR** unless rule 2 slot empty **and** tip lag is material (missing product SHA entirely). |
-| **Conductor** | If rule 1 holds → merge green product PRs only; **restart=false**; no tip-align PR; no invent NEXT. |
-| **Overseer** | If rule 1 holds → HOLD + `restart=false`; mark Unblock active (rule 3); refuse mesh-as-product. |
-| **Flywheel backup** | `noop` if free + no product PR. |
+| **Conductor** | If rule 1 holds → merge green product PRs only; **restart=false**; no tip-align PR; no invent NEXT. If `stall_clock_active` → free_or_ship same tick (§7). Free stale building after product merge (§8). |
+| **Overseer** | If rule 1 holds → HOLD + `restart=false`; mark Unblock active (rule 3); refuse mesh-as-product. Escalate **LAZY** on claim theater (§7). |
+| **Flywheel / Implement** | Claim building only with product path; open PR same cycle (§7/§9). Free claim in merge payload (§8). |
+| **Flywheel backup** | `noop` if free + no product PR **or** `primary_shipped_same_bet`. |
 | **Pruner** | LIGHT noop_idle if no product PR. |
 | **Scout** | Freshness stamp only; no seedlings-as-NEXT. |
 | **Mesh Runner** | May run offline cycles without PR. |
@@ -130,23 +184,27 @@ python -m veritas.plane_stock
 ## Self-check (every support tick)
 
 ```
-[ ] ran plane_stock? (open_prs.ok true?)
+[ ] ran plane_stock? (open_prs.ok true? stock_protocol plane_stock_v2?)
+[ ] stall.claim_stale_building?
+→ free_or_ship same tick (do not leave building empty)
 [ ] claim free?
 [ ] product PRs empty?
 [ ] Overseer HOLD / restart=false?
 → if yes to free+empty product+HOLD: noop; do not open a restock docs PR
 [ ] green PR open (docs or product)?
 → Conductor merge one; others do not open competing restock
+[ ] product just merged, claim still building?
+→ free claim (§8) in hygiene or in-place Conductor fix
 [ ] hygiene PR already open this tip epoch?
 → if yes: do not open another
-[ ] RPC unset and money bottleneck?
-→ Unblock / Researcher only
+[ ] money bottleneck with dated failing probe?
+→ Unblock / Researcher only (MIND ladder)
 [ ] dual continuous?
 → kill one
 ```
 
 ```
-PROPERTY: idle free+HOLD means no restock thrash; stock honesty; Unblock when money blocked; single continuous
-EVIDENCE LEVEL: L1 (process law + plane_stock)
-NOT PROVEN: agents always obey without host re-arm to ORG_LOOPS v4
+PROPERTY: idle free+HOLD no restock thrash; claim stall free_or_ship; free-on-merge; stock honesty v2; single continuous
+EVIDENCE LEVEL: L1 (process law + plane_stock tests)
+NOT PROVEN: agents always obey without host re-arm to ORG_LOOPS v5
 ```

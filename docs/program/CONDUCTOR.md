@@ -65,7 +65,9 @@ Other agents **read** this file at the start of their ticks (wired in prompts).
 | Condition | Action |
 |-----------|--------|
 | No open product PR, claim free, Overseer **HOLD** | **restart=false** — true idle (`WORKFLOW_HYGIENE.md` §1); no tip-restock PR |
-| No open product PR, NEXT **unblocked** (Overseer named) | **Restart** one flywheel / implement cycle |
+| No open product PR, NEXT **unblocked** (Overseer named) | **Restart** one flywheel / implement cycle — kick **must** open product PR same cycle (§9) |
+| `stall.claim_stale_building` | **free_or_ship** same tick — open product PR **or** free claim with reason (§7); count empty polls |
+| Product merge on tip, claim still building, no product PR | **Free claim** (merge payload preferred; else in-place / Steward hygiene) (§8) |
 | Open PR with CI pending | Wait; do not start a second bet |
 | Open PR CI green, unmerged | **Autonomous: squash-merge** (see `AUTONOMOUS.md`); no human wait |
 | Open PR CI pending | Poll once; else next tick — **no `await_user`** |
@@ -90,7 +92,7 @@ STATE NEXT ACTION (single primary)
      ↓
 This-cycle bet (one PR)
      ↓
-Landmass always restated (on-chain 0, multi-instance, …)
+Landmass always restated (testnet N, mainnet 0, unsolicited 0, multi-instance, …)
 ```
 
 ## Outputs
@@ -106,11 +108,12 @@ Landmass always restated (on-chain 0, multi-instance, …)
 
 ## Cadence
 
-- **Scheduler: every 12 minutes** — review + confer + merge green + restart
-  if idle. See `CONTINUOUS.md` + `PRODUCT_ORG.md` latency model.
+- **Scheduler: every 6 minutes** (`ORG_LOOPS` v5) — stock → merge green →
+  stall free_or_ship → restart only if unblocked singular. See `CONTINUOUS.md`.
 - **Interactive continuous:**  
   `/workflow agent-commerce-continuous {"max_cycles": 3}`  
-  or `/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 3}`
+  or `/workflow agent-commerce-conductor {"continuous": true, "max_cycles": 3}`  
+  At most **one** continuous/forever.
 
 ## Success (honest)
 

@@ -8,19 +8,19 @@
 Primary objective: **agent-to-agent autonomous commerce** substrate with
 scalable momentum (L0 multi-billion *direction* — never claim proven).
 
-## Active cadence (v4 — low latency + anti-thrash)
+## Active cadence (v5 — continuous ship clocks)
 
-**Full layer map:** [`ORG_LOOPS.md`](ORG_LOOPS.md) (7 watchers, stock protocol, Researcher).
+**Full layer map:** [`ORG_LOOPS.md`](ORG_LOOPS.md) (7 watchers, stock protocol, stall clocks).
 
 | Loop | Interval | Job |
 |------|----------|-----|
-| **Conductor** | **6m** | Merge **any** green non-draft PR; restart only if unblocked singular NEXT |
+| **Conductor** | **6m** | Merge green PRs; **stall free_or_ship**; restart only if unblocked singular NEXT |
 | **Researcher** | **10m** | Claim block board · solve/escalate · inbox (unsolicited) |
-| **Overseer** | **12m** | Quality + strategy; enforce hygiene; Scout only if vision≤1 |
-| **Pruner** | **15m** | Full-tree sweep every tick; ponytail-audit/debt; **Overseer-agreed** prune PR only; HEAVY on product PR |
+| **Overseer** | **12m** | Quality + strategy; hygiene + **LAZY on claim theater**; Scout if vision≤1 |
+| **Pruner** | **15m** | Full-tree sweep; Overseer-agreed prune PR; HEAVY on product PR |
 | **Scout (Idea)** | **25m** | Freshness stamp under HOLD; pattern fuel if confer |
-| **Steward** | **30m** | In-place cohesion only; **no restock PR** under idle-true |
-| **Flywheel** | **45m** | Backup builder only when claim/unblocked; else idle_true noop |
+| **Steward** | **30m** | In-place; **one** tip-epoch free-claim hygiene when needed |
+| **Flywheel** | **45m** | Builder when claim/unblocked; backup `primary_shipped_same_bet` noop; else idle_true |
 | **Git Agent** | on demand / ~6–12h | Branch archaeology, salvage, local prune |
 | **Ecosystem tracks** | offline mesh | Prefer Mesh Runner over LLM track timers |
 | **Mesh Runner** | every 5 cycles / demand | `python -m veritas.ecosystem_cycle --cycles 5` |
@@ -68,6 +68,9 @@ Overseer Researcher Pruner      Conductor (6m)
 |------|--------|
 | Green PR → merged | ≤ **6m** |
 | Block → Researcher claim | ≤ **10m** |
+| Claim building → product PR open | **same builder cycle** |
+| `stall_clock_active` → free_or_ship | ≤ **2 Conductor ticks** |
+| Product merge → claim free on tip | same PR or ≤1 Steward hygiene |
 | Idle stock → noop exit | ≤ **15 tool calls** |
 | Merge → coherent cards | ≤ **30m** |
 | Thin vision → idea harvest | ≤ **25m** |
@@ -82,15 +85,16 @@ Overseer Researcher Pruner      Conductor (6m)
 5. **No `await_user`** on commerce workflows.  
 6. **noop_*** when facts unchanged.  
 7. **Idle truly** — if claim free + no product PR + Overseer HOLD → support
-   agents **noop**; no new tip-restock docs PRs (see `WORKFLOW_HYGIENE.md` §1).  
-8. **One hygiene PR max per tip epoch** — not conductor + steward dual (§2).  
-9. **Unblock Agent** is the only active track while money is bottleneck and
-   RPC/wallet unset (§3).  
-10. **Product NEXT only when unblocked** (0.1/G9) or Overseer names explicit
-    non-money singular bet — not more mesh without buyer path (§4).  
-11. **Never dual continuous/forever workflows** — Access Denied budget race (§5).  
-12. **Stock honesty** — use `plane_stock`; if `gh` fails, report `gh_failed` (ORG_LOOPS §0).  
-13. **Early-exit noop** under free+HOLD when no merge target (ORG_LOOPS §2).
+   agents **noop**; no new tip-restock docs PRs (`WORKFLOW_HYGIENE.md` §1).  
+8. **One hygiene PR max per tip epoch** (§2).  
+9. **Unblock** only when dated probe fails (MIND ladder); unset env ≠ block (§3).  
+10. **Product NEXT** when unblocked money path **or** Overseer non-money singular (§4).  
+11. **Never dual continuous** (§5).  
+12. **Stock honesty** — `plane_stock` v2; `gh_failed` if `open_prs.ok` false.  
+13. **Early-exit noop** under free+HOLD when no merge target.  
+14. **Claim stall clock** — building without product PR → free_or_ship (§7).  
+15. **Free claim on product merge** — no building lie on tip (§8).  
+16. **One kick = one ship surface** — restart must open product PR path (§9).
 
 ---
 
@@ -143,15 +147,19 @@ resume; do **not** start a second continuous in parallel.
 
 ## Era (product)
 
-See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). **HOLD** until Unblock/0.1 **or** Overseer
-non-money singular. On-chain settlements **0** until proven. Plane economy is T4.
+See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). Post-**#122** Phase 0.1-R: routine
+settle→reconcile on tip. Settlements **2 testnet** self-dogfood · mainnet **0** ·
+unsolicited **0**. Product invent **HOLD** until Overseer names singular or Stage-1
+human unblocks public existence. Plane economy is T4 (not x402).
+
+Strategy (L0 judgment): [`ecosystem/STRATEGY_EVAL_AND_PLAN.md`](ecosystem/STRATEGY_EVAL_AND_PLAN.md)
+posture F — existence-first + D0 wedge; do not invent settle.
 
 ## Re-arm
 
 ```text
-Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v4 intervals"
+Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v5 (v4 intervals + stall clocks)"
 ```
 
-Tasks expire ~7 days. Use **v4** intervals + phase offsets in `ORG_LOOPS.md`.
-Researcher: `RESEARCHER_TICK_PROMPT.md`. Stock: `python -m veritas.plane_stock`.
+Tasks expire ~7 days. Stock: `python -m veritas.plane_stock` (`plane_stock_v2`).
 At most one continuous/forever.

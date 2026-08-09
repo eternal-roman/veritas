@@ -60,7 +60,10 @@ Args:
 4. **No second payer/engine.**  
 5. Workers **must not** edit outside their file list without integrator.  
 6. Integrator owns conflicts, cross-file wiring, full battery.  
-7. Pruner may delete worker output that is bloat.
+7. Pruner may delete worker output that is bloat.  
+8. **Ship surface:** integrator opens **one product PR** before claim may stay
+   building (`WORKFLOW_HYGIENE` §7). Map-only / docs-only packages do not satisfy stall.  
+9. **Free-on-merge:** claim cleared to free in merge payload when practical (§8).
 
 ---
 

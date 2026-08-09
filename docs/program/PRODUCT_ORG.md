@@ -22,15 +22,16 @@ E  Found alone       ── discovery AFTER pay is not a trap
 F  Lifecycle         ── trust, metering, attestations compound
 ```
 
-**Current era (post-#98 plane substrate; product HOLD until money unblocked):**
+**Current era (post-#122 Phase 0.1-R; settlements 2 testnet self-dogfood):**
 
 | Priority | Bet | Axis | Why now |
 |----------|-----|------|---------|
-| **Active (T4)** | **Unblock** checklist/probes | C | Money ranked #1; RPC/wallet human gate — not more mesh charters |
-| **1 NEXT when unblocked** | **Phase 0.1 / G9** dogfood | C | First real settle proof; never invent tx |
-| **Alt NEXT** | Overseer **explicit non-money** singular bet (e.g. retrieval eval) | D | Only if Overseer names it while claim free |
-| Parked | M7 / N0 / more VAAT product | A/B/D | No dual reopen; no mesh-as-product without buyer path |
-| Parked | Bazaar / X1/X3/X6 | E | Discovery before real money is a trap |
+| **Landed** | **#112 / #119 / #122** money path | C | First settle + defaults + routine loop — do not thrash-reclaim |
+| **Human parallel** | **Stage-1** PyPI / TLS / mainnet pay-to | C/E | Public existence; not Flywheel invent |
+| **Alt NEXT** | Overseer **non-money** singular (e.g. product-worth eval harness) | D | Only if named while claim free |
+| **Active (T4)** | Unblock **re-probe** only if dated probe fails | C | MIND ladder; unset env ≠ block |
+| Parked | M7 / N0 / more VAAT / 0.1-R thrash | A/B/D | No dual reopen |
+| Parked | Bazaar before public host | E | Discovery without surface is theater |
 
 One primary NEXT only. **Product NEXT only when unblocked** or Overseer names
 an explicit non-money singular bet — see [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md).

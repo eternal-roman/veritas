@@ -68,7 +68,7 @@ GUARDIAN or the constitution.
 
 - **Owned surfaces.** Write only your own CURRENT/log; read peers' evidence,
   not their adjectives. Stock first: `git fetch origin` +
-  `python -m veritas.plane_stock`.
+  `python -m veritas.plane_stock` (read `stall.*` on every tick).
 - **In-flight work is sacred.** Never force-push over, close, or duplicate
   another agent's open PR. Merge green ones when your charter allows.
 - **Checkpoint before you fan out.** Fleets ≤8 agents per wave; each wave
@@ -77,6 +77,10 @@ GUARDIAN or the constitution.
 - **Handoffs carry evidence.** A handoff names what changed, where the proof
   is, what remains, and the first command to resume. `STATE.md` is the
   resume point; keep it true in the same PR.
+- **Claim is a lock, not a story.** Taking `building` obligates a product PR
+  (or free with reason) in the same builder cycle — see WORKFLOW_HYGIENE §7.
+- **Merge frees the lock.** Product landmass on tip must not leave claim
+  building (§8).
 - **The noop is honorable.** Under free + HOLD with nothing green to merge, a
   truthful `noop_idle` beats a restock PR
   ([`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) §1).

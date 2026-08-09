@@ -12,7 +12,7 @@ Post-#129 LEARN. HOLD invent. Stage-1 human parallel. Existence is measurement o
 ## From Optimizer
 No prefer_bet thrash / no M7.
 
-## From Scout
+## From Evolver (ex-Scout)
 Park M7. Seedlings ≠ product NEXT.
 
 ## From Architect

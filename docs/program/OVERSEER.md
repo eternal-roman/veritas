@@ -196,8 +196,8 @@ Write **`docs/program/overseer/CURRENT.md`** (overwrite) with:
 - **Lazy or half-measured?** yes/no + proof
 - **Quality gate:** functioning / necessary / pursuant? (each yes|no + proof)
 - **Strategic A2A note:** ...
-- **Confer Scout?** yes/no
-- **Scout question:** (if confer) one sharp question for IDEA_BUS
+- **Confer Evolver?** yes/no (legacy alias: Confer Scout)
+- **Evolver question:** (if confer) one sharp question for IDEA_BUS
 - **Idea synthesis:** (if IDEA_BUS read) 0–3 WATCH patterns as hypotheses only
 - **Pruner proposal:** none | pending cut_list summary
 - **pruner_ack:** n/a | accepted | rejected | partial

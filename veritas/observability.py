@@ -45,6 +45,11 @@ METRIC_HELP: dict[str, tuple[str, str]] = {
     "veritas_rate_limited_total": ("counter", "Requests refused by the per-caller rate limit."),
     "veritas_request_too_large_total": ("counter", "Requests refused for exceeding the body cap."),
     "veritas_settlements_total": ("counter", "Settlement attempts by outcome."),
+    "veritas_credit_refund_failed_total": (
+        "counter",
+        "Credit refunds that could not be written after a failed request; "
+        "the credit journal still holds the unreversed debit.",
+    ),
     "veritas_research_duration_ms_sum": ("counter", "Total research handler time in milliseconds."),
     "veritas_research_duration_ms_count": ("counter", "Research handler invocations timed."),
 }

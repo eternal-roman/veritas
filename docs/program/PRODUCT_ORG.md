@@ -4,8 +4,9 @@ How Veritas **manages product**, sequences bets, times agents, and scales
 without thrash. Subordinate to [`GOVERNING.md`](GOVERNING.md). Honesty bar:
 [`GUARDIAN.md`](GUARDIAN.md).
 
-**L0 direction (never claim proven):** substrate for a multi-billion-dollar
-**agent-to-agent autonomous commerce** business with scalable momentum.
+**L0 direction (never claim proven):** the single statement is
+[`VISION.md`](../../VISION.md) §1; this file sequences the work, it does not
+restate the star (MIND §5).
 
 ---
 
@@ -22,7 +23,7 @@ E  Found alone       ── discovery AFTER pay is not a trap
 F  Lifecycle         ── trust, metering, attestations compound
 ```
 
-**Current era (post-#122 Phase 0.1-R; settlements 2 testnet self-dogfood):**
+**Current era (post-#122 Phase 0.1-R; settlement counts: STATE header, evidence `fable/settlement/`):**
 
 | Priority | Bet | Axis | Why now |
 |----------|-----|------|---------|
@@ -231,4 +232,6 @@ Schedulers: see [`CONTINUOUS.md`](CONTINUOUS.md).
 | Docs-only PR churn | **No** |
 | Multibillion revenue | **Not claimed** until measured |
 
-Landmass always: **on-chain settlements = 0** until a tx hash + (later) G9.
+Landmass always: settlement counts live at their evidence (STATE header,
+`fable/settlement/`) — a "= 0" restated here outlived its truth; unsolicited
+buyers and mainnet remain the registers that gate any claim of demand.

@@ -60,6 +60,7 @@ def build_identity(
             "receipts": f"{base}/v1/receipts/{{request_id}}",
             "identity": f"{base}/v1/identity",
             "constitution": f"{base}/v1/constitution",
+            "hooks": f"{base}/v1/hooks",
             "wellKnown": f"{base}/.well-known/x402",
         },
         "x402": {"network": network, "price": price},

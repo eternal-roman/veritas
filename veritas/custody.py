@@ -26,7 +26,7 @@ def _hash_record(record: dict) -> str:
 
 @dataclass
 class CustodyEvent:
-    event_type: str          # created | transformed | verified | reviewed | updated
+    event_type: str          # names are defined at their emit sites (pipeline.py, notary/observe.py)
     actor: str
     timestamp: str
     prev_hash: str | None

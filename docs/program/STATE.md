@@ -232,12 +232,13 @@ one-credential-away with runbooks · licensed/permitted sources with truthful la
 
 ## Environment constraint (affects what is provable)
 
-The development sandbox blocks outbound egress to `x402.org`, Base Sepolia RPC, and
-Wikipedia (only PyPI is reachable). **No on-chain settlement or live-URL fetch is
-executable in-session.** Everything is proven against the official x402 SDK's models
-offline, a local TLS origin fixture, and a local facilitator harness. Real testnet and
-mainnet settlement ship as runbooks under `docs/runbooks/` for an operator with egress.
-No claim of on-chain success may be made until an operator produces a transaction hash.
+Environment claims are hypotheses with dates, never standing constraints
+(MIND §5). An earlier revision of this section declared "no egress, no
+on-chain settlement executable" with no date — it was one cloud sandbox's
+constraint, outlived by a year of hosts, and it contradicted this file's own
+header. Retired 2026-08-09 (REFOUNDING missed-issue #4). Current probes:
+`python -m veritas.unblock_probe` (dated transcript in
+`ecosystem/unblock/CHECKLIST.md`); settlement evidence: `fable/settlement/`.
 
 ## Phase checklist
 

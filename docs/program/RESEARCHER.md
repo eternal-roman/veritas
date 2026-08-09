@@ -9,7 +9,7 @@
 
 Charter layer: **L1.5** in [`ORG_LOOPS.md`](ORG_LOOPS.md).  
 Tick: [`RESEARCHER_TICK_PROMPT.md`](RESEARCHER_TICK_PROMPT.md).  
-Cadence: **12m**.
+Cadence: **10m** (source: ORG_LOOPS v5).
 
 ## Mandate
 

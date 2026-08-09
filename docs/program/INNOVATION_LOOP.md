@@ -17,25 +17,13 @@ ship only what is functioning, necessary, and pursuant to the north star.
 
 ## North star (L0 aspiration — never claim as proven)
 
-Build the substrate of a multi-billion-dollar **agent commerce hub** by making
-three things real, in this order of dependency:
-
-1. **Agent independence** — a buyer and a seller can complete commerce without
-   a human on the per-request path.
-2. **Hyper-scalable agent commerce** — payment, delivery, ledger, and ops that
-   survive volume, replay, and multi-instance deployment.
-3. **Product lifecycle enrichment** — every served outcome improves discovery,
-   trust, calibration, and the next agent's ability to decide.
-
-The dollar figure is a *direction*, not a metric. The only numbers that ship
-are measured ones (tests, dogfood reports, settlement hashes, request volume).
-`skills/adversarial-code-truth.md` remains a locked gate: no "complete",
-"live-ready", "ZK", or "revenue-ready" without evidence.
-
-The substrate — receipts, custody, settlement, reconciliation, diligence,
-standing — is the platform asset; the research payload is its first
-demonstration (`fable/REFOUNDING.md`). Cycles that grow the substrate's
-public surface outrank cycles that polish the demo.
+The single full statement is [`VISION.md`](../../VISION.md) §1; this loop
+consumes it, it does not restate it (MIND §5 — this section was one of four
+diverging copies, one still saying "hub" while GUARDIAN names "hub ready" a
+gate-failure phrase). What this loop adds: **cycles that grow the
+substrate's public surface outrank cycles that polish the demo**
+(`fable/REFOUNDING.md`). `skills/adversarial-code-truth.md` remains a locked
+gate on every claim.
 
 ---
 
@@ -58,11 +46,11 @@ Hold these. Improve around them. Do not dilute them for speed.
 
 | Gap | Blocks |
 |-----|--------|
-| **Zero external buyers; zero public surface** (no deploy, no PyPI, no listing) | Any evidence of demand — the frontier (`fable/REFOUNDING.md` Stage 1). Settlements: 1 testnet, 0 mainnet (last verified 2026-08-09, `fable/settlement/`) |
+| **Zero external buyers; zero public surface** (no deploy, no PyPI, no listing) | Any evidence of demand — the frontier (`fable/REFOUNDING.md` Stage 1). Settlement counts: STATE header; evidence `fable/settlement/` (a count restated here went stale within a day) |
 | Snippet-grade retrieval / notary not built | Willingness to pay |
 | Multi-instance prune still open | Scale beyond one process retention |
 | Shared state across instances missing | Scale beyond one process |
-| G9 reconcile ran once (confirmed 1), not routine | "settled" at volume still means "facilitator said so" |
+| G9 reconcile not yet routine (run counts: STATE header) | "settled" at volume still means "facilitator said so" |
 
 ---
 

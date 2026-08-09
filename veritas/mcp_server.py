@@ -21,9 +21,9 @@ def tool_research(query: str, max_results: int = 5, allow_network: bool = True) 
     """Evidence-grounded research over the one shared engine (free mode).
 
     Returns the full wire-contract body: claims citing content-hashed
-    evidence, a Bayesian posterior, custody root, and the honest outcome
-    taxonomy (completed / refused / unavailable). `allow_network=False` pins
-    the labelled offline corpus (deterministic, not live evidence).
+    evidence, recomputable support counts, custody root, and the honest
+    outcome taxonomy (completed / refused / unavailable). `allow_network=False`
+    pins the labelled offline corpus (deterministic, not live evidence).
     """
     from veritas.pipeline import run_research
 
@@ -93,6 +93,23 @@ def tool_constitution() -> dict[str, Any]:
     return build_constitution()
 
 
+#: Tool name → implementation. The single source for what `veritas-mcp`
+#: serves: `build_server` registers from this mapping and the hooks registry
+#: (`veritas/hooks.py`) imports `MCP_TOOL_NAMES`, so the HTTP-discoverable
+#: announcement cannot drift from what actually registers.
+_TOOL_IMPLEMENTATIONS = {
+    "research": tool_research,
+    "verify": tool_verify,
+    "verify_attestation": tool_verify_attestation,
+    "verify_pack": tool_verify_pack,
+    "verify_log_inclusion": tool_verify_log_inclusion,
+    "trust": tool_trust,
+    "constitution": tool_constitution,
+}
+
+MCP_TOOL_NAMES: tuple[str, ...] = tuple(_TOOL_IMPLEMENTATIONS)
+
+
 def build_server():
     """Wire the plain tool functions into a FastMCP stdio server.
 
@@ -121,13 +138,8 @@ def build_server():
             "surface, not these tools."
         ),
     )
-    server.tool(name="research")(tool_research)
-    server.tool(name="verify")(tool_verify)
-    server.tool(name="verify_attestation")(tool_verify_attestation)
-    server.tool(name="verify_pack")(tool_verify_pack)
-    server.tool(name="verify_log_inclusion")(tool_verify_log_inclusion)
-    server.tool(name="trust")(tool_trust)
-    server.tool(name="constitution")(tool_constitution)
+    for name, implementation in _TOOL_IMPLEMENTATIONS.items():
+        server.tool(name=name)(implementation)
     return server
 
 

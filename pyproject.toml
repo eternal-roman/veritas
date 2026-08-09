@@ -90,6 +90,7 @@ Homepage = "https://github.com/eternal-roman/veritas"
 Repository = "https://github.com/eternal-roman/veritas"
 Issues = "https://github.com/eternal-roman/veritas/issues"
 Roadmap = "https://github.com/eternal-roman/veritas/blob/main/ROADMAP.md"
+Vision = "https://github.com/eternal-roman/veritas/blob/main/VISION.md"
 
 [tool.setuptools.dynamic]
 version = { attr = "veritas.__version__" }

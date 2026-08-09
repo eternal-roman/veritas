@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.4.** This file
+**The normative source is `veritas/constitution.py`, version 2.5.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -236,6 +236,20 @@ the seller writes the experiment that would refute itself and stakes on it
 be decided is kept apart from both verdicts, and what cannot be refuted by
 any decidable procedure is priced as such instead of warranted. What it does
 not establish: that the bond behind a warranty is enforceable — that is G12.
+
+### A28 — Integration surfaces are registered (L1)
+
+Integration surfaces are registered, not discovered by accident: every HTTP route the service mounts is either listed in the machine-readable hooks registry served at /v1/hooks or named in an explicit exclusion list, the registry never advertises a surface that does not exist, and the absence of push delivery is stated in the registry rather than left to be inferred.
+
+Enforced by `tests/test_hooks.py::test_every_app_route_is_registered_or_excluded`,
+`tests/test_hooks.py::test_registry_advertises_no_phantom_routes`, and
+`tests/test_hooks.py::test_push_absence_is_honest`.
+The registry (`veritas/hooks.py`, served at `GET /v1/hooks`) also carries what
+a links object cannot: MCP tools, CLI exit-code contracts, payment/session
+headers, and the durable signal stores — with the same hash-then-timestamp
+discipline as the identity document. What it does not establish: that each
+surface behaves as described — behaviour stays pinned by that surface's own
+tests.
 
 ---
 

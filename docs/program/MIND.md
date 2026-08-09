@@ -18,8 +18,9 @@ payload is the first demonstration, not the product. The product is **trust a
 stranger's agent can verify without trusting us**
 ([`fable/REFOUNDING.md`](fable/REFOUNDING.md)).
 
-The scale target is a direction (GOVERNING north star), never a claim. The
-only numbers that ship are measured.
+The scale target is a direction, never a claim; its single full statement —
+north star, interfaces, roadblock ledger — is [`VISION.md`](../../VISION.md),
+which this section anchors. The only numbers that ship are measured.
 
 ## 2. The scarce resource is contact with reality
 

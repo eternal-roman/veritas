@@ -214,7 +214,7 @@ def test_new_docs_keep_the_register():
     # surface: the place where a claim is most tempting and least checked.
     # ROADMAP.md and AGENTS.md are deliberately excluded — they quote these
     # very words to prohibit them.
-    for name in ("CONSTITUTION.md", "ECOSYSTEM.md", "README.md", "STATUS.md"):
+    for name in ("CONSTITUTION.md", "ECOSYSTEM.md", "README.md", "STATUS.md", "VISION.md"):
         text = (REPO / name).read_text(encoding="utf-8")
         match = banned.search(text)
         assert match is None, f"{name} contains banned bare claim: {match.group(0)!r}"

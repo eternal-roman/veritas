@@ -9,11 +9,11 @@
 ## Why this agent exists
 
 **Stuck:** track tick prompts without an executor left all tracks at cycle 0.  
-**Fix:** deterministic kernel `veritas.ecosystem_cycle` guarantees progress; optional LLM ticks deepen research on top-ranked tracks only.
+**Fix:** deterministic kernel `vveritas.ecosystem_cycle` guarantees progress; optional LLM ticks deepen research on top-ranked tracks only.
 
 ## Mandate
 
-1. Run `python -m veritas.ecosystem_cycle --cycles 5` (or N).
+1. Run `python -m vveritas.ecosystem_cycle --cycles 5` (or N).
 2. Read `ecosystem/learn/*` and update weights if a track is permanently stuck.
 3. Scale: increase cycles or fan-out LLM research to top-3 ranked tracks — never dual product claim.
 4. If human ops block money_loop (RPC/wallet), spawn **Unblock Agent** checklist only (docs).

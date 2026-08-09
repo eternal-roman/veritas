@@ -1,13 +1,14 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-09T04:10:00Z
-- **last_merged:** product **#127** @ `6809580` testnet commerce dogfood (Playwright faucet + harness); docs **#126** @ `a4c8d0e`; product **#125** @ `0eb4ac1` product-worth baseline; plane **#124** @ `d57311c`; product **#122** @ `0c2cef9` Phase 0.1-R; product **#119** @ `fb3b0d5`; product **#112** @ `367a3aa`
+- **bet_id:** stage1-existence-scorecard
+- **branch:** feat/stage1-existence-scorecard
+- **holder:** session-orchestrator
+- **status:** building
+- **updated:** 2026-08-09T04:35:00Z
+- **last_merged:** docs **#128** @ `a1ec8fe` tip hygiene; product **#127** @ `6809580` testnet commerce dogfood; product **#125** @ `0eb4ac1` product-worth; plane **#124** @ `d57311c`; product **#122** @ `0c2cef9` Phase 0.1-R; product **#119** @ `fb3b0d5`; product **#112** @ `367a3aa`
 - **settlements:** **2 testnet** self-dogfood on tip · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free**. #127 is dogfood tooling (faucet/harness) — **not** n=3 settle, **not** unsolicited demand, **not** unattended faucet (captcha). Do **not** invent commercial product-worth thrash / 0.1-R re-claim / M7 dual. Overseer **HOLD invent** until re-names singular or Stage-1 human. Parked: PyPI/TLS/mainnet.
+- **pr:** https://github.com/eternal-roman/veritas/pull/129
+- **next_micro:** Product PR **#129** open. Free claim on merge.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.

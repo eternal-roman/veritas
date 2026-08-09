@@ -16,6 +16,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from veritas.safeurl import UnsafeUrlError, require_http_url
+
 
 def _probe_env(name: str) -> dict[str, Any]:
     val = os.environ.get(name)
@@ -27,10 +29,15 @@ def _probe_env(name: str) -> dict[str, Any]:
 
 def _probe_http(url: str, timeout: float = 3.0) -> dict[str, Any]:
     try:
-        req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        safe = require_http_url(url)
+        req = urllib.request.Request(safe, method="GET")
+        with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=timeout
+        ) as resp:
             code = getattr(resp, "status", None) or resp.getcode()
         return {"status": "yes", "evidence": f"HTTP {code} from {url}"}
+    except UnsafeUrlError as e:
+        return {"status": "no", "evidence": f"UnsafeUrlError: {e}"}
     except urllib.error.HTTPError as e:
         # Reachable enough to get HTTP error
         return {"status": "partial", "evidence": f"HTTP {e.code} from {url}"}
@@ -45,17 +52,22 @@ def _probe_rpc(url: str | None, timeout: float = 3.0) -> dict[str, Any]:
         {"jsonrpc": "2.0", "method": "eth_chainId", "params": [], "id": 1}
     ).encode("utf-8")
     try:
+        safe = require_http_url(url)
         req = urllib.request.Request(
-            url,
+            safe,
             data=body,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(  # nosec B310 - scheme checked by require_http_url
+            req, timeout=timeout
+        ) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
         data = json.loads(raw)
         chain = data.get("result", "?")
         return {"status": "yes", "evidence": f"eth_chainId={chain}"}
+    except UnsafeUrlError as e:
+        return {"status": "no", "evidence": f"UnsafeUrlError: {e}"}
     except Exception as e:  # noqa: BLE001
         return {"status": "no", "evidence": f"{type(e).__name__}: {e}"}
 

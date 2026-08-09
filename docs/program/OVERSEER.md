@@ -21,7 +21,7 @@ ship this direction?) → builders execute.
 | **Overseer** | **8m** | Quality + objectivity + vision + strategy gate |
 | Conductor | 12m | Trajectory board, restart/merge (honors Overseer) |
 | Flywheel | 20m | One shippable bet under gates |
-| Scout (Idea) | 25m | Pattern fuel when vision is thin |
+| Evolver (Idea) | 25m | Evolutionary recombinant fuel when vision is thin |
 | Steward | 15m | Card cohesion |
 | **Ecosystem tracks** | 20–30m | T4 research on money/trust/worth/discovery/tenant/identity/network — `ECOSYSTEM_ADVANCE.md` |
 
@@ -50,7 +50,7 @@ ship this direction?) → builders execute.
    - **Discoverability** (registry only after settlement is not a trap)
    - **Lifecycle compounding** (trust, metering, attestations — not vanity scores)
 6. **Vision health.** Score vision + strategy each tick. If either ≤ 1,
-   **confer with Scout (Idea agent)** — do not bluff strategic depth (§ Idea
+   **confer with Evolver (Idea agent)** — do not bluff strategic depth (§ Idea
    conferral).
 7. **Navigate, don’t thrash.** Steering notes and PR comments over parallel
    rewrites. One bet; kill scope creep. High value ≫ high volume. Enforce
@@ -145,21 +145,24 @@ or lifecycle enrichment — or is it local busywork?*
 | 2 | Named multi-step trajectory + landmass | Axis-ordered preference with parks |
 | 3 | Trajectory + hostile-agent critical path + parks | Clear sequence money→worth→independence→discovery→lifecycle |
 
-If **vision ≤ 1** OR **strategy ≤ 1** → set **`confer_scout: true`** and write
-an explicit **scout_question** for the Idea agent.
+If **vision ≤ 1** OR **strategy ≤ 1** → set **`confer_evolver: true`**
+(legacy **`confer_scout: true`**) and write an explicit **evolver_question**
+(alias **scout_question**) for the Idea agent.
 
-### D. Idea conferral (Scout) — when Overseer lacks vision
+### D. Idea conferral (Evolver) — when Overseer lacks vision
 
 The Overseer is expected to be top-tier on strategy. When it is not (thin
 evidence, stuck axis, empty trajectory):
 
-1. Read `docs/program/scout/IDEA_BUS.md` this tick (patterns only).  
-2. Set on CURRENT: `confer_scout: true`, `scout_question: "..."`.  
-3. Synthesize 1–3 WATCH seedlings into the strategic note as **hypotheses**,
-   never as approved dependencies.  
-4. Scout’s next harvest prioritises that question.  
+1. Read `docs/program/evolver/IDEA_BUS.md` this tick (WATCH patterns only).  
+2. Set on CURRENT: `confer_evolver: true` (or `confer_scout: true`),
+   `evolver_question: "..."`.  
+3. Synthesize evolutionary blueprints / seedlings into the strategic note as
+   **hypotheses**, never as approved dependencies. Structural evolution scores
+   are not commercial proof.  
+4. Evolver’s next tick prioritises that question in `veritas.evolver`.  
 5. Only Overseer + STATE discipline may promote a pattern toward a future NEXT
-   (still needs tests path). Scout never sets NEXT.
+   (still needs tests path). Evolver never sets NEXT.
 
 ### E. Interventions (allowed actions)
 
@@ -234,7 +237,7 @@ GOVERNING loops (goals / NEXT / scorecard)
    GUARDIAN (failing/fake code never ships)
         │
         ▼
-   OVERSEER (quality + vision + strategy) ──confer──► SCOUT (Idea bus)
+   OVERSEER (quality + vision + strategy) ──confer──► EVOLVER (Idea bus)
         │                                              │
         │◄──────────── patterns (WATCH only) ──────────┘
         ▼

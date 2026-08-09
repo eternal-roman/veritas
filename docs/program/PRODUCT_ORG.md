@@ -55,8 +55,8 @@ Outrank only for security/money-path severity (Overseer writes why).
               │                 │
               │         confer if vision≤1
               │                 ▼
-              │              SCOUT (Idea)
-              │              pattern fuel
+              │              EVOLVER (Idea)
+              │              evolutionary fuel
               ▼                 │
          ┌────────────────────────────────┐
          │  CONDUCTOR  (orchestration)    │
@@ -69,7 +69,7 @@ Outrank only for security/money-path severity (Overseer writes why).
          │  → PRUNER (ship veto) → merge  │
          └────────────────────────────────┘
                          │
-              STEWARD · SCOUT (support)
+              STEWARD · EVOLVER (support)
 ```
 
 | Tier | Agents | Scale rule |
@@ -81,7 +81,7 @@ Outrank only for security/money-path severity (Overseer writes why).
 | **T1.5 Unblock** | **Researcher**×n | Autonomous block board; solve/escalate; report inbox — **scale fan-out** |
 | **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart (fastest timer) |
 | **T3 Build** | Flywheel **or** Implement×**n** | **1 product bet**; N workers share one claim |
-| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks**, **Unblock** | Parallel OK when not idle-true; **no dual product NEXT**; one hygiene PR/epoch |
+| **T4 Support** | Steward, **Evolver** (ex-Scout), **Git Agent**, **Ecosystem tracks**, **Unblock** | Parallel OK when not idle-true; **no dual product NEXT**; one hygiene PR/epoch |
 | **T5 Burst** | continuous / pulse | **One** continuous/forever at a time |
 
 **7 watchers + layers:** see [`ORG_LOOPS.md`](ORG_LOOPS.md).
@@ -132,7 +132,7 @@ Plan → parallel Implementers[1..n] → Integrate → PRUNER → Ship
 
 ```
 parallel:
-  Overseer │ Steward │ Scout skim │ (optional Pruner skim)
+  Overseer │ Steward │ Evolver skim │ (optional Pruner skim)
 serial:
   Conductor (merge green → else kick implement or flywheel)
 ```
@@ -161,7 +161,7 @@ Measured work vs interval. Critical path = **merge lag + restart lag + build**.
 | **Researcher** | ~3–10m | **10m** | Clear others' blocks |
 | **Overseer** | ~2.5m | **12m** | Strategy; thrash catch |
 | **Pruner** | ~3–8m | **15m** | ship_ok when product PR |
-| **Scout** | ~3m | **25m** | Idea fuel (slow under HOLD) |
+| **Evolver** | ~3–8m | **25m** | Evolutionary Idea fuel (slow under HOLD) |
 | **Steward** | ~4m | **30m** | Cohesion lag intentional |
 | **Flywheel** | 10–40m | **45m** | Backup only |
 | **Implement×n** | on demand | workflow | N workers |
@@ -174,12 +174,12 @@ Measured work vs interval. Critical path = **merge lag + restart lag + build**.
 | Block posted → claimed | ≤ **10m** (Researcher) |
 | Idle → noop exit | ≤ **15 tools** (plane_stock) |
 | Merge → cards coherent | ≤ **30m** (Steward) |
-| Vision thin → Idea harvest | ≤ **25m** (Scout) |
+| Vision thin → Idea evolve | ≤ **25m** (Evolver) |
 
 ### Anti-thrash
 
 1. **One claim** — `flywheel-claim.md` (G10).  
-2. **Write ownership:** Overseer→`overseer/*`; Steward→cards/STATE hygiene; Conductor→`conductor/*`; Flywheel→product code+cycles; Scout→`scout/*`.  
+2. **Write ownership:** Overseer→`overseer/*`; Steward→cards/STATE hygiene; Conductor→`conductor/*`; Flywheel→product code+cycles; Evolver→`evolver/*` (legacy `scout/*` pointers).  
 3. **Docs PR dirty** (#21 class) never freezes product NEXT.  
 4. **noop_stable / noop_coherent** when facts unchanged.
 

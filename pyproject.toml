@@ -56,6 +56,12 @@ signing = ["eth_account>=0.13"]
 # extra that cannot serve. Raise this only after confirming the new major
 # provides that module; tests/test_mcp_server.py enforces both halves.
 mcp = ["mcp>=1.0,<2"]
+# Optional evolutionary Idea graph (Evolver). Offline mock works without this;
+# install for LangGraph-native state machine wiring.
+evolver = [
+    "langgraph>=0.2",
+    "langchain-core>=0.3",
+]
 dev = [
     "eth_account>=0.13",
     "pytest>=8.0",
@@ -77,6 +83,7 @@ veritas-money-loop = "veritas.money_loop:main"
 veritas-diligence = "veritas.diligence_cli:main"
 veritas-audit = "veritas.audit_cli:main"
 veritas-verify = "veritas.verifier:main"
+veritas-evolver = "veritas.evolver.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/eternal-roman/veritas"

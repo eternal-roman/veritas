@@ -110,28 +110,30 @@ Score **vision 0–3** and **strategy 0–3** on the CURRENT card:
 | 2 | Trajectory named (e.g. M7 → N0 → G9 design) with landmass honesty |
 | 3 | Trajectory + hostile-agent critical path + explicit parked alternatives |
 
-If **vision ≤ 1** or **strategy ≤ 1**, Overseer **must confer with Scout**
-(Idea agent) — see §4. Do not fake strategic depth.
+If **vision ≤ 1** or **strategy ≤ 1**, Overseer **must confer with Evolver**
+(evolutionary Idea agent; formerly Scout) — see §4. Do not fake strategic depth.
 
 ---
 
-## 4. Idea agent (Scout) — conferral when vision is thin
+## 4. Idea agent (Evolver) — conferral when vision is thin
 
-Scout owns `scout/IDEA_BUS.md`: low-star / adjacent OSS patterns, **WATCH not
-approve**.
+**Evolver** (formerly Scout) owns `evolver/IDEA_BUS.md` and runs the
+evolutionary creativity ensemble (`veritas.evolver`): first principles →
+constraints → distant paradigms → mutate/score loop → architecture sketch.
+Outputs are **WATCH not approve**. Legacy `confer_scout` ≡ `confer_evolver`.
 
 When Overseer vision or strategy is weak **or** the scorecard is stuck on an
 axis with no local idea:
 
-1. Overseer writes `overseer/CURRENT.md` with `confer_scout: true` and the
-   **question** (e.g. “patterns for SIWx credits without dual payer”).  
-2. Overseer **reads** IDEA_BUS this tick (and prior) for divergent patterns.  
-3. Scout’s next tick **prioritises** that question in harvest (still WATCH).  
-4. Overseer **synthesises** — seedlings never become NEXT without Overseer
+1. Overseer writes `overseer/CURRENT.md` with `confer_evolver: true` (or
+   legacy `confer_scout: true`) and the **question**.  
+2. Overseer **reads** IDEA_BUS this tick (and prior) for recombinant patterns.  
+3. Evolver’s next tick **prioritises** that question in the evolutionary loop.  
+4. Overseer **synthesises** — blueprints never become NEXT without Overseer
    judgment + STATE discipline + tests path.
 
-Scout never sets STATE NEXT. Overseer never invents fitness of foreign code.
-Together they advance the **broader vision** without bypassing quality gates.
+Evolver never sets STATE NEXT. Overseer never invents fitness of foreign code
+or treats structural evolution scores as commercial proof.
 
 ---
 
@@ -149,7 +151,7 @@ Together they advance the **broader vision** without bypassing quality gates.
 | **Implement×n** | Parallel workers on one bet | Dual NEXT; ship without Pruner |
 | **Pruner** | Deny bloat; QA; E2E; ship veto | Setting NEXT; strategy cosplay |
 | **Steward** | Card/STATE claim cohesion | Product features |
-| **Scout (Idea)** | Pattern harvest for vision fuel | Approvals, NEXT, merges |
+| **Evolver (Idea)** | Evolutionary recombinant vision fuel (`veritas.evolver`) | Approvals, NEXT, merges |
 
 ---
 
@@ -186,6 +188,8 @@ routine reconciliation is not operational. L0 hub aspiration ≠ L1 product.
 - [`OVERSEER.md`](OVERSEER.md) — rubric, output contract, Scout conferral  
 - [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) — north star + scorecard  
 - [`GUARDIAN.md`](GUARDIAN.md) — G1–G12  
-- [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) — Idea agent  
+- [`EVOLVER_TICK_PROMPT.md`](EVOLVER_TICK_PROMPT.md) — evolutionary Idea agent (Scout renamed)  
+- [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) — legacy pointer → Evolver  
+
 - [`AUTONOMOUS.md`](AUTONOMOUS.md) — unattended execution  
 - Pulse workflow: `/workflow agent-commerce-pulse`

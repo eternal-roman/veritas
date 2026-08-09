@@ -57,7 +57,7 @@ skipping battery while claiming green, strategically empty green, dual product P
 
 ### Write (always)
 1. Overwrite `docs/program/overseer/CURRENT.md` (vision/strategy, quality gate,
-   confer_scout, **Pruner ack** if pending: `pruner_ack` / `pruner_do_not_touch`).
+   confer_evolver (alias confer_scout), **Pruner ack** if pending: `pruner_ack` / `pruner_do_not_touch`).
 2. Append `docs/program/overseer/log/NNN-brief.md`.
 3. If open PR is LAZY/DRIFT/MISGUIDED and `gh` works, short factual PR comment.
 4. **Do not merge. Do not force-push main.**
@@ -70,8 +70,8 @@ and `noop_stable` so cadence and vision health stay observable.
 ### Banned
 Cheerleading · inventing green · inventing NEXT · claiming on-chain success ·
 “hub is ready” / “multibillion achieved” · rewriting large WIP without tests ·
-second bet mid-flight · treating Scout seedlings as approved dependencies.
+second bet mid-flight · treating Evolver blueprints/seedlings as approved dependencies.
 
 ### Final reply
-Verdict, honesty scores, **vision/strategy scores**, confer_scout yes/no,
+Verdict, honesty scores, **vision/strategy scores**, confer_evolver yes/no,
 one-line directive, PROPERTY block for this review.

@@ -1,0 +1,241 @@
+{
+  "captured_at": "2026-08-09T13:38:06.769586Z",
+  "subject": "first live session-commerce loop: SIWx -> x402 topup settle -> credit-paid research -> honest empty-balance refusal",
+  "acceptance": {
+    "met": true,
+    "transaction": "0xa21d6aeaa2dd0c2c02da975535e10d2f767b0e49f32c2880486e12b68c6419f6",
+    "criterion": "topup settled on-chain; credits granted, debited by research, and refused when exhausted"
+  },
+  "attempt_1_transient_rejection": {
+    "subject": "live session commerce: SIWx -> x402 topup -> credit research",
+    "steps": [
+      {
+        "step": "siwx_challenge",
+        "http": 200,
+        "keys": [
+          "address",
+          "chain_id",
+          "domain",
+          "expiration_time",
+          "issued_at",
+          "message",
+          "nonce",
+          "statement",
+          "uri"
+        ]
+      },
+      {
+        "step": "siwx_verify",
+        "http": 200,
+        "keys": [
+          "address",
+          "chain_id",
+          "domain",
+          "expires_at",
+          "header",
+          "session_token"
+        ]
+      },
+      {
+        "step": "topup_challenge",
+        "http": 402,
+        "accepts_count": 1
+      },
+      {
+        "step": "topup_settle",
+        "http": 402,
+        "body": {
+          "x402Version": 1,
+          "error": "invalid_exact_evm_transaction_simulation_failed",
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:84532",
+              "maxAmountRequired": "10000",
+              "resource": "http://127.0.0.1:8000/v1/credits/topup",
+              "description": "High-assurance evidence-backed research via Veritas",
+              "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+              "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "mimeType": "application/json",
+              "maxTimeoutSeconds": 60,
+              "extra": {
+                "name": "USDC",
+                "version": "2"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "step": "balance_after_topup",
+        "http": 200,
+        "body": {
+          "account": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599",
+          "balance": 0,
+          "unit": "atomic_usdc",
+          "entries": []
+        }
+      },
+      {
+        "step": "credit_research",
+        "http": 402,
+        "status": null,
+        "billable": null,
+        "payment": null,
+        "custody_root": null,
+        "request_id": null,
+        "claims": 0
+      },
+      {
+        "step": "balance_after_research",
+        "http": 200,
+        "body": {
+          "account": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599",
+          "balance": 0,
+          "unit": "atomic_usdc",
+          "entries": []
+        }
+      },
+      {
+        "step": "research_with_empty_balance",
+        "http": 402,
+        "error": "credits_insufficient",
+        "note": "expected: no free work once credits are spent"
+      }
+    ]
+  },
+  "attempt_2_settled": {
+    "subject": "live session commerce: SIWx -> x402 topup -> credit research",
+    "steps": [
+      {
+        "step": "siwx_challenge",
+        "http": 200,
+        "keys": [
+          "address",
+          "chain_id",
+          "domain",
+          "expiration_time",
+          "issued_at",
+          "message",
+          "nonce",
+          "statement",
+          "uri"
+        ]
+      },
+      {
+        "step": "siwx_verify",
+        "http": 200,
+        "keys": [
+          "address",
+          "chain_id",
+          "domain",
+          "expires_at",
+          "header",
+          "session_token"
+        ]
+      },
+      {
+        "step": "topup_challenge",
+        "http": 402,
+        "accepts_count": 1
+      },
+      {
+        "step": "topup_settle",
+        "http": 200,
+        "body": {
+          "topped_up": true,
+          "account": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599",
+          "granted": 10000,
+          "entry_id": 1,
+          "balance": 10000,
+          "payment": {
+            "success": true,
+            "state": "settled",
+            "transaction": "0xa21d6aeaa2dd0c2c02da975535e10d2f767b0e49f32c2880486e12b68c6419f6",
+            "network": "eip155:84532",
+            "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+            "error_reason": null
+          }
+        }
+      },
+      {
+        "step": "balance_after_topup",
+        "http": 200,
+        "body": {
+          "account": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599",
+          "balance": 10000,
+          "unit": "atomic_usdc",
+          "entries": [
+            {
+              "id": 1,
+              "kind": "topup",
+              "amount": 10000,
+              "request_id": "bfe19fa6-a49e-46a0-8cc0-ef197c90a9db",
+              "note": "x402_topup_settled",
+              "recorded_at": "2026-08-09T13:37:14.340766Z"
+            }
+          ]
+        }
+      },
+      {
+        "step": "credit_research",
+        "http": 200,
+        "status": "refused",
+        "billable": true,
+        "payment": {
+          "settled": true,
+          "mode": "credits",
+          "reason": "prepaid_credits",
+          "account": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599",
+          "balance": 0
+        },
+        "custody_root": "sha256:1e147b6cd85da823b298d8861d8ed900385608af6eeeaef22b7ab77c176ac862",
+        "request_id": "704b4a03-26db-4128-9194-6853660b9b93",
+        "claims": 0
+      },
+      {
+        "step": "balance_after_research",
+        "http": 200,
+        "body": {
+          "account": "0xf355fc4df7e7a7016efe530f71835e3a6e6b8599",
+          "balance": 0,
+          "unit": "atomic_usdc",
+          "entries": [
+            {
+              "id": 2,
+              "kind": "debit",
+              "amount": -10000,
+              "request_id": "704b4a03-26db-4128-9194-6853660b9b93",
+              "note": "research_debit",
+              "recorded_at": "2026-08-09T13:37:14.378773Z"
+            },
+            {
+              "id": 1,
+              "kind": "topup",
+              "amount": 10000,
+              "request_id": "bfe19fa6-a49e-46a0-8cc0-ef197c90a9db",
+              "note": "x402_topup_settled",
+              "recorded_at": "2026-08-09T13:37:14.340766Z"
+            }
+          ]
+        }
+      },
+      {
+        "step": "research_with_empty_balance",
+        "http": 402,
+        "error": "credits_insufficient",
+        "note": "expected: no free work once credits are spent"
+      }
+    ]
+  },
+  "chain_reconcile": {
+    "chain_checked": true,
+    "counts": {
+      "confirmed": 2
+    },
+    "rpc_source": "default_public_rpc:eip155:84532",
+    "note": "server ledger holds research tx 0x40d117... and topup tx 0xa21d6a..., both confirmed"
+  },
+  "lesson": "facilitator verify can reject a fresh valid authorization with invalid_exact_evm_transaction_simulation_failed transiently; identical code settled on retry with a new authorization. Buyers should retry once before concluding rejection.",
+  "not_proven": "unsolicited buyers; mainnet; that the transient rejection class is bounded"
+}

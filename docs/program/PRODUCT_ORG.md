@@ -75,7 +75,7 @@ Outrank only for security/money-path severity (Overseer writes why).
 |------|--------|------------|
 | **T0 Governing** | Loops, STATE, Guardian | Documents; not parallelised |
 | **T1 Gate** | Overseer | 1 instance; top-tier; may call Idea |
-| **T1b Lean/QA** | **Pruner** | 1 instance; aggressive bloat denial + battery/E2E; **ship veto** |
+| **T1b Lean/QA** | **Pruner** | 1 instance; **full-tree sweep** every tick; ponytail-audit/debt; **Overseer-agreed** prune PRs; battery/E2E; **ship veto**; owns over-cuts |
 | **T1c Self-improve** | **Optimizer** | Every **5 product cycles** forever; edits org/cadence/workflows (Overseer veto thrash) |
 | **T1.5 Unblock** | **Researcher**×n | Autonomous block board; solve/escalate; report inbox — **scale fan-out** |
 | **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart (fastest timer) |

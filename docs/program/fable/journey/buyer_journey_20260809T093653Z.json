@@ -1,0 +1,93 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "diligence_verdict": "pass",
+  "errors": [],
+  "exit_hint": 0,
+  "not_proven": [
+    "paid settlement",
+    "unsolicited demand",
+    "seller will deliver",
+    "mainnet"
+  ],
+  "not_settled": true,
+  "package_version": "0.9.0",
+  "schema": "veritas.buyer_journey.v0",
+  "steps": [
+    {
+      "errors": [],
+      "fetched": [
+        "discovery",
+        "constitution",
+        "trust"
+      ],
+      "ok": true,
+      "step": "discover"
+    },
+    {
+      "checks": [
+        {
+          "detail": "challenge agrees with advertised discovery on payee, network and asset, and does not exceed the advertised price",
+          "name": "challenge_matches_discovery",
+          "verdict": "pass"
+        },
+        {
+          "detail": "25 articles carry enforcement pointers and no aspirational article claims to be enforced",
+          "name": "register_integrity",
+          "verdict": "pass"
+        },
+        {
+          "detail": "5 open gaps declared of 12 registered",
+          "name": "gap_register_present",
+          "verdict": "pass"
+        },
+        {
+          "detail": "trust document discloses that it is self-reported and names its sample floor",
+          "name": "trust_self_disclosure",
+          "verdict": "pass"
+        }
+      ],
+      "ok": true,
+      "step": "diligence",
+      "verdict": "pass"
+    },
+    {
+      "accepts_count": 1,
+      "accepts_preview": [
+        {
+          "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+          "description": "High-assurance evidence-backed research via Veritas",
+          "extra": {
+            "name": "USDC",
+            "version": "2"
+          },
+          "maxAmountRequired": "10000",
+          "maxTimeoutSeconds": 60,
+          "mimeType": "application/json",
+          "network": "eip155:84532",
+          "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+          "resource": "http://127.0.0.1:8000/v1/research",
+          "scheme": "exact"
+        }
+      ],
+      "free_response": null,
+      "not_settled": true,
+      "note": "Seller issued x402 challenge; settle via payer/dogfood, not this CLI.",
+      "ok": true,
+      "payment_required": true,
+      "status": 402,
+      "step": "pay_surface_probe"
+    },
+    {
+      "note": "No content_hash yet (typical after 402-only probe).",
+      "ok": true,
+      "skipped": true,
+      "step": "verify_content_hash"
+    },
+    {
+      "note": "No request_id; pass --request-id after a delivered research call.",
+      "ok": true,
+      "skipped": true,
+      "step": "receipt"
+    }
+  ]
+}

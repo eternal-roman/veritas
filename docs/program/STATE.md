@@ -25,6 +25,11 @@ committed and pushed survives. Update this file and push after every sub-step.
 > `#131` / `ac68cc9` evolver; `#129` / `b2420ce` existence. Claim **free**.
 > Settlements: **3 testnet** · mainnet **0** · unsolicited **0**. Gap G9 open.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **#136 journey ran live 2026-08-09:** `veritas-buy` against a live-mode
+> seller — exit 0, all four diligence checks pass incl.
+> challenge_matches_discovery; `not_settled` honest. First live transcript:
+> `fable/journey/buyer_journey_20260809T093653Z.json`. Self-vetting is not a
+> stranger's vetting; unsolicited remains 0.
 
 
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /

@@ -15,6 +15,7 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| **VISION + /v1/hooks registry (A28, constitution 2.5)** | **#134** — single north star (program docs point, never restate); integration registry sync-tested both directions; org tables reconciled. Do not re-open north-star wording or re-add counts to program docs |
 | **Evolver (Scout → evolutionary Idea agent)** | **`ac68cc9` / #131** — `veritas.evolver`; WATCH only; not commercial fitness |
 | Steward free claim post-#129 | `ba24552` / #130 |
 | **Stage-1 existence scorecard** | **`b2420ce` / #129** — `veritas.existence` / `veritas-ops existence`; measurement only |

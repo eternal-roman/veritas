@@ -153,6 +153,7 @@ def _agent_surfaces(root: Path) -> dict[str, bool]:
         "product_worth": (
             root / "veritas" / "evaluations" / "product_worth.py"
         ).is_file(),
+        "buyer_journey": (root / "veritas" / "buyer_journey.py").is_file(),
         "dogfood_commerce": (
             root / "scripts" / "dogfood_agent_commerce.py"
         ).is_file(),

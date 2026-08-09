@@ -1,13 +1,13 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-09T05:00:00Z
-- **last_merged:** product **#131** @ `ac68cc9` evolver (Scout→Evolver); docs **#130** @ `ba24552` tip hygiene; product **#129** @ `b2420ce` Stage-1 existence scorecard; docs **#128** @ `a1ec8fe` tip hygiene; product **#127** @ `6809580` testnet commerce dogfood; product **#125** @ `0eb4ac1` product-worth; plane **#124** @ `d57311c`; product **#122** @ `0c2cef9` Phase 0.1-R; product **#119** @ `fb3b0d5`; product **#112** @ `367a3aa`
+- **bet_id:** PS9-buyer-journey-stage1-status
+- **branch:** feat/ps9-buyer-journey-stage1-status
+- **holder:** flywheel
+- **status:** building
+- **updated:** 2026-08-09T08:30:00Z
+- **last_merged:** product **#135** @ `816a465` composed 0.1-R n=3 + existence money_loop count; product **#134** VISION/hooks; product **#133** evolver journal; product **#131** @ `ac68cc9` evolver; product **#129** existence scorecard; product **#127** dogfood; product **#122** Phase 0.1-R
 - **settlements:** counts live at STATE header + `fable/settlement/` (n includes the first live composed 0.1-R green) · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free**. #131 landed evolver — WATCH vision fuel only, **not** commercial fitness or STATE NEXT. #129 measurement only — **not** n=3, unsolicited, mainnet, or PyPI. Do **not** invent commercial product-worth thrash / 0.1-R re-claim / M7 dual / #129 thrash / #131 thrash. Overseer **HOLD invent** until re-names singular or Stage-1 human (PyPI/TLS/mainnet).
+- **next_micro:** Building PS9 A2A journey surfaces from evolver worklist — `veritas-buy` (discover→diligence→unpaid pay-surface probe; never settles) + `veritas-agent status` Stage-1 readiness + block_board catalog seed one-shot (no reseed thrash). Not PyPI/TLS/mainnet invent; not commercial-grade retrieval; not dual NEXT.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.

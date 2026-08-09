@@ -200,6 +200,16 @@ HOOKS: tuple[dict[str, Any], ...] = (
          "Vet an x402 seller off its published documents; the verdict is "
          "also the exit code.",
          {"0": "pass", "1": "fail", "2": "unverifiable", "3": "bad_input"}),
+    _cli("veritas-buy",
+         "Guided buyer journey: discover → diligence → unpaid pay-surface "
+         "probe → optional verify/receipt. Never settles payment.",
+         {
+             "0": "ok",
+             "1": "diligence_fail",
+             "2": "unverifiable",
+             "3": "bad_input",
+             "4": "probe_error",
+         }),
     _cli("veritas-audit",
          "Audit an attested pack against its origin; the verdict is also "
          "the exit code.",

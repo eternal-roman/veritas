@@ -114,3 +114,18 @@ def test_status_reports_config_and_wallet(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "free" in out
     assert "0x" in out
+
+
+def test_status_includes_stage1_readiness_scorecard(tmp_path, capsys):
+    """PS9: seller status surfaces Stage-1 readiness in-process (measure only)."""
+    pytest.importorskip("eth_account")
+    main(["init"])
+    capsys.readouterr()  # drop init chatter
+    assert main(["status"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    readiness = payload["stage1_readiness"]
+    assert readiness["schema"] == "veritas.existence.v0"
+    assert readiness["publicly_existable"] is False
+    assert "human_minutes_remaining" in readiness
+    assert "unsolicited demand" in readiness["not_proven"]
+    assert readiness["testnet_settlements_confirmed"] is not None

@@ -1,14 +1,14 @@
 # flywheel-claim
 
-- **bet_id:** (none)
-- **branch:** (none)
-- **pr:** (none)
-- **holder:** (none)
-- **status:** free
-- **updated:** 2026-08-09T08:55:00Z
-- **last_merged:** product **#136** @ `694626a` PS9 buyer journey + Stage-1 status + catalog seed one-shot; product **#135** @ `816a465` composed 0.1-R n=3; product **#134** VISION/hooks; product **#133** evolver journal; product **#131** evolver; product **#129** existence; product **#127** dogfood; product **#122** Phase 0.1-R
-- **settlements:** counts live at STATE header + `fable/settlement/` (n includes the first live composed 0.1-R green) · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free** post-#136. PS9 landed — do **not** re-claim journey CLI thrash. Overseer **HOLD invent** until singular named or Stage-1 human (PyPI · public TLS · mainnet pay-to). Not dual NEXT; not invent unsolicited/mainnet.
+- **bet_id:** stage1-existence-probes
+- **branch:** feat/stage1-existence-probes
+- **pr:** (pending)
+- **holder:** flywheel
+- **status:** building
+- **updated:** 2026-08-09T15:30:00Z
+- **last_merged:** docs **#140** @ `33cfecd` session-commerce n=4; product **#139** receipt_not_refetchable; docs **#138** journey; docs **#137** free-claim; product **#136** PS9; product **#135** 0.1-R n=3
+- **settlements:** counts live at STATE + `fable/settlement/` · testnet **4** · mainnet **0** · unsolicited **0**
+- **next_micro:** Building Stage-1 vision prep — existence v1 probes (PyPI JSON + optional public /health) + machine-checkable agent-prep/human runbook. Not invent money; not thrash #136/#140; does **not** publish to PyPI (human).
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.

@@ -8,6 +8,8 @@ from pathlib import Path
 from veritas.existence import (
     SCHEMA,
     build_existence_report,
+    probe_public_host,
+    probe_pypi,
     scan_settlement_evidence,
 )
 from veritas.existence import (
@@ -99,6 +101,8 @@ def test_build_report_never_invents_unsolicited_or_mainnet(tmp_path: Path) -> No
     (root / ".github" / "workflows").mkdir(parents=True)
     (root / ".github" / "workflows" / "release.yml").write_text("#", encoding="utf-8")
     (root / "veritas" / "chain_reconcile.py").write_text("#", encoding="utf-8")
+    (root / "veritas" / "existence.py").write_text("#", encoding="utf-8")
+    (root / "veritas" / "buyer_journey.py").write_text("#", encoding="utf-8")
 
     report = build_existence_report(evidence_dir=tmp_path, repo_root=root)
     assert report["schema"] == SCHEMA
@@ -109,7 +113,89 @@ def test_build_report_never_invents_unsolicited_or_mainnet(tmp_path: Path) -> No
     assert "pypi_trusted_publisher" in report["stage1"]["human_minutes_remaining"]
     assert report["agent_ready_surfaces"]["notary_package"] is True
     assert report["agent_ready_surfaces"]["dogfood_commerce"] is True
+    assert report["publicly_existable"] is False
+    assert report["probe_ran"] is False
+    assert report["stage1_prep"]["vision_stage"] == "1_public_existence"
+    assert report["stage1_prep"]["agent_prep_complete"] is True
     assert "unsolicited demand" in report["not_proven"]
+
+
+def test_probe_pypi_404_is_not_published() -> None:
+    def fake_get(url: str) -> tuple[int, bytes]:
+        assert "pypi.org" in url
+        return 404, b"Not Found"
+
+    out = probe_pypi(http_get=fake_get)
+    assert out["published"] is False
+    assert out["http_status"] == 404
+    assert out["probed"] is True
+
+
+def test_probe_pypi_200_is_published() -> None:
+    body = json.dumps({"info": {"version": "0.9.0"}}).encode("utf-8")
+
+    def fake_get(url: str) -> tuple[int, bytes]:
+        return 200, body
+
+    out = probe_pypi(http_get=fake_get)
+    assert out["published"] is True
+    assert out["pypi_version"] == "0.9.0"
+
+
+def test_probe_public_host_health_ok() -> None:
+    def fake_get(url: str) -> tuple[int, bytes]:
+        assert url.endswith("/health")
+        return 200, json.dumps({"mode": "free"}).encode("utf-8")
+
+    out = probe_public_host("https://seller.example", http_get=fake_get)
+    assert out["ok"] is True
+    assert out["https"] is True
+    assert out["health_mode"] == "free"
+
+
+def test_build_report_with_probe_injection(tmp_path: Path, monkeypatch) -> None:
+    good = "0x" + "ab" * 32
+    _write_settlement(tmp_path / "settlement_a.json", met=True, tx=good)
+    root = tmp_path / "repo"
+    (root / "veritas" / "notary").mkdir(parents=True)
+    for rel in (
+        "veritas/notary/observe.py",
+        "veritas/verifier.py",
+        "veritas/money_loop.py",
+        "veritas/buyer_journey.py",
+        "veritas/existence.py",
+        "veritas/chain_reconcile.py",
+        "veritas/evaluations/product_worth.py",
+        "scripts/dogfood_agent_commerce.py",
+        "scripts/circle_faucet_playwright.py",
+        ".github/workflows/release.yml",
+    ):
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("#", encoding="utf-8")
+
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://seller.example")
+
+    def fake_get(url: str) -> tuple[int, bytes]:
+        if "pypi.org" in url:
+            return 404, b"Not Found"
+        if url.endswith("/health"):
+            return 200, b'{"mode":"live"}'
+        return 500, b""
+
+    report = build_existence_report(
+        evidence_dir=tmp_path,
+        repo_root=root,
+        probe=True,
+        http_get=fake_get,
+    )
+    assert report["probe_ran"] is True
+    assert report["probes"]["pypi"]["published"] is False
+    assert report["probes"]["public_host"]["ok"] is True
+    assert report["publicly_existable"] is False  # PyPI still human
+    assert "not_on_pypi" in report["stage1_prep"]["human_status"][
+        "pypi_trusted_publisher"
+    ]
 
 
 def test_cli_module_and_ops_existence(tmp_path: Path, capsys) -> None:

@@ -5,9 +5,8 @@ Maintained by Steward.
 | File | Note |
 |------|------|
 | historical | may be session-local |
-| **`032-brief.md`** | Open **#119** review; Bandit B608 block (pre-merge) |
-| **`033-brief.md`** | Post-**#119** LEARN; singular Phase 0.1-R named |
-| **`038-brief.md`** | Post-**#122** LEARN; claim free; hold invent |
-| **`../CURRENT.md`** | **Live steering** — tip **`0c2cef9`**; claim **free**; #122 landed |
+| **`038-brief.md`** | Post-**#122** LEARN |
+| **`042-brief.md`** | Post-**#125** LEARN; claim free; hold invent |
+| **`../CURRENT.md`** | **Live steering** — tip **`0eb4ac1`**; claim **free**; #125+#124 landed |
 
 **Rule:** CURRENT is source of truth for “now.”

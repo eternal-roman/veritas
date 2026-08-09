@@ -1,0 +1,94 @@
+{
+  "run_id": "20260809T010427Z",
+  "started_at": "2026-08-09T01:04:27.292988Z",
+  "base_url": "http://127.0.0.1:8000",
+  "query": "What is the x402 payment protocol?",
+  "steps": [
+    {
+      "step": "health",
+      "http_status": 200,
+      "body": {
+        "status": "ok",
+        "service": "veritas",
+        "version": "0.8.1",
+        "payment_mode": "live",
+        "live_ready": true
+      }
+    },
+    {
+      "step": "unpaid_challenge",
+      "http_status": 402,
+      "body": {
+        "x402Version": 1,
+        "error": "X-PAYMENT header is required",
+        "accepts": [
+          {
+            "scheme": "exact",
+            "network": "eip155:84532",
+            "maxAmountRequired": "10000",
+            "resource": "http://127.0.0.1:8000/v1/research",
+            "description": "High-assurance evidence-backed research via Veritas",
+            "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+            "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+            "mimeType": "application/json",
+            "maxTimeoutSeconds": 60,
+            "extra": {
+              "name": "USDC",
+              "version": "2"
+            }
+          }
+        ]
+      },
+      "payment_required_header": null
+    },
+    {
+      "step": "build_payment",
+      "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+      "network": "eip155:84532",
+      "gated_by": "veritas.payer: validate_accepts + SpendPolicy + attempt journal"
+    },
+    {
+      "step": "paid_request",
+      "http_status": 503,
+      "body": {
+        "error": "payment_verification_unavailable",
+        "detail": "facilitator_http_500"
+      },
+      "payment_response_header": null
+    }
+  ],
+  "acceptance": {
+    "criterion": "Base Sepolia USDC transfer buyer \u2192 VERITAS_PAY_TO from unattended request",
+    "met": false,
+    "transaction": null,
+    "notes": [
+      "paid status=503; no real tx"
+    ]
+  },
+  "requirements": {
+    "scheme": "exact",
+    "network": "eip155:84532",
+    "maxAmountRequired": "10000",
+    "resource": "http://127.0.0.1:8000/v1/research",
+    "description": "High-assurance evidence-backed research via Veritas",
+    "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+    "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "mimeType": "application/json",
+    "maxTimeoutSeconds": 60,
+    "extra": {
+      "name": "USDC",
+      "version": "2"
+    }
+  },
+  "proof": {
+    "request_id": null,
+    "status": null,
+    "billable": null,
+    "custody_root": null,
+    "settlement": {},
+    "transaction": null,
+    "payer": null,
+    "network": null
+  },
+  "finished_at": "2026-08-09T01:04:28.112149Z"
+}

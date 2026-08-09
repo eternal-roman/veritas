@@ -1,0 +1,14 @@
+{
+  "http_status": 200,
+  "receipt": {
+    "request_id": "965fdc17-5800-43d2-a5b0-43803b11726c",
+    "query": "What is the x402 payment protocol?",
+    "status": "completed",
+    "custody_root": "sha256:4263f74ae83ff32bb26bcbb4be593ffd490c9aeabf2aac0fca79d6e624216788",
+    "custody_valid": true,
+    "evidence_hashes": [
+      "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d"
+    ],
+    "stored_at": "2026-08-09T01:15:21.118518Z"
+  }
+}

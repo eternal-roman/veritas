@@ -1,17 +1,17 @@
 # Scout CURRENT — pointer (steward hygiene)
 
-- **Time:** 2026-08-09T01:12:00Z
+- **Time:** 2026-08-09T01:36:00Z
 - **Role:** Scout harvests seedlings into `IDEA_BUS.md`. **Does not** set product NEXT.
-- **origin/main:** **`f5e060f`** (#108; product #106 on main)
-- **Claim:** **free**. Open product PRs: **none**.
-- **NEXT authority:** STATE + Overseer — default **hold** unless unblocked. **#106/#98 landed** — do not dual-reopen.
-- **Do not:** treat seedlings as dual product authorization; re-open M7 / N0 / P7-C / A26 / #98/#106.
-- **Settlements:** **0**. Gap G9 open. Not PyPI. Plane ≠ on-chain settle.
+- **origin/main:** **`4aa6c61`** (#111 plane v4)
+- **Claim:** **free**. Open product PRs: **#112**.
+- **NEXT authority:** STATE + Overseer — #112 mid-flight; seedlings ≠ second track.
+- **Do not:** re-open M7 / N0 / P7-C / A26 / #98 as dual product.
+- **Settlements on main:** **0**. Gap G9 open on main until #112 merges.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: scout pointer; tip f5e060f; #106 on main; claim free; open product none
+PROPERTY: scout pointer; tip 4aa6c61; claim free; open #112
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main f5e060f; flywheel-claim free
-NOT PROVEN: next product ship; live RPC; on-chain (0)
+CHECKED ARTIFACT: origin/main 4aa6c61; gh pr list [#112]
+NOT PROVEN: #112 on main; mainnet
 ```

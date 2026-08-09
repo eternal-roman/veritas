@@ -193,6 +193,10 @@ Write **`docs/program/overseer/CURRENT.md`** (overwrite) with:
 - **Confer Scout?** yes/no
 - **Scout question:** (if confer) one sharp question for IDEA_BUS
 - **Idea synthesis:** (if IDEA_BUS read) 0–3 WATCH patterns as hypotheses only
+- **Pruner proposal:** none | pending cut_list summary
+- **pruner_ack:** n/a | accepted | rejected | partial
+- **pruner_do_not_touch:** (if partial/rejected) protected paths
+- **pruner_note:** one line for Pruner
 - **Directive (next 15–60m):** imperative, one primary action for builders
 - **Do not do:** anti-goals for builders
 - **PROPERTY / EVIDENCE / NOT PROVEN:** gate block for this review itself

@@ -31,7 +31,7 @@ surfaces**, singular product NEXT, **minimum wall-clock** from “green PR” or
 | 1 | **Conductor** | **6m** | +0 | merge green PRs; `restart=false`; **no restock PR** | **yes** (merge) |
 | 2 | **Researcher** | **10m** | +2m | claim blocks; probe; inbox | **yes** (unblock) |
 | 3 | **Overseer** | **12m** | +1m | HOLD / `noop_stable`; enforce hygiene | strategy |
-| 4 | **Pruner** | **15m** | +3m | LIGHT noop unless open product PR | ship only |
+| 4 | **Pruner** | **15m** | +3m | SWEEP always; PROPOSE→Overseer ack→prune PR; HEAVY on product PR | lean gate |
 | 5 | **Scout** | **25m** | +5m | freshness stamp only | no |
 | 6 | **Steward** | **30m** | +4m | **noop_coherent** in-place only | no |
 | 7 | **Flywheel** | **45m** | +6m | **idle_true noop** | only if claim |
@@ -43,7 +43,8 @@ minute (host scheduler: stagger `fire_immediately` / next-fire times).
 
 - Merge and unblock are the only latency that converts to progress under HOLD.  
 - Strategy/cohesion/build backups **slow down** when idle so they stop eating budget.  
-- When claim **building** or product PR open: Pruner may drop to **10m** HEAVY; Flywheel **20m**.
+- When claim **building** or product PR open: Pruner **HEAVY** on that surface; Flywheel **20m**.
+- Pruner **always sweeps** (bloat/unused/dangling/non-serving docs); **never** mass-delete without Overseer ack (`PRUNER.md`).
 
 ---
 

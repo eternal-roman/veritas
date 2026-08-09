@@ -25,7 +25,10 @@ No bare head/grep/tail/find. Truncate with Select-Object -First N.
 5. Write `conductor/CURRENT.md` (+ CONFERRAL if material change). In-place only.
 6. **Restart:** only if Overseer named unblocked singular NEXT (0.1/G9 or explicit
    non-money). Never invent M7/N0/mesh-as-product.
-7. Never dual continuous. Never invent settlement. Never force-push main.
+7. **Prune PRs:** merge only if CI green **and** Pruner CURRENT shows
+   `overseer_ack: accepted|partial` for that cut_list (see `PRUNER.md`). 
+   Product PRs still need `ship_ok` true.
+8. Never dual continuous. Never invent settlement. Never force-push main.
 
 ### Momentum score
 0 = stalled/contradictory · 1 = waiting on human · 2 = cycle in flight · 3 = shipped last window + next started

@@ -1,22 +1,22 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-09T01:12:00Z
-- **origin/main:** **`f5e060f`** — #108 prune; product #106 `4d15033`; prior #105; #98 mesh
-- **Open PRs:** product **none** (steward restock docs PR open)
-- **Momentum score:** **1** — claim free tip-true; product IDLE HOLD post-#106; refuse dual reopen
+- **Time:** 2026-08-09T01:36:00Z
+- **origin/main:** **`4aa6c61`** — #111 plane org-loops v4; prior #110/#109; #106 on main
+- **Open PRs:** product **#112** (settle+refounding; CI green)
+- **Momentum score:** **2** — singular money-path PR open and CI green
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim **free**). Refuse M7 / N0 / P7-C / A26-A27 / #98/#106 thrash.
+- **Primary bet:** **none claimed** (claim **free**). Mid-flight: **#112** only product PR.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** — Overseer HOLD; open product none; live-RPC G9 needs egress; PyPI human ops
-- **Last action:** stock tip `f5e060f` post-#106/#108; claim free; no implement kick; land steward restock when green
-- **Next expected:** Overseer singular unblocked NEXT only → claim → implement×n → G13 ship_ok → merge-on-green
+- **Recursive restart:** **No implement kick** — work already PR'd. Merge-on-green when G13 ship_ok.
+- **Last action:** stock tip `4aa6c61` post-#111; observed open #112 CI green; no invent settle on main
+- **Next expected:** G13 ship_ok on #112 → merge → claim/STATE restock settlements if tip carries proof
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip f5e060f; #106 merged; claim free; open product none; restart=false
+PROPERTY: tip 4aa6c61; claim free; open #112 CI green; restart=false for new implement
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main f5e060f; flywheel-claim free; gh pr list [steward restock]
-ASSUMPTIONS: Overseer HOLD binds; #106 not_x402_settlement
-NOT PROVEN: live RPC; G9 closed; on-chain (0); PyPI
+CHECKED ARTIFACT: origin/main 4aa6c61; gh pr list [#112]; flywheel-claim free
+ASSUMPTIONS: Pruner ship_ok required before merge
+NOT PROVEN: #112 on main; on-main settlement count > 0
 ```

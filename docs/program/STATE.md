@@ -18,19 +18,21 @@ committed and pushed survives. Update this file and push after every sub-step.
 > **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**,
 > **#129 thrash**, **#131 thrash**, or commercial product-worth thrash.
 >
-> **On main:** settlements **2 testnet** · mainnet **0** · unsolicited **0**.
-> Tip **`ac68cc9`** / **#131** evolver; **#129** / `b2420ce` existence;
-> **#127** / `6809580` dogfood; **#125** / `0eb4ac1` product-worth; **#122** /
-> `0c2cef9` 0.1-R; **#119** / `fb3b0d5` n=2; **#112** / `367a3aa`. Gap **G9**
-> production-routine open. Not PyPI. Claim **free**. Open product: **none**.
+> **On main:** settlements **3 testnet** · mainnet **0** · unsolicited **0**
+> (n=3 is the **first live green of the composed 0.1-R loop** —
+> `fable/settlement/money_loop_20260809T073637Z.json`, exit 0, chain-confirmed
+> via unset-env default RPC). Tip **`7861c2b`** / **#134** VISION + hooks
+> (constitution 2.5, A28); **#131** evolver; **#129** existence; **#127**
+> dogfood; **#122** 0.1-R. Gap **G9** production-routine open (one live
+> composed run ≠ routine). Not PyPI. Claim **free**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `ac68cc9` (PR **#131** evolver / Scout → Evolver).
-> Prior: `#130` / `ba24552` hygiene; `#129` / `b2420ce` existence; `#128` /
-> `a1ec8fe` hygiene; `#127` / `6809580` dogfood; `#125` / `0eb4ac1` product-worth;
+> **Tip of `origin/main`:** `7861c2b` (PR **#134** VISION + /v1/hooks, constitution 2.5).
+> Prior: `#133` / `be0e0c7` evolver workflow; `#131` / `ac68cc9` evolver; `#129` /
+> `b2420ce` existence; `#127` / `6809580` dogfood; `#125` / `0eb4ac1` product-worth;
 > `#122` / `0c2cef9` 0.1-R.
-> Claim **free**. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
+> Claim **free**. Settlements: **3 testnet** · mainnet **0** · unsolicited **0**.
 > Gap G9 open (production-routine). Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 

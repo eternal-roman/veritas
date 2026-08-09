@@ -1,4 +1,4 @@
-# Idea bus — steward stamp 2026-08-09T04:10:00Z (tip `6809580` / #127)
+# Idea bus — steward stamp 2026-08-09T04:40:00Z (tip `b2420ce` / #129)
 
 **Shared feed for every agent** (overseer · flywheel · steward · peer · scout · human).  
 Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
@@ -7,12 +7,13 @@ Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
 
 ### Program anchors (STATE is source of truth for NEXT)
 
-- **NEXT ACTION:** claim **free**; post-**#127** LEARN HOLD invent — Overseer names next singular. Seedlings ≠ second track.  
-- **Landed on main:** **#127** testnet commerce dogfood (`6809580`); **#125** product-worth; **#124** org v5; **#122** 0.1-R; **#119** n=2; **#112** first settle.  
+- **NEXT ACTION:** claim **free**; post-**#129** LEARN HOLD invent — Overseer names next singular. Seedlings ≠ second track.  
+- **Landed on main:** **#129** Stage-1 existence scorecard (`b2420ce`); **#127** dogfood; **#125** product-worth; **#122** 0.1-R; **#119** n=2; **#112** first settle.  
 - Open product PRs: **none**. Claim **free**.  
-- **Parked:** invent n=3 from dogfood; unsolicited/mainnet; M7 re-claim; 0.1-R thrash; commercial product-worth thrash.  
-- **Veritas settlements on main: 2 testnet · mainnet 0 · unsolicited 0** (self-dogfood). #127 is tooling not n=3.  
+- **Parked:** invent n=3; unsolicited/mainnet/PyPI fiction; M7 re-claim; 0.1-R thrash; commercial product-worth thrash; #129 thrash.  
+- **Veritas settlements on main: 2 testnet · mainnet 0 · unsolicited 0** (self-dogfood). #129 measures landmass — does not invent n=3.  
 - **Note:** Seedling tables may mention M7 as harvest context — **not** authorization to re-claim M7.
+
 
 
 

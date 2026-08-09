@@ -1,15 +1,15 @@
-# Peer CURRENT — IDLE (watch #112)
+# Peer CURRENT — IDLE (no open product PR)
 
-- **Time:** 2026-08-09T01:36:00Z
-- **Role note:** Peer **IDLE** unless assigned #112 scrutiny. Steward owns cohesion; Pruner owns ship_ok.
-- **Open PRs:** **#112**.
+- **Time:** 2026-08-09T02:55:00Z
+- **Role note:** Peer **IDLE**. Claim building phase-0.1-R but **no open PR** yet for scrutiny.
+- **Open PRs:** **none**.
 - **Scrutiny verdict:** **IDLE**
-- **Action:** none unless Conductor assigns review.
+- **Action:** none until a product PR for 0.1-R appears and Conductor assigns review.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: peer idle; tip 4aa6c61; open #112; claim free
+PROPERTY: peer idle; tip fb3b0d5; open none; claim building phase-0.1-R; #119 merged
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 4aa6c61; gh pr list [#112]
-NOT PROVEN: #112 merge; on-main settlement
+CHECKED ARTIFACT: origin/main fb3b0d5; gh pr list []; flywheel-claim building
+NOT PROVEN: Phase 0.1-R PR; mainnet
 ```

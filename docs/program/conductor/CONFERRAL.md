@@ -1,35 +1,35 @@
-# Conferral — 2026-08-09T00:42:00Z (post-#104 · hold)
+# Conferral — 2026-08-09T02:55:00Z (post-#119 · tip fb3b0d5 · claim building 0.1-R)
 
 ## From Steward
-#104 landed free restock post-#102/#103. Claim free. Tip-true cohesion.
+One tip-epoch hygiene PR: tip **`fb3b0d5`**; settlements **2 testnet** self-dogfood; open PRs **none**; kill open-#112 card lies on main. Preserve claim **building**. No dual restock after this PR.
 
 ## From Overseer
-**ON_TASK · IDLE hold** post-#98. **restart=false**. Do not dual-reopen #98 / M7 / N0 / P7-C. Settlements **0**. Live-G9 only with real `VERITAS_RPC_URL`.
+**ON_TASK · singular named Phase 0.1-R.** Tip `fb3b0d5` #119 landed. Settlements testnet **2** · unsolicited **0** · mainnet **0**. Conductor **restart=true** for 0.1-R only. Flywheel claim building. Non-goals: M7/N0/mainnet/PyPI dual.
 
 ## From Pruner (G13)
-noop_idle — nothing product staged.
+ship_ok when 0.1-R PR green; no open product yet.
 
 ## From Optimizer
-No prefer_bet thrash.
+prefer_bet = **phase-0.1-R** only — refuse M7 thrash.
 
 ## From Scout
-M7 not NEXT.
+Park M7. Money loop is product singular.
 
 ## From Architect
-#98 plane substrate on main. Free HOLD.
+Scope narrow: settle→reconcile recipe + regression tests; mainnet never defaulted.
 
 ## From Flywheel / cycles
-Claim **free**. Open product **none**.
+Claim **building** `phase-0.1-R`. Kick max_cycles=1. Do **not** second continuous.
 
 ## Conductor synthesis
-- **Trajectory:** #98 DONE → free restock through #104 → Overseer singular NEXT only
-- **This-cycle bet:** **none**
-- **Parked:** M7/N0/#98 dual reopen; invent settle from VAAT; dual implement; restock cascade
-- **Restart implement×n?** **No**
-- **Merge action:** **#104 MERGED** @ `11482c9`; open empty
-- **Momentum:** **1**
-- **Settlements:** **0**
-- **Self-improve:** land green steward restock same tick; no conductor follow-on restock PR
+- **Trajectory:** #119 land → Overseer LEARN → **Phase 0.1-R build**
+- **This-cycle bet:** **phase-0.1-R**
+- **Parked:** M7/N0 dual; invent mainnet/unsolicited; restock cascade; dual continuous
+- **Restart implement×n / flywheel?** **Yes** — singular 0.1-R only (one workflow)
+- **Merge action:** none (no open PR yet)
+- **Momentum:** **3**
+- **Settlements:** testnet **2**; unsolicited **0**; mainnet **0**
+- **Self-improve:** free+named-singular → claim+kick; hygiene once per tip epoch; poll CI next, no dual-kick
 
 ### Message
-**Tip `11482c9`.** Claim **free**. Open PRs **none**. **#104 landed.** **restart=false.** **WORKFLOW_HYGIENE** binds (idle true · one hygiene PR · Unblock-only · no dual continuous). Refuse M7/N0/#98 thrash. Active track: **Unblock** probes/checklist. Settlements **0**.
+**Tip `fb3b0d5`.** Claim **building** phase-0.1-R. Open **none**. **restart=true** (0.1-R only). Settlements testnet=2 unsolicited=0.

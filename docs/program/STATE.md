@@ -5,8 +5,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet. The old default **hold** rested on "money path blocked on env";
+> **Do this next: one authorized slice only (claim building `phase-0.1-R`)** —
+> Overseer named singular; Flywheel holds the claim. The old default **hold** rested on "money path blocked on env";
 > that premise was probed and cleared
 > ([`ecosystem/unblock/LADDER-2026-08-09.md`](ecosystem/unblock/LADDER-2026-08-09.md)):
 > pinned public testnet defaults ship in code, the probe passes from a bare
@@ -22,18 +22,20 @@ committed and pushed survives. Update this file and push after every sub-step.
 >
 > **On main:** settlements **2 testnet** (both chain-confirmed via the
 > default RPC path, env unset — `fable/settlement/`) · mainnet **0** ·
-> unsolicited **0**. **#112** / `367a3aa` first settlement + refounding;
-> **#118** / `bc0bba3` MIND operating core; **#111** / `4aa6c61` org-loops
-> v4. Gap **G9**: reconcile works from a bare env; still open until routine
-> in production. Not PyPI (name free, workflow ready).
+> unsolicited **0**. **#119** / `fb3b0d5` unblock defaults + n=2 + default G9 path;
+> **#112** / `367a3aa` first settlement + refounding; **#118** / `bc0bba3` MIND;
+> **#111** / `4aa6c61` org-loops v4. Gap **G9**: reconcile works from a bare env;
+> still open until routine in production. Not PyPI (name free, workflow ready).
+> Overseer named singular **Phase 0.1-R**; flywheel-claim **building** (no product PR yet).
 
 ## Progress log
 
-> **Tip of `origin/main`:** `76fe090` (PR **#113** stale restock — cards were
-> wrong about #112; this tip-true restock corrects). Product tip truth is
-> **#112** / `367a3aa` under it. Prior: `#111` / `4aa6c61`; `#110` / `0ab5d36`.
-> Claim **free**. Settlements: **1 testnet** · mainnet **0**. Gap G9 open.
-> Open product PRs: **none**. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `fb3b0d5` (PR **#119** unblock defaults + settlement n=2 +
+> default-path G9 reconcile). Prior: `#118` / `bc0bba3` MIND; `#117` / `a3a52c3`;
+> product `#112` / `367a3aa` first settle; `#111` / `4aa6c61`.
+> Claim **building** `phase-0.1-R`. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
+> Gap G9 open (ops/production-routine). Open product PRs: **none** yet.
+> Overseer singular: **Phase 0.1-R** (claimed by flywheel). Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 >
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /
 > composed standing. **Not proven:** multi-instance survival; on-chain (0).

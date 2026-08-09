@@ -285,8 +285,18 @@ NOT PROVEN: solution is product-correct without battery when code-touched
         return path
 
 
-def seed_known_blocks(board: BlockBoard) -> list[Block]:
-    """Seed recurring plane blocks so Researchers act without being asked."""
+def seed_known_blocks(
+    board: BlockBoard,
+    *,
+    force: bool = False,
+) -> list[Block]:
+    """Seed catalog plane blocks so Researchers act without being asked.
+
+    Catalog seeds are **one-shot per title** until force=True: if the same
+    agent+title was already resolved/escalated/wontfix, do **not** re-open
+    it. Open/claimed still dedup via ``post``. This stops Researcher ticks
+    from thrashing seed→resolve→seed every cadence under free+HOLD.
+    """
     seeds = [
         (
             "money_loop",
@@ -317,8 +327,22 @@ def seed_known_blocks(board: BlockBoard) -> list[Block]:
             1,
         ),
     ]
-    out = []
+    out: list[Block] = []
     for agent, title, detail, kind, sev in seeds:
+        if not force:
+            prior = board._conn.execute(
+                "SELECT * FROM blocks WHERE blocked_agent = ? AND title = ? "
+                "ORDER BY updated_ts DESC LIMIT 1",
+                (agent, title),
+            ).fetchone()
+            if prior is not None:
+                status = str(prior["status"])
+                if status in ("open", "claimed"):
+                    out.append(board._row(prior))
+                    continue
+                if status in ("resolved", "escalated", "wontfix"):
+                    # Standing catalog item already handled — no reseed thrash
+                    continue
         out.append(
             board.post(agent, title, detail, kind=kind, severity=sev)
         )

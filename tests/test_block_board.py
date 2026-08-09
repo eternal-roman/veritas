@@ -38,3 +38,30 @@ def test_seed_known_blocks(tmp_path):
     open_ = board.list_open()
     assert len(open_) >= 3
     board.close()
+
+
+def test_seed_known_blocks_does_not_reopen_resolved(tmp_path):
+    """Catalog seeds must not thrash seed→resolve→seed every Researcher tick."""
+    board = BlockBoard(tmp_path / "b.sqlite3")
+    first = seed_known_blocks(board)
+    assert len(first) >= 3
+    money = next(s for s in first if s.blocked_agent == "money_loop")
+    board.claim(money.block_id, "researcher")
+    board.resolve(money.block_id, "probe OK", status="resolved")
+    second = seed_known_blocks(board)
+    # money_loop title must not reappear as a new open block
+    open_money = [
+        b
+        for b in board.list_open()
+        if b.blocked_agent == "money_loop"
+        and "Money-path env unset" in b.title
+    ]
+    assert open_money == []
+    # force=True reopens catalog for deliberate re-probe
+    forced = seed_known_blocks(board, force=True)
+    assert any(
+        s.blocked_agent == "money_loop" and s.status == "open" for s in forced
+    )
+    board.close()
+    assert isinstance(second, list)
+

@@ -132,17 +132,43 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "status":
         config = load_config(args.base_dir)
         from veritas.autonomous.wallet import wallet_address
+        from veritas.existence import build_existence_report
 
         try:
             address = wallet_address(args.base_dir)
         except ValueError:
             address = None
+
+        # Stage-1 readiness in-process (PS9): never invent public existence.
+        existence = build_existence_report()
+        stage1 = existence.get("stage1") or {}
+        landmass = existence.get("landmass") or {}
+        stage1_readiness = {
+            "schema": existence.get("schema"),
+            "package_version": existence.get("package_version"),
+            "testnet_settlements_confirmed": landmass.get(
+                "testnet_settlements_confirmed"
+            ),
+            "mainnet_settlements": landmass.get("mainnet_settlements"),
+            "unsolicited_settlements": landmass.get("unsolicited_settlements"),
+            "human_minutes_remaining": stage1.get("human_minutes_remaining"),
+            "env_hints": stage1.get("env_hints"),
+            "vision_path": existence.get("vision_path"),
+            "not_proven": existence.get("not_proven"),
+            "publicly_existable": False,  # honest until human residues clear
+            "note": (
+                "Stage-1 public existence remains human-gated "
+                "(PyPI / TLS / mainnet / registry). Measure only — "
+                "require_payment on localhost is not live to agents."
+            ),
+        }
         print(json.dumps({
             "mode": config.get("mode"),
             "require_payment": config.get("require_payment"),
             "pay_to": config.get("pay_to"),
             "wallet": address or "not provisioned",
             "config_path": str(Path(args.base_dir) / CONFIG_NAME),
+            "stage1_readiness": stage1_readiness,
         }, indent=2))
         return 0
 

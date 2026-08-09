@@ -5,36 +5,29 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim free)** — Overseer names
-> the next bet after **#131** LEARN. Default **hold invent**. Landed: **#131**
-> evolver (`veritas.evolver` / Scout → Evolver; IDEA_BUS **WATCH only** — not
-> commercial fitness or STATE NEXT); **#129** Stage-1 existence scorecard
-> (`veritas.existence` / `veritas-ops existence` — measures settlement evidence;
-> **not** n=3 invent, unsolicited, mainnet, or PyPI publish); **#127** dogfood;
-> **#122** Phase 0.1-R. Do **not** re-claim existence thrash, evolver thrash,
-> or invent commercial grade.
-> **Stage-1 human minutes:** PyPI trusted publisher · public TLS · mainnet pay-to.
-> **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
-> **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**,
-> **#129 thrash**, **#131 thrash**, or commercial product-worth thrash.
+> **Do this next:** land **PS9-buyer-journey-stage1-status** (branch
+> `feat/ps9-buyer-journey-stage1-status`, claim building) — evolver worklist
+> product slice: `veritas-buy` guided journey (discover→diligence→unpaid
+> pay-surface probe; **never settles**); `veritas-agent status` embeds Stage-1
+> readiness scorecard; `seed_known_blocks` one-shot (no resolve→reseed thrash).
+> After merge: free claim; default **hold invent money**; Stage-1 human still
+> owns PyPI · public TLS · mainnet pay-to.
+> **G10:** do not dual-reopen **#135** 0.1-R/n=3 thrash, **#134** VISION thrash,
+> **#131** evolver thrash, **#129** existence thrash, commercial product-worth.
 >
 > **On main:** settlements **3 testnet** · mainnet **0** · unsolicited **0**
-> (n=3 is the **first live green of the composed 0.1-R loop** —
-> `fable/settlement/money_loop_20260809T073637Z.json`, exit 0, chain-confirmed
-> via unset-env default RPC). Tip **`7861c2b`** / **#134** VISION + hooks
-> (constitution 2.5, A28); **#131** evolver; **#129** existence; **#127**
-> dogfood; **#122** 0.1-R. Gap **G9** production-routine open (one live
-> composed run ≠ routine). Not PyPI. Claim **free**.
+> (first live green composed 0.1-R —
+> `fable/settlement/money_loop_20260809T073637Z.json`). Tip **`816a465`** /
+> **#135**. Gap **G9** production-routine open. Not PyPI.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `7861c2b` (PR **#134** VISION + /v1/hooks, constitution 2.5).
-> Prior: `#133` / `be0e0c7` evolver workflow; `#131` / `ac68cc9` evolver; `#129` /
-> `b2420ce` existence; `#127` / `6809580` dogfood; `#125` / `0eb4ac1` product-worth;
-> `#122` / `0c2cef9` 0.1-R.
-> Claim **free**. Settlements: **3 testnet** · mainnet **0** · unsolicited **0**.
-> Gap G9 open (production-routine). Open product PRs: **none**.
-> Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `816a465` (PR **#135** composed 0.1-R n=3 +
+> existence money_loop count). Prior: `#134` / `7861c2b` VISION + hooks;
+> `#133` / `be0e0c7` evolver journal; `#131` / `ac68cc9` evolver; `#129` /
+> `b2420ce` existence; `#127` / `6809580` dogfood; `#122` / `0c2cef9` 0.1-R.
+> Claim **building** PS9 journey. Settlements: **3 testnet** · mainnet **0** ·
+> unsolicited **0**. Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 
 
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /

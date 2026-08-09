@@ -1,21 +1,22 @@
 """G9 design: reconcile facilitator-reported settlements against chain RPC.
 
 Constitution gap G9: the ledger records what the facilitator told us. Closing
-the gap requires an RPC endpoint and an explicit operator choice — never a
-silent default that invents on-chain confirmation.
+the gap requires RPC contact that runs **routinely in production** — not one
+dogfood run.
 
-This module is the **design + fail-closed implementation surface**:
+This module is the **design + implementation surface**:
 
-* Without ``VERITAS_RPC_URL`` (or an injected transport), every call returns
-  ``chain_checked: false`` and ``status: rpc_not_configured``.
-* With an RPC URL and transport, JSON-RPC ``eth_getTransactionReceipt`` is
-  used to classify a single transaction hash.
+* ``resolve_rpc_url``: env ``VERITAS_RPC_URL`` wins; else a pinned **testnet**
+  default from ``DEFAULT_PUBLIC_RPC_URLS``; mainnet is never defaulted.
+* Low-level ``check_transaction`` without an explicit ``rpc_url`` still uses
+  env only (callers that need defaults use ``reconcile_settlements_auto``).
+* With a URL and transport, JSON-RPC ``eth_getTransactionReceipt`` classifies
+  a single transaction hash. Versioned User-Agent is load-bearing.
 * Results never rewrite the ledger or invent revenue. Operators act on the
   report; the money path is unchanged.
 
 Honesty: shipping this module does **not** close G9. G9 closes when production
-operators run chain reconcile and the constitution witness is retired. Default
-sandbox has no RPC; on-chain settlements proven here remain **0**.
+operators run chain reconcile routinely and the constitution witness is retired.
 """
 
 from __future__ import annotations
@@ -47,10 +48,11 @@ DEFAULT_PUBLIC_RPC_URLS: dict[str, str] = {
 RpcTransport = Callable[[str, str, list[Any]], Any]
 
 G9_NOTE = (
-    "chain reconcile design surface; without VERITAS_RPC_URL nothing is "
-    "checked on-chain; does not rewrite the ledger or invent revenue; "
-    "constitution gap G9 remains open until operators configure RPC and "
-    "the production path uses it"
+    "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset "
+    "env uses pinned public testnet defaults only (mainnet always requires "
+    "explicit VERITAS_RPC_URL); does not rewrite the ledger or invent "
+    "revenue; constitution gap G9 remains open until reconciliation runs "
+    "routinely in production"
 )
 
 

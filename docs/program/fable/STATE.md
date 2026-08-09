@@ -104,6 +104,15 @@ after token exhaustion; do not lose state.
    runs were chain-confirmed via the pinned-default RPC path with the env
    unset (`settlement/chain_reconcile_default_run1.json` / `…run2.json`) —
    the fable/unblock-defaults PR made env-unset a non-block.
+6. **Settlement n=3 (2026-08-09): first live green of the composed 0.1-R
+   loop.** `veritas.money_loop` — previously pinned offline only — ran
+   end-to-end against the real facilitator: exit 0, tx `0x40d117e6…01e26`,
+   research `completed`/billable with custody root, chain-confirmed via the
+   unset-env default RPC (`settlement/money_loop_20260809T073637Z.json`).
+   Composition gap found and fixed the same run: the #129 existence
+   scorecard globbed only `settlement_*.json`, so the live money-loop
+   transcript was invisible to the measured signal — both families now
+   count (witness-tested). Buyer wallet ≈19.97 testnet USDC remains.
 
 ## Resume protocol
 

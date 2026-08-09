@@ -69,6 +69,10 @@ def scan_settlement_evidence(evidence_dir: Path) -> dict[str, Any]:
 
     A file counts when ``acceptance.met`` is true **and** a 32-byte 0x
     transaction hash appears (acceptance.transaction or nested proof).
+    Both transcript families count: ``settlement_*.json`` (direct recipe) and
+    ``money_loop_*.json`` (composed 0.1-R runs) — the first live money-loop
+    run was invisible to this scorecard because only the former was globbed,
+    which made the measured signal undercount the evidence on disk.
     """
     confirmed: list[dict[str, Any]] = []
     incomplete = 0
@@ -85,7 +89,10 @@ def scan_settlement_evidence(evidence_dir: Path) -> dict[str, Any]:
             "by_file": [],
         }
 
-    files = sorted(evidence_dir.glob("settlement_*.json"))
+    files = sorted(
+        set(evidence_dir.glob("settlement_*.json"))
+        | set(evidence_dir.glob("money_loop_*.json"))
+    )
     for path in files:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))

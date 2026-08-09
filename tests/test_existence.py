@@ -48,6 +48,38 @@ def test_scan_counts_only_met_with_real_tx(tmp_path: Path) -> None:
     assert report["incomplete_or_failed_runs"] == 2
 
 
+def _write_money_loop(path: Path, *, met: bool, tx: str | None) -> None:
+    # The composed 0.1-R transcript shape: top-level acceptance, tx nested
+    # under settle.acceptance (veritas.money_loop.run_money_loop evidence).
+    body = {
+        "phase": "0.1-R",
+        "acceptance": {"met": met, "notes": []},
+        "settle": {"acceptance": {"met": met, "transaction": tx}},
+        "reconcile": {"chain_checked": met, "counts": {"confirmed": 1 if met else 0}},
+    }
+    path.write_text(json.dumps(body), encoding="utf-8")
+
+
+def test_scan_counts_money_loop_transcripts(tmp_path: Path) -> None:
+    """The first live money-loop run was invisible to the scorecard: only
+    settlement_*.json was globbed, so the measured signal undercounted the
+    evidence on disk. Both transcript families must count, without double-
+    counting a tx that appears in both."""
+    tx_a = "0x" + "11" * 32
+    tx_b = "0x" + "22" * 32
+    _write_settlement(tmp_path / "settlement_one.json", met=True, tx=tx_a)
+    _write_money_loop(tmp_path / "money_loop_two.json", met=True, tx=tx_b)
+    _write_money_loop(tmp_path / "money_loop_honest_exit2.json", met=False, tx=None)
+    # Same tx re-logged by both families must not inflate the unique count.
+    _write_money_loop(tmp_path / "money_loop_dup.json", met=True, tx=tx_a)
+
+    report = scan_settlement_evidence(tmp_path)
+    assert report["files_scanned"] == 4
+    assert report["testnet_settlements_confirmed"] == 2
+    assert sorted(report["transactions"]) == sorted([tx_a.lower(), tx_b.lower()])
+    assert report["incomplete_or_failed_runs"] == 1
+
+
 def test_build_report_never_invents_unsolicited_or_mainnet(tmp_path: Path) -> None:
     good = "0x" + "cd" * 32
     _write_settlement(tmp_path / "settlement_a.json", met=True, tx=good)

@@ -1,0 +1,297 @@
+{
+  "run_id": "20260809T073637Z",
+  "phase": "0.1-R",
+  "started_at": "2026-08-09T07:36:37.479924Z",
+  "settle": {
+    "phase": "settle",
+    "base_url": "http://127.0.0.1:8000",
+    "query": "What is the x402 payment protocol?",
+    "steps": [
+      {
+        "step": "health",
+        "http_status": 200,
+        "body": {
+          "status": "ok",
+          "service": "veritas",
+          "version": "0.9.0",
+          "payment_mode": "live",
+          "live_ready": true
+        }
+      },
+      {
+        "step": "unpaid_challenge",
+        "http_status": 402,
+        "body": {
+          "x402Version": 1,
+          "error": "X-PAYMENT header is required",
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:84532",
+              "maxAmountRequired": "10000",
+              "resource": "http://127.0.0.1:8000/v1/research",
+              "description": "High-assurance evidence-backed research via Veritas",
+              "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+              "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "mimeType": "application/json",
+              "maxTimeoutSeconds": 60,
+              "extra": {
+                "name": "USDC",
+                "version": "2"
+              }
+            }
+          ]
+        },
+        "payment_required_header": null
+      },
+      {
+        "step": "build_payment",
+        "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+        "network": "eip155:84532",
+        "gated_by": "veritas.payer: validate_accepts + SpendPolicy + attempt journal"
+      },
+      {
+        "step": "paid_request",
+        "http_status": 200,
+        "body": {
+          "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8",
+          "status": "completed",
+          "query": "What is the x402 payment protocol?",
+          "claims": [
+            {
+              "id": "c1",
+              "statement": "X402: x402 is an open, neutral payment standard for internet-native transactions built on the HTTP protocol. It repurposes the long-unused HTTP 402 \"Payment Required\" status code to enable peer-to-peer payments directly within",
+              "evidence_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+              "source_url": "https://en.wikipedia.org/wiki/X402",
+              "provenance": "live_fetch",
+              "relevance": 1.0
+            }
+          ],
+          "evidence": [
+            {
+              "url": "https://en.wikipedia.org/wiki/X402",
+              "title": "X402",
+              "excerpt": "x402 is an open, neutral payment standard for internet-native transactions built on the HTTP protocol. It repurposes the long-unused HTTP 402 \"Payment Required\" status code to enable peer-to-peer payments directly within HTTP request-response cycles. Payments can be made in supported cryptocurrencies like USDC and through supported fiat money facilitators like payment cards.",
+              "content_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+              "provider": "wikipedia",
+              "provenance": "live_fetch",
+              "relevance": 1.0,
+              "license": {
+                "id": "CC-BY-SA-4.0",
+                "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+              },
+              "attribution": {
+                "required": true,
+                "text": "Wikipedia contributors, \"X402\", https://en.wikipedia.org/wiki/X402"
+              }
+            }
+          ],
+          "support": {
+            "n_evidence": 1,
+            "independent_domains": 1,
+            "domains": [
+              "wikipedia.org"
+            ],
+            "distinct_providers": 1,
+            "verdict": "single_source",
+            "agreement": "not_assessed",
+            "method": "veritas.support.v1"
+          },
+          "custody_root": "sha256:cb633080dc2edfde9262670dd346fb6d669785b549ff7b622149ea156ce101ff",
+          "custody_valid": true,
+          "custody_chain": [
+            {
+              "event_type": "created",
+              "actor": "pipeline",
+              "timestamp": "2026-08-09T07:36:38.364252Z",
+              "prev_hash": null,
+              "payload": {
+                "query": "What is the x402 payment protocol?",
+                "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8"
+              },
+              "event_hash": "sha256:380d0f6d8664addae2d2db5b1c76bccd4493e5554dacf7162f482ecc642787fb"
+            },
+            {
+              "event_type": "evidence_created",
+              "actor": "wikipedia",
+              "timestamp": "2026-08-09T07:36:39.485848Z",
+              "prev_hash": "sha256:380d0f6d8664addae2d2db5b1c76bccd4493e5554dacf7162f482ecc642787fb",
+              "payload": {
+                "content_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+                "url": "https://en.wikipedia.org/wiki/X402",
+                "title": "X402",
+                "provenance": "live_fetch"
+              },
+              "event_hash": "sha256:098450cc7e9c6bc198eb06eae244fae3e14f6b9890244ad3cfd171891c35a613"
+            },
+            {
+              "event_type": "evidence_discarded",
+              "actor": "wikipedia",
+              "timestamp": "2026-08-09T07:36:39.485848Z",
+              "prev_hash": "sha256:098450cc7e9c6bc198eb06eae244fae3e14f6b9890244ad3cfd171891c35a613",
+              "payload": {
+                "reason": "below_min_relevance",
+                "relevance": 0.333,
+                "threshold": 0.34,
+                "url": "https://en.wikipedia.org/wiki/Payment_system"
+              },
+              "event_hash": "sha256:83da5406fd2d69aaa9be3861fb16d14a954844df016231cb608af2690a1e5fd1"
+            },
+            {
+              "event_type": "claim_created",
+              "actor": "pipeline",
+              "timestamp": "2026-08-09T07:36:39.485848Z",
+              "prev_hash": "sha256:83da5406fd2d69aaa9be3861fb16d14a954844df016231cb608af2690a1e5fd1",
+              "payload": {
+                "claim_id": "c1",
+                "evidence_hash": "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d",
+                "relevance": 1.0
+              },
+              "event_hash": "sha256:6267b475483db10b9625c2b4a0dbc4052f66597de9f4ebb038f0a270b7c48ed3"
+            },
+            {
+              "event_type": "completed",
+              "actor": "pipeline",
+              "timestamp": "2026-08-09T07:36:39.485848Z",
+              "prev_hash": "sha256:6267b475483db10b9625c2b4a0dbc4052f66597de9f4ebb038f0a270b7c48ed3",
+              "payload": {
+                "n_claims": 1
+              },
+              "event_hash": "sha256:cb633080dc2edfde9262670dd346fb6d669785b549ff7b622149ea156ce101ff"
+            }
+          ],
+          "attests": "what this service received from these sources at this time; not what those sources served to any other party",
+          "retrieval": {
+            "n_sources": 2,
+            "providers_attempted": [
+              "wikipedia",
+              "duckduckgo_instant_answer"
+            ],
+            "providers_succeeded": [
+              "wikipedia",
+              "duckduckgo_instant_answer"
+            ],
+            "degraded": false,
+            "unavailable": false,
+            "errors": []
+          },
+          "refusal_reason": null,
+          "billable": true,
+          "timestamp": "2026-08-09T07:36:39.485848Z",
+          "custody_receipt": {
+            "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8",
+            "query": "What is the x402 payment protocol?",
+            "status": "completed",
+            "custody_root": "sha256:cb633080dc2edfde9262670dd346fb6d669785b549ff7b622149ea156ce101ff",
+            "custody_valid": true,
+            "evidence_hashes": [
+              "sha256:3144fad7063ea0ace69781b95640916104279f13d1dac3c5ae0eb5776571a73d"
+            ],
+            "stored_at": "2026-08-09T07:36:39.501898Z",
+            "persisted": true
+          },
+          "payment": {
+            "settled": true,
+            "success": true,
+            "state": "settled",
+            "transaction": "0x40d117e66e553432da5a676372341fff173af7ef67f57614022be7b685201e26",
+            "network": "eip155:84532",
+            "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+            "error_reason": null
+          }
+        },
+        "payment_response_header": null
+      }
+    ],
+    "acceptance": {
+      "criterion": "Base Sepolia USDC transfer buyer \u2192 pay_to from unattended request",
+      "met": true,
+      "transaction": "0x40d117e66e553432da5a676372341fff173af7ef67f57614022be7b685201e26",
+      "notes": [
+        "on-chain transaction field present"
+      ]
+    },
+    "error_class": null,
+    "requirements": {
+      "scheme": "exact",
+      "network": "eip155:84532",
+      "maxAmountRequired": "10000",
+      "resource": "http://127.0.0.1:8000/v1/research",
+      "description": "High-assurance evidence-backed research via Veritas",
+      "payTo": "0xbbeE7F8B2f691D276c44767B7358DE61e4e99364",
+      "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "mimeType": "application/json",
+      "maxTimeoutSeconds": 60,
+      "extra": {
+        "name": "USDC",
+        "version": "2"
+      }
+    },
+    "proof": {
+      "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8",
+      "status": "completed",
+      "billable": true,
+      "custody_root": "sha256:cb633080dc2edfde9262670dd346fb6d669785b549ff7b622149ea156ce101ff",
+      "settlement": {
+        "settled": true,
+        "success": true,
+        "state": "settled",
+        "transaction": "0x40d117e66e553432da5a676372341fff173af7ef67f57614022be7b685201e26",
+        "network": "eip155:84532",
+        "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+        "error_reason": null
+      },
+      "transaction": "0x40d117e66e553432da5a676372341fff173af7ef67f57614022be7b685201e26",
+      "payer": "0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599",
+      "network": "eip155:84532"
+    }
+  },
+  "reconcile": {
+    "phase": "reconcile",
+    "error_class": null,
+    "runtime_dir": "C:/Users/elamj/AppData/Local/Temp/claude/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/scratchpad/serverdir-n3",
+    "g9_note": "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset env uses pinned public testnet defaults only (mainnet always requires explicit VERITAS_RPC_URL); does not rewrite the ledger or invent revenue; constitution gap G9 remains open until reconciliation runs routinely in production",
+    "chain_checked": true,
+    "rpc_configured": true,
+    "rpc_sources": {
+      "default_public_rpc:eip155:84532": 1
+    },
+    "counts": {
+      "confirmed": 1
+    },
+    "results": [
+      {
+        "transaction": "0x40d117e66e553432da5a676372341fff173af7ef67f57614022be7b685201e26",
+        "chain_checked": true,
+        "status": "confirmed",
+        "note": "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset env uses pinned public testnet defaults only (mainnet always requires explicit VERITAS_RPC_URL); does not rewrite the ledger or invent revenue; constitution gap G9 remains open until reconciliation runs routinely in production",
+        "request_id": "d149c149-5fea-4b50-a642-00ee0dac2ea8",
+        "rpc_source": "default_public_rpc:eip155:84532"
+      }
+    ],
+    "note": "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset env uses pinned public testnet defaults only (mainnet always requires explicit VERITAS_RPC_URL); does not rewrite the ledger or invent revenue; constitution gap G9 remains open until reconciliation runs routinely in production",
+    "limitation": "This report does not rewrite ledger revenue. Defaults cover known public testnets only; mainnet requires an explicit VERITAS_RPC_URL. G9 remains open until reconciliation runs routinely in production.",
+    "candidates": 1,
+    "settled_without_transaction": 0
+  },
+  "acceptance": {
+    "criterion": "routine settle \u2192 chain reconcile; non-simulated tx when funded; rpc_source stamped; mainnet never defaulted",
+    "met": true,
+    "notes": [
+      "exit 0 \u2014 confirmed path this run"
+    ]
+  },
+  "defaults": {
+    "public_rpc_networks": [
+      "eip155:84532"
+    ],
+    "mainnet_never_defaulted": true
+  },
+  "limitations": [
+    "Does not close constitution G9 (production-routine still required).",
+    "Self-dogfood is not unsolicited demand; mainnet not in scope.",
+    "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset env uses pinned public testnet defaults only (mainnet always requires explicit VERITAS_RPC_URL); does not rewrite the ledger or invent revenue; constitution gap G9 remains open until reconciliation runs routinely in production"
+  ],
+  "exit_code": 0,
+  "finished_at": "2026-08-09T07:36:40.504509Z"
+}

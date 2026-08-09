@@ -53,6 +53,33 @@ def _unb64(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + pad)
 
 
+def _read_secret_file(path: Path) -> bytes:
+    """Load plane secret from disk.
+
+    Prefer hex text (64 ascii chars). Legacy raw 32-byte digests are accepted
+    **without** ``.strip()`` — stripping can drop trailing 0x0a/0x20 bytes that
+    are valid in a SHA-256 digest and cause intermittent VisaVerifyError.
+    """
+    data = path.read_bytes()
+    try:
+        text = data.decode("ascii").strip()
+    except UnicodeDecodeError:
+        return data
+    if len(text) == 64 and all(c in "0123456789abcdefABCDEF" for c in text):
+        return bytes.fromhex(text)
+    # Legacy binary blob (exact bytes; no strip)
+    return data
+
+
+def _write_secret_file(path: Path, raw: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(raw.hex() + "\n", encoding="ascii")
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
+
+
 def load_plane_secret(secret: bytes | str | Path | None = None) -> bytes:
     if secret is None:
         env = os.environ.get("VERITAS_PLANE_IDENTITY_SECRET")
@@ -60,18 +87,17 @@ def load_plane_secret(secret: bytes | str | Path | None = None) -> bytes:
             return env.encode("utf-8")
         path = Path.cwd() / ".veritas" / "plane_identity.secret"
         if path.is_file():
-            return path.read_bytes().strip()
-        path.parent.mkdir(parents=True, exist_ok=True)
+            return _read_secret_file(path)
         raw = hashlib.sha256(os.urandom(32)).digest()
-        path.write_bytes(raw)
-        try:
-            path.chmod(0o600)
-        except OSError:
-            pass
+        _write_secret_file(path, raw)
         return raw
     if isinstance(secret, Path):
-        return secret.read_bytes().strip()
+        return _read_secret_file(secret)
     if isinstance(secret, str):
+        # Allow hex env-style strings
+        s = secret.strip()
+        if len(s) == 64 and all(c in "0123456789abcdefABCDEF" for c in s):
+            return bytes.fromhex(s)
         return secret.encode("utf-8")
     return secret
 

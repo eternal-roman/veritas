@@ -120,14 +120,12 @@ class AgentEconomy:
         import hashlib
         import os
 
+        from veritas.agent_identity import _read_secret_file, _write_secret_file
+
         if self.secret_path.is_file():
-            return self.secret_path.read_bytes().strip()
+            return _read_secret_file(self.secret_path)
         raw = hashlib.sha256(os.urandom(32)).digest()
-        self.secret_path.write_bytes(raw)
-        try:
-            self.secret_path.chmod(0o600)
-        except OSError:
-            pass
+        _write_secret_file(self.secret_path, raw)
         return raw
 
     def close(self) -> None:

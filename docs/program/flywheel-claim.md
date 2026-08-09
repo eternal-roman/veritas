@@ -1,14 +1,14 @@
 # flywheel-claim
 
-- **bet_id:** PS9-buyer-journey-stage1-status
-- **branch:** feat/ps9-buyer-journey-stage1-status
-- **pr:** https://github.com/eternal-roman/veritas/pull/136
-- **holder:** flywheel
-- **status:** building
-- **updated:** 2026-08-09T08:40:00Z
-- **last_merged:** product **#135** @ `816a465` composed 0.1-R n=3 + existence money_loop count; product **#134** VISION/hooks; product **#133** evolver journal; product **#131** @ `ac68cc9` evolver; product **#129** existence scorecard; product **#127** dogfood; product **#122** Phase 0.1-R
+- **bet_id:** (none)
+- **branch:** (none)
+- **pr:** (none)
+- **holder:** (none)
+- **status:** free
+- **updated:** 2026-08-09T08:55:00Z
+- **last_merged:** product **#136** @ `694626a` PS9 buyer journey + Stage-1 status + catalog seed one-shot; product **#135** @ `816a465` composed 0.1-R n=3; product **#134** VISION/hooks; product **#133** evolver journal; product **#131** evolver; product **#129** existence; product **#127** dogfood; product **#122** Phase 0.1-R
 - **settlements:** counts live at STATE header + `fable/settlement/` (n includes the first live composed 0.1-R green) · mainnet **0** · unsolicited **0**
-- **next_micro:** Building PS9 A2A journey surfaces from evolver worklist — `veritas-buy` (discover→diligence→unpaid pay-surface probe; never settles) + `veritas-agent status` Stage-1 readiness + block_board catalog seed one-shot (no reseed thrash). Not PyPI/TLS/mainnet invent; not commercial-grade retrieval; not dual NEXT.
+- **next_micro:** Claim **free** post-#136. PS9 landed — do **not** re-claim journey CLI thrash. Overseer **HOLD invent** until singular named or Stage-1 human (PyPI · public TLS · mainnet pay-to). Not dual NEXT; not invent unsolicited/mainnet.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -16,6 +16,7 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| **PS9 buyer journey + Stage-1 status + catalog seed one-shot** | **`694626a` / #136** — `veritas-buy` discover→diligence→unpaid probe (never settles); `veritas-agent status`; seed_known_blocks one-shot. Not PyPI/TLS/mainnet |
 | **VISION + /v1/hooks registry (A28, constitution 2.5)** | **#134** — single north star (program docs point, never restate); integration registry sync-tested both directions; org tables reconciled. Do not re-open north-star wording or re-add counts to program docs |
 | **Evolver (Scout → evolutionary Idea agent)** | **`ac68cc9` / #131** — `veritas.evolver`; WATCH only; not commercial fitness |
 | Steward free claim post-#129 | `ba24552` / #130 |
@@ -39,4 +40,4 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | **P7-C** re-fetch research_slots | **`e7f674b` / #69** |
 | **v0.8.1** / N1.5 / v0.8.0 / prior ladder | through tags `v0.8.1` / `v0.8.0` |
 
-**G10:** Claim **free**. Open product PRs: **none**. Settlement counts: STATE header (evidence `fable/settlement/`); unsolicited **0**; mainnet **0**. Not on PyPI. #131 is evolver WATCH fuel — not demand proof. #129 measures landmass from evidence on disk — n moves only when a transcript lands.
+**G10:** Claim **free** post-#136. Open product PRs: **none**. Settlement counts: STATE header (evidence `fable/settlement/`); unsolicited **0**; mainnet **0**. Not on PyPI. #136 journey never settles; #131 is evolver WATCH fuel — not demand proof. #129 measures landmass from evidence on disk — n moves only when a transcript lands.

@@ -192,7 +192,8 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _cli("veritas-mcp", "Serve the engine as local MCP tools over stdio.", _EXIT_OK),
     _cli("veritas-ops",
          "Operator reports off the ledger as JSON: revenue, owed, reconcile, "
-         "reconcile-chain, usage, pricing, authorization, prune.", _EXIT_OK),
+         "reconcile-chain, existence, usage, pricing, authorization, prune.",
+         _EXIT_OK),
     _cli("veritas-money-loop",
          "Compose one settle-then-reconcile pass and report it.", _EXIT_OK),
     _cli("veritas-diligence",
@@ -206,6 +207,10 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _cli("veritas-verify",
          "Single-file zero-dependency receipt verifier (vendor by copying "
          "veritas/verifier.py).", _EXIT_OK),
+    _cli("veritas-evolver",
+         "Evolutionary idea engine for the Evolver role: journaled "
+         "first-principles recombination; WATCH output, never approval.",
+         _EXIT_OK),
     # ------------------------------------------------------ headers —
     _hook("header_x_payment", "header", "X-PAYMENT",
           "Base64 x402 payment payload answering a 402 challenge.",

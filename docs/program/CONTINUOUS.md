@@ -16,9 +16,9 @@ statement (L0 *direction* — never claim proven; not restated here, MIND §5).
 |------|----------|-----|
 | **Conductor** | **6m** | Merge green PRs; **stall free_or_ship**; restart only if unblocked singular NEXT |
 | **Researcher** | **10m** | Claim block board · solve/escalate · inbox (unsolicited) |
-| **Overseer** | **12m** | Quality + strategy; hygiene + **LAZY on claim theater**; Scout if vision≤1 |
+| **Overseer** | **12m** | Quality + strategy; hygiene + **LAZY on claim theater**; Evolver if vision≤1 |
 | **Pruner** | **15m** | Full-tree sweep; Overseer-agreed prune PR; HEAVY on product PR |
-| **Scout (Idea)** | **25m** | Freshness stamp under HOLD; pattern fuel if confer |
+| **Evolver (Idea)** | **25m** | Freshness stamp under HOLD; evolutionary fuel if confer |
 | **Steward** | **30m** | In-place; **one** tip-epoch free-claim hygiene when needed |
 | **Flywheel** | **45m** | Builder when claim/unblocked; backup `primary_shipped_same_bet` noop; else idle_true |
 | **Git Agent** | on demand / ~6–12h | Branch archaeology, salvage, local prune |
@@ -40,7 +40,7 @@ Orchestrators:
 .agent-commerce-{pulse,continuous,conductor,flywheel,overseer,steward}.rhai
 ```
 
-(Scout is scheduler + tick prompt; optional future `agent-commerce-scout.rhai`.)
+(Evolver is scheduler + tick prompt + `veritas.evolver` engine; Scout name is legacy.)
 
 ---
 
@@ -59,7 +59,7 @@ Overseer Researcher Pruner      Conductor (6m)
    │   claim/inbox    LIGHT     ├── CI pending → poll once
    └────────┬──────────┘        └── HOLD → restart=false
             ▼
-   Steward (30m) in-place · Scout (25m) stamp · Flywheel (45m) idle_true
+   Steward (30m) in-place · Evolver (25m) stamp · Flywheel (45m) idle_true
 ```
 
 ### Latency targets
@@ -126,7 +126,7 @@ resume; do **not** start a second continuous in parallel.
 | **Researcher** | *(create)* | **10m** |
 | Overseer | `019fdfde0212` | **12m** |
 | **Pruner** | `019fe29d4d61` | **15m** |
-| Scout | `019fe0026e7d` | **25m** |
+| Evolver | `019fe0026e7d` | **25m** |
 | Steward | `019fdff1fbe4` | **30m** |
 | Flywheel | `019fdfd6c9bf` | **45m** |
 
@@ -141,7 +141,7 @@ resume; do **not** start a second continuous in parallel.
 | Flywheel | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
 | Implement×n | [`IMPLEMENTERS.md`](IMPLEMENTERS.md) | workflow only |
 | Steward | [`STEWARD.md`](STEWARD.md) | [`STEWARD_TICK_PROMPT.md`](STEWARD_TICK_PROMPT.md) |
-| Scout | [`SCOUT.md`](SCOUT.md) | [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) |
+| Evolver | [`EVOLVER.md`](EVOLVER.md) | [`EVOLVER_TICK_PROMPT.md`](EVOLVER_TICK_PROMPT.md) |
 | Architect | [`ARCHITECT.md`](ARCHITECT.md) | on demand — seam map + builder directives; no timer (L4) |
 
 ---

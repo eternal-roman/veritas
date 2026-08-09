@@ -117,8 +117,9 @@ invent it:
 
 1. **Merge** — a green PR lands (Conductor merges; owner automation backs it).
 2. **Measure** — the tree reports on itself: `veritas-ops` (revenue, owed,
-   reconcile-chain), `veritas-money-loop` (settle→reconcile), trust outcomes
-   (`/v1/trust`), `python -m veritas.evaluations.product_worth`, and
+   reconcile-chain, and the Stage-1 `existence` scorecard), `veritas-money-loop`
+   (settle→reconcile), trust outcomes (`/v1/trust`),
+   `python -m veritas.evaluations.product_worth`, and
    `python -m veritas.unblock_probe` (dated environment truth).
 3. **Judge** — Overseer reads the signals and names the next singular bet
    (`ecosystem/OVERSEER_CONFERRAL.md`); default hold beats invented work.

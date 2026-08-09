@@ -1,34 +1,34 @@
-# Conferral — 2026-08-09T03:48:00Z (post-#125 · tip 0eb4ac1 · claim free)
+# Conferral — 2026-08-09T04:40:00Z (post-#129 · tip b2420ce · claim free)
 
 ## From Steward
-One tip-epoch hygiene: tip **`0eb4ac1`**; claim **free**; open **none**; last_merged #125+#124; settlements **2 testnet**.
+One tip-epoch hygiene: tip **`b2420ce`**; claim **free**; open **none**; last_merged #129; settlements **2 testnet** (no invent n=3).
 
 ## From Overseer
-Post-#125 LEARN. Hold invent. Stage-1 human parallel.
+Post-#129 LEARN. HOLD invent. Stage-1 human parallel. Existence is measurement only.
 
 ## From Pruner (G13)
-#124+#125 merged. LIGHT / noop_idle.
+#129 already merged. LIGHT / noop_idle.
 
 ## From Optimizer
 No prefer_bet thrash / no M7.
 
-## From Scout
+## From Evolver (ex-Scout)
 Park M7. Seedlings ≠ product NEXT.
 
 ## From Architect
-#125 under tip as offline skeleton only.
+#129 under tip as scorecard; not market existence.
 
 ## From Flywheel / cycles
 Claim **free**. Open product **none**.
 
 ## Conductor synthesis
-- **Trajectory:** #122 → #123 hygiene → #124 org v5 → **#125 product-worth** → free
+- **Trajectory:** #127 → #128 hygiene → **#129 existence scorecard** → free HOLD
 - **This-cycle bet:** **none**
-- **Parked:** commercial product-worth thrash; invent n=3; M7 dual; re-claim 0.1-R
+- **Parked:** invent n=3; unsolicited; M7 dual; 0.1-R re-claim; commercial product-worth thrash; #129 thrash
 - **Restart implement×n?** **No**
 - **Merge action:** none
 - **Momentum:** **2**
 - **Settlements:** testnet **2**; unsolicited **0**; mainnet **0**
 
 ### Message
-**Tip `0eb4ac1` (#125).** Claim **free**. Open **none**. Settlements testnet=2. Await LEARN / Stage-1.
+**Tip `b2420ce` (#129).** Claim **free**. Open **none**. Settlements testnet=2. HOLD invent / Stage-1 human.

@@ -5,7 +5,7 @@
 
 The **Conductor** is the top-of-plane agent for Veritas agent commerce. It
 **reviews all current work**, holds **organization + vision** against the live
-workflows, **confers** with Overseer / Steward / Scout / Flywheel via their
+workflows, **confers** with Overseer / Steward / Evolver / Flywheel via their
 cards, and **keeps the builder workflow recursing** so finished cycles do not
 become dead air.
 
@@ -27,7 +27,7 @@ honesty is thrash; green without strategy is thrash.
 1. **Review all work** — main, open PRs, dirty tree, cycle ledger, every CURRENT card.
 2. **Organization & vision** — maintain `conductor/TRAJECTORY.md`: where we are,
    where A2A value compounds next, what is explicitly parked.
-3. **Confer productively** — read Steward (cohesion), Overseer (honesty), Scout
+3. **Confer productively** — read Steward (cohesion), Overseer (honesty), Evolver
    (seedlings), Peer (if active). Write a **conferral note** they must honor.
 4. **Recurse the builder workflow** — when the flywheel (or equivalent cycle)
    is idle and the queue is clear, **start the next cycle** on STATE NEXT
@@ -46,7 +46,7 @@ Each tick writes `docs/program/conductor/CONFERRAL.md`:
 (cohesion score, contradictions)
 ## From Overseer
 (verdict, lazy flags)
-## From Scout
+## From Evolver (ex-Scout)
 (top WATCH only — not approval)
 ## From Flywheel / cycles
 (last cycle, open PR?)

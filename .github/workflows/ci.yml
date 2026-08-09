@@ -46,7 +46,7 @@ jobs:
 
       - name: Import all modules
         run: |
-          python -c "import veritas.server, veritas.autonomous.control_plane, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution, veritas.support, veritas.safeurl, veritas.payer, veritas.ledger, veritas.metering, veritas.pricing, veritas.observability, veritas.ops_cli, veritas.providers, veritas.buyer_payment, veritas.diligence, veritas.counterparty, veritas.diligence_cli, veritas.verifier"
+          python -c "import veritas.server, veritas.autonomous.control_plane, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution, veritas.hooks, veritas.support, veritas.safeurl, veritas.payer, veritas.ledger, veritas.metering, veritas.pricing, veritas.observability, veritas.ops_cli, veritas.providers, veritas.buyer_payment, veritas.diligence, veritas.counterparty, veritas.diligence_cli, veritas.verifier"
           # veritas.diligence and veritas.payer import each other, so import
           # each first in its own process. A cycle that breaks in only one
           # order would otherwise pass here and fail for a user.
@@ -298,6 +298,8 @@ jobs:
           test -f SECURITY.md
           test -f LICENSE
           test -f AGENTS.md
+          test -f VISION.md
+          test -f llms.txt
           test -f pyproject.toml
           test -f requirements.txt
           test -f requirements-dev.txt

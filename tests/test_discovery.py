@@ -27,11 +27,19 @@ def free_client(tmp_path, monkeypatch):
 
 
 def test_well_known_is_self_traversing(free_client):
+    """Every link must reach a live surface — all of them, not a sample.
+    A 405 on a POST-only route is existence; a 404 is a dead link."""
     body = free_client.get("/.well-known/x402").json()
     links = body["links"]
-    for name in ("identity", "trust", "constitution", "errors", "schema", "openapi", "llms"):
+    for name in ("identity", "trust", "constitution", "errors", "schema",
+                 "openapi", "llms", "hooks", "research", "verify",
+                 "payment_config"):
         assert name in links, f"well-known does not link {name}"
-        assert free_client.get(links[name]).status_code == 200, f"{name} link is dead"
+    for name, path in links.items():
+        if "{" in path:
+            continue
+        status = free_client.get(path).status_code
+        assert status != 404, f"links[{name!r}] -> {path} is dead"
 
 
 def test_well_known_free_mode_publishes_empty_accepts_and_configured_price(free_client):
@@ -67,6 +75,22 @@ def test_identity_does_not_advertise_removed_bayesian_surface(free_client):
     assert "support-counts" in caps
     assert "custody-chain" in caps
     assert "refusal" in caps
+
+
+def test_llms_and_mcp_do_not_advertise_removed_bayesian_surface(free_client):
+    """The identity fix above did not reach llms.txt or the MCP tool
+    descriptions, which kept advertising the retracted posterior to agents —
+    the same defect class, caught on different surfaces."""
+    from veritas import mcp_server
+    from veritas.discovery import LLMS_TXT
+
+    assert "bayesian" not in LLMS_TXT.lower()
+    assert "bayesian" not in free_client.get("/llms.txt").text.lower()
+    for name in mcp_server.MCP_TOOL_NAMES:
+        doc = getattr(mcp_server, f"tool_{name}").__doc__ or ""
+        assert "bayesian" not in doc.lower(), (
+            f"MCP tool {name} advertises the retracted posterior"
+        )
 
 
 def test_identity_with_public_url_is_absolute(free_client, tmp_path, monkeypatch):

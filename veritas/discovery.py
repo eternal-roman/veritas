@@ -13,16 +13,17 @@ from __future__ import annotations
 LLMS_TXT = """\
 # Veritas Research
 
-Evidence-grounded research service for agents: hash-chained custody, Bayesian
-belief updating, explicit refusal, and x402 payment. The service separates
-"no evidence exists" from "I could not look" and never bills for its own
-failure.
+Evidence-grounded research service for agents: hash-chained custody,
+recomputable support counts, explicit refusal, and x402 payment. The service
+separates "no evidence exists" from "I could not look" and never bills for
+its own failure.
 
 ## Endpoints
 
 - /.well-known/x402: discovery document (payment requirements, links to every surface below)
 - /v1/identity: identity document with stable content hash
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
+- /v1/hooks: machine-readable integration registry — HTTP surfaces, MCP tools, CLI exit codes, headers, signal stores; states that no push delivery exists
 - /v1/research: POST — the paid product; returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
 - /v1/notarize: POST — observe-once evidence notary for a URL; same payment gates as research (X-PAYMENT or X-VERITAS-SESSION); stores evidence text with a retention class; unavailable is non-billable
 - /v1/siwx/challenge: POST — issue a SIWx challenge for credit-session establishment
@@ -39,9 +40,11 @@ failure.
 - /v1/trust: behaviour-derived trust score; reports UNPROVEN below 10 recorded outcomes
 - /v1/schema: the wire contract as JSON Schema
 - /v1/errors: registered error codes with status and retriability
+- /v1/payment-config: payment mode and the current price point (configuration, not an offer)
 - /openapi.json: OpenAPI description of this API
 - /health: liveness plus payment mode (never rate limited)
 - /readyz: readiness — 503 when the process is alive but cannot serve
+- /llms.txt: this index
 
 ## Install and run
 

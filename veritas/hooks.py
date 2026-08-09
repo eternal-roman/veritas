@@ -258,6 +258,15 @@ HOOKS: tuple[dict[str, Any], ...] = (
 )
 
 
+# The MCP records above carry individual descriptions but must never drift
+# from what veritas-mcp actually registers; drift fails at import, not serve.
+_mcp_drift = {
+    h["interface"]["tool"] for h in HOOKS if h["kind"] == "mcp-tool"
+} ^ set(MCP_TOOL_NAMES)
+if _mcp_drift:
+    raise ValueError(f"hooks registry disagrees with MCP_TOOL_NAMES: {sorted(_mcp_drift)}")
+
+
 def http_paths() -> frozenset[str]:
     """Every HTTP path the registry carries, for reconciliation tests."""
     return frozenset(

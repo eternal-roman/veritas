@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.4"
+CONSTITUTION_VERSION = "2.5"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -309,6 +309,18 @@ ARTICLES: tuple[dict[str, Any], ...] = (
             {"kind": "test", "pointer": "tests/test_warranty.py::test_challenge_terminates_in_deterministic_reexecution"},
             {"kind": "test", "pointer": "tests/test_warranty.py::test_unwarrantable_content_is_labeled_never_dressed_in_a_warranty"},
             {"kind": "test", "pointer": "tests/test_warranty.py::test_undecidable_context_forfeits_nothing_either_way"},
+        ],
+    ),
+    _article(
+        "A28",
+        "Integration surfaces are registered",
+        "Integration surfaces are registered, not discovered by accident: every HTTP route the service mounts is either listed in the machine-readable hooks registry served at /v1/hooks or named in an explicit exclusion list, the registry never advertises a surface that does not exist, and the absence of push delivery is stated in the registry rather than left to be inferred.",
+        "service",
+        "L1",
+        [
+            {"kind": "test", "pointer": "tests/test_hooks.py::test_every_app_route_is_registered_or_excluded"},
+            {"kind": "test", "pointer": "tests/test_hooks.py::test_registry_advertises_no_phantom_routes"},
+            {"kind": "test", "pointer": "tests/test_hooks.py::test_push_absence_is_honest"},
         ],
     ),
     # Aspirational articles: named norms with no enforcement yet. Each cites

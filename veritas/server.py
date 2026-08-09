@@ -39,6 +39,7 @@ from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
+from veritas.hooks import build_hooks
 from veritas.identity import build_identity
 from veritas.ledger import REDELIVERABLE_STATES, Ledger, NonceState
 from veritas.metering import Usage
@@ -1470,6 +1471,12 @@ async def constitution():
     return build_constitution()
 
 
+@app.get("/v1/hooks")
+async def hooks():
+    """The integration registry: every surface, push absence stated (A28)."""
+    return build_hooks()
+
+
 @app.get("/v1/identity")
 async def identity():
     cfg = get_payment_config()
@@ -1805,10 +1812,22 @@ async def well_known():
             "readiness": "/readyz",
             "trust": "/v1/trust",
             "constitution": "/v1/constitution",
+            # A28: the registry carrying what a links object cannot — MCP
+            # tools, CLI exit codes, headers, signal stores, push absence.
+            "hooks": "/v1/hooks",
             "errors": "/v1/errors",
             "schema": "/v1/schema",
             "openapi": "/openapi.json",
             "llms": "/llms.txt",
+            # The paid resource is in resources[]; an agent traversing links
+            # alone must still reach it, and verify/receipts close the loop
+            # a delivered response starts.
+            "research": RESOURCE_PATH,
+            "verify": "/v1/verify",
+            "receipts": "/v1/receipts/{request_id}",
+            # Payment-config introspection was previously reachable from no
+            # discovery document at all.
+            "payment_config": "/v1/payment-config",
             "siwx_challenge": "/v1/siwx/challenge",
             "siwx_verify": "/v1/siwx/verify",
             "credits": "/v1/credits",

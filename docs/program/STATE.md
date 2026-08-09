@@ -5,38 +5,31 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next: one authorized slice only (claim building `phase-0.1-R`)** —
-> Overseer named singular; Flywheel holds the claim. The old default **hold** rested on "money path blocked on env";
-> that premise was probed and cleared
-> ([`ecosystem/unblock/LADDER-2026-08-09.md`](ecosystem/unblock/LADDER-2026-08-09.md)):
-> pinned public testnet defaults ship in code, the probe passes from a bare
-> environment, and the settle→reconcile recipe is proven **n=2**.
-> **Recommended singular bet: Phase 0.1-R — routine money loop** (scripted
-> settle→reconcile cycle from any egress host; keeps G9 reconciliation
-> routine). Alternative if Overseer prefers demand-side: product-worth
-> (retrieval grade). **Stage-1 human minutes** (prepared-90% done, see
-> ladder §4): PyPI trusted publisher for `veritas-research` (name verified
-> free) · public TLS host · mainnet pay-to.
+> **Do this next: one authorized slice only (claim free)** — Overseer names
+> the next bet after **#122** LEARN. Default **hold**. Phase **0.1-R** is
+> **landed** on tip (`veritas.money_loop` compose settle→reconcile; L1 offline
+> pins). Do **not** re-claim 0.1-R thrash.
+> **Stage-1 human minutes** (prepared-90%): PyPI trusted publisher for
+> `veritas-research` · public TLS host · mainnet pay-to.
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
-> **O.8**, **#98**, or **#112 thrash**.
+> **O.8**, **#98**, **#112 thrash**, or **#122 thrash**.
 >
-> **On main:** settlements **2 testnet** (both chain-confirmed via the
-> default RPC path, env unset — `fable/settlement/`) · mainnet **0** ·
-> unsolicited **0**. **#119** / `fb3b0d5` unblock defaults + n=2 + default G9 path;
-> **#112** / `367a3aa` first settlement + refounding; **#118** / `bc0bba3` MIND;
-> **#111** / `4aa6c61` org-loops v4. Gap **G9**: reconcile works from a bare env;
-> still open until routine in production. Not PyPI (name free, workflow ready).
-> Overseer named singular **Phase 0.1-R**; flywheel-claim **building** (no product PR yet).
+> **On main:** settlements **2 testnet** (self-dogfood; #122 did **not** add
+> on-chain count) · mainnet **0** · unsolicited **0**. **#122** / `0c2cef9` Phase
+> 0.1-R routine money loop; **#119** / `fb3b0d5` unblock defaults + n=2;
+> **#112** / `367a3aa` first settlement; **#118** / `bc0bba3` MIND. Gap **G9**:
+> compose path exists; still open until production-routine. Not PyPI.
+> Claim **free**. Open product PRs: **none**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `fb3b0d5` (PR **#119** unblock defaults + settlement n=2 +
-> default-path G9 reconcile). Prior: `#118` / `bc0bba3` MIND; `#117` / `a3a52c3`;
-> product `#112` / `367a3aa` first settle; `#111` / `4aa6c61`.
-> Claim **building** `phase-0.1-R`. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
-> Gap G9 open (ops/production-routine). Open product PRs: **none** yet.
-> Overseer singular: **Phase 0.1-R** (claimed by flywheel). Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
->
+> **Tip of `origin/main`:** `0c2cef9` (PR **#122** Phase 0.1-R routine money_loop).
+> Prior: `#121` / `c6dc73f` hygiene; `#119` / `fb3b0d5` n=2 defaults; `#112` / `367a3aa`.
+> Claim **free**. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
+> Gap G9 open (production-routine). Open product PRs: **none**.
+> Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+
+
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /
 > composed standing. **Not proven:** multi-instance survival; on-chain (0).
 >

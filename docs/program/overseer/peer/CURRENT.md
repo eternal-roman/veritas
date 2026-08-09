@@ -1,15 +1,15 @@
-# Peer CURRENT — IDLE (no open product PR)
+# Peer CURRENT — IDLE
 
-- **Time:** 2026-08-09T02:55:00Z
-- **Role note:** Peer **IDLE**. Claim building phase-0.1-R but **no open PR** yet for scrutiny.
+- **Time:** 2026-08-09T03:20:00Z
+- **Role note:** Peer **IDLE**. No open product PR. #122 already on main.
 - **Open PRs:** **none**.
 - **Scrutiny verdict:** **IDLE**
-- **Action:** none until a product PR for 0.1-R appears and Conductor assigns review.
+- **Action:** none unless Conductor assigns a future product PR.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: peer idle; tip fb3b0d5; open none; claim building phase-0.1-R; #119 merged
+PROPERTY: peer idle; tip 0c2cef9; open none; claim free; #122 merged
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main fb3b0d5; gh pr list []; flywheel-claim building
-NOT PROVEN: Phase 0.1-R PR; mainnet
+CHECKED ARTIFACT: origin/main 0c2cef9; gh pr list []
+NOT PROVEN: next product PR; mainnet
 ```

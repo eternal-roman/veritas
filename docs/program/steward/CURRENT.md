@@ -1,25 +1,25 @@
 # Steward CURRENT
 
-- **Time:** 2026-08-09T04:40:00Z
-- **origin/main:** **`b2420ce`** — product **#129** Stage-1 existence scorecard; docs #128; product **#127** dogfood; product **#125** product-worth; plane **#124**; product **#122** 0.1-R
-- **Open PRs:** **none** (#129 MERGED) — this hygiene PR only
-- **Cohesion score:** **1 → 3** after this tick (free-on-merge debt: tip claim still **building** post-#129)
+- **Time:** 2026-08-09T05:00:00Z
+- **origin/main:** **`ac68cc9`** — product **#131** evolver (Scout → Evolver); docs **#130** / `ba24552`; product **#129** / `b2420ce` existence scorecard
+- **Open PRs:** product **none**. Docs: this tip-epoch hygiene only (#132)
+- **Cohesion score:** **1 → 3** after this tick (post-#131 free-on-merge tip lag; cards still #129-era)
 - **Contradictions fixed this tick:**
-  - Tip lag → **`b2420ce`** (#129)
-  - Claim **building** after product land → **free** (WORKFLOW_HYGIENE §8)
-  - last_merged missing #129 → **#129 + #128 + #127 + …**
-  - Settlements stay **2 testnet** (existence scorecard measures; do not invent n=3)
-- **Cards rewritten:** flywheel-claim free, STATE tip-true free, steward CURRENT+log
-- **STATE claim hygiene:** tip **`b2420ce`**; claim **free**; open product **none**; settlements **2 testnet** / mainnet **0** / unsolicited **0**
-- **Builder mid-flight:** **no**. Claim free. HOLD invent / Stage-1 human.
-- **Momentum directive:** Tip-true free post-**#129**; measure with `veritas-ops existence`; no invent n=3/unsolicited/mainnet; no #129 thrash.
-- **noop_coherent?** **no** — free-on-merge debt after #129
+  - Tip lag → **`ac68cc9`** (#131 landed)
+  - last_merged missing #131 → **#131 + #130 + #129 + …**
+  - Open-product mid-flight narrative → **none** (merged)
+  - Settlements stay **2 testnet** (do not invent n=3)
+- **Cards rewritten:** flywheel-claim free tip-true; STATE; steward/overseer/conductor CURRENT; steward log
+- **STATE claim hygiene:** tip **`ac68cc9`**; claim **free**; open product **none**; settlements **2 testnet** / mainnet **0** / unsolicited **0**
+- **Builder mid-flight:** **no**. Claim free. HOLD invent / Stage-1 human. Evolver is WATCH fuel — not money invent.
+- **Momentum directive:** Tip-true free post-**#131**; no invent n=3/unsolicited/mainnet; no #129/#131 thrash; Stage-1 human parallel.
+- **noop_coherent?** **no** — free-on-merge tip-epoch hygiene after #131
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip b2420ce; claim free; open product none; #129 merged existence scorecard; settlements testnet=2
+PROPERTY: tip ac68cc9; claim free; open product none; #131 merged evolver; settlements testnet=2
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main b2420ce; #129 MERGED; plane_stock free after this hygiene; veritas-ops existence
-ASSUMPTIONS: one hygiene PR this tip epoch
-NOT PROVEN: n=3; unsolicited; mainnet; PyPI; next singular
+CHECKED ARTIFACT: origin/main ac68cc9; #131 MERGED; plane_stock free + product=[]; idle_true_candidate
+ASSUMPTIONS: one tip-epoch hygiene this product epoch (#131)
+NOT PROVEN: n=3; unsolicited; mainnet; PyPI; evolver commercial fitness
 ```

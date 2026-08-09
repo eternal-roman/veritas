@@ -30,6 +30,35 @@ after token exhaustion; do not lose state.
       FABLE_INSIGHTS, FALSIFIABLE_COMMERCE, PRODUCT_ORG, program STATE).
 - [ ] Adversarial verification of top findings — pending.
 - [ ] First-principles strategy panel (5 lenses) + judging — pending.
+- [~] **Phase 0.1 live settlement attempt — protocol path PROVEN, funding
+      remains.** From this machine (full egress, unlike the cloud sandbox):
+      1. Egress probe: Base Sepolia RPC answers (chainId 0x14a34), x402.org
+         facilitator `/supported` 200. Recorded above.
+      2. Live run 1: facilitator answered **403** — Cloudflare error 1010 bans
+         the default `Python-urllib` user-agent. The client could never have
+         settled in production; every test was green. Fixed:
+         `veritas/facilitator.py` now sends a versioned User-Agent.
+      3. Live run 2: **500** — the reference facilitator routes handlers by
+         `x402Version` and registers only **v2** for exact/eip155:84532; the
+         whole stack speaks v1. Fixed: v1→v2 wire adapter at the client
+         boundary (`_wire_requirements` / `_wire_payment_payload`; v2 renames
+         `maxAmountRequired`→`amount`, moves resource/description/mimeType
+         into a structured `resource` block, echoes selected requirement as
+         `accepted`). Spec: coinbase/x402 specs/x402-specification-v2.md.
+      4. Live run 3: verify HTTP 200, `payer` recovered = our buyer address
+         `0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599` — **EIP-712 signing
+         path cryptographically confirmed against the real facilitator.**
+         Refusal: `invalid_exact_evm_insufficient_balance` (buyer holds 0
+         USDC), surfaced to the buyer as a 402, not an outage. Correct.
+      5. Remaining: fund the buyer with Base Sepolia USDC (Circle faucet →
+         `0xF355fc4DF7E7A7016EFE530F71835E3a6e6b8599`), re-run
+         `scripts/testnet_settlement.py`, record the tx hash, then reconcile
+         via `veritas.chain_reconcile` with `VERITAS_RPC_URL=https://sepolia.base.org`
+         (first-ever G9 exercise).
+      Payment-path test subset: 87 passed with the adapter. Evidence:
+      `docs/program/fable/settlement/settlement_*.json` (403 run, 500 run,
+      insufficient-balance run). Throwaway testnet keys in session scratchpad
+      `testnet_keys.json` — testnet only, never funded with real value.
 - [ ] Synthesis: `docs/program/fable/REFOUNDING.md` — pending.
 - [ ] PR opened — pending.
 

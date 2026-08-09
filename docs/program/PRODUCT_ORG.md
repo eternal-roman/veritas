@@ -22,17 +22,19 @@ E  Found alone       ── discovery AFTER pay is not a trap
 F  Lifecycle         ── trust, metering, attestations compound
 ```
 
-**Current era (post-O.8 @ `96b9013`):**
+**Current era (post-#98 plane substrate; product HOLD until money unblocked):**
 
 | Priority | Bet | Axis | Why now |
 |----------|-----|------|---------|
-| **1 NEXT** | **M7** credits via SIWx | A/B | Last Phase M; prepaid agents without per-request human |
-| **2** | **N0** notary core | D | Product worth — without it, scale is plumbing |
-| **3** | **G9 design / measure** | C | Instrumentation only until RPC; never fake settle |
+| **Active (T4)** | **Unblock** checklist/probes | C | Money ranked #1; RPC/wallet human gate — not more mesh charters |
+| **1 NEXT when unblocked** | **Phase 0.1 / G9** dogfood | C | First real settle proof; never invent tx |
+| **Alt NEXT** | Overseer **explicit non-money** singular bet (e.g. retrieval eval) | D | Only if Overseer names it while claim free |
+| Parked | M7 / N0 / more VAAT product | A/B/D | No dual reopen; no mesh-as-product without buyer path |
 | Parked | Bazaar / X1/X3/X6 | E | Discovery before real money is a trap |
 
-One primary NEXT only. Outrank only for security/money-path severity (Overseer
-writes why).
+One primary NEXT only. **Product NEXT only when unblocked** or Overseer names
+an explicit non-money singular bet — see [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md).
+Outrank only for security/money-path severity (Overseer writes why).
 
 ---
 
@@ -77,11 +79,12 @@ writes why).
 | **T1c Self-improve** | **Optimizer** | Every **5 product cycles** forever; edits org/cadence/workflows (Overseer veto thrash) |
 | **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart |
 | **T3 Build** | Flywheel **or** Implement×**n** | **1 product bet**; N workers share one claim |
-| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks** | Parallel OK; tracks may ship plane substrate (`agent_money` / `agent_identity`) + research docs; **no dual product NEXT** |
-| **T5 Burst** | continuous / pulse | Multi-cycle under budget cap |
+| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks**, **Unblock** | Parallel OK when not idle-true; tracks may run plane substrate offline; **no dual product NEXT**; hygiene: at most **one** tip-restock PR per epoch |
+| **T5 Burst** | continuous / pulse | **One** continuous/forever at a time (no dual — Access Denied budget race) |
 
 **Scale agents by fan-out of *support, audit, track research, and implementer workers*, never by dual product NEXT.**  
-See [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md) · [`ECOSYSTEM_ADVANCE.md`](ECOSYSTEM_ADVANCE.md).
+**Idle truly:** free claim + no product PR + HOLD → support **noop** (no restock PR thrash).  
+See [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) · [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md) · [`ECOSYSTEM_ADVANCE.md`](ECOSYSTEM_ADVANCE.md).
 
 ### Ecosystem track agents (T4)
 
@@ -97,7 +100,7 @@ Cooperative loops under Overseer strategy (not product claim):
 | legal_identity | 25m | `TRACK_LEGAL_IDENTITY_TICK_PROMPT.md` |
 | network_effects | 30m | `TRACK_NETWORK_EFFECTS_TICK_PROMPT.md` |
 | **mesh_runner** | 5-cycle / demand | `TRACK_MESH_RUNNER_TICK_PROMPT.md` — offline kernel |
-| **unblock** | on demand | `TRACK_UNBLOCK.md` — human ops for Phase 0.1 |
+| **unblock** | on demand (primary while money blocked) | `TRACK_UNBLOCK.md` + `python -m veritas.unblock_probe` |
 
 Bus: `ecosystem/BUS.md`. Conferral: `ecosystem/OVERSEER_CONFERRAL.md`.  
 Kernel: `python -m veritas.ecosystem_cycle --cycles 5`.

@@ -61,12 +61,15 @@ Other agents **read** this file at the start of their ticks (wired in prompts).
 
 | Condition | Action |
 |-----------|--------|
-| No open product PR, NEXT clear, tree not hostile WIP | **Restart** flywheel / run one cycle |
+| No open product PR, claim free, Overseer **HOLD** | **restart=false** — true idle (`WORKFLOW_HYGIENE.md` §1); no tip-restock PR |
+| No open product PR, NEXT **unblocked** (Overseer named) | **Restart** one flywheel / implement cycle |
 | Open PR with CI pending | Wait; do not start a second bet |
 | Open PR CI green, unmerged | **Autonomous: squash-merge** (see `AUTONOMOUS.md`); no human wait |
 | Open PR CI pending | Poll once; else next tick — **no `await_user`** |
 | Overseer LAZY/MISGUIDED on live WIP | Do not restart new bet; demand fix in cards |
-| Steward cohesion < 2 | Demand card cleanup before restart |
+| Steward cohesion < 2 | Prefer in-place CURRENT fix; **no dual restock PR** |
+| Hygiene PR already open this tip epoch | Do not open another (`WORKFLOW_HYGIENE.md` §2) |
+| Dual continuous workflows | Kill extras; one only (§5) |
 | Budget exhausted / max cycles | Stop with trajectory updated |
 
 **Autonomous continuous** (`continuous: true`, default `auto_merge: true`): after

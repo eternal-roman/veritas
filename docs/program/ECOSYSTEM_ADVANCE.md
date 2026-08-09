@@ -71,6 +71,21 @@ python -m veritas.ecosystem_cycle --cycles 5
 | **Unblock Agent** | Human-ops checklist when money_loop #1 but RPC/wallet missing |
 | **Scale** | Raise `--cycles` or schedule Mesh Runner; never dual product NEXT |
 
+## Unblock-only mode (workflow hygiene §3)
+
+**When:** mesh ranks **money_loop** high **and** product `VERITAS_RPC_URL` is
+unset (or funded wallet missing).
+
+| Active | Parked / quiet |
+|--------|----------------|
+| **Unblock** — `python -m veritas.unblock_probe` → `ecosystem/unblock/CHECKLIST.md` | Extra TRACK charter edits |
+| Mesh kernel offline cycles (no PR required) | New mesh feature code without a buyer path |
+| Optional human funding steps | Dual continuous workflows |
+
+Product flywheel/implement stays **idle** until checklist required rows are
+ready **or** Overseer names an explicit non-money singular bet
+(`WORKFLOW_HYGIENE.md` §4). Plane VAAT ≠ product settle.
+
 ## Paths
 
 | Artifact | Path |
@@ -79,12 +94,14 @@ python -m veritas.ecosystem_cycle --cycles 5
 | Bus | `docs/program/ecosystem/BUS.md` |
 | Conferral | `docs/program/ecosystem/OVERSEER_CONFERRAL.md` |
 | Mesh Runner | `TRACK_MESH_RUNNER.md` + `veritas/ecosystem_cycle.py` |
-| Unblock | `TRACK_UNBLOCK.md` |
+| Unblock | `TRACK_UNBLOCK.md` + `TRACK_UNBLOCK_TICK_PROMPT.md` |
+| Unblock probe | `veritas/unblock_probe.py` → `ecosystem/unblock/CHECKLIST.md` |
+| Workflow hygiene | `WORKFLOW_HYGIENE.md` (idle · one hygiene PR · Unblock · dual continuous ban) |
 | Plane money | `veritas/agent_money.py` |
 | Plane visa | `veritas/agent_identity.py` |
 
 ```
-PROPERTY: cooperative track plane + mesh kernel; no dual product NEXT; no fake settlement
-EVIDENCE LEVEL: L0 (direction) + L1 (plane money/visa/cycle tests)
+PROPERTY: cooperative track plane + mesh kernel; Unblock-only when money blocked; no dual product NEXT; no fake settlement
+EVIDENCE LEVEL: L0 (direction) + L1 (plane money/visa/cycle/probe tests)
 NOT PROVEN: billion-dollar EV; product on-chain settle; G10–G12 closed
 ```

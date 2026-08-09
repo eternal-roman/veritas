@@ -149,6 +149,50 @@ package — CI's package job asserts this.
   JSON. `reconcile` compares this instance's records against each other only
   and says so: nothing is checked against the chain (constitution gap G9).
 
+## Field notes from live contact (2026-08-09) — read before touching the money path
+
+The first real settlement (`docs/program/fable/settlement/`, PR #112) found
+defects that internal verification structurally could not. Do not re-learn
+these:
+
+1. **Every outbound HTTP client must send a versioned User-Agent.**
+   Cloudflare fronts both x402.org and sepolia.base.org and rejects the
+   default `Python-urllib` agent (error 1010 → HTTP 403) before reading the
+   body. The facilitator client and the G9 RPC transport were both
+   structurally unable to reach their production counterparties while every
+   test stayed green. Pinned by `tests/test_payment.py` — keep the pattern
+   for any new client.
+2. **The reference facilitator speaks x402 v2 only** for exact/eip155:84532:
+   it routes handlers by `x402Version`, renames `maxAmountRequired`→`amount`,
+   moves resource/description/mimeType into a structured `resource` block,
+   and expects the selected requirement echoed as `accepted`. Internal shapes
+   stay v1; the one translation site is `FacilitatorClient`
+   (`_wire_requirements` / `_wire_payment_payload`). Do not add a second
+   translation site, and do not "fix" internal shapes to v2 piecemeal —
+   migrate end to end or not at all.
+3. **Do not trust recorded environment constraints — probe them.** The
+   long-standing "no egress, settlement unprovable from here" premise was one
+   sandbox's, not this machine's. A 60-second probe (`curl` the facilitator
+   `/supported` and the RPC `eth_chainId`) invalidated it. Any environment
+   claim in `docs/program/` needs a last-verified date; treat stale ones as
+   hypotheses.
+4. **The settlement recipe is repeatable.** `scripts/testnet_settlement.py`
+   against a live-mode server; Circle's faucet (faucet.circle.com) is
+   permissionless — 20 testnet USDC per address per 2 hours, no account; the
+   buyer needs no ETH (EIP-3009: the facilitator submits and pays gas). Full
+   walkthrough: `docs/program/fable/STATE.md`.
+5. **An hour of boundary contact beats a week of internal rigor.** Every
+   defect above was invisible to a green 791-test suite and found in minutes
+   of live contact. Prefer one real exchange with a production counterparty
+   over another round of self-verification; record the transcript as
+   evidence.
+6. **Fan-out discipline for agent workflows.** A 28-agent audit workflow died
+   mid-flight on the session usage limit: ~1M tokens spent, zero results
+   returned, nothing recoverable. Keep fleets small (≤8 per wave), stage
+   waves so each checkpoints its results to disk before the next starts, and
+   fall back to inline synthesis when limits are near. Partial results that
+   are persisted beat comprehensive results that never land.
+
 ## Current state, honestly
 
 Structural invariants above are tested and green. One payment has settled

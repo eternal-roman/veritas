@@ -1,47 +1,45 @@
 # Trajectory — agent commerce vision
 
-**Updated:** 2026-08-08T23:10:00Z (continuous cycle 8)
-**Main:** `64b7a1a` (#72) · closeout `e45a2f5` (#71) · product tip `e7f674b` (P7-C #69) · version **0.8.1**
+**Updated:** 2026-08-09T00:08:00Z (post-#98 LEARN)
+**Main:** `9359b79` (#98 ecosystem advance) · prior `d39eee4` (#97) · product A26/A27 `ab728a6` (#75) · **version:** `0.8.1`
 
 ## Where we are
 
 | Layer | State |
 |-------|--------|
-| M7 → N0 → N1.1–N1.4 → P7 → cycle-1/5 | **On main** |
-| G9-design | **On main** `6777a92` — gap **still open** |
-| **N1.5** inclusion proof on observe | **On main** `e089f86` (#60) |
-| **v0.8.1** | **On main** `070d4c4` (#62) — **not** PyPI |
-| **P7-C** free re-fetch `research_slots` | **On main** `e7f674b` (#69) |
-| Program closeouts | **On main** `e45a2f5` (#71), `64b7a1a` (#72) |
+| M7 → N0 → N1.1–N1.5 → P7 → cycle-1/5 | **On main** |
+| G9-design | **On main** — gap **still open** |
+| **v0.8.1** | **On main** — **not** PyPI |
+| **P7-C** | **On main** `e7f674b` (#69) |
+| **N0 residue** | **On main** `1c56a0b` (#77) |
+| **A26/A27** | **On main** `ab728a6` (#75) |
+| **Ecosystem advance / VAAT / visas** | **On main** `9359b79` (#98) — **not** x402 settle |
+| G10 harvest docs | **On main** `458c36a` (#81) — gap **still open** |
 | On-chain settlements | **0** |
 | Claim | **free** |
 | Open product PRs | **none** |
-| `VERITAS_RPC_URL` | **unset** → live-G9 dogfood **blocked** |
 
 ## Primary trajectory
 
 ```
-… → N1.5 DONE → 0.8.1 DONE → P7-C DONE
-  → Overseer HOLD (this era)
-     when unblocked: live-RPC G9 dogfood (G9-L-A…E)
-     external only: PyPI Trusted Publishing (human ops)
+… → A26/A27 DONE → free → plane hygiene → #98 ecosystem plane DONE
+  → Overseer singular NEXT only
+     candidates (blocked/external): live-RPC G9 | PyPI human ops | W1 after settle
+     plane mesh tracks: under Overseer ecosystem conferral (not product settle)
 ```
 
-**This-cycle bet:** none (claim free · restart=false)
+**This-cycle bet:** none
 
-**Refuse:** `prefer_bet=M7` thrash — M7 landed `2171bfa` (#23) + crash refund `386efff` (#28).
+**Refuse:** prefer_bet=N0/M7 dual reopen; invent settlement from VAAT; dual product.
 
 ## Parked
 
-- Re-opening M7 / N1.5 / P7-C / 0.8.1 / cycle-5 / N1.4 / G9-design / N0 as dual NEXT
-- Stale `prefer_bet=M7` or `N0` in continuous params when STATE is free/HOLD
-- Live RPC G9 close without egress / invented settlement green
-- Treating version bump as PyPI / revenue-ready
-- Bazaar / X1 / X3 / X6 before money is real
-- Settlement fiction
+- Dual NEXT thrash
+- Live RPC G9 without egress
+- Claiming G10 closed because A26/docs exist
+- Bond escrow (G12) before proven settlement
+- Settlement fiction / VAAT as on-chain
 
 ## Landmass
 
-On-chain settlements: **0**. Hub: **L0 only**. v0.8.0 / v0.8.1 are local version +
-docs cuts — not published, not settled, not G9-closed. P7-C is L1 shed path only
-— multi-instance / live load **not** proven.
+On-chain: **0**. Hub: **L0 only**. #98 L1 plane money/visa only. G9/G10/G11/G12 open as registered. G13 required before any next product ship.

@@ -1,22 +1,22 @@
 # Conductor CURRENT
 
-- **Time:** 2026-08-08T23:10:00Z (continuous cycle 8)
-- **origin/main:** **`64b7a1a`** — docs #72 cycle-7 board; product tip **`e7f674b`** (#69 P7-C); closeout **`e45a2f5`** (#71)
-- **Open PRs:** **none**
-- **Momentum score:** **1** — post-ship idle hold; no green product merge; refuse prefer_bet=M7 thrash
+- **Time:** 2026-08-09T01:12:00Z
+- **origin/main:** **`f5e060f`** — #108 prune; product #106 `4d15033`; prior #105; #98 mesh
+- **Open PRs:** product **none** (steward restock docs PR open)
+- **Momentum score:** **1** — claim free tip-true; product IDLE HOLD post-#106; refuse dual reopen
 - **Vision:** A2A independence + commerce + lifecycle; hub is L0 only
-- **Primary bet:** **none** (claim **free**). Overseer singular NEXT = **HOLD**. M7 already landed (`2171bfa` #23 / `386efff` #28) — do not re-kick.
+- **Primary bet:** **none** (claim **free**). Refuse M7 / N0 / P7-C / A26-A27 / #98/#106 thrash.
 - **Conferral:** `conductor/CONFERRAL.md`
 - **Trajectory:** `conductor/TRAJECTORY.md`
-- **Recursive restart:** **No** — claim free; open product PR none; Overseer HOLD; `VERITAS_RPC_URL` unset (live-RPC G9 blocked); PyPI is human ops
-- **Last action:** cycle-8 stock — merge queue empty; G13 n/a (Pruner noop_idle / no ship candidate); honor Overseer restart=false
-- **Next expected:** Operator sets real `VERITAS_RPC_URL` → Overseer names live-G9 dogfood → claim → implement×n → G13 → merge-on-green
+- **Recursive restart:** **No** — Overseer HOLD; open product none; live-RPC G9 needs egress; PyPI human ops
+- **Last action:** stock tip `f5e060f` post-#106/#108; claim free; no implement kick; land steward restock when green
+- **Next expected:** Overseer singular unblocked NEXT only → claim → implement×n → G13 ship_ok → merge-on-green
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 64b7a1a; claim free; open PRs none; P7-C on e7f674b; HOLD; M7 not NEXT
+PROPERTY: tip f5e060f; #106 merged; claim free; open product none; restart=false
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 64b7a1a; gh pr list open=[]; flywheel-claim free; env VERITAS_RPC_URL unset
-ASSUMPTIONS: prefer_bet=M7 thrash (landed); n_implementers=3 unused until NEXT named
-NOT PROVEN: live RPC; closed G9; PyPI; on-chain settlements (0)
+CHECKED ARTIFACT: origin/main f5e060f; flywheel-claim free; gh pr list [steward restock]
+ASSUMPTIONS: Overseer HOLD binds; #106 not_x402_settlement
+NOT PROVEN: live RPC; G9 closed; on-chain (0); PyPI
 ```

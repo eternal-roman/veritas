@@ -22,17 +22,19 @@ E  Found alone       ── discovery AFTER pay is not a trap
 F  Lifecycle         ── trust, metering, attestations compound
 ```
 
-**Current era (post-O.8 @ `96b9013`):**
+**Current era (post-#98 plane substrate; product HOLD until money unblocked):**
 
 | Priority | Bet | Axis | Why now |
 |----------|-----|------|---------|
-| **1 NEXT** | **M7** credits via SIWx | A/B | Last Phase M; prepaid agents without per-request human |
-| **2** | **N0** notary core | D | Product worth — without it, scale is plumbing |
-| **3** | **G9 design / measure** | C | Instrumentation only until RPC; never fake settle |
+| **Active (T4)** | **Unblock** checklist/probes | C | Money ranked #1; RPC/wallet human gate — not more mesh charters |
+| **1 NEXT when unblocked** | **Phase 0.1 / G9** dogfood | C | First real settle proof; never invent tx |
+| **Alt NEXT** | Overseer **explicit non-money** singular bet (e.g. retrieval eval) | D | Only if Overseer names it while claim free |
+| Parked | M7 / N0 / more VAAT product | A/B/D | No dual reopen; no mesh-as-product without buyer path |
 | Parked | Bazaar / X1/X3/X6 | E | Discovery before real money is a trap |
 
-One primary NEXT only. Outrank only for security/money-path severity (Overseer
-writes why).
+One primary NEXT only. **Product NEXT only when unblocked** or Overseer names
+an explicit non-money singular bet — see [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md).
+Outrank only for security/money-path severity (Overseer writes why).
 
 ---
 
@@ -75,13 +77,36 @@ writes why).
 | **T1 Gate** | Overseer | 1 instance; top-tier; may call Idea |
 | **T1b Lean/QA** | **Pruner** | 1 instance; aggressive bloat denial + battery/E2E; **ship veto** |
 | **T1c Self-improve** | **Optimizer** | Every **5 product cycles** forever; edits org/cadence/workflows (Overseer veto thrash) |
-| **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart |
+| **T1.5 Unblock** | **Researcher**×n | Autonomous block board; solve/escalate; report inbox — **scale fan-out** |
+| **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart (fastest timer) |
 | **T3 Build** | Flywheel **or** Implement×**n** | **1 product bet**; N workers share one claim |
-| **T4 Support** | Steward, Scout, **Git Agent** | Parallel OK; no product code (Git Agent may open salvage PRs only) |
-| **T5 Burst** | continuous / pulse | Multi-cycle under budget cap |
+| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks**, **Unblock** | Parallel OK when not idle-true; **no dual product NEXT**; one hygiene PR/epoch |
+| **T5 Burst** | continuous / pulse | **One** continuous/forever at a time |
 
-**Scale agents by fan-out of *support, audit, and implementer workers*, never by dual product NEXT.**  
-See [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md).
+**7 watchers + layers:** see [`ORG_LOOPS.md`](ORG_LOOPS.md).
+
+**Scale agents by fan-out of *support, audit, track research, and implementer workers*, never by dual product NEXT.**  
+**Idle truly:** free claim + no product PR + HOLD → support **noop** (no restock PR thrash).  
+See [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) · [`PRUNER.md`](PRUNER.md) · [`IMPLEMENTERS.md`](IMPLEMENTERS.md) · [`GIT_AGENT.md`](GIT_AGENT.md) · [`ECOSYSTEM_ADVANCE.md`](ECOSYSTEM_ADVANCE.md).
+
+### Ecosystem track agents (T4)
+
+Cooperative loops under Overseer strategy (not product claim):
+
+| Track | Cadence | Charter tick |
+|-------|---------|--------------|
+| money_loop | 20m | `TRACK_MONEY_LOOP_TICK_PROMPT.md` |
+| multiparty_trust | 25m | `TRACK_MULTIPARTY_TRUST_TICK_PROMPT.md` |
+| product_worth | 25m | `TRACK_PRODUCT_WORTH_TICK_PROMPT.md` |
+| discovery_density | 30m | `TRACK_DISCOVERY_DENSITY_TICK_PROMPT.md` |
+| multi_tenant | 30m | `TRACK_MULTI_TENANT_TICK_PROMPT.md` |
+| legal_identity | 25m | `TRACK_LEGAL_IDENTITY_TICK_PROMPT.md` |
+| network_effects | 30m | `TRACK_NETWORK_EFFECTS_TICK_PROMPT.md` |
+| **mesh_runner** | 5-cycle / demand | `TRACK_MESH_RUNNER_TICK_PROMPT.md` — offline kernel |
+| **unblock** | on demand (primary while money blocked) | `TRACK_UNBLOCK.md` + `python -m veritas.unblock_probe` |
+
+Bus: `ecosystem/BUS.md`. Conferral: `ecosystem/OVERSEER_CONFERRAL.md`.  
+Kernel: `python -m veritas.ecosystem_cycle --cycles 5`.
 
 ---
 
@@ -131,23 +156,24 @@ Measured work vs interval. Critical path = **merge lag + restart lag + build**.
 
 | Role | Work p95 | Interval | Role in latency |
 |------|----------|----------|-----------------|
-| **Overseer** | ~2.5m | **8m** | Strategy gate; thrash catch |
-| **Pruner** | ~3–8m | **10m** | Bloat denial + battery/E2E; pre-ship veto |
-| **Conductor** | ~2m + build | **12m** | Merge + restart (primary lever) |
-| **Steward** | ~6m | **15m** | Cohesion; lags Overseer slightly |
-| **Flywheel** | 10–40m cycle | **20m** | Backup single-builder cycle |
-| **Scout** | ~3m | **25m** | Idea fuel for vision |
-| **Implement×n** | on demand | workflow | N workers for large bets (not a timer) |
+| **Conductor** | ~2m + merge | **6m** | Merge critical path |
+| **Researcher** | ~3–10m | **10m** | Clear others' blocks |
+| **Overseer** | ~2.5m | **12m** | Strategy; thrash catch |
+| **Pruner** | ~3–8m | **15m** | ship_ok when product PR |
+| **Scout** | ~3m | **25m** | Idea fuel (slow under HOLD) |
+| **Steward** | ~4m | **30m** | Cohesion lag intentional |
+| **Flywheel** | 10–40m | **45m** | Backup only |
+| **Implement×n** | on demand | workflow | N workers |
 
 ### Progress-tree latency (target)
 
 | Event | Target worst-case |
 |-------|-------------------|
-| Green product PR → merged | ≤ **12m** (Conductor) |
-| Merge → cards coherent | ≤ **15m** (Steward) |
-| Idle queue → build kick | ≤ **12m** (Conductor) |
+| Green PR → merged | ≤ **6m** (Conductor) |
+| Block posted → claimed | ≤ **10m** (Researcher) |
+| Idle → noop exit | ≤ **15 tools** (plane_stock) |
+| Merge → cards coherent | ≤ **30m** (Steward) |
 | Vision thin → Idea harvest | ≤ **25m** (Scout) |
-| Full flywheel ship | ≤ **1 cycle** (~20–45m wall) |
 
 ### Anti-thrash
 

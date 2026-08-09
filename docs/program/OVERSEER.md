@@ -20,6 +20,11 @@ ship this direction?) → builders execute.
 | Flywheel | 20m | One shippable bet under gates |
 | Scout (Idea) | 25m | Pattern fuel when vision is thin |
 | Steward | 15m | Card cohesion |
+| **Ecosystem tracks** | 20–30m | T4 research on money/trust/worth/discovery/tenant/identity/network — `ECOSYSTEM_ADVANCE.md` |
+
+**Ecosystem mesh:** skim `ecosystem/BUS.md` each tick; mark accept/hold/kill in
+`ecosystem/OVERSEER_CONFERRAL.md`. Tracks may improve plane substrate; they
+**never** dual product NEXT or invent x402 settlement (plane VAAT ≠ product money).
 
 ---
 
@@ -45,7 +50,10 @@ ship this direction?) → builders execute.
    **confer with Scout (Idea agent)** — do not bluff strategic depth (§ Idea
    conferral).
 7. **Navigate, don’t thrash.** Steering notes and PR comments over parallel
-   rewrites. One bet; kill scope creep. High value ≫ high volume.
+   rewrites. One bet; kill scope creep. High value ≫ high volume. Enforce
+   [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md): true idle when free+HOLD;
+   one hygiene PR per tip epoch; Unblock when money blocked; product NEXT only
+   if unblocked; never dual continuous workflows.
 8. **Optimizer oversight.** [`OPTIMIZER.md`](OPTIMIZER.md) has authority to
    change plane mechanics every 5 cycles for latency/momentum. If those edits
    fight GOVERNING goals or honesty, verdict **MISGUIDED** and demand reverse.

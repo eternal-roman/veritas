@@ -17,7 +17,7 @@ scalable momentum (L0 multi-billion *direction* — never claim proven).
 | **Conductor** | **6m** | Merge **any** green non-draft PR; restart only if unblocked singular NEXT |
 | **Researcher** | **10m** | Claim block board · solve/escalate · inbox (unsolicited) |
 | **Overseer** | **12m** | Quality + strategy; enforce hygiene; Scout only if vision≤1 |
-| **Pruner** | **15m** | LIGHT noop if idle; HEAVY only on open product PR / claim building |
+| **Pruner** | **15m** | Full-tree sweep every tick; ponytail-audit/debt; **Overseer-agreed** prune PR only; HEAVY on product PR |
 | **Scout (Idea)** | **25m** | Freshness stamp under HOLD; pattern fuel if confer |
 | **Steward** | **30m** | In-place cohesion only; **no restock PR** under idle-true |
 | **Flywheel** | **45m** | Backup builder only when claim/unblocked; else idle_true noop |

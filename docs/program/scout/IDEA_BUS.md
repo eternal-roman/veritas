@@ -1,4 +1,4 @@
-# Idea bus — steward stamp 2026-08-09T00:34:00Z (tip `5c02edb` / #103)
+# Idea bus — steward stamp 2026-08-09T01:12:00Z (tip `f5e060f` / #108; product #106)
 
 **Shared feed for every agent** (overseer · flywheel · steward · peer · scout · human).  
 Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
@@ -8,9 +8,9 @@ Source charter: `docs/program/SCOUT.md`. Seedlings are **not** approvals.
 ### Program anchors (STATE is source of truth for NEXT)
 
 - **NEXT ACTION: hold** — Overseer names the singular bet when unblocked (default: live-RPC G9 dogfood if egress; else true idle). PyPI is human ops.  
-- **Landed (do not re-open as NEXT):** **#98** ecosystem advance / VAAT / plane visas (`9359b79`) — **not** x402 on-chain settle; #102 TRACK VT fix; plus M7, N0, A26/A27, P7-C, plane closeouts through #103.  
+- **Landed (do not re-open as NEXT):** **#106** plane org-loops/Researcher/limited VAAT economy (`4d15033`) — **not** x402 on-chain settle; **#108** prune researcher inbox; **#98** ecosystem mesh; #105 WORKFLOW_HYGIENE; plus M7, N0, A26/A27, P7-C.  
 - Open product PRs: **none**. Claim **free**.  
-- **Parked:** dual product tracks; seedling vendoring; settlement fiction; prefer_bet thrash on landed M7/N0/#98.  
+- **Parked:** dual product tracks; seedling vendoring; settlement fiction; prefer_bet thrash on landed M7/N0/#98/#106.  
 - **Veritas on-chain settlements: still 0.** Foreign “mainnet ready” READMEs are not our evidence.  
 - **Note:** Seedling tables below may still mention M7 as harvest context — that is **not** authorization to re-claim M7.
 

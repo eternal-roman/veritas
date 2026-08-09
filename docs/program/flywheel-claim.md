@@ -4,9 +4,9 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-09T00:34:00Z
-- **last_merged:** docs #103 @ `5c02edb`; docs #102 @ `b74b0af`; docs #101 @ `72119b4`; docs #100 @ `7011bdf`; ecosystem-advance #98 @ `9359b79`; docs #97 @ `d39eee4`; docs #96 @ `bc455c8`; docs #95 @ `301f5b2`; docs #94 @ `827813a`; docs #93 @ `f87a467`; docs #91 @ `03d7401`; docs #89 @ `acc8f2d`; docs #88 @ `abbfb40`; docs #86 @ `d4769ca`; docs #85 @ `232efac`; docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
-- **next_micro:** Overseer singular NEXT only. Default hold unless live-RPC G9 egress. #98 landed plane VAAT/visas/mesh — **not** on-chain settle. Do **not** re-open A26/A27 / N0-residue / N0–N1.3 / P7-C / N1.5 / 0.8.1 / M7. prefer_bet=N0 refused. Settlements **0**. Gap G9 open. Parked: PyPI human ops.
+- **updated:** 2026-08-09T01:12:00Z
+- **last_merged:** docs #108 @ `f5e060f`; plane #106 @ `4d15033`; docs #105 @ `b66901f`; docs #104 @ `11482c9`; docs #103 @ `5c02edb`; docs #102 @ `b74b0af`; docs #101 @ `72119b4`; docs #100 @ `7011bdf`; ecosystem-advance #98 @ `9359b79`; docs #97 @ `d39eee4`; docs #96 @ `bc455c8`; docs #95 @ `301f5b2`; docs #94 @ `827813a`; docs #93 @ `f87a467`; docs #91 @ `03d7401`; docs #89 @ `acc8f2d`; docs #88 @ `abbfb40`; docs #86 @ `d4769ca`; docs #85 @ `232efac`; docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
+- **next_micro:** Overseer singular NEXT only. Default hold unless live-RPC G9 egress. #106 plane org-loops/Researcher/VAAT economy + #98 mesh — **not** on-chain settle. Do **not** re-open A26/A27 / N0-residue / N0–N1.3 / P7-C / N1.5 / 0.8.1 / M7. prefer_bet=N0 refused. Settlements **0**. Gap G9 open. Parked: PyPI human ops.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -14,6 +14,10 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| Prune researcher inbox thrash + gitignore | `f5e060f` / #108 |
+| **Plane org loops v3 / Researcher / limited VAAT economy** | **`4d15033` / #106** |
+| Workflow hygiene idle-true / Unblock-only | `b66901f` / #105 |
+| Steward tip 5c02edb free restock post-#102/#103 | `11482c9` / #104 |
 | Steward tip 72119b4 free restock post-#100/#101 | `5c02edb` / #103 |
 | TRACK VT corruption fix | `b74b0af` / #102 |
 | Steward tip 9359b79 free restock post-#98 | `72119b4` / #101 |
@@ -38,4 +42,4 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | **P7-C** re-fetch research_slots | **`e7f674b` / #69** |
 | **v0.8.1** / N1.5 / v0.8.0 / prior ladder | through tags `v0.8.1` / `v0.8.0` |
 
-**G10:** Claim **free**. Open product PRs: **none**. Settlements: **0**. Not on PyPI. G9 open. #98 L1 plane substrate only — not x402 settlement.
+**G10:** Claim **free**. Open product PRs: **none**. Settlements: **0**. Not on PyPI. G9 open. #106/#98 plane L1 only — not x402 settlement.

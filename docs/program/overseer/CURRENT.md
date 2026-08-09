@@ -1,32 +1,32 @@
 # Overseer CURRENT
 
-- **Time:** 2026-08-09T00:42:00Z
-- **Branch / HEAD:** `origin/main` @ **`11482c9`** (#104 steward restock; prior #103 `5c02edb`; #102 `b74b0af`; #101 `72119b4`; #100 `7011bdf`; #98 `9359b79`)
-- **Verdict:** **ON_TASK** · **IDLE hold** (product `noop_stable`; claim free)
+- **Time:** 2026-08-09T01:12:00Z
+- **Branch / HEAD:** `origin/main` @ **`f5e060f`** (#108 prune; product #106 `4d15033` plane org-loops/Researcher/VAAT economy; #105 hygiene; #98 mesh)
+- **Verdict:** **ON_TASK** · **IDLE hold** post-#106 LEARN (product `noop_stable` until singular unblocked NEXT)
 - **Scores:** on-task 3 / measured 3 / integrity 3 / a2a 2 / claims 3
 - **Vision score:** 2
 - **Strategy score:** 2
-- **Claim:** **free**. Open product PRs: **none**. Open docs PRs: **none** (`gh pr list` empty).
-- **What is happening:** Plane **#98** on main @ `9359b79` (VAAT + visas + mesh; **`not_x402_settlement`**). Docs hygiene **#100–#104** landed (free claim, steward restocks, TRACK VT fix). Product settlements **0**. Gap G9 open. `VERITAS_RPC_URL` **unset**. Not PyPI. Product ladder unchanged: A26/A27 `#75` / N0-residue `#77` / P7-C `#69`. No open PR mid-flight. Local workspace may hold uncommitted plane/docs experiments — **not** stock truth until pushed/PR'd; do not dual product claim from dirt.
-- **Lazy or half-measured?** **no** for product (idle). Prefer **true noop_idle** over further steward tip-align churn now that open PRs are empty and claim is free.
-- **Quality gate:** functioning **n/a** (no product WIP) / necessary **yes** (hold avoids dual NEXT + settlement fiction) / pursuant **yes** (money path honest at C=0 until RPC).
-- **Strategic A2A note:** Plane VAAT ≠ facilitator settle / G9. Buyers still cannot verify on-chain settlement without RPC + real hash. Singular unblocked product NEXT only: live-G9 dogfood if egress; else true idle. PyPI human ops. Refuse re-open #98 thrash / M7 / N0 / P7-C / A26.
-- **Confer Scout?** **no** (vision 2 / strategy 2)
+- **Claim:** **free**. Open product PRs: **none**.
+- **What is happening:** **#106 landed** @ `4d15033` — org loops v3, Researcher unblock board, limited-supply VAAT economy; **`not_x402_settlement`**. **#108** pruned researcher inbox thrash. Prior #105 WORKFLOW_HYGIENE + #98 mesh still bind. Settlements **0**. Gap G9 open. `VERITAS_RPC_URL` **unset**. Not PyPI. Claim free; do not dual-reopen #106/#98 thrash.
+- **Lazy or half-measured?** **no** for idle path. Watch plane VAAT / agent_economy not sold as facilitator settle.
+- **Quality gate:** functioning **n/a** / necessary **yes** (hold) / pursuant **yes**.
+- **Strategic A2A note:** Plane VAAT ≠ G9 chain reconcile. Next unblocked product may be live-G9 when egress exists; else true idle / Unblock checklist. PyPI human ops.
+- **Confer Scout?** **no**
 - **Scout question:** (none)
-- **Idea synthesis:** (skipped — scores > 1)
-- **Ecosystem track marks:** **bootstrap accepted** (#98). **hold** discovery_density product push. **accept research** product_worth / multiparty_trust / multi_tenant / network_effects / money_loop Phase 0.1. Tracks never dual product claim.
+- **Idea synthesis:** (skipped)
+- **Ecosystem track marks:** **bootstrap accepted** (#98/#106 plane). **Unblock** active while RPC unset. Tracks never dual product claim.
 - **Directive (next 15–60m):**
-  1. **Product HOLD** — claim stays **free**; Conductor **restart=false**; **do not** invent implement assign.
-  2. **WORKFLOW_HYGIENE** binds: true idle (no restock PR thrash); **one hygiene PR max** this tip epoch; **never dual continuous**.
-  3. **Unblock only active track** while RPC unset — `python -m veritas.unblock_probe` / checklist; no new mesh charters as product.
+  1. **Product HOLD** — claim stays **free**; Conductor **restart=false**.
+  2. **WORKFLOW_HYGIENE** — one restock this tip epoch (this steward PR); no dual continuous.
+  3. **Unblock only** while RPC unset — checklist/probe; no mesh-as-product.
   4. Product NEXT only when 0.1/G9 unblocked **or** explicit non-money singular bet. Never invent settlement.
-- **Do not do:** Re-open **#98** thrash / **A26/A27** / **N0-residue** / **P7-C** / **N1.5** / **0.8.1** / **M7** / **O.8**; invent on-chain success; claim PyPI shipped; treat VAAT as x402 settle; second engine; soft-fail battery; prefer_bet=N0/M7; open product PR without Overseer-named unblocked NEXT; promote local dirty tree as claim.
+- **Do not do:** Dual product; re-open A26/A27 / N0 / P7-C / M7 / O.8 / #98/#106 thrash; invent on-chain success; claim PyPI; second engine; soft-fail battery.
 - **PROPERTY / EVIDENCE / NOT PROVEN:**
 
 ```
-PROPERTY: tip 11482c9; #98 on main not_x402_settlement; claim free; open PRs none; product HOLD; RPC unset; settlements 0; G9 open
+PROPERTY: tip f5e060f; #106 merged; claim free; open product none; HOLD; settlements 0; G9 open
 EVIDENCE LEVEL: L1
-CHECKED ARTIFACT: origin/main 11482c9; gh pr list empty; flywheel-claim free; agent_money not_x402_settlement on tip; VERITAS_RPC_URL unset; STATE NEXT hold
-ASSUMPTIONS: no product implement mid-flight; local dirt is not origin truth
-NOT PROVEN: live RPC; G9 closed; on-chain (0); PyPI; multi-instance survival
+CHECKED ARTIFACT: origin/main f5e060f; flywheel-claim free; #106 MERGED; #108 MERGED; VERITAS_RPC_URL unset
+ASSUMPTIONS: #106 not_x402_settlement binds
+NOT PROVEN: live RPC; G9 closed; on-chain (0); PyPI
 ```

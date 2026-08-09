@@ -62,15 +62,13 @@ def bootstrap(
     snap = led.snapshot()
     led.close()
 
+    from veritas.agent_identity import _read_secret_file, _write_secret_file
+
     if secret_path.is_file():
-        raw = secret_path.read_bytes().strip()
+        raw = _read_secret_file(secret_path)
     else:
         raw = hashlib.sha256(os.urandom(32)).digest()
-        secret_path.write_bytes(raw)
-        try:
-            secret_path.chmod(0o600)
-        except OSError:
-            pass
+        _write_secret_file(secret_path, raw)
     visas = bootstrap_plane_roster(DEFAULT_ROSTER, secret=raw)
     visa_path.write_text(
         json.dumps(visas, indent=2, sort_keys=True) + "\n", encoding="utf-8"

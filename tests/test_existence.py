@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from veritas.existence import (
     SCHEMA,
@@ -122,7 +123,9 @@ def test_build_report_never_invents_unsolicited_or_mainnet(tmp_path: Path) -> No
 
 def test_probe_pypi_404_is_not_published() -> None:
     def fake_get(url: str) -> tuple[int, bytes]:
-        assert "pypi.org" in url
+        # Hostname equality, not substring: CodeQL rightly flags `in url`
+        # checks as incomplete URL sanitization even in a test double.
+        assert urlsplit(url).hostname == "pypi.org"
         return 404, b"Not Found"
 
     out = probe_pypi(http_get=fake_get)
@@ -177,7 +180,7 @@ def test_build_report_with_probe_injection(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://seller.example")
 
     def fake_get(url: str) -> tuple[int, bytes]:
-        if "pypi.org" in url:
+        if urlsplit(url).hostname == "pypi.org":
             return 404, b"Not Found"
         if url.endswith("/health"):
             return 200, b'{"mode":"live"}'

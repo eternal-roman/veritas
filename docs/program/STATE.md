@@ -21,8 +21,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `9359b79` (PR **#98** ecosystem advance / VAAT / visas).
-> Prior: `#97` / `d39eee4`; `#96` / `bc455c8`; `#95` / `301f5b2`; `#94` / `827813a`.
+> **Tip of `origin/main`:** `72119b4` (PR **#101** steward restock post-#98).
+> Prior: `#100` / `7011bdf`; `#98` / `9359b79` ecosystem advance; `#97` / `d39eee4`.
 > Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
 > Claim **free**. Settlements: **0**. Gap G9 open. Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.

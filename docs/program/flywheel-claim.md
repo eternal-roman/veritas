@@ -4,8 +4,8 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-09T00:08:00Z
-- **last_merged:** ecosystem-advance #98 @ `9359b79`; docs #97 @ `d39eee4`; docs #96 @ `bc455c8`; docs #95 @ `301f5b2`; docs #94 @ `827813a`; docs #93 @ `f87a467`; docs #91 @ `03d7401`; docs #89 @ `acc8f2d`; docs #88 @ `abbfb40`; docs #86 @ `d4769ca`; docs #85 @ `232efac`; docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
+- **updated:** 2026-08-09T00:22:00Z
+- **last_merged:** docs #101 @ `72119b4`; docs #100 @ `7011bdf`; ecosystem-advance #98 @ `9359b79`; docs #97 @ `d39eee4`; docs #96 @ `bc455c8`; docs #95 @ `301f5b2`; docs #94 @ `827813a`; docs #93 @ `f87a467`; docs #91 @ `03d7401`; docs #89 @ `acc8f2d`; docs #88 @ `abbfb40`; docs #86 @ `d4769ca`; docs #85 @ `232efac`; docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
 - **next_micro:** Overseer singular NEXT only. Default hold unless live-RPC G9 egress. #98 landed plane VAAT/visas/mesh — **not** on-chain settle. Do **not** re-open A26/A27 / N0-residue / N0–N1.3 / P7-C / N1.5 / 0.8.1 / M7. prefer_bet=N0 refused. Settlements **0**. Gap G9 open. Parked: PyPI human ops.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
@@ -14,6 +14,8 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| Steward tip 9359b79 free restock post-#98 | `72119b4` / #101 |
+| Conductor post-#98 free claim tip-align | `7011bdf` / #100 |
 | **Ecosystem advance / VAAT / plane visas** | **`9359b79` / #98** |
 | Steward free restock post-#95/#96 | `d39eee4` / #97 |
 | Conductor post-#95 tip-align | `bc455c8` / #96 |

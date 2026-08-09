@@ -5,10 +5,10 @@
 - **pr:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-09T08:55:00Z
-- **last_merged:** product **#136** @ `694626a` PS9 buyer journey + Stage-1 status + catalog seed one-shot; product **#135** @ `816a465` composed 0.1-R n=3; product **#134** VISION/hooks; product **#133** evolver journal; product **#131** evolver; product **#129** existence; product **#127** dogfood; product **#122** Phase 0.1-R
-- **settlements:** counts live at STATE header + `fable/settlement/` (n includes the first live composed 0.1-R green) · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free** post-#136. PS9 landed — do **not** re-claim journey CLI thrash. Overseer **HOLD invent** until singular named or Stage-1 human (PyPI · public TLS · mainnet pay-to). Not dual NEXT; not invent unsolicited/mainnet.
+- **updated:** 2026-08-09T18:00:00Z
+- **last_merged:** product **#141** stage1-existence-probes (existence v1 `--probe` + agent-prep runbook, merged with the #143 polish); docs **#144** constitution 2.6 G12-from-evidence; product **#143** review-driven cleanup/debloat + release pipeline (v0.9.1 GitHub release published, PyPI job gated on repo variable); docs **#142** notary arc; docs **#140** session commerce; product **#139** receipt_not_refetchable
+- **settlements:** counts live ONLY at STATE header + `fable/settlement/` · mainnet **0** · unsolicited **0**
+- **next_micro:** Claim **free** post-#141/#143/#144. Do not re-open the polish surfaces (#143), constitution wording (#144), or existence v1 (#141). Stage-1 human minutes unchanged (PyPI trusted publisher + `PYPI_TRUSTED_PUBLISHER=configured` variable · public TLS · mainnet pay-to); `veritas-ops existence --probe` now measures two of them.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.

@@ -230,13 +230,22 @@ def build_parser() -> argparse.ArgumentParser:
         "existence",
         help=(
             "Stage-1 existence scorecard: confirmed testnet settlements from "
-            "on-disk evidence, unsolicited/mainnet never invented, human residues."
+            "on-disk evidence, unsolicited/mainnet never invented, human residues. "
+            "Optional --probe measures PyPI + public /health."
         ),
     )
     existence.add_argument(
         "--evidence-dir",
         default=None,
         help="Settlement transcript directory (default: docs/program/fable/settlement).",
+    )
+    existence.add_argument(
+        "--probe",
+        action="store_true",
+        help=(
+            "Contact PyPI JSON API and optional VERITAS_PUBLIC_URL/health "
+            "(Stage-1 vision prep; never invents publish)."
+        ),
     )
     sub.add_parser("usage", help="What serving consumed, priced where possible.")
     sub.add_parser("pricing", help="The price new ledger entries are stamped with.")
@@ -284,7 +293,10 @@ def main(argv: list[str] | None = None) -> int:
         from veritas.existence import build_existence_report
 
         evidence = Path(args.evidence_dir) if args.evidence_dir else None
-        payload = build_existence_report(evidence_dir=evidence)
+        payload = build_existence_report(
+            evidence_dir=evidence,
+            probe=bool(getattr(args, "probe", False)),
+        )
     elif args.command == "usage":
         payload = ledger.usage_summary(costs)
     elif args.command == "pricing":

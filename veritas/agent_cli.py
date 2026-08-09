@@ -144,7 +144,9 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             address = None
 
-        # Stage-1 readiness in-process (PS9): never invent public existence.
+        # Stage-1 readiness in-process (PS9 + vision Stage-1): never invent
+        # public existence. Offline by default; operators run
+        # `veritas-ops existence --probe` for PyPI / public /health.
         existence = build_existence_report()
         stage1 = existence.get("stage1") or {}
         landmass = existence.get("landmass") or {}
@@ -158,13 +160,15 @@ def main(argv: list[str] | None = None) -> int:
             "unsolicited_settlements": landmass.get("unsolicited_settlements"),
             "human_minutes_remaining": stage1.get("human_minutes_remaining"),
             "env_hints": stage1.get("env_hints"),
+            "stage1_prep": existence.get("stage1_prep"),
             "vision_path": existence.get("vision_path"),
             "not_proven": existence.get("not_proven"),
-            "publicly_existable": False,  # honest until human residues clear
+            "publicly_existable": bool(existence.get("publicly_existable")),
+            "probe_ran": bool(existence.get("probe_ran")),
             "note": (
                 "Stage-1 public existence remains human-gated "
-                "(PyPI / TLS / mainnet / registry). Measure only — "
-                "require_payment on localhost is not live to agents."
+                "(PyPI / TLS / mainnet / registry). Offline status does not "
+                "probe the network — use `veritas-ops existence --probe`."
             ),
         }
         print(json.dumps({

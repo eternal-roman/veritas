@@ -124,8 +124,10 @@ def test_status_includes_stage1_readiness_scorecard(tmp_path, capsys):
     assert main(["status"]) == 0
     payload = json.loads(capsys.readouterr().out)
     readiness = payload["stage1_readiness"]
-    assert readiness["schema"] == "veritas.existence.v0"
+    assert readiness["schema"] == "veritas.existence.v1"
     assert readiness["publicly_existable"] is False
+    assert readiness["probe_ran"] is False
     assert "human_minutes_remaining" in readiness
     assert "unsolicited demand" in readiness["not_proven"]
     assert readiness["testnet_settlements_confirmed"] is not None
+    assert readiness["stage1_prep"]["vision_stage"] == "1_public_existence"

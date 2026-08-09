@@ -22,9 +22,12 @@ personality, not busyness.
 |---------------|---------|
 | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | North star, scorecard A–F, one-cycle atom, what “better” means |
 | [`STATE.md`](STATE.md) | Single NEXT ACTION (executable objective) |
-| [`CONTINUOUS.md`](CONTINUOUS.md) | Cadence, roles, latency model |
+| [`CONTINUOUS.md`](CONTINUOUS.md) | Cadence, roles, latency model (v5 stall clocks) |
+| [`ORG_LOOPS.md`](ORG_LOOPS.md) | 7 watchers, stock protocol, handoff matrix |
+| [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) | Idle-true, one hygiene, claim stall, free-on-merge |
 | [`PRODUCT_ORG.md`](PRODUCT_ORG.md) | Product eras, org chart, sequencing, timing, scale rules |
 | [`AUTONOMOUS.md`](AUTONOMOUS.md) | Unattended progress without human gates |
+| [`ecosystem/STRATEGY_EVAL_AND_PLAN.md`](ecosystem/STRATEGY_EVAL_AND_PLAN.md) | L0 strategy posture (Overseer accept/hold) |
 | Cycle ledger `cycles/*` | Measured learning after each ship |
 
 **Objectives** are only legitimate if they:

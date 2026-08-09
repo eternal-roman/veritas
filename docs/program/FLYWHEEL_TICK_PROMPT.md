@@ -15,16 +15,25 @@ Default: **HOLD** until money path unblocked (0.1/G9) or Overseer names a
 non-money singular bet. Do not default-reopen M7. O.8 and #98 plane are on main.
 
 If a **product PR is open**:
-- CI green + mergeable → **squash-merge** (auto_merge), then LEARN / advance STATE NEXT.
+- CI green + mergeable → **squash-merge** (auto_merge); set claim **free** in
+  merge/LEARN; advance STATE NEXT.
 - CI pending → poll once; if still pending, **noop** (next tick retries).
 - Never open a second product bet (G10 + `flywheel-claim.md`).
+
+### Claim / stall (`WORKFLOW_HYGIENE` §7–§9 · `plane_stock` v2)
+- Taking claim → building **requires** real `branch:` and a **product PR same cycle**.
+- If `stall.claim_stale_building` → free claim with reason **or** open product PR now.
+- Architect map-only commits **do not** clear stall; implement code + PR required.
+- Backup tick: if tip already has this `bet_id` shipped →
+  `{"status":"noop","reason":"primary_shipped_same_bet"}` — no dual PR.
 
 ### Idle-true gate (`WORKFLOW_HYGIENE.md` §1 · §4)
 If **claim free** + **no open product PR** + Overseer **HOLD** / `restart=false`:
 - Exit `{"status":"noop","reason":"idle_true"}` — **do not invent product NEXT**.
 - Do not open tip-restock docs PRs (support agents own that; rule §2 caps one hygiene PR/epoch).
-- Product SELECT/BUILD only when: (a) Phase **0.1 / G9** unblocked (RPC + facilitator +
-  funded test wallet), **or** (b) Overseer names an **explicit non-money singular bet**.
+- Product SELECT/BUILD only when: (a) money path agent-clearable (defaults/probes;
+  MIND ladder — unset env alone is not a block), **or** (b) Overseer names an
+  **explicit non-money singular bet**.
 - More mesh / VAAT / track charters are **not** product NEXT.
 
 ### WINDOWS PWSH SHELL SAFETY

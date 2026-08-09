@@ -91,20 +91,21 @@ ready **or** Overseer names an explicit non-money singular bet
 | Artifact | Path |
 |----------|------|
 | Charter | `docs/program/ECOSYSTEM_ADVANCE.md` |
+| Strategy eval + plan | `docs/program/ecosystem/STRATEGY_EVAL_AND_PLAN.md` (posture F) |
 | Bus | `docs/program/ecosystem/BUS.md` |
 | Conferral | `docs/program/ecosystem/OVERSEER_CONFERRAL.md` |
 | Mesh Runner | `TRACK_MESH_RUNNER.md` + `veritas/ecosystem_cycle.py` |
 | Unblock | `TRACK_UNBLOCK.md` + `TRACK_UNBLOCK_TICK_PROMPT.md` |
 | Unblock probe | `veritas/unblock_probe.py` → `ecosystem/unblock/CHECKLIST.md` |
-| Workflow hygiene | `WORKFLOW_HYGIENE.md` |
-| Org loops v3 | `ORG_LOOPS.md` · `RESEARCHER.md` |
+| Workflow hygiene | `WORKFLOW_HYGIENE.md` (§7–§9 stall + free-on-merge) |
+| Org loops | `ORG_LOOPS.md` **v5** · `RESEARCHER.md` |
 | Block board | `veritas/block_board.py` · `veritas/researcher.py` |
 | Plane money | `veritas/agent_money.py` (limited supply) |
 | Plane visa | `veritas/agent_identity.py` |
 | Agent economy | `veritas/agent_economy.py` |
 
 ```
-PROPERTY: cooperative track plane + mesh kernel; Unblock-only when money blocked; no dual product NEXT; no fake settlement
-EVIDENCE LEVEL: L0 (direction) + L1 (plane money/visa/cycle/probe tests)
-NOT PROVEN: billion-dollar EV; product on-chain settle; G10–G12 closed
+PROPERTY: cooperative track plane + mesh kernel; Unblock when probe fails; no dual product NEXT; no fake settlement; org v5 stall clocks
+EVIDENCE LEVEL: L0 (direction) + L1 (plane money/visa/cycle/probe/stock tests)
+NOT PROVEN: billion-dollar EV; mainnet; unsolicited; G10–G12 closed
 ```

@@ -2,10 +2,12 @@
 
 Run: ``python -m veritas.plane_stock``
 
-Prints JSON: tip, claim, open PRs (via ``gh`` if available), RPC probe bits.
+Prints JSON: tip, claim (incl. bet/branch), open PRs (via ``gh`` if available),
+stall signals for continuous org v5, RPC probe bits.
+
 Agents should stock from this instead of divergent memory / partial ``gh`` calls.
 
-Does not invent settlement. Does not open PRs.
+Does not invent settlement. Does not open PRs. Does not free the claim file.
 """
 
 from __future__ import annotations
@@ -44,15 +46,50 @@ def _git_tip() -> dict[str, Any]:
     return {"sha": sha, "subject": subj.splitlines()[-1] if subj else ""}
 
 
+def _field(text: str, key: str) -> str | None:
+    """Parse ``- **key:** value`` lines from flywheel-claim.md."""
+    m = re.search(
+        rf"^\s*-\s*\*\*{re.escape(key)}:\*\*\s*(.+?)\s*$",
+        text,
+        re.MULTILINE | re.IGNORECASE,
+    )
+    if not m:
+        return None
+    val = m.group(1).strip()
+    if val.startswith("(") and val.endswith(")"):
+        # e.g. (none) / (pending — …)
+        inner = val[1:-1].strip().lower()
+        if inner == "none" or inner.startswith("pending"):
+            return None
+    if val.lower() in {"(none)", "none", "—", "-"}:
+        return None
+    return val
+
+
 def _claim(path: Path) -> dict[str, Any]:
     if not path.is_file():
-        return {"status": "unknown", "path": str(path)}
+        return {
+            "status": "unknown",
+            "path": str(path),
+            "bet_id": None,
+            "branch": None,
+            "pr": None,
+            "updated": None,
+        }
     text = path.read_text(encoding="utf-8")
     status = "unknown"
     m = re.search(r"\*\*status:\*\*\s*(\w+)", text)
     if m:
         status = m.group(1)
-    return {"status": status, "path": str(path)}
+    pr_raw = _field(text, "pr")
+    return {
+        "status": status,
+        "path": str(path),
+        "bet_id": _field(text, "bet_id"),
+        "branch": _field(text, "branch"),
+        "pr": pr_raw,
+        "updated": _field(text, "updated"),
+    }
 
 
 def _open_prs() -> dict[str, Any]:
@@ -106,12 +143,48 @@ def _open_prs() -> dict[str, Any]:
     return {"ok": True, "error": None, "product": product, "docs": docs, "all": rows}
 
 
+def _stall_signals(claim: dict[str, Any], prs: dict[str, Any]) -> dict[str, Any]:
+    """Continuous-org v5: detect claim theater without product surface.
+
+    Does not free the claim — reports only. Conductor/Flywheel act on signals.
+    """
+    status = claim.get("status")
+    product = list(prs.get("product") or [])
+    docs = list(prs.get("docs") or [])
+    building = status == "building"
+    has_product_pr = bool(product)
+    branch = claim.get("branch")
+    pr_field = claim.get("pr")
+    # Stall: holding the claim slot without a product PR (branch-only maps count
+    # as incomplete until a PR exists — Architect map without implement).
+    building_without_product_pr = building and not has_product_pr
+    # Soft stall: building + PR field empty and branch empty/pending
+    building_without_branch = building and not branch
+    claim_stale_building = building_without_product_pr
+    stall_action = None
+    if claim_stale_building:
+        stall_action = "free_or_ship"
+    elif building and has_product_pr:
+        stall_action = "poll_ci_or_merge"
+    return {
+        "building_without_product_pr": building_without_product_pr,
+        "building_without_branch": building_without_branch,
+        "claim_stale_building": claim_stale_building,
+        "hygiene_open": bool(docs),
+        "claim_has_pr_url": bool(pr_field),
+        "stall_action": stall_action,
+        # Conductor: >2 empty polls with this true → free or ship same tick
+        "stall_clock_active": claim_stale_building,
+    }
+
+
 def stock(repo_root: Path | None = None) -> dict[str, Any]:
     root = repo_root or Path.cwd()
     claim_path = root / "docs" / "program" / "flywheel-claim.md"
     tip = _git_tip()
     claim = _claim(claim_path)
     prs = _open_prs()
+    stall = _stall_signals(claim, prs)
     rpc = os.environ.get("VERITAS_RPC_URL")
     fac = os.environ.get("VERITAS_FACILITATOR_URL") or os.environ.get(
         "X402_FACILITATOR_URL"
@@ -121,13 +194,14 @@ def stock(repo_root: Path | None = None) -> dict[str, Any]:
         "tip": tip,
         "claim": claim,
         "open_prs": prs,
+        "stall": stall,
         "env": {
             "VERITAS_RPC_URL": "set" if rpc else "unset (public testnet default available)",
             "facilitator": "set" if fac else "unset (public default available)",
         },
-        "idle_true_candidate": free_hold,
+        "idle_true_candidate": free_hold and not stall.get("claim_stale_building"),
         "not_x402_settlement": True,
-        "stock_protocol": "plane_stock_v1",
+        "stock_protocol": "plane_stock_v2",
     }
 
 

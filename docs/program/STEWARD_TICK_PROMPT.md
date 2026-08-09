@@ -15,12 +15,16 @@ No bare head/grep/tail/find. Truncate:
 `2>&1 | Out-String -Stream | Select-Object -First 80`.
 
 ### Mission
-0. **Idle-true gate** (`WORKFLOW_HYGIENE.md` §1–2): if claim **free** + no open
-   **product** PR + Overseer **HOLD**/`restart=false` → set **noop_coherent**,
-   optionally rewrite **own** CURRENT in-place **without opening a PR**, and
-   **stop**. Do not open tip-restock PRs. If a hygiene PR already exists this
-   tip epoch, do not open another.
+0. **Idle-true gate** (`WORKFLOW_HYGIENE.md` §1–2 · `ORG_LOOPS.md`): if claim
+   **free** + no open **product** PR + Overseer **HOLD**/`restart=false` → set
+   **noop_coherent**, optionally rewrite **own** CURRENT in-place **without
+   opening a PR**, and **stop**. Do not open tip-restock PRs. Read
+   `researcher/inbox/steward-*.md` if present (Researcher may have unblocked you).
 1. Stock truth from tools: `git fetch`, `origin/main` log, open PRs, dirty tree.
+   If blocked on a real process wall, post once via
+   `python -c "from veritas.block_board import BlockBoard; b=BlockBoard(); print(b.post('steward','title','detail',kind='cohesion',severity=1).block_id); b.close()"`
+   — do not spam duplicate titles.
+
 2. Read all CURRENT cards + **conductor/CONFERRAL.md** + TRAJECTORY + STATE NEXT
    + cycles index + IDEA_BUS if present.
 3. Find **contradictions** (e.g. card says #18 blocked while main has retention).

@@ -14,15 +14,15 @@ No bare head/grep/tail/find. Truncate with Select-Object -First N.
 
 ### Mission
 1. Stock: `git fetch`, `origin/main`, open PRs, dirty tree, cycle files.
-2. **Idle-true / hygiene** (`WORKFLOW_HYGIENE.md`): if claim free + no product PR
-   + Overseer HOLD → **restart=false**, merge only green **product** PRs if any,
-   **do not** open tip-restock docs PRs; do not dual steward restock. Prefer
-   true idle. At most **one** hygiene PR per tip epoch (and only if slot empty).
+2. **Idle-true / hygiene** (`WORKFLOW_HYGIENE.md` · `ORG_LOOPS.md`): if claim free
+   + no product PR + Overseer HOLD → **restart=false**, merge only green
+   **product** PRs if any, **do not** open tip-restock docs PRs. Prefer true idle.
+   At most **one** hygiene PR per tip epoch. Read `researcher/inbox/conductor-*.md`.
 3. Confer — read (honor Overseer directives unless git/gh contradicts):
    - **`overseer/CURRENT.md`** (quality + vision + strategy gate — primary)
    - `steward/CURRENT.md`
    - `scout/IDEA_BUS.md` (if Overseer confer_scout or patterns useful)
-   - `WORKFLOW_HYGIENE.md` + `ecosystem/unblock/CHECKLIST.md` if money blocked
+   - `WORKFLOW_HYGIENE.md` + `ORG_LOOPS.md` + `ecosystem/unblock/CHECKLIST.md`
    - `STATE.md` NEXT + `GOVERNING.md` / `INNOVATION_LOOP.md` goals
    - latest `cycles/*`
 4. Write `conductor/TRAJECTORY.md` (vision + phase + primary bet + parked).

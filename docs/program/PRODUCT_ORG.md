@@ -77,10 +77,13 @@ Outrank only for security/money-path severity (Overseer writes why).
 | **T1 Gate** | Overseer | 1 instance; top-tier; may call Idea |
 | **T1b Lean/QA** | **Pruner** | 1 instance; aggressive bloat denial + battery/E2E; **ship veto** |
 | **T1c Self-improve** | **Optimizer** | Every **5 product cycles** forever; edits org/cadence/workflows (Overseer veto thrash) |
-| **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart |
+| **T1.5 Unblock** | **Researcher**×n | Autonomous block board; solve/escalate; report inbox — **scale fan-out** |
+| **T2 Orchestrate** | Conductor | 1 instance; owns merge+restart (fastest timer) |
 | **T3 Build** | Flywheel **or** Implement×**n** | **1 product bet**; N workers share one claim |
-| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks**, **Unblock** | Parallel OK when not idle-true; tracks may run plane substrate offline; **no dual product NEXT**; hygiene: at most **one** tip-restock PR per epoch |
-| **T5 Burst** | continuous / pulse | **One** continuous/forever at a time (no dual — Access Denied budget race) |
+| **T4 Support** | Steward, Scout, **Git Agent**, **Ecosystem tracks**, **Unblock** | Parallel OK when not idle-true; **no dual product NEXT**; one hygiene PR/epoch |
+| **T5 Burst** | continuous / pulse | **One** continuous/forever at a time |
+
+**7 watchers + layers:** see [`ORG_LOOPS.md`](ORG_LOOPS.md).
 
 **Scale agents by fan-out of *support, audit, track research, and implementer workers*, never by dual product NEXT.**  
 **Idle truly:** free claim + no product PR + HOLD → support **noop** (no restock PR thrash).  
@@ -153,23 +156,24 @@ Measured work vs interval. Critical path = **merge lag + restart lag + build**.
 
 | Role | Work p95 | Interval | Role in latency |
 |------|----------|----------|-----------------|
-| **Overseer** | ~2.5m | **8m** | Strategy gate; thrash catch |
-| **Pruner** | ~3–8m | **10m** | Bloat denial + battery/E2E; pre-ship veto |
-| **Conductor** | ~2m + build | **12m** | Merge + restart (primary lever) |
-| **Steward** | ~6m | **15m** | Cohesion; lags Overseer slightly |
-| **Flywheel** | 10–40m cycle | **20m** | Backup single-builder cycle |
-| **Scout** | ~3m | **25m** | Idea fuel for vision |
-| **Implement×n** | on demand | workflow | N workers for large bets (not a timer) |
+| **Conductor** | ~2m + merge | **8m** | Merge critical path |
+| **Overseer** | ~2.5m | **10m** | Strategy gate; thrash catch |
+| **Researcher** | ~3–10m | **12m** | Clear others' blocks (scale) |
+| **Pruner** | ~3–8m | **12m** | ship_ok veto |
+| **Scout** | ~3m | **15m** | Idea fuel + block seeds |
+| **Steward** | ~4m | **20m** | Cohesion; anti-thrash lag |
+| **Flywheel** | 10–40m | **30m** | Backup builder only |
+| **Implement×n** | on demand | workflow | N workers (exponential build) |
 
 ### Progress-tree latency (target)
 
 | Event | Target worst-case |
 |-------|-------------------|
-| Green product PR → merged | ≤ **12m** (Conductor) |
-| Merge → cards coherent | ≤ **15m** (Steward) |
-| Idle queue → build kick | ≤ **12m** (Conductor) |
-| Vision thin → Idea harvest | ≤ **25m** (Scout) |
-| Full flywheel ship | ≤ **1 cycle** (~20–45m wall) |
+| Green product PR → merged | ≤ **8m** (Conductor) |
+| Block posted → claimed | ≤ **12m** (Researcher) |
+| Merge → cards coherent | ≤ **20m** (Steward) |
+| Idle → true noop | immediate (hygiene) |
+| Vision thin → Idea harvest | ≤ **15m** (Scout) |
 
 ### Anti-thrash
 

@@ -1,6 +1,6 @@
 # Unblock CHECKLIST (living — update in place)
 
-**Updated:** 2026-08-09T00:44Z by `python -m veritas.unblock_probe`  
+**Updated:** 2026-08-09T01:03Z by `python -m veritas.unblock_probe`
 **Rule:** Do **not** open a docs PR just to rewrite this file unless a required
 row flips with new evidence. Product settle remains **0** until 0.1 dogfood.
 

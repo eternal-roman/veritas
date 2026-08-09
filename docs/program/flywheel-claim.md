@@ -1,10 +1,10 @@
 # flywheel-claim
 
 - **bet_id:** phase-0.1-R
-- **branch:** (pending — flywheel/implement)
+- **branch:** feat/phase-0.1-R-routine-money-loop
 - **holder:** agent-commerce-flywheel
 - **status:** building
-- **updated:** 2026-08-09T02:55:00Z
+- **updated:** 2026-08-09T03:15:00Z
 - **last_merged:** product **#119** @ `fb3b0d5` (unblock defaults + n=2 settle artifacts); docs #118 @ `bc0bba3` MIND; plane #117 @ `a3a52c3`; docs #116 @ `42a4378`; docs #115 @ `270fb42`; docs #114 @ `efd5dfd`; product **#112** @ `367a3aa` first testnet settle; plane #111 @ `4aa6c61`
 - **settlements:** **2 testnet** self-dogfood on tip · mainnet **0** · unsolicited **0**
 - **next_micro:** **Phase 0.1-R — routine money loop** (Overseer-named singular; claim held). Scope: agent-clearable settle → chain reconcile (testnet defaults ok); pin tests so defaults/UA cannot regress; exit-honest evidence; mainnet never defaulted. Non-goals: mainnet, PyPI, TLS, M7, N0, dual product. Do not dual-kick second continuous.

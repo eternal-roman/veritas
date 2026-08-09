@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.5.** This file
+**The normative source is `veritas/constitution.py`, version 2.6.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -34,7 +34,7 @@ stays single-sourced in `veritas/__init__.py` (article A8).
 
 ## Service articles
 
-These lift the eight invariants of `AGENTS.md` into citable form. Each was
+These lift the load-bearing invariants of `AGENTS.md` into citable form. Each was
 already CI-gated or tested; the constitution adds a stable id another agent
 can reference in an attestation or a dispute.
 
@@ -385,12 +385,14 @@ Witness: `tests/test_known_gaps.py::test_known_gap_survival_reports_are_bounded_
 
 ### G12 — Warranty bonds are commitments, not escrow (open, article A27)
 
-Warranty bonds are signed commitments, not escrowed value: no settlement has
-ever run from this codebase, so a fired challenge indicates a forfeit the
-payment rails cannot yet enforce, and the unomittable-negative-reputation
-property of forfeits is designed, not real. The wire says so on every warranty
+Warranty bonds are signed commitments, not escrowed value. Settlement has run
+only in operator-run testnet arcs (evidence: `docs/program/fable/settlement/`),
+and no escrow or forfeit path exists on any network, so a fired challenge
+indicates a forfeit the payment rails cannot yet enforce, and the
+unomittable-negative-reputation property of forfeits is designed, not real.
+The wire says so on every warranty
 (`bond_binding: signed_commitment_not_escrow`). Removal requires escrowed
-bonds over proven settlement (W1, gated on ROADMAP Phase 0).
+bonds over routine proven settlement (W1).
 
 Witness: `tests/test_known_gaps.py::test_known_gap_warranty_bonds_are_commitments_not_escrow`.
 

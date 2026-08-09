@@ -2,9 +2,10 @@
 
 - **bet_id:** PS9-buyer-journey-stage1-status
 - **branch:** feat/ps9-buyer-journey-stage1-status
+- **pr:** https://github.com/eternal-roman/veritas/pull/136
 - **holder:** flywheel
 - **status:** building
-- **updated:** 2026-08-09T08:30:00Z
+- **updated:** 2026-08-09T08:40:00Z
 - **last_merged:** product **#135** @ `816a465` composed 0.1-R n=3 + existence money_loop count; product **#134** VISION/hooks; product **#133** evolver journal; product **#131** @ `ac68cc9` evolver; product **#129** existence scorecard; product **#127** dogfood; product **#122** Phase 0.1-R
 - **settlements:** counts live at STATE header + `fable/settlement/` (n includes the first live composed 0.1-R green) · mainnet **0** · unsolicited **0**
 - **next_micro:** Building PS9 A2A journey surfaces from evolver worklist — `veritas-buy` (discover→diligence→unpaid pay-surface probe; never settles) + `veritas-agent status` Stage-1 readiness + block_board catalog seed one-shot (no reseed thrash). Not PyPI/TLS/mainnet invent; not commercial-grade retrieval; not dual NEXT.

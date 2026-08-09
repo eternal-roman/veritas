@@ -9,7 +9,9 @@ optimising for** and **who may steer**.
 charter. The unblock ladder there is binding — "blocked" requires a dated
 failing probe, and the human is the last rung, reached only with the
 agent-executable 90% already prepared. Conflicts resolve GUARDIAN → MIND →
-these loops → role card.
+these loops → role card. (That is the **conflict-precedence** order; §3's
+"GOVERNING loops → GUARDIAN → Overseer" is the **goal-setting** order — who
+states goals vs. who wins a contradiction. Different axes; both hold.)
 
 ---
 
@@ -20,7 +22,8 @@ personality, not busyness.
 
 | Loop document | Governs |
 |---------------|---------|
-| [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | North star, scorecard A–F, one-cycle atom, what “better” means |
+| [`../../VISION.md`](../../VISION.md) | The single north-star statement, interfaces, roadblock ledger (L0) |
+| [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | Scorecard A–F, one-cycle atom, what “better” means |
 | [`STATE.md`](STATE.md) | Single NEXT ACTION (executable objective) |
 | [`CONTINUOUS.md`](CONTINUOUS.md) | Cadence, roles, latency model (v5 stall clocks) |
 | [`ORG_LOOPS.md`](ORG_LOOPS.md) | 7 watchers, stock protocol, handoff matrix |
@@ -38,16 +41,12 @@ personality, not busyness.
 
 ### North star (L0 aspiration — never claim proven)
 
-Build substrate for a **multi-billion-dollar agent-to-agent commerce** business
-model that works with **scalable momentum**:
-
-1. **Agent independence** — buy/sell without a human on the per-request path.  
-2. **Hyper-scalable commerce** — payment, delivery, ledger, ops under load, replay, multi-instance.  
-3. **Product lifecycle enrichment** — each outcome improves trust, discovery, and the next agent’s decision.
-
-The dollar figure is **direction**, not a metric. Only measured numbers ship
-(tests, dogfood, settlement hashes, request volume). Claiming “hub ready” or
-“revenue-ready” without evidence is a **gate failure**.
+The full statement lives in exactly one place: [`VISION.md`](../../VISION.md)
+§1 (substrate for agent-to-agent commerce; three pillars in dependency
+order; the dollar figure is direction, not a metric). This section is a
+pointer by design — four diverging copies of the north star is the defect
+class MIND §5 exists to kill. Success-word claims without evidence remain a
+**gate failure** (the locked gate).
 
 ### Scorecard (how loops measure progress)
 
@@ -150,6 +149,7 @@ Together they advance the **broader vision** without bypassing quality gates.
 | **Pruner** | Deny bloat; QA; E2E; ship veto | Setting NEXT; strategy cosplay |
 | **Steward** | Card/STATE claim cohesion | Product features |
 | **Scout (Idea)** | Pattern harvest for vision fuel | Approvals, NEXT, merges |
+| **Architect** | Living seam map ([`ARCHITECTURE.md`](ARCHITECTURE.md)); builder directives while a claim builds | Implementation, merges, `ship_ok`, strategy |
 
 ---
 
@@ -167,19 +167,21 @@ verdicts it.
 
 ---
 
-## 7. Always restated landmass
+## 7. Landmass (by pointer — MIND §5)
 
-Point at evidence; do not let this section rot (MIND §5). Last verified
-2026-08-09: on-chain settlements **1** (testnet Base Sepolia, chain-confirmed
-— `fable/settlement/`); mainnet **0**; external buyers **0**; not on PyPI; no
-public host or registry listing; product not yet notary-grade; multi-instance
-gaps open. G9 reconcile has run once against a real chain (confirmed 1) but
-routine reconciliation is not operational. L0 hub aspiration ≠ L1 product.
+This section restates no counts: a prior revision said "settlements 1" while
+STATE said 2 — the exact rot the pointer rule prevents. Measured counts live
+in the `STATE.md` header; settlement evidence in `fable/settlement/`. What
+stays qualitatively true until its register says otherwise: no external
+buyer has ever paid; not on PyPI; no public host or registry listing;
+product not yet notary-grade; multi-instance gaps open; G9 reconcile is not
+yet routine. L0 aspiration ≠ L1 product.
 
 ---
 
 ## Related
 
+- [`VISION.md`](../../VISION.md) — the single north-star statement  
 - [`MIND.md`](MIND.md) — shared operating core; unblock ladder  
 - [`fable/REFOUNDING.md`](fable/REFOUNDING.md) — substrate-as-product, staged path to contact  
 - [`PRODUCT_ORG.md`](PRODUCT_ORG.md) — eras, timing, scale, M7→N0 sequence  

@@ -1,4 +1,4 @@
-# Steward 15-minute tick prompt
+# Steward 30-minute tick prompt (interval source: ORG_LOOPS v5)
 
 **Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
 

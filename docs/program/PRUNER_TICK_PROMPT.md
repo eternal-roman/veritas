@@ -2,7 +2,7 @@
 
 **Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
 
-Charter: `docs/program/PRUNER.md` · Rules: `GUARDIAN.md` · Org: `ORG_LOOPS.md` v4 ·
+Charter: `docs/program/PRUNER.md` · Rules: `GUARDIAN.md` · Org: `ORG_LOOPS.md` v5 ·
 Hygiene: `WORKFLOW_HYGIENE.md` · Goals: `GOVERNING.md`
 
 ---

@@ -5,8 +5,8 @@
 **Product org / sequencing / timing:** [`PRODUCT_ORG.md`](PRODUCT_ORG.md).  
 **Autonomous (no human gates):** [`AUTONOMOUS.md`](AUTONOMOUS.md).
 
-Primary objective: **agent-to-agent autonomous commerce** substrate with
-scalable momentum (L0 multi-billion *direction* — never claim proven).
+Primary objective: [`VISION.md`](../../VISION.md) §1 — the single north-star
+statement (L0 *direction* — never claim proven; not restated here, MIND §5).
 
 ## Active cadence (v5 — continuous ship clocks)
 
@@ -141,16 +141,17 @@ resume; do **not** start a second continuous in parallel.
 | Flywheel | [`INNOVATION_LOOP.md`](INNOVATION_LOOP.md) | [`FLYWHEEL_TICK_PROMPT.md`](FLYWHEEL_TICK_PROMPT.md) |
 | Implement×n | [`IMPLEMENTERS.md`](IMPLEMENTERS.md) | workflow only |
 | Steward | [`STEWARD.md`](STEWARD.md) | [`STEWARD_TICK_PROMPT.md`](STEWARD_TICK_PROMPT.md) |
-| Scout | Idea fuel | [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) |
+| Scout | [`SCOUT.md`](SCOUT.md) | [`SCOUT_TICK_PROMPT.md`](SCOUT_TICK_PROMPT.md) |
+| Architect | [`ARCHITECT.md`](ARCHITECT.md) | on demand — seam map + builder directives; no timer (L4) |
 
 ---
 
 ## Era (product)
 
 See [`PRODUCT_ORG.md`](PRODUCT_ORG.md). Post-**#122** Phase 0.1-R: routine
-settle→reconcile on tip. Settlements **2 testnet** self-dogfood · mainnet **0** ·
-unsolicited **0**. Product invent **HOLD** until Overseer names singular or Stage-1
-human unblocks public existence. Plane economy is T4 (not x402).
+settle→reconcile on tip. Settlement counts: STATE header (evidence
+`fable/settlement/`). Product invent **HOLD** until Overseer names singular
+or Stage-1 human unblocks public existence. Plane economy is T4 (not x402).
 
 Strategy (L0 judgment): [`ecosystem/STRATEGY_EVAL_AND_PLAN.md`](ecosystem/STRATEGY_EVAL_AND_PLAN.md)
 posture F — existence-first + D0 wedge; do not invent settle.

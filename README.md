@@ -17,10 +17,10 @@ machine-native over [x402](https://x402.org), so an agent can buy a single
 query without an account, an API key, or a human.
 
 **Status: working software, unproven economics.** The invariants below are
-tested and CI-gated. Exactly one payment has settled on-chain — a testnet
-end-to-end run against the real facilitator, chain-confirmed
-(`docs/program/fable/settlement/`); no buyer we did not operate has ever
-paid, and retrieval is snippet-grade today. All of this is stated plainly in
+tested and CI-gated. Payments have settled on-chain only in operator-run
+testnet runs against the real facilitator, each chain-confirmed — count and
+evidence live in `docs/program/fable/settlement/`; no buyer we did not
+operate has ever paid, and retrieval is snippet-grade today. All of this is stated plainly in
 [Known limitations](#known-limitations) and sequenced in [ROADMAP.md](ROADMAP.md)
 — we would rather you find that here than discover it later.
 
@@ -220,6 +220,7 @@ If any of these is invalid the service reports `mode: misconfigured` and returns
 | `GET /v1/receipts/{id}` | Retrieve a stored custody receipt after the call |
 | `GET /v1/trust` | Behaviour-derived trust score (`UNPROVEN` until enough data) |
 | `GET /v1/identity` | ERC-8004 style identity document |
+| `GET /v1/hooks` | Integration registry: every surface (HTTP, MCP, CLIs, headers, stores); states that no push delivery exists |
 | `GET /.well-known/x402` | Discovery + payment requirements |
 
 ## Testing

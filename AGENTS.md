@@ -109,7 +109,8 @@ package — CI's package job asserts this.
   shared operating core: the unblock ladder ("blocked" needs a dated failing
   probe; the human is the last rung, reached with the agent-executable 90%
   already prepared), the cooperation contract, and the anti-staleness rule
-  for facts.
+  for facts. The single north-star statement is `VISION.md` (root) — program
+  docs point to it and never restate it.
 - Docs state limitations plainly (see README "Known limitations", STATUS.md).
   Keep that register: narrow claims, evidence cited.
 - **The venue constitution is enforcement-linked.** `veritas/constitution.py`
@@ -127,6 +128,10 @@ package — CI's package job asserts this.
 - Norms: `GET /v1/constitution` — the venue constitution, each article either
   pointing at its enforcement artifact or marked aspirational (see
   `CONSTITUTION.md` and `ECOSYSTEM.md`).
+- Hooks: `GET /v1/hooks` — the registered integration surface (A28): every
+  HTTP route, the MCP tools, CLI exit-code contracts, payment/session
+  headers, durable signal stores — and the stated absence of push delivery
+  (everything is pull). Sync-tested against the live app in both directions.
 - Research: `POST /v1/research` — returns 402 with an `accepts` array in live
   mode; retry with an `X-PAYMENT` header (base64 x402 payload).
 - Verification: `POST /v1/verify` re-checks any published `content_hash`;

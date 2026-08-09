@@ -2,7 +2,7 @@
 
 **Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
 
-Charter: seedlings only · Rules: `GUARDIAN.md` · Plane: `GOVERNING.md` · `PRODUCT_ORG.md`
+Charter: [`SCOUT.md`](SCOUT.md) · Rules: `GUARDIAN.md` · Plane: `GOVERNING.md` · `PRODUCT_ORG.md`
 
 ---
 

@@ -1,4 +1,4 @@
-# Conductor 12-minute tick prompt
+# Conductor 6-minute tick prompt (interval source: ORG_LOOPS v5)
 
 **Load [`MIND.md`](MIND.md) first** — the unblock ladder and cooperation contract bind this tick.
 

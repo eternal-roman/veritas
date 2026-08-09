@@ -87,8 +87,10 @@ gate failure as ship-blocker.
 ## Landmass (always restate after a win)
 
 After every cycle, name what still blocks a hostile agent in the wild. Until
-proven otherwise, that list includes: **zero on-chain settlements**, snippet
-or unbuilt notary product, no public discovery host, multi-instance gaps, G9.
+proven otherwise, that list includes: no unsolicited buyer has ever paid
+(settlement counts live at STATE header / `fable/settlement/` — a count
+restated here went stale), snippet or unbuilt notary product, no public
+discovery host, multi-instance gaps, G9.
 
 ## Relationship to continuous operation
 

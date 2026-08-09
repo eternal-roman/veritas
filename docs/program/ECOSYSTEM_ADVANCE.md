@@ -2,8 +2,9 @@
 
 **Status:** active plane (T4 research / substrate tracks) — **v2 mesh optimized**.  
 **Does not dual product NEXT.** Overseer remains singular strategy gate.  
-**Does not invent on-chain x402 settlement.** Product settlements remain **0**
-until Phase 0.1 is proven. Local **plane money** is explicitly *not* that.
+**Does not invent on-chain x402 settlement.** Product settlement counts live
+at their evidence (STATE header, `fable/settlement/`) — never restated here.
+Local **plane money** is explicitly *not* that.
 
 ## Discovery (what is missing for A2A commerce scale)
 

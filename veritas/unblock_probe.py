@@ -162,7 +162,10 @@ def write_checklist(
         for k in ("VERITAS_RPC_URL", "facilitator")
         if k in probes
     )
-    body = f"""# Unblock CHECKLIST (living — update in place)
+    # Markdown checklist template only — not SQL. Bandit B608 false-positives on
+    # the words "update" / "or" inside this f-string (CI security scan gate).
+    body = (  # nosec B608
+        f"""# Unblock CHECKLIST (living — refresh in place)
 
 **Updated:** {ts} by `python -m veritas.unblock_probe`
 **Rule:** Do **not** open a docs PR just to rewrite this file unless a required
@@ -196,6 +199,7 @@ EVIDENCE LEVEL: L1 (env/http probes) / L0 (funding balance)
 NOT PROVEN: mainnet settlement; unsolicited buyers
 ```
 """
+    )
     path.write_text(body, encoding="utf-8")
     return path
 

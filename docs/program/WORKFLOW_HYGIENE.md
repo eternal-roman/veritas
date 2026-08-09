@@ -89,6 +89,22 @@ when dual runs race the same budget journal.
 | Retry continuous only after budget path is writable | Resume both failed runs “to be safe” |
 | Prefer single pulse for interactive | Stack forever workflows without operator ack |
 
+### 6. Stock honesty + early-exit (latency without thrash)
+
+Every support tick **starts** with:
+
+```bash
+git fetch origin
+python -m veritas.plane_stock
+```
+
+| Rule | Detail |
+|------|--------|
+| Never invent empty open-PR list | If `open_prs.ok` is false → report `gh_failed`, retry once |
+| Early-exit noop | free + no product PR + HOLD + no green merge target → ≤15 tools, `noop_*` |
+| Merge green docs/plane | Conductor may merge green non-product PRs without counting as dual product NEXT |
+| Tip epoch for restock | Starts on **product or plane-code** merge, not every docs restock |
+
 ---
 
 ## Agent-specific enforcement
@@ -109,20 +125,23 @@ when dual runs race the same budget journal.
 ## Self-check (every support tick)
 
 ```
+[ ] ran plane_stock? (open_prs.ok true?)
 [ ] claim free?
 [ ] product PRs empty?
 [ ] Overseer HOLD / restart=false?
-→ if yes to all three: noop; do not open a docs PR
+→ if yes to free+empty product+HOLD: noop; do not open a restock docs PR
+[ ] green PR open (docs or product)?
+→ Conductor merge one; others do not open competing restock
 [ ] hygiene PR already open this tip epoch?
 → if yes: do not open another
-[ ] RPC unset and money path is the bottleneck?
-→ Unblock checklist/probe only; no new mesh product features
-[ ] dual continuous running?
-→ kill one; never start a second
+[ ] RPC unset and money bottleneck?
+→ Unblock / Researcher only
+[ ] dual continuous?
+→ kill one
 ```
 
 ```
-PROPERTY: idle free+HOLD means no restock PR thrash; one hygiene PR max; Unblock when money blocked; product NEXT only if unblocked; single continuous
-EVIDENCE LEVEL: L1 (process law)
-NOT PROVEN: agents always obey without host enforcement
+PROPERTY: idle free+HOLD means no restock thrash; stock honesty; Unblock when money blocked; single continuous
+EVIDENCE LEVEL: L1 (process law + plane_stock)
+NOT PROVEN: agents always obey without host re-arm to ORG_LOOPS v4
 ```

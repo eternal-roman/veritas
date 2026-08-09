@@ -38,9 +38,11 @@ ACCESS_LOGGER = "veritas.access"
 METRIC_HELP: dict[str, tuple[str, str]] = {
     "veritas_requests_total": ("counter", "HTTP requests by path and response status."),
     "veritas_research_total": ("counter", "Research requests by outcome status."),
+    "veritas_notarize_total": ("counter", "Notarize requests by outcome status."),
     "veritas_research_shed_total": (
         "counter",
-        "Research requests refused because every concurrency slot was in use.",
+        "Requests refused because every concurrency slot was in use "
+        "(research, notarize and verify share the slot pool).",
     ),
     "veritas_rate_limited_total": ("counter", "Requests refused by the per-caller rate limit."),
     "veritas_request_too_large_total": ("counter", "Requests refused for exceeding the body cap."),

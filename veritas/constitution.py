@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.5"
+CONSTITUTION_VERSION = "2.6"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -537,13 +537,15 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
         "article": "A27",
         "status": "open",
         "description": (
-            "Warranty bonds are signed commitments, not escrowed value: no "
-            "settlement has ever run from this codebase, so a fired challenge "
-            "indicates a forfeit the payment rails cannot yet enforce, and the "
+            "Warranty bonds are signed commitments, not escrowed value. "
+            "Settlement has run only in operator-run testnet arcs (evidence: "
+            "docs/program/fable/settlement/), and no escrow or forfeit path "
+            "exists on any network, so a fired challenge indicates a forfeit "
+            "the payment rails cannot yet enforce, and the "
             "unomittable-negative-reputation property of forfeits is designed, not "
             "real. The wire says so on every warranty (bond_binding: "
             "signed_commitment_not_escrow). Removal requires escrowed bonds over "
-            "proven settlement (W1, gated on ROADMAP Phase 0)."
+            "routine proven settlement (W1)."
         ),
         "witness_test": "tests/test_known_gaps.py::test_known_gap_warranty_bonds_are_commitments_not_escrow",
     },

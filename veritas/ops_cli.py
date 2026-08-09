@@ -287,7 +287,6 @@ def main(argv: list[str] | None = None) -> int:
         payload = reconcile_settlements_auto(candidates)
         payload["candidates"] = len(candidates)
         payload["settled_without_transaction"] = len(missing)
-        payload["chain_checked"] = bool(payload.get("chain_checked"))
     elif args.command == "existence":
         from pathlib import Path
 

@@ -566,6 +566,15 @@ class Ledger:
         costs = CostTable.from_env() if costs is None else costs
         financial = self.summary()
         usage = self.usage_summary(costs)
+        # Both sub-reports degrade to {"error": "ledger_unavailable"} when the
+        # store is unreachable; composing them blindly turned that structured
+        # answer into a KeyError traceback for the operator.
+        if "error" in financial or "error" in usage:
+            return {
+                "error": "ledger_unavailable",
+                "financial": financial,
+                "usage": usage,
+            }
 
         revenue_micros = 0
         unconvertible: list[str] = []

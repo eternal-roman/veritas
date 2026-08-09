@@ -206,10 +206,11 @@ these:
 
 ## Current state, honestly
 
-Structural invariants above are tested and green. One payment has settled
-on-chain: a testnet (Base Sepolia) end-to-end run against the real x402.org
-facilitator — tx recorded and chain-confirmed by `reconcile-chain`; evidence
-in `docs/program/fable/settlement/`. Not yet proven: mainnet settlement, any
-buyer we did not operate ourselves, sustained volume. Retrieval is
-snippet-grade and the package is not yet published to PyPI. See ROADMAP.md
-for the full evaluation and sequencing.
+Structural invariants above are tested and green. Payments have settled
+on-chain in operator-run testnet (Base Sepolia) arcs against the real
+x402.org facilitator, each chain-confirmed by `reconcile-chain` — the count
+and every transcript live at the `docs/program/STATE.md` header and
+`docs/program/fable/settlement/`, deliberately not restated here. Not yet
+proven: mainnet settlement, any buyer we did not operate ourselves, sustained
+volume. Retrieval is snippet-grade and the package is not yet published to
+PyPI. See ROADMAP.md for the full evaluation and sequencing.

@@ -7,7 +7,6 @@ when it fails.**
 [![CodeQL](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-420%20passing-brightgreen.svg)](tests/)
 [![x402](https://img.shields.io/badge/payments-x402-8A2BE2.svg)](https://x402.org)
 
 Every answer arrives with a hash-chained custody record the caller can verify
@@ -135,8 +134,9 @@ up` provisions its own config and wallet and starts serving.
   chain, and a differential test pins it against the engine on real output and
   on tampered variants. It reports what it does **not** attest: consistent
   records do not mean we ever contacted the URLs we name
-- **Hiding wallet commitments** so a broadcast offer does not leak the payout address
-- **Signed JIT Disposable Packets** with enforced expiry and verified chain linkage
+- **Prototype privacy pieces** (hiding wallet commitments, signed JIT
+  disposable packets) live in `veritas/autonomous/` with design notes under
+  `docs/design/` — experiments, not product surfaces
 
 ## Install
 
@@ -200,28 +200,43 @@ error reported in `retrieval.errors`.
 
 ## Live payments
 
+The configuration below is the one that has actually settled on-chain
+(operator-run, chain-confirmed; evidence in `docs/program/fable/settlement/`).
+Base Sepolia and the x402.org facilitator are also the shipped defaults, so
+only the first three lines are strictly required:
+
 ```bash
-export VERITAS_PAY_TO=0xYourWallet          # validated as a real EVM address
-export VERITAS_FACILITATOR=https://pay.openfacilitator.io   # unverified by us; see ROADMAP
+export VERITAS_PAY_TO=0xYourWallet              # validated as a real EVM address
 export VERITAS_REQUIRE_PAYMENT=true
-export VERITAS_NETWORK=eip155:8453
+export VERITAS_PUBLIC_URL=https://your.host     # 402 challenges name absolute URLs
+export VERITAS_NETWORK=eip155:84532             # Base Sepolia (default)
+export VERITAS_FACILITATOR=https://x402.org/facilitator   # default; the one we have settled through
 veritas-server
 ```
 
-If any of these is invalid the service reports `mode: misconfigured` and returns
-503 — it will not quietly serve paid research for free.
+Mainnet (`eip155:8453`) is a deliberate, unproven step: no mainnet settlement
+has ever run from this codebase, `veritas-agent` refuses `--paid` on mainnet
+without `--i-understand-this-is-real-money`, and you must choose a
+mainnet-capable facilitator yourself. If any variable is invalid the service
+reports `mode: misconfigured` and returns 503 — it will not quietly serve
+paid research for free.
 
 ## Endpoints
 
 | Endpoint | Purpose |
 |----------|---------|
 | `POST /v1/research` | Run research (402-gated in live mode) |
+| `POST /v1/notarize` | Paid notarization of a URL: observed body, custody, optional EIP-191 attestation |
 | `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`); legacy content+hash is non-independent arithmetic |
 | `GET /v1/receipts/{id}` | Retrieve a stored custody receipt after the call |
 | `GET /v1/trust` | Behaviour-derived trust score (`UNPROVEN` until enough data) |
+| `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Wire contract, registered error codes, venue norms |
 | `GET /v1/identity` | ERC-8004 style identity document |
-| `GET /v1/hooks` | Integration registry: every surface (HTTP, MCP, CLIs, headers, stores); states that no push delivery exists |
-| `GET /.well-known/x402` | Discovery + payment requirements |
+| `GET /v1/hooks` | Integration registry: **every** surface (HTTP, MCP tools, CLI exit codes, headers, stores); states that no push delivery exists |
+| `GET /.well-known/x402` | Discovery + payment requirements (links reach everything above) |
+
+The MCP route for local agents: `claude mcp add veritas -- veritas-mcp`
+(free-mode engine over stdio; paid access is the HTTP surface).
 
 ## Testing
 
@@ -238,11 +253,12 @@ Stated plainly, because a truth-telling service should not overstate itself:
 
 - **Retrieval quality is thin.** Wikipedia and Instant Answer snippets are not
   competitive with a paid search/extraction stack for general queries.
-- **On-chain settlement has happened exactly once, on testnet.** One
-  end-to-end run against the real facilitator settled and was
-  chain-confirmed (evidence: `docs/program/fable/settlement/`). Mainnet
-  settlement, repeat volume, and any buyer other than our own harness remain
-  unexercised; fail-closed paths stay the tested norm.
+- **On-chain settlement is operator-run testnet only.** Every settled run was
+  executed by us against the real x402.org facilitator and chain-confirmed —
+  count and evidence live in `docs/program/fable/settlement/` and the
+  `docs/program/STATE.md` header, never restated here. Mainnet settlement and
+  any buyer other than our own harness remain unexercised; fail-closed paths
+  stay the tested norm.
 - **Claims are extractive, not synthesised.** A "claim" is a grounded excerpt,
   not an answer composed across sources.
 - **The calibrator is untrained and unused.** It reports `passthrough_untrained`,
@@ -280,8 +296,9 @@ were removed:
   third-party URLs and a content hash, which reads as "this text appears at
   this URL". It did not. The corpus is now `veritas://fixture/*` and offline-only.
 
-See `LIVE_PAYMENTS.md`, `JIT_PACKET.md`, `ZK_WALLET.md`, `WORKFLOW.md`,
-`ANALYSIS.md`, and `AGENTS.md` (repo guide for agents and contributors).
+See `AGENTS.md` (repo guide for agents and contributors, including the field
+notes from live settlement contact) and `docs/design/` (design notes for the
+prototype pieces).
 
 ## Layout
 

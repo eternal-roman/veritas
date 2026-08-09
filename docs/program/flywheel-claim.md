@@ -1,14 +1,14 @@
 # flywheel-claim
 
-- **bet_id:** stage1-existence-probes
-- **branch:** feat/stage1-existence-probes
-- **pr:** https://github.com/eternal-roman/veritas/pull/141
-- **holder:** flywheel
-- **status:** building
-- **updated:** 2026-08-09T15:30:00Z
-- **last_merged:** docs **#140** @ `33cfecd` session-commerce n=4; product **#139** receipt_not_refetchable; docs **#138** journey; docs **#137** free-claim; product **#136** PS9; product **#135** 0.1-R n=3
-- **settlements:** counts live at STATE + `fable/settlement/` · testnet **4** · mainnet **0** · unsolicited **0**
-- **next_micro:** Building Stage-1 vision prep — existence v1 probes (PyPI JSON + optional public /health) + machine-checkable agent-prep/human runbook. Not invent money; not thrash #136/#140; does **not** publish to PyPI (human).
+- **bet_id:** (none)
+- **branch:** (none)
+- **pr:** (none)
+- **holder:** (none)
+- **status:** free
+- **updated:** 2026-08-09T18:00:00Z
+- **last_merged:** product **#141** stage1-existence-probes (existence v1 `--probe` + agent-prep runbook, merged with the #143 polish); docs **#144** constitution 2.6 G12-from-evidence; product **#143** review-driven cleanup/debloat + release pipeline (v0.9.1 GitHub release published, PyPI job gated on repo variable); docs **#142** notary arc; docs **#140** session commerce; product **#139** receipt_not_refetchable
+- **settlements:** counts live ONLY at STATE header + `fable/settlement/` · mainnet **0** · unsolicited **0**
+- **next_micro:** Claim **free** post-#141/#143/#144. Do not re-open the polish surfaces (#143), constitution wording (#144), or existence v1 (#141). Stage-1 human minutes unchanged (PyPI trusted publisher + `PYPI_TRUSTED_PUBLISHER=configured` variable · public TLS · mainnet pay-to); `veritas-ops existence --probe` now measures two of them.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.

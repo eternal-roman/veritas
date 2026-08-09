@@ -18,6 +18,7 @@ from typing import Any
 
 from veritas import __version__
 from veritas.chain_reconcile import DEFAULT_PUBLIC_RPC_URLS
+from veritas.payment_config import DEFAULT_FACILITATOR
 from veritas.safeurl import UnsafeUrlError, require_http_url
 
 # Load-bearing, not cosmetic (AGENTS.md field note 1): Cloudflare fronts both
@@ -29,9 +30,10 @@ USER_AGENT = f"veritas-unblock-probe/{__version__}"
 #: Pinned public endpoints probed when the env vars are unset. An unset
 #: variable is a hypothesis, not a block (docs/program/MIND.md §3): the probe
 #: answers "can this host reach the money-path counterparties", and both
-#: endpoints are public. Env vars always override.
+#: endpoints are public. Env vars always override. The facilitator default is
+#: imported from veritas.payment_config so the probe checks the same
+#: counterparty the money path defaults to — they diverged once.
 DEFAULT_TESTNET_RPC = DEFAULT_PUBLIC_RPC_URLS["eip155:84532"]
-DEFAULT_FACILITATOR = "https://x402.org/facilitator"
 
 
 def _probe_env(name: str) -> dict[str, Any]:
@@ -94,8 +96,14 @@ def _probe_rpc(url: str | None, timeout: float = 3.0) -> dict[str, Any]:
 
 def run_probes() -> dict[str, dict[str, Any]]:
     rpc_env = os.environ.get("VERITAS_RPC_URL")
-    fac_env = os.environ.get("VERITAS_FACILITATOR_URL") or os.environ.get(
-        "X402_FACILITATOR_URL"
+    # VERITAS_FACILITATOR is the name the money path actually reads
+    # (payment_config.from_env); the others are legacy aliases kept as
+    # fallbacks. Probing a name nobody reads reported falsehoods to a
+    # correctly configured operator.
+    fac_env = (
+        os.environ.get("VERITAS_FACILITATOR")
+        or os.environ.get("VERITAS_FACILITATOR_URL")
+        or os.environ.get("X402_FACILITATOR_URL")
     )
 
     rpc = _probe_rpc(rpc_env or DEFAULT_TESTNET_RPC)
@@ -117,9 +125,16 @@ def run_probes() -> dict[str, dict[str, Any]]:
     return {
         "VERITAS_RPC_URL": rpc,
         "facilitator": fac,
-        "wallet_key_configured": _probe_env("VERITAS_PRIVATE_KEY")
-        if os.environ.get("VERITAS_PRIVATE_KEY")
-        else _probe_env("VERITAS_BUYER_KEY"),
+        # BUYER_PRIVATE_KEY is what the settle paths read (money_loop,
+        # scripts/testnet_settlement.py); the VERITAS_* names are legacy.
+        "wallet_key_configured": next(
+            (
+                _probe_env(name)
+                for name in ("BUYER_PRIVATE_KEY", "VERITAS_PRIVATE_KEY", "VERITAS_BUYER_KEY")
+                if os.environ.get(name)
+            ),
+            _probe_env("BUYER_PRIVATE_KEY"),
+        ),
         # Funding cannot be proven without chain + address — leave honest,
         # but the path is permissionless: Circle faucet, 20 testnet USDC per
         # address per 2h, no account (proven 2026-08-09, fable/settlement/).

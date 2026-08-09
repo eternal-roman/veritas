@@ -238,10 +238,7 @@ def maybe_attest_record(record: Mapping[str, Any]) -> dict[str, Any] | None:
     observation is not discarded for attestation trouble (the product is the
     observation; signature is additive for N1.1).
     """
-    try:
-        signer = operator_signer_from_env()
-    except NotarySignError:
-        raise
+    signer = operator_signer_from_env()
     if signer is None:
         return None
     try:

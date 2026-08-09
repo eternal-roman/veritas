@@ -1,5 +1,13 @@
 # Veritas — State of the System and Delivery Roadmap
 
+> **Dated snapshot.** The full evaluation below is from **2026-07-27** and has
+> not been re-run; system descriptions in Part I–II (including the Bayesian
+> engine, since removed) and every count or "never happened" claim in this
+> file describe that date, not today. Current state: `STATUS.md`, the
+> `docs/program/STATE.md` header, and `docs/program/fable/settlement/` —
+> settlement has since been proven there (operator-run, testnet,
+> chain-confirmed). The phase sequencing remains the useful part.
+
 Self-contained handoff. Everything needed to pick this up cold is here: what the
 system does, what is verified, what is broken, and what to build in what order.
 

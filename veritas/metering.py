@@ -9,10 +9,10 @@ The rule that shapes this module: **count everything, invent nothing.**
 Provider calls, evidence bytes and wall time are countable facts, and they are
 recorded on every request — including free ones, because a retrieval pass costs
 the same whether or not anyone paid for it. Turning those counts into dollars
-needs a per-provider price, and this repository has no way to verify any
-provider's list price from inside a sandbox with no egress. So the default cost
-table is **empty**, an unpriced provider is reported as unpriced, and a margin
-over a partial cost base is withheld rather than published.
+needs a per-provider price, and no provider's list price can be verified from
+inside this repository. So the default cost table is **empty**, an unpriced
+provider is reported as unpriced, and a margin over a partial cost base is
+withheld rather than published.
 
 An assumed-zero cost for a provider nobody configured produces a margin report
 that is confidently wrong, which is worse than no report: it is the shape of a
@@ -20,10 +20,12 @@ measurement without the substance of one.
 
 Operators supply real numbers through `VERITAS_PROVIDER_COST_MICROS`, e.g.
 
-    VERITAS_PROVIDER_COST_MICROS="serper=1000,wikipedia=0,duckduckgo=0"
+    VERITAS_PROVIDER_COST_MICROS="serper=1000,wikipedia=0,duckduckgo_instant_answer=0"
 
-in micro-USD per provider call (1000 = $0.001). Attempted calls are counted,
-not just successful ones: a search API bills the request, not the result.
+in micro-USD per provider call (1000 = $0.001), keyed by the provider name as
+it appears in `retrieval.providers_attempted` — an entry for a name no request
+ever reports prices nothing. Attempted calls are counted, not just successful
+ones: a search API bills the request, not the result.
 """
 
 from __future__ import annotations

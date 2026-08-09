@@ -12,6 +12,8 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from veritas.payment_config import DEFAULT_FACILITATOR
+
 
 def generate_local_seed(agent_id: str = "default") -> str:
     """Deterministic local seed for development / agent-controlled instances.
@@ -31,7 +33,7 @@ def bootstrap_free_mode(agent_id: str = "default", base_dir: str = ".veritas_age
         "retrieval": "zero_key",          # uses veritas/autonomous/zero_key_retrieval.py
         "require_payment": False,        # can be flipped later by the agent
         "pay_to": None,                  # agent can later set its own address
-        "facilitator": "https://pay.openfacilitator.io",  # public free facilitator option
+        "facilitator": DEFAULT_FACILITATOR,  # single-sourced with the money path
         "seed_hint": generate_local_seed(agent_id)[:16] + "...",
         "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "notes": "Free mode uses only zero-key sources. Upgrade by setting paid keys or a real receiving wallet."

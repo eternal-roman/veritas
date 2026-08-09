@@ -18,6 +18,14 @@ import urllib.error
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from veritas import __version__
+
+#: Shared identity for the retrieval tiers. Load-bearing (AGENTS.md field
+#: note 1): Cloudflare-fronted providers 403 the default Python-urllib agent,
+#: so every outbound retrieval client sends a versioned UA — defined once here
+#: so the tiers cannot fork it.
+USER_AGENT = f"VeritasAgent/{__version__} (+https://github.com/eternal-roman/veritas)"
+
 # Tokens that carry no retrieval signal; matching on these made the previous
 # relevance filter accept essentially any query against any document.
 _STOPWORDS = frozenset({
@@ -208,22 +216,17 @@ class StaticCorpusRetriever:
 class CompositeRetriever:
     """Runs retrievers in order, merging sources and preserving every error.
 
-    The fallback is deliberately *not* a rescue path for provider outages. If
-    live retrieval errored, substituting offline fixture text would convert an
-    honest "I could not reach my sources" into a confident answer built from
-    canned paragraphs — the outage would become invisible to the buyer. So the
-    fallback runs only when the live providers worked and genuinely returned
-    nothing, and an outage is allowed to propagate as `unavailable`.
-
+    There is deliberately no fallback seam here: substituting offline fixture
+    text when live retrieval errors would convert an honest "I could not
+    reach my sources" into a confident answer built from canned paragraphs.
     Offline operation is reached by choosing the corpus explicitly
     (`default_retriever(allow_network=False)`), not by failing into it.
     """
 
     name = "composite"
 
-    def __init__(self, retrievers: list[Retriever], fallback: Retriever | None = None):
+    def __init__(self, retrievers: list[Retriever]):
         self.retrievers = retrievers
-        self.fallback = fallback
 
     def retrieve(self, query: str, max_results: int = 5) -> RetrievalResult:
         merged = RetrievalResult()
@@ -239,13 +242,6 @@ class CompositeRetriever:
                 if url and url not in seen_urls:
                     seen_urls.add(url)
                     merged.sources.append(src)
-
-        if not merged.sources and not merged.errors and self.fallback is not None:
-            fb = self.fallback.retrieve(query, max_results=max_results)
-            merged.providers_attempted.extend(fb.providers_attempted)
-            merged.providers_succeeded.extend(fb.providers_succeeded)
-            merged.errors.extend(fb.errors)
-            merged.sources.extend(fb.sources)
 
         merged.sources = merged.sources[:max_results]
         return merged

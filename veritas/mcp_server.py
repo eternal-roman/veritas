@@ -31,11 +31,16 @@ def tool_research(query: str, max_results: int = 5, allow_network: bool = True) 
 
 
 def tool_verify(content: str, content_hash: str) -> dict[str, Any]:
-    """Independently re-check a published content hash."""
+    """Re-check a published content hash over caller-supplied text.
+
+    Arithmetic on bytes already in the caller's hands — the same non-independent
+    check the HTTP legacy mode labels `caller_supplied`. Independent origin
+    re-fetch is `POST /v1/verify` with url+content_hash on the HTTP surface.
+    """
     from veritas.hashing import verify_content_hash
 
     valid, details = verify_content_hash(content, content_hash)
-    return {"valid": valid, "detail": details}
+    return {"valid": valid, "detail": details, "binding": "caller_supplied"}
 
 
 def tool_verify_attestation(
@@ -143,8 +148,24 @@ def build_server():
     return server
 
 
-def main() -> None:
-    """Console entry point (`veritas-mcp`): serve over stdio."""
+def main(argv: list[str] | None = None) -> None:
+    """Console entry point (`veritas-mcp`): serve over stdio.
+
+    The parser exists so `veritas-mcp --help` explains itself instead of
+    silently blocking on stdio.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="veritas-mcp",
+        description=(
+            "Serve the Veritas engine as MCP tools over stdio (free-mode "
+            "local engine; paid access with settlement is the HTTP surface). "
+            "Register it with an MCP client, e.g.: "
+            "claude mcp add veritas -- veritas-mcp"
+        ),
+    )
+    parser.parse_args(argv)
     build_server().run()
 
 

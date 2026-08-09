@@ -18,7 +18,7 @@ import uuid
 from collections import deque
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
@@ -39,7 +39,7 @@ from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
 from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
-from veritas.hooks import build_hooks
+from veritas.hooks import build_hooks, http_paths
 from veritas.identity import build_identity
 from veritas.ledger import REDELIVERABLE_STATES, Ledger, NonceState
 from veritas.metering import Usage
@@ -259,12 +259,27 @@ async def enforce_limits(request: Request, call_next):
     return _observed(await call_next(request), request, started)
 
 
+_KNOWN_METRIC_PATHS = frozenset(http_paths())
+
+
+def _metric_path(path: str) -> str:
+    """Bound metric label cardinality. Registered paths label themselves,
+    per-receipt URLs collapse onto their template, and everything else (path
+    scans, typos, probes) shares one label — the counter map must not grow
+    with attacker-chosen paths."""
+    if path in _KNOWN_METRIC_PATHS:
+        return path
+    if path.startswith("/v1/receipts/"):
+        return "/v1/receipts/{request_id}"
+    return "unmatched"
+
+
 def _observed(response, request: Request, started: float):
     """Count and log one request from its envelope. Never touches the body."""
     duration_ms = int((time.monotonic() - started) * 1000)
     path = request.url.path
     metrics.increment("veritas_requests_total", {
-        "path": path, "status": str(response.status_code),
+        "path": _metric_path(path), "status": str(response.status_code),
     })
     if path == RESOURCE_PATH:
         metrics.increment("veritas_research_duration_ms_sum", by=duration_ms)
@@ -355,10 +370,6 @@ class VerifyPackRequest(BaseModel):
     pack: dict[str, Any] = Field(min_length=1)
 
 
-class LogProofRequest(BaseModel):
-    index: int = Field(ge=0)
-
-
 class LogVerifyRequest(BaseModel):
     proof: dict[str, Any] = Field(min_length=1)
 
@@ -389,7 +400,14 @@ async def readyz():
     reasons = list(cfg.config_errors) if cfg.mode == "misconfigured" else []
     ready = not reasons
     body = {"ready": ready, "payment_mode": cfg.mode, "reasons": reasons}
-    return body if ready else JSONResponse(status_code=503, content=body)
+    if ready:
+        return body
+    # Carry the registered code so this is not the one non-402 error response
+    # on the surface outside the {"error": ...} envelope. The load-balancer
+    # keys stay alongside it.
+    return JSONResponse(
+        status_code=503, content={**error_envelope(ErrorCode.NOT_READY), **body}
+    )
 
 
 @app.get("/v1/payment-config")
@@ -511,7 +529,7 @@ def _settle_and_respond(
     )
 
 
-def _resubmitted_authorization(claim, cfg, facilitator, payment_payload,
+def _resubmitted_authorization(claim, facilitator, payment_payload,
                                requirements_dict, query):
     """Answer a payment authorization this instance has already admitted.
 
@@ -579,6 +597,10 @@ def _resubmitted_authorization(claim, cfg, facilitator, payment_payload,
         last = attempts[-1] if attempts else {}
         payment = {
             "settled": existing.state == NonceState.SETTLED,
+            # Mirror of `settled` under the x402 settle-response key, so an
+            # agent branching on either name survives first delivery and
+            # replay alike (the shapes had drifted apart).
+            "success": existing.state == NonceState.SETTLED,
             "state": existing.state,
             "transaction": last.get("transaction"),
             "network": last.get("network"),
@@ -840,7 +862,7 @@ def _research(
         )
         if not claim.claimed:
             return _resubmitted_authorization(
-                claim, cfg, facilitator, payment_payload, requirements_dict,
+                claim, facilitator, payment_payload, requirements_dict,
                 req.query,
             )
 
@@ -866,13 +888,17 @@ def _research(
         result["status"] = "unavailable"
         result["refusal_reason"] = "retrieval_unavailable"
         result["error"] = ErrorCode.DEADLINE_EXCEEDED.value
-        result["payment"] = {"settled": False, "reason": "deadline_exceeded_before_settlement"}
         _refund_credits_if_needed("refund_deadline_exceeded")
         if paid_with_credits:
             result["payment"] = {
                 "settled": False,
                 "mode": "credits",
                 "reason": "deadline_exceeded_credits_refunded",
+            }
+        else:
+            result["payment"] = {
+                "settled": False,
+                "reason": "deadline_exceeded_before_settlement",
             }
         if not paid_with_credits and cfg.require_payment:
             ledger.record_delivery(
@@ -1120,7 +1146,7 @@ def _notarize(
         if not claim.claimed:
             # Bind resubmits to the notarized URL (stored as `query` on the envelope).
             return _resubmitted_authorization(
-                claim, cfg, facilitator, payment_payload, requirements_dict,
+                claim, facilitator, payment_payload, requirements_dict,
                 req.url,
             )
 
@@ -1149,13 +1175,17 @@ def _notarize(
         result["status"] = "unavailable"
         result["refusal_reason"] = "fetch_unavailable"
         result["error"] = ErrorCode.DEADLINE_EXCEEDED.value
-        result["payment"] = {"settled": False, "reason": "deadline_exceeded_before_settlement"}
         _refund_credits_if_needed("refund_deadline_exceeded")
         if paid_with_credits:
             result["payment"] = {
                 "settled": False,
                 "mode": "credits",
                 "reason": "deadline_exceeded_credits_refunded",
+            }
+        else:
+            result["payment"] = {
+                "settled": False,
+                "reason": "deadline_exceeded_before_settlement",
             }
         if not paid_with_credits and cfg.require_payment:
             ledger.record_delivery(
@@ -1166,7 +1196,7 @@ def _notarize(
                         paid=False)
         return JSONResponse(status_code=503, content=result)
 
-    metrics.increment("veritas_research_total", {"status": result["status"]})
+    metrics.increment("veritas_notarize_total", {"status": result["status"]})
     record = store.save(result)
     result["custody_receipt"] = record
     outcomes.record(
@@ -1381,18 +1411,20 @@ async def evidence_log_status():
 
 
 @app.get(LOG_PROOF_PATH)
-async def evidence_log_proof(index: int = 0):
+async def evidence_log_proof(index: int = Query(0, ge=0)):
     """N1.4: Merkle inclusion proof for a log index (free)."""
     from veritas.notary.log import EvidenceLogError, default_evidence_log
 
     try:
         return default_evidence_log().proof(index)
     except EvidenceLogError as exc:
-        # 400 not 404: route exists; empty/out-of-range is a client error.
+        # 422 to match invalid_request's registered status (a negative index
+        # already 422s via the Query bound above): the route exists, the
+        # parameter cannot be satisfied by the current log state.
         # Fixed tokens only (CodeQL: no exception text to client).
         msg = exc.code if exc.code in {"log_empty", "index out of range", "proof_unavailable"} else "proof_unavailable"
         return JSONResponse(
-            status_code=400,
+            status_code=422,
             content=error_envelope(ErrorCode.INVALID_REQUEST, msg),
         )
 
@@ -1728,11 +1760,20 @@ async def credits_topup(request: Request):
         price_version=PRICE_TABLE_VERSION,
     )
     if not claim.claimed:
+        if claim.reason == "replay_store_unavailable":
+            # A store outage is a transient service failure, not a spent
+            # nonce. Serving "already used" here asserted a falsehood —
+            # could-not-check must not impersonate failure. Same class as the
+            # research path's handling.
+            return JSONResponse(status_code=503, content=error_envelope(
+                ErrorCode.REPLAY_PROTECTION_UNAVAILABLE, claim.reason,
+            ))
         return JSONResponse(
             status_code=409,
             content=error_envelope(
                 ErrorCode.PAYMENT_NONCE_ALREADY_SPENT,
-                "this top-up authorization was already used",
+                "this top-up authorization was already used; top-up replays "
+                "are not redelivered — sign a fresh authorization",
             ),
         )
     # Top-up is the deliverable: record delivery then settle, then grant credits.
@@ -1764,16 +1805,20 @@ async def credits_topup(request: Request):
     if settlement.outcome != "settled":
         # Do not grant credits without settled payment. Indeterminate is not
         # a grant: funds may have moved, but we do not invent balance on maybe.
+        failed = settlement.outcome == "failed"
         return JSONResponse(
-            status_code=402 if settlement.outcome == "failed" else 200,
+            status_code=402 if failed else 200,
             content={
+                # The registered code rides along on the 402 so an agent
+                # branching on body["error"] survives this endpoint too.
+                **({"error": ErrorCode.SETTLEMENT_FAILED.value} if failed else {}),
                 "topped_up": False,
                 "reason": (
                     "settlement_failed"
-                    if settlement.outcome == "failed"
+                    if failed
                     else "settlement_indeterminate_no_credit_grant"
                 ),
-                "payment": settlement.to_dict(),
+                "payment": {"settled": settlement.success, **settlement.to_dict()},
                 "balance": credit_ledger.balance(session.address),
             },
             headers=_payment_response_header(settlement.to_dict()),
@@ -1804,7 +1849,7 @@ async def credits_topup(request: Request):
             "granted": atomic,
             "entry_id": entry.id,
             "balance": credit_ledger.balance(session.address),
-            "payment": settlement.to_dict(),
+            "payment": {"settled": settlement.success, **settlement.to_dict()},
         },
         headers=_payment_response_header(settlement.to_dict()),
     )
@@ -1891,11 +1936,11 @@ async def metrics_endpoint(request: Request):
     """
     if not METRICS_ENABLED:
         return JSONResponse(status_code=404, content=error_envelope(
-            ErrorCode.RECEIPT_NOT_FOUND, "metrics are not enabled on this instance",
+            ErrorCode.NOT_FOUND, "metrics are not enabled on this instance",
         ))
     if not hmac.compare_digest(_presented_metrics_token(request), METRICS_TOKEN):
         return JSONResponse(status_code=401, content=error_envelope(
-            ErrorCode.INVALID_REQUEST, "metrics require the configured bearer token",
+            ErrorCode.UNAUTHORIZED, "metrics require the configured bearer token",
         ))
     return PlainTextResponse(
         metrics.render(), media_type="text/plain; version=0.0.4; charset=utf-8",
@@ -1908,8 +1953,24 @@ async def llms_txt():
     return PlainTextResponse(LLMS_TXT)
 
 
-def main() -> None:
-    """Console entry point (`veritas-server`)."""
+def main(argv: list[str] | None = None) -> None:
+    """Console entry point (`veritas-server`). Configuration is env-only.
+
+    The parser exists so `veritas-server --help` explains itself instead of
+    booting a server; programmatic callers (veritas-agent serve) pass [].
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="veritas-server",
+        description=(
+            "Run the Veritas HTTP service. Configuration is environment-only: "
+            "VERITAS_HOST / VERITAS_PORT bind the socket (default "
+            "127.0.0.1:8000); payment, retrieval and observability variables "
+            "are listed in the README configuration reference."
+        ),
+    )
+    parser.parse_args(argv)
     import uvicorn
 
     configure_logging()

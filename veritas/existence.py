@@ -358,7 +358,8 @@ def _stage1_agent_prep(
         )
     elif isinstance(pypi_probe, dict) and pypi_probe.get("published") is False:
         human_status["pypi_trusted_publisher"] = (
-            "not_on_pypi — create project + trusted publisher (release.yml ready)"
+            "not_on_pypi — create project + trusted publisher, then set repo "
+            "variable PYPI_TRUSTED_PUBLISHER=configured (release.yml ready)"
         )
 
     if isinstance(host_probe, dict) and host_probe.get("ok") is True:

@@ -193,7 +193,7 @@ def test_agent_cli_refuses_mainnet_without_explicit_acknowledgement(tmp_path, mo
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
-    monkeypatch.setattr("veritas.server.main", lambda: None)
+    monkeypatch.setattr("veritas.server.main", lambda argv=None: None)
     with pytest.raises(SystemExit):
         main(["up", "--paid", "--network", "eip155:8453"])
 
@@ -205,7 +205,7 @@ def test_agent_cli_allows_mainnet_when_acknowledged(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
     monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.example.org")
-    monkeypatch.setattr("veritas.server.main", lambda: None)
+    monkeypatch.setattr("veritas.server.main", lambda argv=None: None)
     assert main([
         "up", "--paid", "--network", "eip155:8453",
         "--i-understand-this-is-real-money",

@@ -256,7 +256,11 @@ class FacilitatorClient:
 
 
 class SimulatedFacilitatorClient(FacilitatorClient):
-    """Deterministic stand-in for free mode and tests.
+    """Deterministic stand-in, reachable from tests only.
+
+    Free mode constructs no facilitator at all (the server's call sites all
+    pass live=True), so despite the earlier docstring this class never runs
+    in production; `get_facilitator(live=False)` exists for tests.
 
     Accepts structurally valid payloads and fabricates a settlement reference.
     It is explicitly labelled in every result so simulated settlements can

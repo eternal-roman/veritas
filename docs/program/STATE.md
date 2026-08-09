@@ -30,6 +30,12 @@ committed and pushed survives. Update this file and push after every sub-step.
 > challenge_matches_discovery; `not_settled` honest. First live transcript:
 > `fable/journey/buyer_journey_20260809T093653Z.json`. Self-vetting is not a
 > stranger's vetting; unsolicited remains 0.
+> **Verify/receipt closure on the paid n=3 artifact (2026-08-09):** receipt
+> served live (200, custody fields); receipt re-fetch on a research receipt
+> misclassified — fetched the QUERY as an origin, refused `robots_unknown`.
+> Fixed: `receipt_not_refetchable` honest class, no slot/fetch spent;
+> witness-tested. Evidence:
+> `fable/journey/verify_receipt_class_20260809.json`.
 
 
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
 
 import pytest
@@ -149,6 +150,42 @@ def test_verify_endpoint_request_id_refetch(free_client, monkeypatch):
     assert body["valid"] is True
     assert body["binding"] == "receipt_refetch"
     assert body["request_id"] == rid
+
+
+def test_research_receipt_is_not_refetchable_and_says_so(free_client, monkeypatch):
+    """Found live 2026-08-09: a research receipt stores the buyer's QUESTION
+    in `query`, and receipt re-fetch tried to fetch the question as a URL —
+    the refusal surfaced as `robots_unknown`, a claim about an origin's
+    robots policy for something that was never an origin. Could-not-check
+    must not impersonate a specific failure, and no slot/fetch is owed."""
+    import veritas.server as main_module
+
+    rid = "req-research-receipt-1"
+    main_module.store.save(
+        {
+            "request_id": rid,
+            "query": "What is the x402 payment protocol?",
+            "status": "completed",
+            "custody_root": "sha256:" + "cd" * 32,
+            "custody_valid": True,
+            "evidence": [{"content_hash": compute_content_hash("evidence body")}],
+        }
+    )
+
+    import veritas.notary.refetch as refetch_mod
+
+    def must_not_fetch(url, content_hash, **kwargs):
+        raise AssertionError(f"refetch attempted for non-URL query: {url!r}")
+
+    monkeypatch.setattr(refetch_mod, "refetch_verify", must_not_fetch)
+    r = free_client.post("/v1/verify", json={"request_id": rid})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["valid"] is False
+    assert body["binding"] == "receipt_refetch"
+    assert body["reason"] == "receipt_not_refetchable"
+    assert "robots" not in json.dumps(body)
+    assert "url+content_hash" in body["note"]
 
 
 def test_verify_endpoint_requires_a_mode(free_client):

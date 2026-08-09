@@ -8,32 +8,31 @@
 Primary objective: **agent-to-agent autonomous commerce** substrate with
 scalable momentum (L0 multi-billion *direction* — never claim proven).
 
-## Active cadence (v3 — cooperative scale + anti-thrash)
+## Active cadence (v4 — low latency + anti-thrash)
 
-**Full layer map:** [`ORG_LOOPS.md`](ORG_LOOPS.md) (7 watchers, Researcher protocol).
+**Full layer map:** [`ORG_LOOPS.md`](ORG_LOOPS.md) (7 watchers, stock protocol, Researcher).
 
 | Loop | Interval | Job |
 |------|----------|-----|
-| **Conductor** | **8m** | Merge green product PRs; restart only if unblocked singular NEXT |
-| **Overseer** | **10m** | Quality + vision + strategy; Scout if vision≤1; enforce hygiene |
-| **Researcher** | **12m** | **Autonomous:** claim block board · research · solve/escalate · inbox report |
-| **Pruner** | **12m** | Aggressive clean/prune; battery + E2E; **ship_ok veto** (G13) |
-| **Scout (Idea)** | **15m** | Pattern fuel; may seed blocks for Researcher |
-| **Steward** | **20m** | Card cohesion **in-place** (no restock PR under idle-true) |
-| **Flywheel** | **30m** | Backup builder only when claim/unblocked; else idle_true noop |
+| **Conductor** | **6m** | Merge **any** green non-draft PR; restart only if unblocked singular NEXT |
+| **Researcher** | **10m** | Claim block board · solve/escalate · inbox (unsolicited) |
+| **Overseer** | **12m** | Quality + strategy; enforce hygiene; Scout only if vision≤1 |
+| **Pruner** | **15m** | LIGHT noop if idle; HEAVY only on open product PR / claim building |
+| **Scout (Idea)** | **25m** | Freshness stamp under HOLD; pattern fuel if confer |
+| **Steward** | **30m** | In-place cohesion only; **no restock PR** under idle-true |
+| **Flywheel** | **45m** | Backup builder only when claim/unblocked; else idle_true noop |
 | **Git Agent** | on demand / ~6–12h | Branch archaeology, salvage, local prune |
-| **Ecosystem tracks** | offline mesh | T4 — prefer Mesh Runner over 7 LLM track timers |
+| **Ecosystem tracks** | offline mesh | Prefer Mesh Runner over LLM track timers |
 | **Mesh Runner** | every 5 cycles / demand | `python -m veritas.ecosystem_cycle --cycles 5` |
 | **Unblock Agent** | on demand / Researcher | `python -m veritas.unblock_probe` |
-| **Implement×n** | on demand | `/workflow agent-commerce-implement {"n":3}` — scale workers |
+| **Implement×n** | on demand | `/workflow agent-commerce-implement {"n":3}` |
 
-**Shared truth:** `STATE.md` · `overseer/CURRENT.md` · `conductor/CONFERRAL.md` ·
-`conductor/TRAJECTORY.md` · `steward/CURRENT.md` · `ecosystem/BUS.md` ·
-`researcher/inbox/*` · block board (`.veritas/block_board.sqlite3`)  
-**Claim:** `flywheel-claim.md` (one product builder)  
-**Plane money / identity / pay:** `python -m veritas.agent_economy` — **not** x402  
-**Workflow hygiene (binding):** [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md)  
-**Org loops (binding):** [`ORG_LOOPS.md`](ORG_LOOPS.md)
+**Stock first (all watchers):** `python -m veritas.plane_stock` — never invent empty open-PR list if `open_prs.ok` is false.
+
+**Shared truth:** `STATE.md` · cards · `ecosystem/BUS.md` · block board · **plane_stock**  
+**Claim:** `flywheel-claim.md`  
+**Plane money:** `python -m veritas.agent_economy` — **not** x402  
+**Law:** [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) · [`ORG_LOOPS.md`](ORG_LOOPS.md)
 
 Orchestrators:
 
@@ -45,37 +44,33 @@ Orchestrators:
 
 ---
 
-## Progress tree (autonomous v3)
+## Progress tree (autonomous v4)
 
 ```
 event: idle | CI green | merge | LEARN | block post
         │
-   ┌────┴────┬──────────────┐
-   ▼         ▼              ▼
-Overseer  Researcher     Pruner
- (10m)      (12m)         (12m)
-   │    claim/solve/inbox    │
-   └─────────┬───────────────┘
-             ▼
-        Conductor (8m)
-        ├── green product PR → squash-merge → LEARN
-        ├── CI pending → poll once
-        └── unblocked singular NEXT → Implement×n OR Flywheel (30m)
-                └── battery → ship_ok → PR → auto-merge
-
-   Steward (20m) ── in-place cards; idle-true → no restock PR
-   Scout (15m) ── IDEA_BUS + optional block seeds
+        ▼
+   plane_stock (shared JSON — all watchers)
+        │
+   ┌────┼────────────┬──────────────┐
+   ▼    ▼            ▼              ▼
+Overseer Researcher Pruner      Conductor (6m)
+ (12m)    (10m)      (15m)      ├── green PR (any) → merge
+   │   claim/inbox    LIGHT     ├── CI pending → poll once
+   └────────┬──────────┘        └── HOLD → restart=false
+            ▼
+   Steward (30m) in-place · Scout (25m) stamp · Flywheel (45m) idle_true
 ```
 
 ### Latency targets
 
 | Path | Target |
 |------|--------|
-| Green PR → merged | ≤ **8m** |
-| Block → Researcher claim | ≤ **12m** |
-| Merge → coherent cards | ≤ **20m** |
-| Idle → true noop (no PR) | immediate |
-| Thin vision → idea harvest | ≤ **15m** |
+| Green PR → merged | ≤ **6m** |
+| Block → Researcher claim | ≤ **10m** |
+| Idle stock → noop exit | ≤ **15 tool calls** |
+| Merge → coherent cards | ≤ **30m** |
+| Thin vision → idea harvest | ≤ **25m** |
 
 ### Design rules
 
@@ -93,7 +88,9 @@ Overseer  Researcher     Pruner
    RPC/wallet unset (§3).  
 10. **Product NEXT only when unblocked** (0.1/G9) or Overseer names explicit
     non-money singular bet — not more mesh without buyer path (§4).  
-11. **Never dual continuous/forever workflows** — Access Denied budget race (§5).
+11. **Never dual continuous/forever workflows** — Access Denied budget race (§5).  
+12. **Stock honesty** — use `plane_stock`; if `gh` fails, report `gh_failed` (ORG_LOOPS §0).  
+13. **Early-exit noop** under free+HOLD when no merge target (ORG_LOOPS §2).
 
 ---
 
@@ -117,17 +114,17 @@ resume; do **not** start a second continuous in parallel.
 
 ---
 
-## Active schedules (v3 targets — re-arm host to match)
+## Active schedules (v4 targets — re-arm host to match)
 
-| Name | Prior id (may lag) | Interval |
-|------|--------------------|----------|
-| Conductor | `019fe25403f2` | **8m** |
-| Overseer | `019fdfde0212` | **10m** |
-| **Researcher** | *(new)* | **12m** |
-| **Pruner** | `019fe29d4d61` | **12m** |
-| Scout | `019fe0026e7d` | **15m** |
-| Steward | `019fdff1fbe4` | **20m** |
-| Flywheel | `019fdfd6c9bf` | **30m** |
+| Name | Prior id (may be stale) | Interval |
+|------|-------------------------|----------|
+| Conductor | `019fe25403f2` | **6m** |
+| **Researcher** | *(create)* | **10m** |
+| Overseer | `019fdfde0212` | **12m** |
+| **Pruner** | `019fe29d4d61` | **15m** |
+| Scout | `019fe0026e7d` | **25m** |
+| Steward | `019fdff1fbe4` | **30m** |
+| Flywheel | `019fdfd6c9bf` | **45m** |
 
 ### Role briefs
 
@@ -152,8 +149,9 @@ non-money singular. On-chain settlements **0** until proven. Plane economy is T4
 ## Re-arm
 
 ```text
-Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v3 intervals"
+Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v4 intervals"
 ```
 
-Tasks expire ~7 days. Use **v3** intervals above. Add Researcher 12m tick with
-`RESEARCHER_TICK_PROMPT.md`. At most one continuous/forever.
+Tasks expire ~7 days. Use **v4** intervals + phase offsets in `ORG_LOOPS.md`.
+Researcher: `RESEARCHER_TICK_PROMPT.md`. Stock: `python -m veritas.plane_stock`.
+At most one continuous/forever.

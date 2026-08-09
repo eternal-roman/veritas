@@ -156,24 +156,24 @@ Measured work vs interval. Critical path = **merge lag + restart lag + build**.
 
 | Role | Work p95 | Interval | Role in latency |
 |------|----------|----------|-----------------|
-| **Conductor** | ~2m + merge | **8m** | Merge critical path |
-| **Overseer** | ~2.5m | **10m** | Strategy gate; thrash catch |
-| **Researcher** | ~3–10m | **12m** | Clear others' blocks (scale) |
-| **Pruner** | ~3–8m | **12m** | ship_ok veto |
-| **Scout** | ~3m | **15m** | Idea fuel + block seeds |
-| **Steward** | ~4m | **20m** | Cohesion; anti-thrash lag |
-| **Flywheel** | 10–40m | **30m** | Backup builder only |
-| **Implement×n** | on demand | workflow | N workers (exponential build) |
+| **Conductor** | ~2m + merge | **6m** | Merge critical path |
+| **Researcher** | ~3–10m | **10m** | Clear others' blocks |
+| **Overseer** | ~2.5m | **12m** | Strategy; thrash catch |
+| **Pruner** | ~3–8m | **15m** | ship_ok when product PR |
+| **Scout** | ~3m | **25m** | Idea fuel (slow under HOLD) |
+| **Steward** | ~4m | **30m** | Cohesion lag intentional |
+| **Flywheel** | 10–40m | **45m** | Backup only |
+| **Implement×n** | on demand | workflow | N workers |
 
 ### Progress-tree latency (target)
 
 | Event | Target worst-case |
 |-------|-------------------|
-| Green product PR → merged | ≤ **8m** (Conductor) |
-| Block posted → claimed | ≤ **12m** (Researcher) |
-| Merge → cards coherent | ≤ **20m** (Steward) |
-| Idle → true noop | immediate (hygiene) |
-| Vision thin → Idea harvest | ≤ **15m** (Scout) |
+| Green PR → merged | ≤ **6m** (Conductor) |
+| Block posted → claimed | ≤ **10m** (Researcher) |
+| Idle → noop exit | ≤ **15 tools** (plane_stock) |
+| Merge → cards coherent | ≤ **30m** (Steward) |
+| Vision thin → Idea harvest | ≤ **25m** (Scout) |
 
 ### Anti-thrash
 

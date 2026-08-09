@@ -1,171 +1,141 @@
 # Organization loops — layered scale without thrash
 
-**Status:** binding plane law (v3 org).  
+**Status:** binding plane law (**v4** — latency + stock honesty).  
 **Pairs with:** [`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) · [`PRODUCT_ORG.md`](PRODUCT_ORG.md) · [`CONTINUOUS.md`](CONTINUOUS.md).
 
-Goal: **exponential cooperative throughput** — many agents work in parallel on
-**different owned surfaces**, while product NEXT stays singular. Watchers do
-not restock thrash; **Researchers** clear other agents’ blocks without being asked.
+Goal: **cooperative throughput without thrash** — parallel work on **owned
+surfaces**, singular product NEXT, **minimum wall-clock** from “green PR” or
+“block posted” to the next correct action.
 
 ---
 
-## 1. The 7 watchers (v3)
+## 0. Inefficiencies observed (session evidence) → fixes
 
-| # | Watcher | Layer | Interval | Write surface | Default when free+HOLD |
-|---|---------|-------|----------|---------------|------------------------|
-| 1 | **Conductor** | L2 Orchestrate | **8m** | `conductor/*`, merge | merge green product only; `restart=false` |
-| 2 | **Overseer** | L1 Gate | **10m** | `overseer/*` | HOLD / `noop_stable`; mark Unblock |
-| 3 | **Researcher** | L1.5 Unblock | **12m** | `researcher/*`, block board | claim open blocks; solve or escalate |
-| 4 | **Pruner** | L1 Lean | **12m** | `pruner/*`, PR comments | LIGHT noop_idle |
-| 5 | **Scout** | L4 Idea | **15m** | `scout/*` | freshness stamp; feed Researcher |
-| 6 | **Steward** | L3 Cohesion | **20m** | cards in-place only | **noop_coherent** — no restock PR |
-| 7 | **Flywheel** | L3 Build | **30m** | product code only if claim | **idle_true noop** |
-
-**Why these times**
-
-- **Conductor fastest (8m):** green-PR merge is the critical path.
-- **Overseer 10m:** strategy slightly behind merge sense; cuts thrash on CURRENT.
-- **Researcher 12m:** clears blocks so other watchers stay productive.
-- **Pruner 12m:** pairs with ship path without racing Steward.
-- **Scout 15m:** idea fuel for Researcher/Overseer without write storms.
-- **Steward slowest write (20m):** cohesion lag is intentional anti-thrash.
-- **Flywheel 30m:** backup builder only; primary build is Conductor kick / implement×n.
-
-**Hard rules still bind:** one product claim; one hygiene PR/epoch; never dual continuous.
+| Inefficiency | Symptom | v4 fix |
+|--------------|---------|--------|
+| **Restock thrash** | #100–#104, #109 tip-align under free+HOLD | Idle-true hard; Steward/Architect **no PR** under free+HOLD |
+| **Stock blindness** | Watchers reported `open PRs []` while #106/#110 open | **Stock protocol** — `python -m veritas.plane_stock` first; never invent empty list if `gh` fails |
+| **Merge lag** | Green plane PR sat until human/session merged | Conductor merges **any** green non-draft PR (product **or** docs/plane), one per tick |
+| **Timer drift** | Host still on old 8m/12m/… while law said v3 | Re-arm table below; mark prior ids **stale** |
+| **Tool bloat on idle** | 50–120 tool calls for noop_idle | **Early-exit noop** after stock if idle_true_candidate |
+| **Card write races** | Many CURRENT rewrites per hour | Only **owner role** writes its CURRENT; others read `plane_stock` + tip SHA |
+| **Worker latency** | Blocked agent waits for next long tick | Researcher **10m**; inbox path; Conductor **6m** for merge |
+| **Dual continuous** | Access Denied budget race | Still banned (hygiene §5) |
 
 ---
 
-## 2. Layer cake (org stack)
+## 1. The 7 watchers (v4)
 
-```
-L0  GOVERNING · GUARDIAN · STATE          (documents; not timed)
-L1  Overseer · Pruner · Researcher        (gate · ship veto · unblock others)
-L2  Conductor                             (merge + restart one NEXT)
-L3  Steward · Flywheel / Implement×n      (cohesion · build)
-L4  Scout · Mesh · Tracks · Unblock       (fuel · offline cycles · human ops)
-L5  Pulse / Continuous (≤1 forever)       (burst orchestration)
-```
+| # | Watcher | Interval | Offset* | Default free+HOLD | Critical path? |
+|---|---------|----------|---------|-------------------|----------------|
+| 1 | **Conductor** | **6m** | +0 | merge green PRs; `restart=false`; **no restock PR** | **yes** (merge) |
+| 2 | **Researcher** | **10m** | +2m | claim blocks; probe; inbox | **yes** (unblock) |
+| 3 | **Overseer** | **12m** | +1m | HOLD / `noop_stable`; enforce hygiene | strategy |
+| 4 | **Pruner** | **15m** | +3m | LIGHT noop unless open product PR | ship only |
+| 5 | **Scout** | **25m** | +5m | freshness stamp only | no |
+| 6 | **Steward** | **30m** | +4m | **noop_coherent** in-place only | no |
+| 7 | **Flywheel** | **45m** | +6m | **idle_true noop** | only if claim |
 
-**Scale law:** fan-out **L1 Researcher×n** and **L3 Implement×n** and **L4 tracks**.  
-**Never** fan-out product NEXT or dual continuous.
+\*Offset = phase delay after Conductor epoch so writers do not collide on the same
+minute (host scheduler: stagger `fire_immediately` / next-fire times).
+
+**Why**
+
+- Merge and unblock are the only latency that converts to progress under HOLD.  
+- Strategy/cohesion/build backups **slow down** when idle so they stop eating budget.  
+- When claim **building** or product PR open: Pruner may drop to **10m** HEAVY; Flywheel **20m**.
 
 ---
 
-## 3. Cooperative unblock protocol (autonomous researchers)
+## 2. Stock protocol (every watcher, step 0)
 
-```
-Any agent hits a wall
-        │
-        ▼
-  block_board.post(self, title, detail, kind, severity)
-        │
-        ▼
-  Researcher tick (every 12m, unsolicited)
-        │
-        ├── claim highest severity open block
-        ├── research + local solve (probe, economy, docs-in-place)
-        ├── resolve | escalate | wontfix
-        └── write researcher/inbox/{blocked_agent}-{id}.md
-        │
-        ▼
-  Blocked agent next tick: read inbox → act or stay HOLD
+```bash
+git fetch origin
+python -m veritas.plane_stock
 ```
 
-Code:
+Use the JSON fields:
 
-| Module | Role |
-|--------|------|
-| `veritas.block_board` | Post / claim / resolve / inbox |
-| `veritas.researcher` | One autonomous tick |
-| `python -m veritas.block_board` | Seed known blocks |
-| `python -m veritas.researcher` | Run Researcher |
+| Field | Use |
+|-------|-----|
+| `tip.sha` | Card HEAD truth |
+| `claim.status` | free / building |
+| `open_prs.product` / `open_prs.docs` | merge targets |
+| `open_prs.ok` | if **false**, say `gh_failed` — **do not** claim “open PRs none” |
+| `idle_true_candidate` | free + no product PR |
+| `env.VERITAS_RPC_URL` | Unblock gate |
 
-**Researchers may open product PRs only** if claim is free **and** Overseer named
-that bet **and** WORKFLOW_HYGIENE §4 allows. Default: local resolution + inbox.
-
----
-
-## 4. Exponential scale patterns
-
-| Pattern | Mechanism | Thrash guard |
-|---------|-----------|--------------|
-| **N implementers** | one claim, N workers | G10 claim file |
-| **N researchers** | different `researcher_id`, claim locking | one claim per block |
-| **Mesh cycles** | offline kernel rank+tax | no product dual NEXT |
-| **Pulse** | parallel Overseer‖Steward‖Scout → serial Conductor | docs dirty ≠ freeze product |
-| **Quality pay** | VAAT for effort | limited supply; not x402 |
-
-Throughput ≈ **(watchers that noop correctly) × (researchers clearing blocks) × (implement×n when unblocked)**.  
-Thrash destroys the multiplier — hygiene is load-bearing.
+**Early-exit noop (≤15 tool calls):** if `idle_true_candidate` **and** Overseer
+HOLD **and** `open_prs.all` empty (with `ok: true`) **and** no CI-green PR to
+merge → write own CURRENT only if tip SHA changed; final `noop_*`; stop.
 
 ---
 
-## 5. Continuous improvement loop
+## 3. Handoff matrix (reduce inter-worker latency)
 
-Every **5 product merges** or **5 mesh cycles**:
+| Event | Producer | Consumer | Max lag |
+|-------|----------|----------|---------|
+| PR CI green | CI | **Conductor** merge | ≤ **6m** |
+| Block posted | any agent | **Researcher** claim | ≤ **10m** |
+| Inbox report | Researcher | blocked agent | next consumer tick |
+| HOLD directive | Overseer | all | ≤ **12m** |
+| Product claim free→building | Conductor/Flywheel | Pruner HEAVY | ≤ **10m** once building |
 
-1. Optimizer tick (or LEARN file) measures merge lag, idle waste, open blocks age  
-2. Adjust intervals only with numbers (never faster than ~2× p95 work)  
-3. Overseer vetoes thrash-inducing cadence  
-4. Researcher seeds new block kinds from repeated HOLD reasons  
+Prefer **block board + plane_stock** over rewriting peer CURRENT to “notify”.
 
 ---
 
-## 6. Progress tree (v3)
+## 4. Layer cake
 
 ```
-events: CI green | merge | block post | LEARN | idle
-              │
-    ┌─────────┼──────────────┐
-    ▼         ▼              ▼
-Overseer   Researcher     Pruner
- (10m)       (12m)         (12m)
-    │         │              │
-    └────┬────┘              │
-         ▼                   │
-    Conductor (8m) ◄─────────┘ ship_ok
-         │
-    ├── green product PR → merge → LEARN
-    ├── open blocks for NEXT? → wait Researcher / Unblock
-    └── unblocked singular NEXT → Implement×n or Flywheel (30m)
-
-Steward (20m) ── in-place cards only under idle-true
-Scout (15m) ── IDEA_BUS + optional block seeds
+L0  GOVERNING · GUARDIAN · STATE · plane_stock
+L1  Overseer · Researcher · Pruner
+L2  Conductor (merge + restart)
+L3  Steward · Flywheel / Implement×n
+L4  Scout · Mesh · Unblock probe
+L5  Pulse / Continuous (≤1 forever)
 ```
 
-### Latency targets (v3)
-
-| Path | Target |
-|------|--------|
-| Green PR → merged | ≤ **8m** |
-| Block posted → Researcher claim | ≤ **12m** |
-| Researcher resolve → inbox | same tick |
-| Merge → cards coherent | ≤ **20m** (Steward) |
-| Thin vision → Scout fuel | ≤ **15m** |
-| Idle → true noop (no PR) | immediate (hygiene) |
+**Scale:** Researcher×n · Implement×n · mesh cycles.  
+**Never:** dual product NEXT · dual continuous · dual restock PR.
 
 ---
 
-## 7. Re-arm watchers (host)
+## 5. Cooperative unblock
+
+Unchanged protocol; interval **10m**. Code: `veritas.block_board` ·
+`veritas.researcher` · `python -m veritas.unblock_probe`.
+
+---
+
+## 6. Continuous improvement
+
+Every **5 product or plane code merges** (not restock docs): Optimizer or LEARN
+measures: green→merge lag, restock PR count, `plane_stock` `ok` rate, idle tool
+calls p95. Raise only with numbers; Overseer vetoes thrash.
+
+---
+
+## 7. Re-arm (host)
 
 ```text
-Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v3 intervals"
+Ask Grok: "Re-arm Veritas control-plane schedulers to ORG_LOOPS v4"
 ```
 
 | Name | Interval |
 |------|----------|
-| Conductor | 8m |
-| Overseer | 10m |
-| Researcher | 12m |
-| Pruner | 12m |
-| Scout | 15m |
-| Steward | 20m |
-| Flywheel | 30m |
+| Conductor | 6m |
+| Researcher | 10m (create if missing) |
+| Overseer | 12m |
+| Pruner | 15m |
+| Scout | 25m |
+| Steward | 30m |
+| Flywheel | 45m |
 
-At most **one** continuous/forever workflow.
+At most **one** continuous/forever.
 
 ```
-PROPERTY: 7 watchers layered for merge speed + autonomous unblock + anti-thrash
-EVIDENCE LEVEL: L1 (process + block_board/researcher tests)
-NOT PROVEN: exponential wall-clock gains without host scheduler re-arm
+PROPERTY: v4 cuts merge/unblock lag and idle thrash via stock protocol + slower support timers
+EVIDENCE LEVEL: L1 (process + plane_stock tests)
+NOT PROVEN: host re-arm without operator; exponential wall-clock gains
 ```

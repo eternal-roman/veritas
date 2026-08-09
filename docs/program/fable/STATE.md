@@ -80,7 +80,24 @@ after token exhaustion; do not lose state.
       Wire-contract witness tests added to `tests/test_payment.py`, teeth
       verified by bug-reintroduction. Gates run locally in the isolated venv:
       ruff clean, bandit clean, payment_model OK, harness OK.
-- [~] PR opened — pending full-suite green on the final tree.
+- [x] Full suite green on the final tree: 791 passed, 2 skipped (POSIX-only
+      wallet-mode tests), 4 fixture errors traced to missing `cryptography`
+      in the local venv — installed, all 19 notary-fetch tests pass. Gates:
+      ruff, bandit, payment_model, harness all clean.
+- [x] **PR opened: https://github.com/eternal-roman/veritas/pull/112** —
+      merge is the user's/CI's call per program norms.
+
+## Open threads for a future session
+
+1. Re-run the killed strategy panel (script path recorded above) after the
+   session-limit reset; file its dissents against REFOUNDING.md.
+2. Stage 1 human unblock list (REFOUNDING §4) is in the user's hands: PyPI
+   trusted publisher, host+TLS, mainnet pay-to, registry listing.
+3. The x402 v2 adapter is a boundary shim; a full v2 migration (server
+   challenge shape, payer, schema) is a follow-up bet once the ecosystem
+   direction is confirmed.
+4. Buyer wallet still holds ~19.99 testnet USDC for repeat runs (throwaway
+   key in the session scratchpad; regenerate + re-faucet if lost).
 
 ## Resume protocol
 

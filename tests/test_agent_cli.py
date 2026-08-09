@@ -77,7 +77,7 @@ def test_up_configures_server_from_bootstrap_config(tmp_path, monkeypatch):
     pytest.importorskip("eth_account")
     served = {}
 
-    def fake_serve():
+    def fake_serve(argv=None):
         from veritas.payment_config import get_payment_config
         served["config"] = get_payment_config()
 
@@ -89,7 +89,7 @@ def test_up_configures_server_from_bootstrap_config(tmp_path, monkeypatch):
 
 def test_free_default_never_requires_payment(tmp_path, monkeypatch):
     pytest.importorskip("eth_account")
-    monkeypatch.setattr("veritas.server.main", lambda: None)
+    monkeypatch.setattr("veritas.server.main", lambda argv=None: None)
     assert main(["up"]) == 0
     assert os.environ.get("VERITAS_REQUIRE_PAYMENT") == "false"
 
@@ -99,7 +99,7 @@ def test_paid_flag_sets_pay_to_from_wallet(tmp_path, monkeypatch):
     PaymentConfig validation then decides live vs misconfigured exactly as
     for any other deployment."""
     pytest.importorskip("eth_account")
-    monkeypatch.setattr("veritas.server.main", lambda: None)
+    monkeypatch.setattr("veritas.server.main", lambda argv=None: None)
     assert main(["up", "--paid"]) == 0
     config = json.loads((tmp_path / ".veritas_agent" / "config.json").read_text(encoding="utf-8"))
     assert config["require_payment"] is True

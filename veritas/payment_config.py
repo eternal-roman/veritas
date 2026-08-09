@@ -7,9 +7,12 @@ import re
 from dataclasses import dataclass, field
 
 from .networks import DEFAULT_NETWORK, is_settleable, normalize_network, supported_networks
-from .x402 import PriceError, parse_price
+from .x402 import PriceError, advertisable_networks, parse_price
 
-DEFAULT_FACILITATOR = "https://pay.openfacilitator.io"
+# The one facilitator this codebase has actually settled through (testnet,
+# chain-confirmed; evidence in docs/program/fable/settlement/). The previous
+# default named a facilitator no run had ever exercised. Env always wins.
+DEFAULT_FACILITATOR = "https://x402.org/facilitator"
 
 # Comparable x402 endpoints sell data at about $0.01 per call. The previous
 # $0.25 default asked 25x that for truncated snippets.
@@ -41,14 +44,27 @@ class PaymentConfig:
         # Validate before claiming live mode. The previous check accepted any
         # string of length >= 20 as a wallet, so a typo'd address would put the
         # service in live mode and settle payments to nowhere.
+        # These strings are served to unauthenticated callers on /readyz and
+        # /v1/payment-config, so they name the failing variable and never echo
+        # its value — a secret pasted into the wrong env var must not be
+        # published as a diagnostic.
         errors: list[str] = []
         if require:
             if not EVM_ADDRESS_RE.match(pay_to):
-                errors.append(f"VERITAS_PAY_TO is not a valid EVM address: {pay_to!r}")
+                errors.append("VERITAS_PAY_TO is not a valid EVM address")
             if not is_settleable(network):
-                errors.append(f"no settlement asset configured for network {network!r}")
+                errors.append("VERITAS_NETWORK names a network with no settlement asset configured")
+            elif network not in advertisable_networks():
+                # Settleable but with an unverified EIP-712 signing domain:
+                # challenge construction would raise on every paid request and
+                # on discovery itself. That is misconfiguration, not a
+                # servable state (invariant 7).
+                errors.append(
+                    "VERITAS_NETWORK names a network whose EIP-712 signing domain "
+                    "is unverified; a 402 challenge for it cannot be constructed"
+                )
             if not facilitator.startswith(("http://", "https://")):
-                errors.append(f"VERITAS_FACILITATOR is not a valid URL: {facilitator!r}")
+                errors.append("VERITAS_FACILITATOR is not a valid http(s) URL")
             # Price was the one live-mode field this guard never validated, so a
             # typo yielded mode=="live", a green /health, and a 500 on every
             # request — the exact class of failure the guard exists to catch.
@@ -63,8 +79,8 @@ class PaymentConfig:
                 )
             try:
                 parse_price(price)
-            except PriceError as exc:
-                errors.append(f"VERITAS_PRICE is not a valid price: {price!r} ({exc})")
+            except PriceError:
+                errors.append("VERITAS_PRICE is not a valid price")
 
         is_live = bool(require and not errors)
         mode = "live" if is_live else ("misconfigured" if require else "free")

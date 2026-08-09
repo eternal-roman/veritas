@@ -428,18 +428,30 @@ def test_release_job_does_not_combine_publish_identity_with_write_access():
     """
     text = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
     # This workflow's comments discuss `contents: write` in order to record why
-    # it is absent, so the check must read directives, not prose.
+    # it lives in its own job, so the check must read directives, not prose.
     directives = "\n".join(
         line for line in text.splitlines() if not line.lstrip().startswith("#")
     )
     assert "id-token: write" in directives, "release.yml no longer uses Trusted Publishing"
-    assert "contents: write" not in directives, (
-        "the release job holds id-token: write; granting it contents: write too "
-        "combines publishing authority with repository write access"
-    )
-    assert "gh release upload" not in directives, (
-        "attaching to a release needs contents: write — keep it out of this job"
-    )
+    # The GitHub-release job legitimately holds contents: write — the property
+    # is per-job isolation: no single job may hold both the OIDC publishing
+    # identity and repository write access.
+    jobs_text = directives.split("\njobs:", 1)[1]
+    blocks: dict[str, list[str]] = {}
+    current = None
+    for line in jobs_text.splitlines():
+        if line and not line.startswith("    ") and line.startswith("  ") and line.rstrip().endswith(":"):
+            current = line.strip()
+            blocks[current] = []
+        elif current is not None:
+            blocks[current].append(line)
+    assert blocks, "release.yml jobs could not be parsed"
+    for job, lines in blocks.items():
+        body = "\n".join(lines)
+        assert not ("id-token: write" in body and "contents: write" in body), (
+            f"job {job} combines the PyPI publishing identity with repository "
+            "write access — keep them in separate jobs"
+        )
 
 
 def test_no_unhashed_dependency_install_remains_in_ci():

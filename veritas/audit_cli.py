@@ -1,4 +1,4 @@
-"""veritas-audit: audit an EvidencePack, verify audit records, compute standing.
+"""veritas-audit: audit an EvidencePack, verify audit records, count survival.
 
     veritas-audit run pack.json            # re-fetch origin, emit signed AuditRecord
     veritas-audit verify record.json       # check one record's signature and shape
@@ -42,6 +42,7 @@ from .audit import (
     survival_report,
     verify_audit_record,
 )
+from .cli import VerdictArgumentParser
 from .notary.sign import NotarySignError, operator_signer_from_env
 
 EXIT_CONFIRMED = 0
@@ -51,9 +52,11 @@ EXIT_BAD_INPUT = 3
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = VerdictArgumentParser(
         prog="veritas-audit",
-        description="Independent audit of evidence attestations; standing as counts.",
+        description="Independent audit of evidence attestations; survival as counts.",
+        epilog="exit codes (run): 0 confirmed · 1 diverged · 2 unobserved · "
+               "3 bad input (2 is evidence of nothing and never scored)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

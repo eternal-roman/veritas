@@ -1,4 +1,4 @@
-"""Evaluation harness: fidelity, refusal discrimination, and calibration input.
+"""Evaluation harness: fidelity, refusal discrimination, unavailability honesty.
 
 Runs against a pinned offline corpus by default so results are deterministic
 and do not depend on network reachability — a harness whose numbers change

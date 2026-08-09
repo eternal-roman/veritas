@@ -163,7 +163,10 @@ def score_service(log: OutcomeLog | None = None) -> TrustScore:
     basis: dict[str, Any] = {
         **stats,
         "min_samples": MIN_SAMPLES_FOR_SCORE,
-        "counts": "settled paid requests only",
+        "counts": (
+            "verified-payment requests, recorded at delivery time — before "
+            "the settlement outcome is known"
+        ),
         "excluded": (
             "Unpaid requests are recorded and reported here but never scored: "
             "/v1/trust is free and unauthenticated, so free traffic could "

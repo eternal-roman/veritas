@@ -411,7 +411,9 @@ def _finalize(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    from .cli import VerdictArgumentParser
+
+    parser = VerdictArgumentParser(
         prog="veritas-buy",
         description=(
             "Guided buyer journey against a seller base URL: discover, "

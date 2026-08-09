@@ -38,14 +38,10 @@ USDC_ASSETS: dict[str, dict[str, Any]] = {
     "eip155:43113": {"address": "0x5425890298aed601595a70AB815c96711a31Bc65", "decimals": 6, "symbol": "USDC"},
 }
 
-# Networks recognised for alias resolution but NOT advertised as payable.
-# Solana settlement uses SPL token accounts and a different payload shape than
-# the EVM `exact` scheme implemented here; advertising it would publish an
-# offer no buyer could actually fulfil.
-UNSUPPORTED_SETTLEMENT = {
-    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana_spl_not_implemented",
-    "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": "solana_spl_not_implemented",
-}
+# Solana is recognised for alias resolution but NOT advertised as payable:
+# SPL settlement uses different token accounts and payload shapes than the
+# EVM `exact` scheme implemented here. The exclusion mechanism is absence
+# from USDC_ASSETS above — an offer we cannot construct is never published.
 
 DEFAULT_DECIMALS = 6
 

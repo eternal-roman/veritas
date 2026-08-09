@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "veritas-research"
 dynamic = ["version"]
-description = "Evidence-grounded research service for agents: hash-chained custody, Bayesian updating, explicit refusal, and x402 payment."
+description = "Evidence-grounded research service for agents: hash-chained custody, countable support, explicit refusal, and x402 payment."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -17,7 +17,6 @@ keywords = [
     "evidence",
     "provenance",
     "custody",
-    "bayesian",
     "payments",
     "usdc",
     "mcp",

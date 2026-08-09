@@ -37,6 +37,8 @@ class ErrorCode(str, Enum):
     RECEIPT_GONE = "receipt_gone"
     DEADLINE_EXCEEDED = "deadline_exceeded"
     INVALID_REQUEST = "invalid_request"
+    NOT_FOUND = "not_found"
+    UNAUTHORIZED = "unauthorized"
     REQUEST_TOO_LARGE = "request_too_large"
     RATE_LIMITED = "rate_limited"
     SERVICE_OVERLOADED = "service_overloaded"
@@ -86,7 +88,7 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.PAYMENT_AUTHORIZATION_IN_PROGRESS.value: {
         "status": 409,
-        "meaning": "A request against this payment authorization is still running. Wait for it to finish and resubmit the same authorization to collect the deliverable; do not sign a new one.",
+        "meaning": "A request against this payment authorization is still running. Wait for it to finish and resubmit the same authorization to collect the deliverable; do not sign a new one. If repeated resubmissions keep returning this error, the original request likely died mid-work — nothing was settled, and a fresh authorization is the way forward.",
         "retriable": True,
     },
     ErrorCode.REPLAY_PROTECTION_UNAVAILABLE.value: {
@@ -96,7 +98,7 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.SETTLEMENT_FAILED.value: {
         "status": 402,
-        "meaning": "The facilitator answered and refused settlement; the work was done, is held, and was not delivered. Nothing was charged. Resubmitting the same authorization once the cause is fixed returns the held deliverable without re-running the work. A settlement we simply never heard back about is NOT this error: it returns 200 with payment.state == 'indeterminate', because the funds may have moved.",
+        "meaning": "The facilitator answered and refused settlement; the work was done, is held, and was not delivered. Nothing was charged. On /v1/research and /v1/notarize, resubmitting the same authorization once the cause is fixed returns the held deliverable without re-running the work. On /v1/credits/topup there is no held deliverable and replays are refused — sign a fresh authorization. A settlement we simply never heard back about is NOT this error: it returns 200 with payment.state == 'indeterminate', because the funds may have moved.",
         "retriable": True,
     },
     ErrorCode.RETRIEVAL_UNAVAILABLE.value: {
@@ -121,7 +123,17 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.INVALID_REQUEST.value: {
         "status": 422,
-        "meaning": "The request body failed validation; detail lists the failing fields.",
+        "meaning": "The request body or parameters failed validation; detail lists the failing fields.",
+        "retriable": False,
+    },
+    ErrorCode.NOT_FOUND.value: {
+        "status": 404,
+        "meaning": "The requested surface does not exist in the current configuration. Receipts use the more specific receipt_not_found / receipt_gone pair.",
+        "retriable": False,
+    },
+    ErrorCode.UNAUTHORIZED.value: {
+        "status": 401,
+        "meaning": "The request carried a credential for a token-gated surface and it did not match. Session problems use siwx_invalid / session_invalid.",
         "retriable": False,
     },
     ErrorCode.REQUEST_TOO_LARGE.value: {

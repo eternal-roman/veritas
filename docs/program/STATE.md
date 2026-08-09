@@ -21,6 +21,18 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
+> **Review/polish PR (2026-08-09, fable):** six-territory adversarial review
+> of the whole repo → one cleanup/debloat/polish PR. Execution-confirmed bug:
+> both buyer CLIs crashed on every real (un-injected) invocation via
+> resolver=None in the SSRF guard, exit 1 masquerading as seller-failed —
+> green 894-test suite never saw it (every test injects a resolver). Also:
+> unverified-domain networks 500ed live mode; DEFAULT_FACILITATOR named a
+> never-exercised counterparty; probes read env names nobody sets; hooks
+> lied about two exit-code contracts. Fixed + witness tests. Deferred (org
+> decisions, not thrash): program-ware in the wheel (~23% of package lines:
+> evolver, plane cluster), paid-work scaffold extraction in server.py,
+> conftest fixture consolidation, constitution G12 wording amendment.
+>
 > **Tip of `origin/main`:** `694626a` (PR **#136** PS9 buyer journey + Stage-1
 > status + catalog seed one-shot). Prior: `#135` / `816a465` 0.1-R n=3;
 > `#134` / `7861c2b` VISION + hooks; `#133` / `be0e0c7` evolver journal;
@@ -394,7 +406,7 @@ Updated as they are measured, never estimated in this table.
 | Payment model traces | 8,720 | 4f2321c |
 | COGS per notarization | not measured | — (Cycle 4) |
 | Break-even requests/month | not measured | — (Cycle 4) |
-| On-chain settlements (testnet self-dogfood) | **2** | 2026-08-09; evidence `docs/program/fable/settlement/`; scorecard `veritas-ops existence` |
+| On-chain settlements (testnet self-dogfood) | see header + evidence dir | count lives ONLY at the STATE header and `docs/program/fable/settlement/`; scorecard `veritas-ops existence` |
 | Unsolicited settlements | **0** | never observed |
 | Mainnet settlements | **0** | never executed |
 

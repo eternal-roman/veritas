@@ -53,8 +53,10 @@ def _fake_urlopen(request, timeout=None):
 def test_unset_env_probes_pinned_defaults_with_labelled_source(monkeypatch):
     for var in (
         "VERITAS_RPC_URL",
+        "VERITAS_FACILITATOR",
         "VERITAS_FACILITATOR_URL",
         "X402_FACILITATOR_URL",
+        "BUYER_PRIVATE_KEY",
         "VERITAS_PRIVATE_KEY",
         "VERITAS_BUYER_KEY",
     ):
@@ -102,8 +104,10 @@ def test_write_checklist_no_secrets_and_no_stale_settle_claim(
     monkeypatch.setattr(urllib.request, "urlopen", _fake_urlopen)
     for var in (
         "VERITAS_RPC_URL",
+        "VERITAS_FACILITATOR",
         "VERITAS_FACILITATOR_URL",
         "X402_FACILITATOR_URL",
+        "BUYER_PRIVATE_KEY",
         "VERITAS_PRIVATE_KEY",
         "VERITAS_BUYER_KEY",
     ):

@@ -1,18 +1,15 @@
 """The canonical Veritas response contract.
 
-These dataclasses previously described a response shape that nothing produced:
-the pipeline built ad-hoc dicts with different field names, so the "contract"
-and the wire format were free to drift apart, and a consuming agent had no
-authoritative definition to code against.
-
-This module now defines the shape the pipeline actually emits and provides
-`validate_response`, which the test suite runs against real pipeline output so
-the contract cannot silently diverge again.
+The contract is constants plus `validate_response`, which the test suite runs
+against real pipeline output so the published shape cannot silently diverge
+from the emitted one. An earlier revision also carried dataclasses mirroring
+the wire shape; they were never instantiated and drifted from the real
+contract twice — a contract nothing produces is where drift hides, so they
+were removed rather than re-synced.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -32,42 +29,9 @@ class RefusalReason(str, Enum):
 class Provenance(str, Enum):
     LIVE_FETCH = "live_fetch"
     OFFLINE_CORPUS = "offline_corpus"
-
-
-@dataclass
-class Evidence:
-    url: str
-    title: str | None
-    excerpt: str
-    content_hash: str
-    provider: str | None = None
-    provenance: str | None = None
-    relevance: float = 0.0
-
-
-@dataclass
-class Claim:
-    id: str
-    statement: str
-    evidence_hash: str
-    source_url: str
-    provenance: str | None = None
-    relevance: float = 0.0
-
-
-@dataclass
-class VeritasResponse:
-    request_id: str
-    status: Status
-    query: str
-    claims: list[Claim] = field(default_factory=list)
-    evidence: list[Evidence] = field(default_factory=list)
-    custody_root: str | None = None
-    custody_valid: bool = False
-    retrieval: dict[str, Any] = field(default_factory=dict)
-    refusal_reason: str | None = None
-    billable: bool = True
-    timestamp: str = ""
+    # Stamped by the pipeline when a source was re-observed through the
+    # notary engine (observe_urls=True) and carried no provenance of its own.
+    NOTARY_OBSERVE = "notary.observe"
 
 
 REQUIRED_FIELDS = (
@@ -85,8 +49,9 @@ def response_json_schema() -> dict[str, Any]:
 
     Derived from the same constants `validate_response` enforces, so the
     served schema cannot drift from the enforced one. Nullability mirrors the
-    pipeline's actual output (refusal_reason and custody_root are null on
-    completed responses).
+    pipeline's actual output (refusal_reason is null on completed responses;
+    custody_root is typed nullable only for an empty ledger, which the
+    pipeline never produces).
     """
     evidence_properties = {
         "url": {"type": "string"},
@@ -96,6 +61,13 @@ def response_json_schema() -> dict[str, Any]:
         "provider": {"type": ["string", "null"]},
         "provenance": {"type": ["string", "null"], "enum": [p.value for p in Provenance] + [None]},
         "relevance": {"type": "number"},
+        # Emitted on every evidence item: what the buyer may reuse, and the
+        # attribution that reuse must carry. Unknown licences say "unknown".
+        "license": {"type": ["string", "null"]},
+        "attribution": {"type": ["string", "null"]},
+        # Present (true) only when the source body was re-fetched through the
+        # notary observation engine rather than taken from a search snippet.
+        "observed": {"type": "boolean"},
     }
     claim_properties = {
         "id": {"type": "string"},

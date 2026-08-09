@@ -6,29 +6,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet. Default **hold** unless unblocked (live RPC G9 dogfood if egress;
-> PyPI is human ops, not a dual product bet).
-> **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **N1.5**,
-> **0.8.1**, **cycle-5**, **N1.4**, **G9-design**, **P7 product**, **N0–N1.3**,
-> **M7**, **O.8**, or **#98** ecosystem-advance thrash.
+> the bet. Default **hold**. Stage-1 public existence (PyPI / public TLS /
+> mainnet pay-to) is mostly **human ops**, not dual product invent.
+> **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
+> **O.8**, **#98**, or **#112 thrash**.
 >
-> **On main:** **#111** / `4aa6c61` plane org-loops v4 (stock protocol) — **not**
-> x402 settle; **#106** / `4d15033` plane v3; **#98** / `9359b79` mesh;
-> A26/A27 `#75` / `ab728a6`; N0-residue `#77` / `1c56a0b`; P7-C `#69` /
-> `e7f674b`. Settlements **on main still 0**. Gap G9 **still open on main**.
-> Not PyPI. Open product PR **#112** (first testnet settle + refounding;
-> CI green; **not stock until merge**).
->
-> Nothing has settled on-chain **on main**. #112 is open evidence, not tip truth.
+> **On main:** **#112** / `367a3aa` — first **testnet** settlement L1-live
+> (tx `0xdad0…2361`, chain_checked confirmed=1) + refounding docs; **not**
+> mainnet; **not** unsolicited buyer. **#111** / `4aa6c61` plane org-loops v4.
+> Gap **G9 still open** constitutionally (ops must configure RPC in production).
+> Settlements: **1 testnet** · mainnet **0** · unsolicited **0**. Not PyPI.
+> Open product PRs: **none** (docs #114 Pruner charter may be open).
 
 ## Progress log
 
-> **Tip of `origin/main`:** `4aa6c61` (PR **#111** plane org loops v4).
-> Prior: `#110` / `0ab5d36`; `#109` / `4a3c112`; `#108` / `f5e060f`; product
-> `#106` / `4d15033`; `#98` / `9359b79`.
-> Product A26/A27 **`ab728a6`** (#75); N0-residue **`1c56a0b`** (#77).
-> Claim **free**. Settlements on main: **0**. Gap G9 open on main.
-> Open product PRs: **#112**. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `76fe090` (PR **#113** stale restock — cards were
+> wrong about #112; this tip-true restock corrects). Product tip truth is
+> **#112** / `367a3aa` under it. Prior: `#111` / `4aa6c61`; `#110` / `0ab5d36`.
+> Claim **free**. Settlements: **1 testnet** · mainnet **0**. Gap G9 open.
+> Open product PRs: **none**. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 >
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /
 > composed standing. **Not proven:** multi-instance survival; on-chain (0).

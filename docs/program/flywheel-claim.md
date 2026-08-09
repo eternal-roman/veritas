@@ -4,9 +4,10 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-09T01:36:00Z
-- **last_merged:** plane #111 @ `4aa6c61`; docs #110 @ `0ab5d36`; docs #109 @ `4a3c112`; docs #108 @ `f5e060f`; plane #106 @ `4d15033`; docs #105 @ `b66901f`; docs #104 @ `11482c9`; docs #103 @ `5c02edb`; docs #102 @ `b74b0af`; docs #101 @ `72119b4`; docs #100 @ `7011bdf`; ecosystem-advance #98 @ `9359b79`; docs #97 @ `d39eee4`; docs #96 @ `bc455c8`; docs #95 @ `301f5b2`; docs #94 @ `827813a`; docs #93 @ `f87a467`; docs #91 @ `03d7401`; docs #89 @ `acc8f2d`; docs #88 @ `abbfb40`; docs #86 @ `d4769ca`; docs #85 @ `232efac`; docs #84 @ `398e2ac`; docs #82 @ `48d7703`; docs #81 @ `458c36a`; docs #78 @ `2876f0a`; A26/A27 #75 @ `ab728a6`; N0 residue #77 @ `1c56a0b`; Git Agent #76 @ `e78a7a9`; P7-C #69 @ `e7f674b`
-- **next_micro:** Open product **#112** first testnet settle+refounding (CI green; not on main). Claim **free** until claim or merge. #111 plane v4 landed. Do **not** re-open A26/A27 / N0 / P7-C / M7. Settlements **on main still 0** until #112 merges. Gap G9 open on main. Parked: PyPI human ops.
+- **updated:** 2026-08-09T01:42:00Z
+- **last_merged:** docs #113 @ `76fe090` (stale restock — superseded by this tip-true); product **#112** @ `367a3aa` first **testnet** settle; plane #111 @ `4aa6c61`; docs #110 @ `0ab5d36`
+- **settlements:** **1 testnet** (tx `0xdad0…2361`, Base Sepolia, chain_checked confirmed=1) · mainnet **0** · unsolicited **0**
+- **next_micro:** Claim **free**. Product HOLD unless Overseer names Stage-1 slice or non-money singular. Do **not** re-open #112 thrash / M7 / N0 / #98 dual. G9 constitutionally open (ops). Parked: PyPI/TLS/mainnet human ops. #114 Pruner charter when green.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -14,6 +15,7 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| **First testnet settlement + refounding** | **`367a3aa` / #112** — L1-live **one** self-dogfood; not mainnet; not unsolicited |
 | **Plane org loops v4 — stock protocol** | **`4aa6c61` / #111** |
 | Plugin-settings pattern gitignore + .claude guide | `0ab5d36` / #110 |
 | Steward tip f5e060f free restock post-#106/#108 | `4a3c112` / #109 |

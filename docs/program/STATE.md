@@ -5,29 +5,26 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next:** land **PS9-buyer-journey-stage1-status** (branch
-> `feat/ps9-buyer-journey-stage1-status`, claim building) — evolver worklist
-> product slice: `veritas-buy` guided journey (discover→diligence→unpaid
-> pay-surface probe; **never settles**); `veritas-agent status` embeds Stage-1
-> readiness scorecard; `seed_known_blocks` one-shot (no resolve→reseed thrash).
-> After merge: free claim; default **hold invent money**; Stage-1 human still
-> owns PyPI · public TLS · mainnet pay-to.
-> **G10:** do not dual-reopen **#135** 0.1-R/n=3 thrash, **#134** VISION thrash,
-> **#131** evolver thrash, **#129** existence thrash, commercial product-worth.
+> **Do this next:** claim **free**. Product **#136** PS9 landed (`694626a`) —
+> `veritas-buy` + `veritas-agent status` Stage-1 + catalog seed one-shot.
+> Default **HOLD invent money**; Stage-1 human owns PyPI · public TLS ·
+> mainnet pay-to. No singular agent invent NEXT named.
+> **G10:** do not dual-reopen **#136** PS9 thrash, **#135** 0.1-R/n=3 thrash,
+> **#134** VISION thrash, **#131** evolver thrash, **#129** existence thrash.
 >
 > **On main:** settlements **3 testnet** · mainnet **0** · unsolicited **0**
 > (first live green composed 0.1-R —
-> `fable/settlement/money_loop_20260809T073637Z.json`). Tip **`816a465`** /
-> **#135**. Gap **G9** production-routine open. Not PyPI.
+> `fable/settlement/money_loop_20260809T073637Z.json`). Tip **`694626a`** /
+> **#136**. Gap **G9** production-routine open. Not PyPI.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `816a465` (PR **#135** composed 0.1-R n=3 +
-> existence money_loop count). Prior: `#134` / `7861c2b` VISION + hooks;
-> `#133` / `be0e0c7` evolver journal; `#131` / `ac68cc9` evolver; `#129` /
-> `b2420ce` existence; `#127` / `6809580` dogfood; `#122` / `0c2cef9` 0.1-R.
-> Claim **building** PS9 journey. Settlements: **3 testnet** · mainnet **0** ·
-> unsolicited **0**. Gap G9 open. Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
+> **Tip of `origin/main`:** `694626a` (PR **#136** PS9 buyer journey + Stage-1
+> status + catalog seed one-shot). Prior: `#135` / `816a465` 0.1-R n=3;
+> `#134` / `7861c2b` VISION + hooks; `#133` / `be0e0c7` evolver journal;
+> `#131` / `ac68cc9` evolver; `#129` / `b2420ce` existence. Claim **free**.
+> Settlements: **3 testnet** · mainnet **0** · unsolicited **0**. Gap G9 open.
+> Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.
 
 
 > **A26/A27 landed on main @ `ab728a6` (PR #75).** Survival records / warranty W0 /

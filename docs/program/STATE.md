@@ -6,17 +6,26 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: one authorized slice only (claim free)** — Overseer names
-> the bet. Default **hold**. Stage-1 public existence (PyPI / public TLS /
-> mainnet pay-to) is mostly **human ops**, not dual product invent.
+> the bet. The old default **hold** rested on "money path blocked on env";
+> that premise was probed and cleared
+> ([`ecosystem/unblock/LADDER-2026-08-09.md`](ecosystem/unblock/LADDER-2026-08-09.md)):
+> pinned public testnet defaults ship in code, the probe passes from a bare
+> environment, and the settle→reconcile recipe is proven **n=2**.
+> **Recommended singular bet: Phase 0.1-R — routine money loop** (scripted
+> settle→reconcile cycle from any egress host; keeps G9 reconciliation
+> routine). Alternative if Overseer prefers demand-side: product-worth
+> (retrieval grade). **Stage-1 human minutes** (prepared-90% done, see
+> ladder §4): PyPI trusted publisher for `veritas-research` (name verified
+> free) · public TLS host · mainnet pay-to.
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
 > **O.8**, **#98**, or **#112 thrash**.
 >
-> **On main:** **#112** / `367a3aa` — first **testnet** settlement L1-live
-> (tx `0xdad0…2361`, chain_checked confirmed=1) + refounding docs; **not**
-> mainnet; **not** unsolicited buyer. **#111** / `4aa6c61` plane org-loops v4.
-> Gap **G9 still open** constitutionally (ops must configure RPC in production).
-> Settlements: **1 testnet** · mainnet **0** · unsolicited **0**. Not PyPI.
-> Open product PRs: **none** (docs #114 Pruner charter may be open).
+> **On main:** settlements **2 testnet** (both chain-confirmed via the
+> default RPC path, env unset — `fable/settlement/`) · mainnet **0** ·
+> unsolicited **0**. **#112** / `367a3aa` first settlement + refounding;
+> **#118** / `bc0bba3` MIND operating core; **#111** / `4aa6c61` org-loops
+> v4. Gap **G9**: reconcile works from a bare env; still open until routine
+> in production. Not PyPI (name free, workflow ready).
 
 ## Progress log
 

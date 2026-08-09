@@ -136,3 +136,88 @@ def test_g9_witness_still_holds_on_ledger():
     source = Path(ledger_module.__file__).read_text(encoding="utf-8")
     assert "eth_getTransactionReceipt" not in source
     assert not hasattr(ledger_module.Ledger, "reconcile_against_chain")
+
+
+# --- per-network public defaults (an unset env var is not a block) ---------
+
+
+def test_resolve_rpc_url_env_wins_for_every_network(monkeypatch):
+    from veritas.chain_reconcile import resolve_rpc_url
+
+    monkeypatch.setenv(ENV_RPC_URL, "https://operator.example")
+    for network in ("eip155:84532", "eip155:8453", None):
+        url, source = resolve_rpc_url(network)
+        assert url == "https://operator.example"
+        assert source == "env"
+
+
+def test_resolve_rpc_url_defaults_are_testnet_only(monkeypatch):
+    from veritas.chain_reconcile import DEFAULT_PUBLIC_RPC_URLS, resolve_rpc_url
+
+    monkeypatch.delenv(ENV_RPC_URL, raising=False)
+    url, source = resolve_rpc_url("eip155:84532")
+    assert url == DEFAULT_PUBLIC_RPC_URLS["eip155:84532"]
+    assert source == "default_public_rpc:eip155:84532"
+    # Mainnet (Base, eip155:8453) must never inherit a default: a real tx
+    # checked against the wrong chain would read not_found.
+    assert "eip155:8453" not in DEFAULT_PUBLIC_RPC_URLS
+    url, source = resolve_rpc_url("eip155:8453")
+    assert url is None
+    assert source == "unconfigured"
+
+
+def test_reconcile_auto_checks_testnet_default_and_skips_mainnet(monkeypatch):
+    from veritas.chain_reconcile import (
+        DEFAULT_PUBLIC_RPC_URLS,
+        reconcile_settlements_auto,
+    )
+
+    monkeypatch.delenv(ENV_RPC_URL, raising=False)
+    calls = []
+
+    def transport(url, method, params):
+        calls.append(url)
+        assert url == DEFAULT_PUBLIC_RPC_URLS["eip155:84532"]
+        return {"status": "0x1"}
+
+    rows = [
+        {
+            "request_id": "t",
+            "transaction": "0x" + "aa" * 32,
+            "network": "eip155:84532",
+        },
+        {
+            "request_id": "m",
+            "transaction": "0x" + "bb" * 32,
+            "network": "eip155:8453",
+        },
+    ]
+    report = reconcile_settlements_auto(rows, transport=transport)
+    assert len(calls) == 1, "mainnet row must never reach the transport"
+    statuses = {r["request_id"]: r["status"] for r in report["results"]}
+    assert statuses["t"] == "confirmed"
+    assert statuses["m"] == "rpc_not_configured"
+    sources = {r["request_id"]: r["rpc_source"] for r in report["results"]}
+    assert sources["t"] == "default_public_rpc:eip155:84532"
+    assert sources["m"] == "unconfigured"
+    assert report["chain_checked"] is True
+
+
+def test_reconcile_auto_env_overrides_defaults(monkeypatch):
+    from veritas.chain_reconcile import reconcile_settlements_auto
+
+    monkeypatch.setenv(ENV_RPC_URL, "https://operator.example")
+    seen = []
+
+    def transport(url, method, params):
+        seen.append(url)
+        return {"status": "0x1"}
+
+    rows = [
+        {"request_id": "t", "transaction": "0x" + "aa" * 32, "network": "eip155:84532"},
+        {"request_id": "m", "transaction": "0x" + "bb" * 32, "network": "eip155:8453"},
+    ]
+    report = reconcile_settlements_auto(rows, transport=transport)
+    assert seen == ["https://operator.example"] * 2
+    assert all(r["rpc_source"] == "env" for r in report["results"])
+    assert report["counts"] == {"confirmed": 2}

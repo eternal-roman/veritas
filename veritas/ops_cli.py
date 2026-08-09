@@ -23,11 +23,14 @@ constitution gap G9 — closing it needs an RPC endpoint. A reconcile report
 that implied on-chain confirmation it had not performed would be the most
 damaging untruth this codebase could ship, so it says so every time.
 
-**`reconcile-chain` (G9 design).** Optional: with ``VERITAS_RPC_URL``, classify
-facilitator-reported transaction hashes via ``eth_getTransactionReceipt``.
-Without RPC it returns ``rpc_not_configured`` / ``chain_checked: false``.
-Never rewrites the ledger or invents revenue. G9 stays open until operators
-configure RPC and the production path uses it.
+**`reconcile-chain` (G9 design).** Classifies facilitator-reported transaction
+hashes via ``eth_getTransactionReceipt``. ``VERITAS_RPC_URL`` wins when set;
+unset, settlements on a known public **testnet** are checked against that
+network's pinned default (``chain_reconcile.DEFAULT_PUBLIC_RPC_URLS``, source
+stamped per row) and every other network stays ``rpc_not_configured`` —
+mainnet always requires the explicit variable. Never rewrites the ledger or
+invents revenue. G9 stays open until reconciliation runs routinely in
+production.
 
 **What `prune` does not do.** It ages local custody receipts and settled or
 abandoned ledger rows against a shared cutoff. It does not invent settlement
@@ -217,7 +220,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("reconcile", help="What needs an operator's attention.")
     sub.add_parser(
         "reconcile-chain",
-        help="G9 design: classify settled tx hashes via VERITAS_RPC_URL (fail-closed).",
+        help=(
+            "G9 design: classify settled tx hashes via VERITAS_RPC_URL, or a "
+            "pinned public default for known testnets (mainnet needs the env)."
+        ),
     )
     sub.add_parser("usage", help="What serving consumed, priced where possible.")
     sub.add_parser("pricing", help="The price new ledger entries are stamped with.")
@@ -252,11 +258,11 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "reconcile":
         payload = _reconcile(ledger)
     elif args.command == "reconcile-chain":
-        from veritas.chain_reconcile import reconcile_settlements
+        from veritas.chain_reconcile import reconcile_settlements_auto
 
         candidates = ledger.settled_with_transaction()
         missing = ledger.settled_without_transaction()
-        payload = reconcile_settlements(candidates)
+        payload = reconcile_settlements_auto(candidates)
         payload["candidates"] = len(candidates)
         payload["settled_without_transaction"] = len(missing)
         payload["chain_checked"] = bool(payload.get("chain_checked"))

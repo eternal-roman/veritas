@@ -33,6 +33,16 @@ ENV_RPC_URL = "VERITAS_RPC_URL"
 ENV_RPC_TIMEOUT = "VERITAS_RPC_TIMEOUT_SECONDS"
 DEFAULT_TIMEOUT = 15.0
 
+# Known public JSON-RPC endpoints, keyed by CAIP-2 network id. **Testnets
+# only**: a mainnet default could classify real-money settlements against the
+# wrong chain (a genuine mainnet tx would read ``not_found`` here), so mainnet
+# always requires an explicit VERITAS_RPC_URL. Provenance: Base's published
+# network information (docs.base.org); exercised live against a settled tx on
+# 2026-08-09 — evidence in docs/program/fable/settlement/.
+DEFAULT_PUBLIC_RPC_URLS: dict[str, str] = {
+    "eip155:84532": "https://sepolia.base.org",
+}
+
 # Injectable JSON-RPC caller: (url, method, params) -> result object
 RpcTransport = Callable[[str, str, list[Any]], Any]
 
@@ -47,6 +57,27 @@ G9_NOTE = (
 def rpc_url_from_env() -> str | None:
     raw = (os.getenv(ENV_RPC_URL) or "").strip()
     return raw or None
+
+
+def resolve_rpc_url(
+    network: str | None, env_url: str | None = None
+) -> tuple[str | None, str]:
+    """Resolve the RPC URL for one settlement's network.
+
+    An explicit environment URL always wins — the operator's choice covers
+    every network. Otherwise a pinned public **testnet** default applies only
+    to the network it is pinned for; anything else stays unconfigured, so a
+    mainnet settlement can never be checked against the wrong chain by
+    default. Returns ``(url, source)`` where source is ``env``,
+    ``default_public_rpc:<network>``, or ``unconfigured``.
+    """
+    url = env_url if env_url is not None else rpc_url_from_env()
+    if url:
+        return url, "env"
+    default = DEFAULT_PUBLIC_RPC_URLS.get(network or "")
+    if default:
+        return default, f"default_public_rpc:{network}"
+    return None, "unconfigured"
 
 
 def rpc_timeout_from_env() -> float:
@@ -218,7 +249,73 @@ def reconcile_settlements(
     }
 
 
+def reconcile_settlements_auto(
+    settlements: list[Mapping[str, Any]],
+    *,
+    env_url: str | None = None,
+    transport: RpcTransport | None = None,
+) -> dict[str, Any]:
+    """Like :func:`reconcile_settlements`, resolving the RPC per row.
+
+    With ``VERITAS_RPC_URL`` set (or ``env_url`` given) this behaves exactly
+    like the explicit path. Unset, rows on a known public **testnet** are
+    checked against that network's pinned default and every other row stays
+    ``rpc_not_configured`` — an unset variable downgrades coverage, never
+    correctness. Each row is stamped with its ``rpc_source``.
+    """
+    resolved_env = env_url if env_url is not None else rpc_url_from_env()
+    results: list[dict[str, Any]] = []
+    counts: dict[str, int] = {}
+    sources: dict[str, int] = {}
+    any_url = False
+
+    for entry in settlements:
+        tx = entry.get("transaction") or entry.get("transaction_hash")
+        request_id = entry.get("request_id")
+        url, source = resolve_rpc_url(entry.get("network"), resolved_env)
+        if not tx:
+            row: dict[str, Any] = {
+                "request_id": request_id,
+                "transaction": None,
+                "chain_checked": False,
+                "status": "missing_transaction",
+                "note": G9_NOTE,
+            }
+        elif not url:
+            row = {
+                "request_id": request_id,
+                "transaction": str(tx),
+                "chain_checked": False,
+                "status": "rpc_not_configured",
+                "note": G9_NOTE,
+            }
+        else:
+            any_url = True
+            row = check_transaction(str(tx), rpc_url=url, transport=transport)
+            row["request_id"] = request_id
+        row["rpc_source"] = source
+        results.append(row)
+        counts[row["status"]] = counts.get(row["status"], 0) + 1
+        sources[source] = sources.get(source, 0) + 1
+
+    return {
+        "chain_checked": any(r.get("chain_checked") for r in results),
+        "rpc_configured": bool(resolved_env) or any_url,
+        "rpc_sources": sources,
+        "counts": counts,
+        "results": results,
+        "note": G9_NOTE,
+        "limitation": (
+            "This report does not rewrite ledger revenue. Defaults cover "
+            "known public testnets only; mainnet requires an explicit "
+            "VERITAS_RPC_URL. G9 remains open until reconciliation runs "
+            "routinely in production."
+        ),
+    }
+
+
 __all__ = [
+    "DEFAULT_PUBLIC_RPC_URLS",
     "ENV_RPC_URL",
     "ENV_RPC_TIMEOUT",
     "G9_NOTE",
@@ -227,6 +324,8 @@ __all__ = [
     "check_transaction",
     "classify_receipt",
     "reconcile_settlements",
+    "reconcile_settlements_auto",
+    "resolve_rpc_url",
     "rpc_timeout_from_env",
     "rpc_url_from_env",
 ]

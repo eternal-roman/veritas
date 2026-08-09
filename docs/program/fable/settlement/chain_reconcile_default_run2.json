@@ -1,0 +1,24 @@
+{
+  "candidates": 1,
+  "chain_checked": true,
+  "counts": {
+    "confirmed": 1
+  },
+  "limitation": "This report does not rewrite ledger revenue. Defaults cover known public testnets only; mainnet requires an explicit VERITAS_RPC_URL. G9 remains open until reconciliation runs routinely in production.",
+  "note": "chain reconcile design surface; without VERITAS_RPC_URL nothing is checked on-chain; does not rewrite the ledger or invent revenue; constitution gap G9 remains open until operators configure RPC and the production path uses it",
+  "results": [
+    {
+      "chain_checked": true,
+      "note": "chain reconcile design surface; without VERITAS_RPC_URL nothing is checked on-chain; does not rewrite the ledger or invent revenue; constitution gap G9 remains open until operators configure RPC and the production path uses it",
+      "request_id": "a4b72748-6a66-4ce0-8c2e-b140aac6fb64",
+      "rpc_source": "default_public_rpc:eip155:84532",
+      "status": "confirmed",
+      "transaction": "0x9ec7edd5bd0a14496f72dd24b78ec65778b7afca600aa06025971ca46a5d352c"
+    }
+  ],
+  "rpc_configured": true,
+  "rpc_sources": {
+    "default_public_rpc:eip155:84532": 1
+  },
+  "settled_without_transaction": 0
+}

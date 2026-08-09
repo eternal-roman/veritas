@@ -5,8 +5,8 @@ Maintained by Steward.
 | File | Note |
 |------|------|
 | historical | may be session-local |
-| **`038-brief.md`** | Post-**#122** LEARN |
-| **`042-brief.md`** | Post-**#125** LEARN; claim free; hold invent |
-| **`../CURRENT.md`** | **Live steering** — tip **`0eb4ac1`**; claim **free**; #125+#124 landed |
+| **`042-brief.md`** | Post-**#125** LEARN |
+| **`045-brief.md`** | Post-**#127** LEARN; claim free; HOLD invent |
+| **`../CURRENT.md`** | **Live steering** — tip **`6809580`**; claim **free**; #127 landed |
 
 **Rule:** CURRENT is source of truth for “now.”

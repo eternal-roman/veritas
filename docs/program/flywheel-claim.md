@@ -4,10 +4,10 @@
 - **branch:** (none)
 - **holder:** (none)
 - **status:** free
-- **updated:** 2026-08-09T03:48:00Z
-- **last_merged:** product **#125** @ `0eb4ac1` product-worth baseline skeleton; plane **#124** @ `d57311c` continuous org v5; docs #123 @ `1e53cf5`; product **#122** @ `0c2cef9` Phase 0.1-R; product **#119** @ `fb3b0d5`; product **#112** @ `367a3aa`
+- **updated:** 2026-08-09T04:10:00Z
+- **last_merged:** product **#127** @ `6809580` testnet commerce dogfood (Playwright faucet + harness); docs **#126** @ `a4c8d0e`; product **#125** @ `0eb4ac1` product-worth baseline; plane **#124** @ `d57311c`; product **#122** @ `0c2cef9` Phase 0.1-R; product **#119** @ `fb3b0d5`; product **#112** @ `367a3aa`
 - **settlements:** **2 testnet** self-dogfood on tip · mainnet **0** · unsolicited **0**
-- **next_micro:** Claim **free**. #125 is L1 offline eval skeleton (`commercial_grade=false`) — not market prefer-again. Do **not** invent n=3 / re-open 0.1-R thrash / M7 / commercial product-worth thrash. Await Overseer LEARN singular or Stage-1 human. Parked: PyPI/TLS/mainnet.
+- **next_micro:** Claim **free**. #127 is dogfood tooling (faucet/harness) — **not** n=3 settle, **not** unsolicited demand, **not** unattended faucet (captcha). Do **not** invent commercial product-worth thrash / 0.1-R re-claim / M7 dual. Overseer **HOLD invent** until re-names singular or Stage-1 human. Parked: PyPI/TLS/mainnet.
 
 When a flywheel/conductor cycle is building, set `status: building` and holder.
 Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
@@ -15,6 +15,8 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 ## Landed (do not re-claim)
 | Bet | SHA / PR |
 |-----|----------|
+| **Testnet commerce dogfood harness** | **`6809580` / #127** — Playwright Circle faucet + dogfood scripts; funded settle not this PR |
+| Steward free claim post-#125/#124 | `a4c8d0e` / #126 |
 | **Product-worth baseline report (Phase 2 skeleton)** | **`0eb4ac1` / #125** — offline metrics; not commercial-grade; not vs search API |
 | **Continuous org v5 stall clocks + free-on-merge** | **`d57311c` / #124** — plane_stock v2; hygiene law |
 | Steward free claim post-#122 | `1e53cf5` / #123 |
@@ -32,4 +34,4 @@ Clear to `free` after merge or abandon. See `AUTONOMOUS.md` and GUARDIAN G10.
 | **P7-C** re-fetch research_slots | **`e7f674b` / #69** |
 | **v0.8.1** / N1.5 / v0.8.0 / prior ladder | through tags `v0.8.1` / `v0.8.0` |
 
-**G10:** Claim **free**. Open product PRs: **none**. Settlements: testnet **2** (self-dogfood); unsolicited **0**; mainnet **0**. Not on PyPI. #125 is offline skeleton only — not commercial grade.
+**G10:** Claim **free**. Open product PRs: **none**. Settlements: testnet **2** (self-dogfood); unsolicited **0**; mainnet **0**. Not on PyPI. #127 does **not** invent n=3 or unsolicited demand.

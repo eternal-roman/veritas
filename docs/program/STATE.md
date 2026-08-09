@@ -6,23 +6,26 @@ committed and pushed survives. Update this file and push after every sub-step.
 ## NEXT ACTION
 
 > **Do this next: one authorized slice only (claim free)** — Overseer names
-> the next bet after **#125** LEARN. Default **hold**. Landed: **#125**
-> product-worth baseline skeleton (`commercial_grade=false`); **#124** plane
-> org v5 stall clocks; **#122** Phase 0.1-R money_loop. Do **not** invent
-> commercial grade, re-claim 0.1-R, or dual M7.
+> the next bet after **#127** LEARN. Default **hold invent**. Landed: **#127**
+> testnet commerce dogfood tooling (Playwright faucet + harness — **not** n=3
+> settle, **not** unsolicited demand); **#125** product-worth skeleton
+> (`commercial_grade=false`); **#122** Phase 0.1-R money_loop. Do **not**
+> invent n=3 from #127, re-claim 0.1-R, or dual M7.
 > **Stage-1 human minutes:** PyPI trusted publisher · public TLS · mainnet pay-to.
 > **G10:** never dual-reopen **A26/A27**, **N0-residue**, **P7-C**, **M7**,
-> **O.8**, **#98**, **#112 thrash**, **#122 thrash**, or commercial product-worth thrash.
+> **O.8**, **#98**, **#112 thrash**, **#122 thrash**, **#127 thrash**, or
+> commercial product-worth thrash.
 >
 > **On main:** settlements **2 testnet** · mainnet **0** · unsolicited **0**.
-> **#125** / `0eb4ac1` product-worth baseline; **#124** / `d57311c` org v5;
-> **#122** / `0c2cef9` 0.1-R; **#119** / `fb3b0d5` n=2; **#112** / `367a3aa`.
-> Gap **G9** production-routine open. Not PyPI. Claim **free**. Open product: **none**.
+> **#127** / `6809580` dogfood harness; **#125** / `0eb4ac1` product-worth;
+> **#124** / `d57311c` org v5; **#122** / `0c2cef9` 0.1-R; **#119** / `fb3b0d5`
+> n=2; **#112** / `367a3aa`. Gap **G9** production-routine open. Not PyPI.
+> Claim **free**. Open product: **none**.
 
 ## Progress log
 
-> **Tip of `origin/main`:** `0eb4ac1` (PR **#125** product-worth baseline skeleton).
-> Prior: `#124` / `d57311c` org v5; `#123` / `1e53cf5` free-claim hygiene; `#122` / `0c2cef9` 0.1-R.
+> **Tip of `origin/main`:** `6809580` (PR **#127** testnet commerce dogfood harness).
+> Prior: `#126` / `a4c8d0e` hygiene; `#125` / `0eb4ac1` product-worth; `#124` / `d57311c` org v5; `#122` / `0c2cef9` 0.1-R.
 > Claim **free**. Settlements: **2 testnet** · mainnet **0** · unsolicited **0**.
 > Gap G9 open (production-routine). Open product PRs: **none**.
 > Tags: `v0.8.1`, `v0.8.0`. **Not** on PyPI.

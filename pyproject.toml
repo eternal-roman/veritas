@@ -54,7 +54,7 @@ signing = ["eth_account>=0.13"]
 # the published wheel: 128 files, zero fastmcp entries. Admitting 2.x ships an
 # extra that cannot serve. Raise this only after confirming the new major
 # provides that module; tests/test_mcp_server.py enforces both halves.
-mcp = ["mcp>=1.0,<2"]
+mcp = ["mcp>=1.0,<3"]
 # Optional evolutionary Idea graph (Evolver). Offline mock works without this;
 # install for LangGraph-native state machine wiring.
 evolver = [

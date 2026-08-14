@@ -1,29 +1,19 @@
 # Plugin settings (per-project, local)
 
-This repo uses a **plugin-settings** pattern (per-project local files):
-
 | Path | Git? | Purpose |
 |------|------|---------|
-| `.claude/<plugin-name>.local.md` | **no** (gitignored) | YAML frontmatter + body for that plugin |
-| This README | yes | Operator guide + templates |
+| `.claude/<plugin>.local.md` | no | YAML frontmatter + body |
+| This README | yes | Templates |
 
-## Active plugins (Grok)
-
-From `~/.grok/config.toml`: **ponytail**, **ledger**, **superpowers**.
-
-SessionStart **hooks were disabled** on Windows (harness failures). Skills/commands stay available. Local settings below default `hooks_enabled: false`.
-
-## Create / edit settings
+Active plugins (from `~/.grok/config.toml`): **ponytail**, **ledger**, **superpowers**.
+SessionStart hooks are off on Windows. Skills still work. Locals default
+`hooks_enabled: false`. Restart the host after editing.
 
 ```text
 .claude/ponytail.local.md
 .claude/ledger.local.md
 .claude/superpowers.local.md
 ```
-
-Copy a template from below, then **restart** the agent host so hooks/tools re-read state.
-
-## Templates
 
 ### ponytail
 
@@ -34,11 +24,8 @@ hooks_enabled: false
 mode: full
 level: full
 ---
-
 # Ponytail (this project)
-
-Lazy senior defaults for Veritas: smallest honest ship, no dual product NEXT,
-no settlement fiction. Hooks off (Windows); skill still applies when invoked.
+Smallest honest ship. No dual product NEXT. No settlement fiction.
 ```
 
 ### ledger
@@ -50,11 +37,8 @@ hooks_enabled: false
 strict_money: true
 forbid_floats: true
 ---
-
-# Ledger Chad (this project)
-
-Plane + product money: integer VAAT / Money.from only. Never invent x402 settle.
-Use ledger-verify before shipping monetary code.
+# Ledger (this project)
+Integer VAAT / Money.from only. Never invent x402 settle.
 ```
 
 ### superpowers
@@ -65,24 +49,9 @@ enabled: true
 hooks_enabled: false
 process_skills_first: true
 ---
-
 # Superpowers (this project)
-
-Process skills (brainstorming, TDD, systematic-debugging) before implementation.
-SessionStart hook disabled on Windows; invoke skills explicitly.
+Process skills before implementation. Invoke explicitly (hooks off).
 ```
 
-## Parsing (hooks / scripts)
-
-```bash
-STATE_FILE=".claude/ponytail.local.md"
-[[ -f "$STATE_FILE" ]] || exit 0
-FRONTMATTER=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$STATE_FILE")
-ENABLED=$(echo "$FRONTMATTER" | grep '^enabled:' | sed 's/enabled: *//')
-[[ "$ENABLED" == "true" ]] || exit 0
-```
-
-## Veritas agent loop note
-
-Plugin settings do **not** dual product NEXT. Support agents stay under
+Plugin settings do not dual product NEXT. Support agents follow
 `docs/program/WORKFLOW_HYGIENE.md` and `ORG_LOOPS.md`.

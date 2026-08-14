@@ -8,20 +8,12 @@
 
 ## Reporting a vulnerability
 
-Do **not** open a public issue for security vulnerabilities.
-
-Please report privately via GitHub Security Advisories for this repository:
+Do **not** open a public issue. Report privately:
 
 **https://github.com/eternal-roman/veritas/security/advisories/new**
 
-or contact the repository owner.
-
-Include:
-- Description of the issue
-- Steps to reproduce
-- Potential impact (especially if it could affect agent users or payment flows)
-
-We will acknowledge reports as quickly as possible and work on a fix before any public disclosure.
+Include description, reproduce steps, and impact (especially agents or payments).
+We acknowledge and fix before public disclosure.
 
 ## Automated protections
 

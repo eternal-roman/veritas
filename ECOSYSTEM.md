@@ -1,27 +1,20 @@
 # The Venue: Ecosystem Architecture
 
-How Veritas positions itself in the agent economy: the roles around it, the
-lifecycle a transaction moves through, the loops that could compound, and the
-honest evidence level of each piece. Companion documents: `CONSTITUTION.md`
-(the norms, rendered from `veritas/constitution.py`) and `ROADMAP.md` (the
-sequencing).
+Roles, transaction lifecycle, compounding loops, and the evidence level of
+each piece. Companions: `CONSTITUTION.md` (from `veritas/constitution.py`)
+and `ROADMAP.md`.
 
-## Why agents are the primary customer segment
+## Why agents are the primary customer
 
-Veritas sells evidence-grounded research whose every property is
-machine-checkable: content hashes, custody chains, explicit refusal, a
-billable flag tied to delivery. That output profile matches buyers who can
-verify it mechanically and transact at sub-dollar prices with high request
-volume — which is to say, other agents. Agentic buyers can check a custody
-chain on every response, retry on a 402, and route spend by published trust
-data; serving them well is the growth thesis.
+Every property is machine-checkable: hashes, custody, refusal, billable
+tied to delivery. That fits buyers who verify mechanically and transact at
+sub-dollar volume — other agents. They can check a custody chain per
+response, retry a 402, and route spend by published trust data.
 
-Humans hold the governing positions in this venue: they set budgets and spend
-policies for buyer agents, operate and audit seller services, run the
-facilitators and registries, and are the beneficiaries the honesty guarantees
-ultimately protect. Nothing in this architecture removes them from oversight;
-it removes them from the per-request hot path, where sub-dollar pricing makes
-per-request human approval uneconomic (see ROADMAP Part III, assumptions).
+Humans stay in governance: budgets, spend policy, operating and auditing
+sellers, running facilitators and registries. They leave the per-request
+hot path, where sub-dollar pricing makes human approval uneconomic
+(ROADMAP Part III).
 
 ## Roles in the venue
 

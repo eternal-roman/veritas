@@ -1,10 +1,8 @@
 # Fable: Refounding — working state
 
-**Worktree retired.** Canonical tree is `C:/Users/elamj/Dev/veritas` on
-`origin/main`. Do not recreate `veritas-fable` / `fable-veritas`.
-
-Historical: branch `fable/refounding` (worktree `C:/Users/elamj/Dev/veritas-fable`,
-base `origin/main` @ 458c36a). Owner: agent session 2026-08-08.
+Canonical tree: `C:/Users/elamj/Dev/veritas` on `origin/main`. Satellite
+clones retired. Historical branch `fable/refounding` @ 458c36a. Owner: agent
+session 2026-08-08.
 
 ## Mission (from the user, 2026-08-08)
 

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+- Tightened agent-facing docs (AGENTS.md, README, STATUS, VISION, CONTRIBUTING)
+  without dropping commands, invariants, honesty bounds, or field notes.
+
 ## [0.10.0] - 2026-08-14
 
 ### Added

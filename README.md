@@ -9,154 +9,86 @@ when it fails.**
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![x402](https://img.shields.io/badge/payments-x402-8A2BE2.svg)](https://x402.org)
 
-Every answer arrives with a hash-chained custody record the caller can verify
-themselves, per-source licence and attribution, and a status that distinguishes
-*"I looked and found nothing"* from *"I could not look."* Payment is
-machine-native over [x402](https://x402.org), so an agent can buy a single
-query without an account, an API key, or a human.
+Every answer carries a hash-chained custody record the caller can verify,
+per-source licence and attribution, and a status that separates *"I looked
+and found nothing"* from *"I could not look."* Payment is [x402](https://x402.org):
+one query, no account, no API key, no human.
 
-**Status: working software, unproven economics.** The invariants below are
-tested and CI-gated. Payments have settled on-chain only in operator-run
-testnet runs against the real facilitator, each chain-confirmed — count and
-evidence live in `docs/program/fable/settlement/`; no buyer we did not
-operate has ever paid, and retrieval is snippet-grade today. All of this is stated plainly in
-[Known limitations](#known-limitations) and sequenced in [ROADMAP.md](ROADMAP.md)
-— we would rather you find that here than discover it later.
+**Status: working software, unproven economics.** Invariants below are tested
+and CI-gated. On-chain settlement exists only in operator-run testnet arcs
+against the real facilitator (count and evidence:
+`docs/program/fable/settlement/`). No unsolicited buyer has paid. Retrieval is
+snippet-grade. See [Known limitations](#known-limitations) and [ROADMAP.md](ROADMAP.md).
 
 ```bash
 pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
-veritas-agent enroll --id self --interests research,verify   # identity + wallet + skills
-veritas-agent up     # config + wallet + server, zero human input
+veritas-agent enroll --id self --interests research,verify
+veritas-agent up
 ```
 
 ## Core guarantee
 
-Veritas distinguishes three outcomes, and the distinction is the product:
+The distinction is the product:
 
 | Status | Meaning | Billable |
 |--------|---------|----------|
-| `completed` | Evidence was found; every claim cites a hash present in the response | Yes |
-| `refused` | Sources were reachable and genuinely had nothing relevant | Yes |
-| `unavailable` | Retrieval itself failed — we did not observe an absence of evidence, so we do not claim one | **No** |
+| `completed` | Evidence found; every claim cites a hash in the response | Yes |
+| `refused` | Sources reachable; nothing relevant | Yes |
+| `unavailable` | Retrieval failed — we did not observe an absence | **No** |
 
-A service that reports "no evidence exists" when it simply could not reach the
-network is not a research service. Veritas never bills for its own outage.
+A service that reports "no evidence exists" when it could not reach the
+network is not a research service. Veritas never bills its own outage.
 
 ## Why an agent would choose this
 
-**You can check our work without trusting us.** Every response carries its own
-hash-chained custody record. Run `veritas.custody.verify_chain_records` on what
-you received: that check runs entirely on your side, on bytes already in your
-hands, and does not route back through our goodwill.
+**Check the work without trusting us.** Re-run `veritas.custody.verify_chain_records`
+on the delivered chain — local, on bytes already in hand.
 
-`POST /v1/verify` with **`url` + `content_hash`** (or a **`request_id`** from a
-custody receipt) re-fetches the origin through the same notary engine and
-compares the extracted body hash — that is the independent product path (P7
-closed for origin binding). The legacy **`content` + `content_hash`** body is
-still accepted as offline arithmetic convenience and is labeled
-`binding: caller_supplied`; it is not independent verification. Re-fetch at
-time T2 may diverge from notarization at T1 when the page changes; that is
-reported as mismatch, not fraud proof. Nothing here is an on-chain settlement.
+`POST /v1/verify` with **`url` + `content_hash`** (or a receipt `request_id`)
+re-fetches the origin through the notary and compares the extracted body hash
+(P7 origin binding). Legacy `content` + `content_hash` is `binding: caller_supplied`
+— arithmetic, not independent verification. A later re-fetch may diverge if
+the page changed; that is mismatch, not fraud proof. Nothing here is on-chain
+settlement.
 
-**We wrote down the rules we can be held to.** The
-[venue constitution](CONSTITUTION.md) states each norm this service commits to,
-and every article either points at the test that enforces it or is explicitly
-marked aspirational — a test rejects any article that tries to be neither. The
-open gaps are enumerated in the document itself, including the uncomfortable
-one: our trust score is still computed by us, from our own records.
+**Rules we can be held to.** The [venue constitution](CONSTITUTION.md) marks
+each article enforced or aspirational; a test rejects anything in between.
+Open gaps are listed there, including that `/v1/trust` is still computed by
+us from our own records.
 
-**An agent can adopt it without a human in the loop.** Discovery at
-`/.well-known/x402` reaches every other surface; the wire contract is served as
-JSON Schema at `/v1/schema` and the error codes at `/v1/errors`; payment is
-x402, so there is no signup, no key issuance, and no dashboard. `veritas-agent
-up` provisions its own config and wallet and starts serving.
+**No human on the adopt path.** `/.well-known/x402` reaches every surface;
+`/v1/schema` and `/v1/errors` are the contract; payment is x402. `veritas-agent
+up` provisions config and wallet and serves.
 
 ## Capabilities
 
-- **Evidence-first research** with content hashing and an append-only custody
-  ledger **delivered with the response**, so a buyer re-runs
-  `veritas.custody.verify_chain_records` on what they received
-- **A countable support report** — independent registrable domains, distinct
-  providers, verdict — instead of a confidence score. See "What we removed"
-- **First-class refusal** enforced in the pipeline: evidence below the relevance
-  threshold is refused (`irrelevant_evidence`), not dressed up as an answer
-- **Per-source licence and attribution** on every excerpt, so an agent knows what
-  it may reuse; unknown licences are labelled unknown, never assumed permissive
-- **Tiered retrieval**: keyed Serper (Google) when configured, plus keyless
-  Wikipedia and the DuckDuckGo Instant Answer API, each labelled with the engine
-  that actually served it, with provider errors surfaced — never silently
-- **x402 payment** with real facilitator `verify` / `settle`, fail-closed gating,
-  and an idempotent paid path: a resubmitted authorization never buys a second
-  retrieval pass, and returns the deliverable it already paid for
-- **A durable financial ledger** (`veritas/ledger.py`) recording every
-  authorization, delivery and settlement attempt, with delivery written before
-  settlement is attempted and "we never heard back" recorded as indeterminate
-  rather than as failure
-- **Survival records** (`veritas/audit.py`, `veritas-audit`) — the buyer-side
-  audit protocol: any third party re-fetches an attested pack's origin through
-  the notary engine and signs a `confirmed` / `diverged` / `unobserved`
-  verdict with its own key; anyone holding such records computes a
-  **survival report** — counts per distinct auditor key, self-audits
-  excluded, `unobserved` reported but never scored — without the audited
-  party's cooperation or arithmetic. Diligence vets a seller's *documents*;
-  survival records vet its *history*. What this does not fix: the set of
-  records you hold may be curated (constitution gap G11), and `/v1/trust`
-  remains self-reported (G10) — this ships the mechanism for external
-  standing, not the standing itself (see `docs/program/FABLE_INSIGHTS.md`)
-- **Falsifiable commerce, W0** (`veritas/warranty.py`) — a deliverable can
-  carry seller-authored falsification predicates from a registered D0 set
-  (custody chain verifies, every claim cites delivered evidence, the status
-  taxonomy coheres, attestations recover), a bonded stake, and a challenge
-  window; any party evaluates a challenge deterministically —
-  `fired` / `not_fired` / `undecidable` — with no arbiter, and content with
-  no decidable refutation procedure ships labeled `U` (unwarrantable)
-  instead of dressed in a warranty. Bonds are **signed commitments, not
-  escrowed value** (gap G12; settlement is still unproven), and unfalsified
-  does not mean useful — the methodology, its prior-art differentiation,
-  and its honesty boundaries are in `docs/program/FALSIFIABLE_COMMERCE.md`
-- **Buyer-side counterparty diligence** (`veritas/diligence.py`,
-  `veritas-diligence <url>`) — a buyer agent decides whether a seller may be
-  paid at all, from documents that seller publishes, and the verdict gates the
-  signer rather than merely advising: the
-  402 must agree with advertised discovery on payee, network and asset and must
-  not exceed the advertised price; L1 articles must name enforcement; and a
-  seller declaring no open gaps is refused for claiming perfection.
-  `unverifiable` is reported apart from `fail`, because "I could not check this
-  seller" and "this seller failed" call for different action — the CLI carries
-  that into its exit code (`0` pass, `1` fail, `2` unverifiable), so an agent
-  that shells out cannot collapse the two. Fetching is SSRF-guarded on the
-  seller's own links, since a hostile discovery document would otherwise steer
-  the buyer's fetcher at the buyer's private network. Every check is
-  cross-document consistency — **none proves a seller will deliver**
-- **A standalone verifier** (`veritas/verifier.py`, `veritas-verify receipt.json`)
-  — one file, zero dependencies, importing nothing from `veritas`. Copy it out
-  and run it: a buyer should not have to install our web server to audit our
-  receipt, nor check our work with our own code. It re-implements the hash
-  chain, and a differential test pins it against the engine on real output and
-  on tampered variants. It reports what it does **not** attest: consistent
-  records do not mean we ever contacted the URLs we name
-- **Prototype privacy pieces** (hiding wallet commitments, signed JIT
-  disposable packets) live in `veritas/autonomous/` with design notes under
-  `docs/design/` — experiments, not product surfaces
+- **Evidence-first research** — custody chain delivered with the response
+- **Countable support** — independent domains, providers, verdict (not a confidence score)
+- **First-class refusal** — below-threshold evidence is `irrelevant_evidence`, not an answer
+- **Per-source licence and attribution** — unknown stays unknown
+- **Tiered retrieval** — keyed Serper when configured; Wikipedia + DDG IA otherwise; errors surfaced
+- **x402** — real facilitator verify/settle, fail-closed; replay returns the paid deliverable, never a second pass
+- **Durable ledger** (`veritas/ledger.py`) — authorize → fsync delivery → settle; no reply is `indeterminate`
+- **Survival records** (`veritas-audit`) — third-party `confirmed` / `diverged` / `unobserved`; counts per auditor key, self-audits excluded. Diligence vets documents; survival vets history. Held sets may be curated (G11); `/v1/trust` is still self-reported (G10)
+- **Falsifiable commerce W0** (`veritas/warranty.py`) — seller-authored D0 predicates, bonded stake, challenge window; `fired` / `not_fired` / `undecidable`; no predicate → class `U`. Bonds are signed commitments, not escrow (G12). See `docs/program/FALSIFIABLE_COMMERCE.md`
+- **Diligence** (`veritas-diligence <url>`) — 402 must match advertised payee/network/asset/price; L1 articles must name enforcement; a seller claiming no gaps fails. `0` pass / `1` fail / `2` unverifiable. SSRF-guarded. None of this proves delivery
+- **Standalone verifier** (`veritas-verify receipt.json`) — one file, zero deps, imports nothing from `veritas`. Differential test vs the engine. Consistent records ≠ we contacted the named URLs
+- **Privacy prototypes** — hiding-wallet commitments and JIT packets in `veritas/autonomous/`; experiments (`docs/design/`)
 
 ## Install
 
 ```bash
-# Directly from the repository — no clone needed, works for an agent today:
 pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
 
-# From a clone (not yet published to PyPI; the release workflow exists but
-# needs a maintainer to configure the PyPI project first):
-pip install -e ".[signing,dev]"   # development install
+# clone (not on PyPI; release workflow exists, PyPI project is not configured):
+pip install -e ".[signing,dev]"
 
-# Container (binds 0.0.0.0 inside; the bare console script binds 127.0.0.1):
+# container binds 0.0.0.0; bare console script binds 127.0.0.1
 docker build -t veritas-research . && docker run -p 8000:8000 veritas-research
 ```
 
-Requires Python >= 3.10 and pip >= 24.1 (the package uses Metadata 2.4).
-The wheel ships a single top-level package, `veritas` (engine, agent layer,
-HTTP server, and evaluation harness), plus `veritas-server` and
-`veritas-agent` console scripts. Verify an install in one line:
+Python >= 3.10, pip >= 24.1. Wheel is one package (`veritas`) plus
+`veritas-server` / `veritas-agent`. Smoke-test:
 
 ```bash
 python -c "from veritas.pipeline import run_research; print(run_research('What is x402?', allow_network=False)['status'])"
@@ -165,79 +97,65 @@ python -c "from veritas.pipeline import run_research; print(run_research('What i
 ## Quick start (free mode)
 
 ```bash
-veritas-agent up                            # zero-touch: config + wallet + serve
-veritas-ops revenue                         # what was earned, cost and margin (JSON)
-veritas-ops reconcile                       # what needs attention (records only, not the chain)
-veritas-server                              # server only; VERITAS_HOST / VERITAS_PORT to bind
-# or equivalently
-python -m uvicorn veritas.server:app --host 0.0.0.0 --port 8000
-
-# or use the library directly
-python -c "from veritas.pipeline import run_research; print(run_research('What is x402?'))"
+veritas-agent up                 # config + wallet + serve
+veritas-ops revenue              # JSON
+veritas-ops reconcile            # records only, not the chain
+veritas-server                   # VERITAS_HOST / VERITAS_PORT to bind
 ```
-
-Offline / no network:
 
 ```python
 from veritas.pipeline import run_research
-run_research("What is x402?", allow_network=False)   # uses the labelled offline corpus
+run_research("What is x402?", allow_network=False)  # labelled offline corpus
 ```
 
-## Retrieval configuration
+## Retrieval
 
-Zero-key retrieval (Wikipedia + DuckDuckGo) works with no configuration. To
-rank a keyed provider ahead of it:
+Zero-key (Wikipedia + DuckDuckGo) needs no config. To rank a keyed provider:
 
 ```bash
-export VERITAS_SERPER_API_KEY=...   # or the conventional SERPER_API_KEY
+export VERITAS_SERPER_API_KEY=...   # or SERPER_API_KEY
 ```
 
-API keys are configuration, never payload: a key is read from the
-environment, sent only as a request header to its provider, and never
-serialised into responses, errors, custody events, or receipts (tested — see
-`tests/test_providers.py`). Without a key the provider is simply not
-registered; a configured provider's outage degrades to the next tier with the
-error reported in `retrieval.errors`.
+Keys are env config, never payload: header to the provider only, never in
+responses, errors, custody, or receipts (`tests/test_providers.py`). No key →
+provider not registered. A keyed outage degrades to the next tier with the
+error in `retrieval.errors`.
 
 ## Live payments
 
-The configuration below is the one that has actually settled on-chain
-(operator-run, chain-confirmed; evidence in `docs/program/fable/settlement/`).
-Base Sepolia and the x402.org facilitator are also the shipped defaults, so
-only the first three lines are strictly required:
+This is the config that has settled on-chain (operator-run, chain-confirmed;
+`docs/program/fable/settlement/`). Base Sepolia and the x402.org facilitator
+are the shipped defaults — first three lines are required:
 
 ```bash
-export VERITAS_PAY_TO=0xYourWallet              # validated as a real EVM address
+export VERITAS_PAY_TO=0xYourWallet
 export VERITAS_REQUIRE_PAYMENT=true
-export VERITAS_PUBLIC_URL=https://your.host     # 402 challenges name absolute URLs
-export VERITAS_NETWORK=eip155:84532             # Base Sepolia (default)
-export VERITAS_FACILITATOR=https://x402.org/facilitator   # default; the one we have settled through
+export VERITAS_PUBLIC_URL=https://your.host
+export VERITAS_NETWORK=eip155:84532             # default
+export VERITAS_FACILITATOR=https://x402.org/facilitator
 veritas-server
 ```
 
-Mainnet (`eip155:8453`) is a deliberate, unproven step: no mainnet settlement
-has ever run from this codebase, `veritas-agent` refuses `--paid` on mainnet
-without `--i-understand-this-is-real-money`, and you must choose a
-mainnet-capable facilitator yourself. If any variable is invalid the service
-reports `mode: misconfigured` and returns 503 — it will not quietly serve
-paid research for free.
+Mainnet (`eip155:8453`) is unproven. `veritas-agent` refuses `--paid` on
+mainnet without `--i-understand-this-is-real-money`. Invalid config →
+`mode: misconfigured` → 503; it will not quietly serve paid work for free.
 
 ## Endpoints
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /v1/research` | Run research (402-gated in live mode) |
-| `POST /v1/notarize` | Paid notarization of a URL: observed body, custody, optional EIP-191 attestation |
-| `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`); legacy content+hash is non-independent arithmetic |
-| `GET /v1/receipts/{id}` | Retrieve a stored custody receipt after the call |
-| `GET /v1/trust` | Behaviour-derived trust score (`UNPROVEN` until enough data) |
-| `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Wire contract, registered error codes, venue norms |
-| `GET /v1/identity` | ERC-8004 style identity document |
-| `GET /v1/hooks` | Integration registry: **every** surface (HTTP, MCP tools, CLI exit codes, headers, stores); states that no push delivery exists |
-| `GET /.well-known/x402` | Discovery + payment requirements (links reach everything above) |
+| `POST /v1/research` | Research (402 in live mode) |
+| `POST /v1/notarize` | Observe-once URL notary; same payment gates |
+| `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`) |
+| `GET /v1/receipts/{id}` | Durable custody receipt |
+| `GET /v1/trust` | Behaviour score; `UNPROVEN` until enough data |
+| `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Contract, errors, norms |
+| `GET /v1/identity` | ERC-8004-style identity |
+| `GET /v1/hooks` | Every surface (HTTP, MCP, CLI exits, headers, stores); no push |
+| `GET /.well-known/x402` | Discovery + payment requirements |
 
-The MCP route for local agents: register `veritas-mcp` as an stdio MCP server
-with your agent host (free-mode engine; paid access is the HTTP surface).
+Local MCP: register `veritas-mcp` as an stdio server (free-mode engine; paid
+access is HTTP).
 
 ## Testing
 
@@ -250,71 +168,49 @@ ruff check veritas tests
 
 ## Known limitations
 
-Stated plainly, because a truth-telling service should not overstate itself:
-
-- **Retrieval quality is thin.** Wikipedia and Instant Answer snippets are not
-  competitive with a paid search/extraction stack for general queries.
-- **On-chain settlement is operator-run testnet only.** Every settled run was
-  executed by us against the real x402.org facilitator and chain-confirmed —
-  count and evidence live in `docs/program/fable/settlement/` and the
-  `docs/program/STATE.md` header, never restated here. Mainnet settlement and
-  any buyer other than our own harness remain unexercised; fail-closed paths
-  stay the tested norm.
-- **Claims are extractive, not synthesised.** A "claim" is a grounded excerpt,
-  not an answer composed across sources.
-- **The calibrator is untrained and unused.** It reports `passthrough_untrained`,
-  needs labelled outcomes via `record_feedback`, and is applied to no response.
-- **The harness runs on a 3-document offline corpus.** Its perfect scores
-  demonstrate the invariants hold; they are not a quality benchmark.
-- **Solana is not payable.** It is recognised for alias resolution but excluded
-  from advertised networks because SPL settlement is not implemented.
-- **Wallet commitments are hiding, not zero-knowledge.** Public verification of
-  the opening requires the reveal at settlement.
-- **Self-provisioned wallet files are owner-only on POSIX only.** `os.open(...,
-  0o600)` is ignored on Windows and on filesystems without mode bits, leaving
-  the keystore and its plaintext passphrase readable beyond their owner. The
-  mode is read back after every write and a `WalletPermissionWarning` names any
-  file that is unprotected, so this is reported rather than assumed — but on
-  those platforms treat the wallet as development-only.
+- **Retrieval is thin.** Wikipedia and Instant Answer snippets are not a paid search stack.
+- **Settlement is operator-run testnet only.** Count and evidence:
+  `docs/program/fable/settlement/` and `docs/program/STATE.md`. Mainnet: none.
+  Unsolicited buyers: none.
+- **Claims are extractive.** Grounded excerpts, not answers composed across sources.
+- **Calibrator is untrained and unused.** Reports `passthrough_untrained`.
+- **Harness is a 3-document offline corpus.** Perfect scores prove invariants, not quality.
+- **Solana is not payable.** Recognised for aliasing, excluded from advertised networks.
+- **Wallet commitments hide; they are not zero-knowledge.** Public verify needs the reveal.
+- **Self-provisioned wallets are owner-only on POSIX only.** On Windows / no-mode filesystems
+  a `WalletPermissionWarning` names the unprotected file — treat as development-only.
 
 ## What we removed, and why
 
-An audit found the service was making claims its served code path did not
-support. Rather than soften the wording, the claims and the code behind them
-were removed:
+An audit found claims the served path did not support. The claims and the
+code went together:
 
-- **The Bayesian posterior and per-claim confidence.** The posterior's
-  hypothesis was the raw query string (a question has no truth value), its
-  constants were typed rather than derived, it could only increase — so the
-  `low_confidence` refusal it gated was unreachable — and two contradictory
-  sources both pushed it up. Per-claim confidence was decided by list position.
-  `veritas/support.py` publishes counts a buyer can recompute instead.
-- **The metasearch retrieval tier.** It scraped Google, Bing, Yandex and others
-  through a shuffling aggregator while labelling every result `duckduckgo`.
-  That is a redistribution problem and, in a provenance product, a falsified
-  provenance label.
-- **The offline corpus from the live path.** Its fixture text carried real
-  third-party URLs and a content hash, which reads as "this text appears at
-  this URL". It did not. The corpus is now `veritas://fixture/*` and offline-only.
+- **Bayesian posterior and per-claim confidence.** The hypothesis was the raw
+  query (a question has no truth value); constants were typed; the posterior
+  could only rise, so `low_confidence` refusal was unreachable; two
+  contradictions both pushed it up. Confidence was list position.
+  `veritas/support.py` publishes recomputable counts instead.
+- **Metasearch tier.** Scraped Google/Bing/Yandex through a shuffling
+  aggregator while labelling every result `duckduckgo`.
+- **Offline corpus on the live path.** Fixture text carried real third-party
+  URLs and a hash. It never appeared at those URLs. Corpus is now
+  `veritas://fixture/*` and offline-only.
 
-See `AGENTS.md` (repo guide for agents and contributors, including the field
-notes from live settlement contact) and `docs/design/` (design notes for the
-prototype pieces).
+See `AGENTS.md` (how to work here, including live-settlement field notes) and
+`docs/design/` (prototype notes).
 
 ## Layout
 
 ```
-veritas/               # the installable package (everything below ships in the wheel)
-  pipeline.py          #   single research engine: retrieval -> relevance -> hashing -> custody
-  retrieval.py         #   retriever protocol, offline corpus, composite merging
-  custody.py           #   hash-chained ledger + durable receipts
-  hashing.py support.py schema.py trust.py identity.py safeurl.py
+veritas/               # installable package (the wheel)
+  pipeline.py          # single engine: retrieval -> relevance -> hashing -> custody
+  retrieval.py custody.py hashing.py support.py schema.py
   x402.py facilitator.py payment_config.py networks.py
-  server.py            #   FastAPI surface (`veritas-server` console script)
-  autonomous/          #   agent-native layer: zero-key retrieval, control plane,
-                       #   JIT packets, wallet commitments, bootstrap, calibrator
-  evaluations/         #   harness + CI quality gates
-tests/                 # not shipped in the wheel
+  server.py            # FastAPI (`veritas-server`)
+  agent_account.py     # enroll / whoami / skills
+  autonomous/          # zero-key retrieval, wallet, bootstrap; JIT/hiding-wallet experiments
+  evaluations/         # harness + CI gates
+tests/                 # not in the wheel
 ```
 
 ## License

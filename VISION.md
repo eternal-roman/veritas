@@ -44,10 +44,10 @@ payload is the first demonstration, not the product.
 
 ## 4. The three interfaces
 
-**Human → agent (operator).** Everything an operator must do is collapsed
-into minutes, not projects: the standing Stage-1 list (PyPI trusted
-publisher, public TLS host, mainnet pay-to) lives in `docs/program/STATE.md`
-NEXT with the agent-executable 90% already prepared (MIND §3, rung 6).
+**Human → agent (operator).** Operator work is minutes, not projects: Stage-1
+(PyPI trusted publisher, public TLS host, mainnet pay-to) lives in
+`docs/program/STATE.md` NEXT with the agent-executable 90% already prepared
+(MIND §3, rung 6). `veritas-agent enroll` / `up` is the local adopt path.
 Still needs: those minutes spent.
 
 **Agent → human (evidence).** An agent reports upward in artifacts a human
@@ -75,7 +75,7 @@ means shipped and tested in this repository; "L0 next" is direction.
 | Agent onboarding | Self-traversing discovery + zero-account payment: no signup, no API key, no human — find, verify, pay per request | discovery chain + hooks registry (`tests/test_discovery.py`, `tests/test_hooks.py`); 402→pay→deliver (`tests/test_money_path.py`) | registry listings; ERC-8004 identity (A16) |
 | Money ingress | Per-request x402 (EIP-3009: the buyer needs no gas) or prepaid credits over SIWx sessions | settlement recipe + evidence in `docs/program/fable/settlement/`; credits (`tests/test_credits_api.py`) | mainnet (explicit env + human-owned pay-to only); unsolicited buyers |
 | Money egress | Operator-held keys; the service never custodies buyer funds; ledger→chain reconcile is report-only and independent | `veritas-ops reconcile-chain` (gap G9's witness); `veritas-money-loop` | routine production reconcile (closes G9) |
-| Human onboarding | One command to a serving instance; an honesty register instead of marketing | `veritas-agent up`; README "Known limitations" | hosted instance; PyPI wheel |
+| Human onboarding | One command to a serving instance; an honesty register instead of marketing | `veritas-agent enroll` / `up`; README "Known limitations" | hosted instance; PyPI wheel |
 | Business incorporation | Legal-identity claims a counterparty can verify, not assert | nothing yet — `TRACK_LEGAL_IDENTITY` exploration only | entity, terms, compliance (human-rung work) |
 | Trust cold-start | Never fake standing: `/v1/trust` reports UNPROVEN below 10 paid outcomes; falsifiable warranties substitute for reputation at n=0 — the seller stakes on a refutation experiment instead of asking for belief | UNPROVEN rule (`tests/test_api.py`); warranty/audit/standing A26/A27 (`tests/test_warranty.py`, `tests/test_audit.py`) | portable attestations (A16); dispute path (A17) |
 | Integration friction | One machine-readable registry of every surface including what does **not** exist (no push) — absence stated beats absence inferred | `/v1/hooks` + A28 sync tests (`tests/test_hooks.py`) | SDKs; framework adapters |
@@ -111,30 +111,22 @@ No projections. The kill criteria for the whole ambition are REFOUNDING §5.
 
 ## 8. The continuous improvement loop
 
-Improvement is a loop, not a backlog, and every stage of it already has a
-named owner and a measured signal — this section closes it, it does not
-invent it:
+Already owned; this section names it, it does not invent it:
 
-1. **Merge** — a green PR lands (Conductor merges; owner automation backs it).
-2. **Measure** — the tree reports on itself: `veritas-ops` (revenue, owed,
-   reconcile-chain, and the Stage-1 `existence` scorecard), `veritas-money-loop`
-   (settle→reconcile), trust outcomes (`/v1/trust`),
-   `python -m veritas.evaluations.product_worth`, and
-   `python -m veritas.unblock_probe` (dated environment truth).
-3. **Judge** — Overseer reads the signals and names the next singular bet
+1. **Merge** — green PR lands (Conductor; owner automation backs it).
+2. **Measure** — `veritas-ops` (revenue, owed, reconcile-chain, Stage-1
+   existence), `veritas-money-loop`, `/v1/trust`,
+   `python -m veritas.evaluations.product_worth`,
+   `python -m veritas.unblock_probe`.
+3. **Judge** — Overseer names the next singular bet
    (`ecosystem/OVERSEER_CONFERRAL.md`); default hold beats invented work.
-4. **Build** — Flywheel/Implementers ship the bet through the cycle atom
-   (`docs/program/INNOVATION_LOOP.md`); Guardian/Pruner gate it.
-5. **Learn** — the cycle ledger (`docs/program/cycles/`) records what the
-   ship measured, and every 5 product cycles the **Optimizer** adjusts the
-   org itself — cadences, roles, workflows — with Overseer veto on thrash.
+4. **Build** — Flywheel/Implementers ship it (`INNOVATION_LOOP.md`);
+   Guardian/Pruner gate it.
+5. **Learn** — `docs/program/cycles/` records what shipped; every 5 product
+   cycles Optimizer adjusts the org, Overseer vetoes thrash.
 
-The loop's health checks are structural, not aspirational: role cards and
-cadences must agree with `ORG_LOOPS.md` (this PR reconciled five that did
-not), every role has a charter with a Mindset (Scout's was missing), and
-facts live at evidence so the loop never argues with its own documents
-(MIND §5). What keeps it *continuous* is that rung 6 of the unblock ladder
-is the only stage a human appears in.
+Role cards must agree with `ORG_LOOPS.md`. Facts live at evidence (MIND §5).
+The only human rung is unblock-ladder 6.
 
 ## 9. What this document is not
 

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-14
+
 ### Added
 - Plugin-and-play agent account: `veritas-agent enroll` / `whoami` / `skills`
   bind plane identity (DID + visa), commerce wallet, plane VAAT, and

@@ -249,7 +249,7 @@
   "reconcile": {
     "phase": "reconcile",
     "error_class": null,
-    "runtime_dir": "C:/Users/elamj/AppData/Local/Temp/claude/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/scratchpad/serverdir-n3",
+    "runtime_dir": "C:/Users/elamj/AppData/Local/Temp/agent/scratchpad/serverdir-n3",
     "g9_note": "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset env uses pinned public testnet defaults only (mainnet always requires explicit VERITAS_RPC_URL); does not rewrite the ledger or invent revenue; constitution gap G9 remains open until reconciliation runs routinely in production",
     "chain_checked": true,
     "rpc_configured": true,

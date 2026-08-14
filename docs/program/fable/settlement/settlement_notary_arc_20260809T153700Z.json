@@ -37,7 +37,7 @@
         "step": "pack_built",
         "pack_hash": "sha256:2ffb75521df344e92553ede5688f76b305673a266183603e6fb58e5297ad6104",
         "attested": true,
-        "wrote": "C:/Users/elamj/AppData/Local/Temp/claude/C--Users-elamj-Dev-veritas-veritas/d4709c79-4844-4e01-8bcb-de49bf4cd96a/scratchpad/evidence_pack.json"
+        "wrote": "C:/Users/elamj/AppData/Local/Temp/agent/scratchpad/evidence_pack.json"
       },
       {
         "step": "packs_verify",

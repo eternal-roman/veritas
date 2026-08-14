@@ -10,31 +10,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from veritas.agent_economy import FULL_ROSTER
 from veritas.agent_identity import bootstrap_plane_roster
 from veritas.agent_money import AgentMoneyLedger
 
-# Default roster: 7 watchers + tracks. Prefer ``python -m veritas.agent_economy``.
-DEFAULT_ROSTER: dict[str, str] = {
-    "overseer": "overseer",
-    "conductor": "conductor",
-    "steward": "steward",
-    "scout": "scout",
-    "pruner": "pruner",
-    "flywheel": "flywheel",
-    "researcher": "researcher",
-    "architect": "architect",
-    "git_agent": "git_agent",
-    "optimizer": "optimizer",
-    "mesh_runner": "mesh_runner",
-    "unblock": "unblock",
-    "money_loop": "money_loop",
-    "multiparty_trust": "multiparty_trust",
-    "product_worth": "product_worth",
-    "discovery_density": "discovery_density",
-    "multi_tenant": "multi_tenant",
-    "legal_identity": "legal_identity",
-    "network_effects": "network_effects",
-}
+# Single roster: the plane economy is the source of truth.
+DEFAULT_ROSTER: dict[str, str] = FULL_ROSTER
 
 STIPEND_VAAT = 1000
 

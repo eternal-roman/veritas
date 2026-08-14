@@ -15,14 +15,14 @@ from pathlib import Path
 from veritas.payment_config import DEFAULT_FACILITATOR
 
 
-def generate_local_seed(agent_id: str = "default") -> str:
+def generate_local_seed(agent_id: str = "self") -> str:
     """Deterministic local seed for development / agent-controlled instances.
     In production an agent should use its own secure key management.
     """
     raw = f"veritas-agent-{agent_id}-{datetime.now(timezone.utc).strftime('%Y%m%d')}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
-def bootstrap_free_mode(agent_id: str = "default", base_dir: str = ".veritas_agent") -> dict:
+def bootstrap_free_mode(agent_id: str = "self", base_dir: str = ".veritas_agent") -> dict:
     """Create a free-mode configuration that requires no external paid keys."""
     path = Path(base_dir)
     path.mkdir(parents=True, exist_ok=True)
@@ -81,7 +81,7 @@ def load_config(base_dir: str = ".veritas_agent") -> dict:
             pass
     return bootstrap_free_mode(base_dir=base_dir)
 
-def bootstrap(agent_id: str = "default", base_dir: str = ".veritas_agent") -> dict:
+def bootstrap(agent_id: str = "self", base_dir: str = ".veritas_agent") -> dict:
     """Zero-config entry point used by the control plane."""
     return bootstrap_free_mode(agent_id=agent_id, base_dir=base_dir)
 

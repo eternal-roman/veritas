@@ -308,6 +308,7 @@ FULL_ROSTER: dict[str, str] = {
     "scout": "scout",
     "pruner": "pruner",
     "flywheel": "flywheel",
+    "researcher": "researcher",
     "architect": "architect",
     "git_agent": "git_agent",
     "optimizer": "optimizer",

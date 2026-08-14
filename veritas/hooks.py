@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.1"
+HOOKS_VERSION = "1.2"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -186,9 +186,15 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _mcp("verify_log_inclusion", "Verify a local Merkle inclusion proof."),
     _mcp("trust", "Behaviour-derived trust score, honestly UNPROVEN when thin."),
     _mcp("constitution", "The venue constitution document."),
+    _mcp("whoami", "Local agent account (identity, wallets, bound skills) or how to enroll."),
     # --------------------------------------------------------- CLIs —
     _cli("veritas-server", "Serve the HTTP surface (free mode by default).", _EXIT_OK),
-    _cli("veritas-agent", "Zero-touch bootstrap: config plus wallet, then serve.", _EXIT_OK),
+    _cli(
+        "veritas-agent",
+        "Enroll identity + wallets + interest-bound skills; "
+        "init/up also serve. Subcommands: enroll, whoami, skills, init, up, serve, status.",
+        _EXIT_OK,
+    ),
     _cli("veritas-mcp", "Serve the engine as local MCP tools over stdio.", _EXIT_OK),
     _cli("veritas-ops",
          "Operator reports off the ledger as JSON: revenue, owed, reconcile, "
@@ -284,6 +290,13 @@ HOOKS: tuple[dict[str, Any], ...] = (
           {"location": "in-process", "format": "prometheus-text",
            "read_via": "GET /metrics (VERITAS_METRICS_TOKEN required)"},
           names=sorted(METRIC_HELP)),
+    _hook("store_agent_account", "store", "agent account",
+          "Local identity, commerce/plane wallets, and interest-bound skills "
+          "for this agent. Not on-chain identity.",
+          "local",
+          {"location": "$VERITAS_AGENT_HOME/account.json (default .veritas_agent/)",
+           "format": "json",
+           "read_via": "veritas-agent whoami"}),
 )
 
 

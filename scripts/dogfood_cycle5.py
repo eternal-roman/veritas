@@ -184,8 +184,6 @@ def check_trust_is_not_authorization(tmp: Path) -> dict[str, Any]:
     if r.status_code != 200:
         return _check("trust_not_authz", "200 trust", f"status={r.status_code}", False)
     body = r.json()
-    # Self-reported markers required for honest consumption
-    blob = json.dumps(body).lower()
     ok = (body.get("basis") or {}).get("score_source") == "independent_audits"
     rec = body.get("recommendation") == "UNPROVEN"
     return _check(

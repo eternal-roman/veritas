@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-14
+
 ### Added
 - Adopt card: root `adopt.json` + `GET /adopt.json` (`/v1/hooks` 1.5). A
   GitHub-only agent fetches the raw file and runs `veritas-agent adopt`.

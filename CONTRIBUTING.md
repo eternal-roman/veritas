@@ -1,12 +1,9 @@
 # Contributing
 
-Thanks for looking. This repository has a few rules that are stricter than
-usual, and they exist for one reason: the product is a service that tells
-agents the truth about evidence. A codebase that overstates itself cannot ship
-that credibly.
+The product tells agents the truth about evidence. A codebase that
+overstates itself cannot ship that credibly.
 
-Read [AGENTS.md](AGENTS.md) first — it is the working guide for humans and
-agents alike (commands, layout, load-bearing invariants).
+Read [AGENTS.md](AGENTS.md) first (commands, layout, invariants).
 
 ## Setup
 
@@ -15,10 +12,9 @@ pip install -e ".[signing,dev]"
 python -m pytest tests/ -q
 ```
 
-## The gates your change must pass
+## Gates (no soft-fail)
 
-CI runs all of these and **has no soft-fail** — do not add `|| true` or
-`continue-on-error` to make a job green.
+CI runs all of these. Do not add `|| true` or `continue-on-error`.
 
 ```bash
 python -m pytest tests/ -q                    # suite must stay green
@@ -28,9 +24,9 @@ python -m veritas.evaluations.harness         # quality report
 python -m veritas.evaluations.payment_model   # bounded payment-invariant check
 ```
 
-## Rules that are load-bearing
+## Load-bearing rules
 
-These are the ones a well-meaning change breaks most often. Each is tested.
+Well-meaning changes break these most often. Each is tested.
 
 1. **One engine.** Every surface calls `veritas.pipeline.run_research`. Do not
    add a second retrieval, custody or payment path.

@@ -1,252 +1,116 @@
 # Working in this repository
 
-Guide for agents (and humans) contributing to or consuming Veritas. The README
-covers what the product is; this file covers how to work on it and what rules
-are load-bearing.
+README is the product. This file is how to work here and which rules are load-bearing.
 
-## First engagement (arriving agent)
+## First engagement
 
-One local account binds **identity**, **wallets**, and **skills**. There is no
-signup server and no human dashboard.
+One local account binds identity, wallets, and skills. No signup server.
 
 ```bash
 pip install -e ".[signing,dev]"
 veritas-agent enroll --id <your-name> --interests research,buy,verify
-veritas-agent whoami          # DID, commerce address, plane VAAT, bound skills
-veritas-agent skills          # catalog mapping + binding hashes
+veritas-agent whoami
+veritas-agent skills
 ```
 
-Interests map onto capabilities that already exist (`research`, `verify`,
-`diligence`, `audit`, `buy`, `sell`, `notarize`, `ops`, `warranty`,
-`standing`). Unknown interests are recorded unmapped — they are not invented
-into commands.
-
-Then pick a path:
+Interests map to existing capabilities: `research`, `verify`, `diligence`, `audit`, `buy`, `sell`, `notarize`, `ops`, `warranty`, `standing`. Unknown interests stay unmapped.
 
 | Goal | Command |
 |------|---------|
-| Sell research | `veritas-agent up` (add `--paid` to charge the commerce wallet) |
-| Buy from a seller | `veritas-buy <seller-url>` |
+| Sell | `veritas-agent up` (`--paid` charges the commerce wallet) |
+| Buy | `veritas-buy <seller-url>` |
 | Local tools | `veritas-mcp` (includes `whoami`) |
 | Vet a seller | `veritas-diligence <url>` |
 | Audit a pack | `veritas-audit run pack.json` |
 
-`init` / `up` enroll a default account (`id=self`, interests `research,verify`)
-if none exists. Funding the commerce wallet and public TLS stay external.
+`init` / `up` enroll `id=self` with interests `research,verify` if no account exists. Funding the commerce wallet and public TLS stay external.
 
-Account files live in `--base-dir` (default `.veritas_agent/`, or
-`VERITAS_AGENT_HOME`): `account.json`, commerce keystore, plane visa/VAAT
-ledger. The commerce wallet is x402 `pay_to`. Plane VAAT is local
-coordination, not settlement.
+Home is `--base-dir` (default `.veritas_agent/`, or `VERITAS_AGENT_HOME`): `account.json`, commerce keystore, plane visa/VAAT ledger. Commerce address is x402 `pay_to`. VAAT is local coordination, not settlement.
 
 ## Setup and commands
 
 ```bash
-pip install -e ".[signing,dev]"  # everything needed to develop
-python -m pytest tests/ -q               # test suite — must stay green
-python -m veritas.evaluations.harness    # quality report (JSON to stdout)
-python -m veritas.evaluations.payment_model  # bounded payment-invariant check — CI gates on this
-ruff check veritas tests                 # lint — CI gates on this
-bandit -r veritas scripts -ll -q         # security scan — CI gates on medium and high
-python -m build && twine check dist/*    # packaging — CI builds and installs the wheel
-veritas-server                           # run the service (free mode by default)
-veritas-agent enroll --id self --interests research,verify  # identity + wallets + skills
-veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve
-veritas-mcp                              # serve the engine as local MCP tools (stdio)
-VERITAS_METRICS_TOKEN=... veritas-server # /metrics exists only when a token is set
-veritas-ops revenue                      # operator reports from the ledger (JSON)
-veritas-ops reconcile                    # what needs attention; states it has NOT checked the chain
-veritas-ops reconcile-chain              # G9: check settled txs on-chain; env RPC wins, testnet default otherwise
-veritas-diligence https://seller.example # vet a counterparty; exit 0 pass / 1 fail / 2 unverifiable
-veritas-audit run pack.json              # audit an attested pack against its origin; 0 confirmed / 1 diverged / 2 unobserved
-veritas-audit report r1.json r2.json     # survival report (counts) over audit records you hold
-veritas-verify receipt.json              # audit a receipt; one vendorable file, zero dependencies
-python scripts/lock_requirements.py --check  # hashed locks current — Linux/CPython 3.12 only
+pip install -e ".[signing,dev]"
+python -m pytest tests/ -q
+python -m veritas.evaluations.harness
+python -m veritas.evaluations.payment_model
+ruff check veritas tests
+bandit -r veritas scripts -ll -q
+python -m build && twine check dist/*
+veritas-server
+veritas-agent up
+veritas-mcp
+VERITAS_METRICS_TOKEN=... veritas-server   # /metrics only when set
+veritas-ops revenue
+veritas-ops reconcile                      # records only, not the chain
+veritas-ops reconcile-chain                # G9; env RPC wins, else testnet default
+veritas-diligence https://seller.example   # 0 pass / 1 fail / 2 unverifiable
+veritas-audit run pack.json                # 0 confirmed / 1 diverged / 2 unobserved
+veritas-audit report r1.json r2.json
+veritas-verify receipt.json                # one file, zero deps
+python scripts/lock_requirements.py --check  # Linux/CPython 3.12 only
 ```
 
-Retrieval tiers: setting `VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks
-the keyed Serper provider ahead of the zero-key tier. Keys are configuration,
-never payload — read from env, sent only as a provider request header, never
-serialised into results, errors, custody events, or receipts (tested).
+`VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks keyed Serper ahead of the zero-key tier. Keys are env config, never payload: request header only, never in results, errors, custody, or receipts (tested).
 
-Offline development: `run_research(query, allow_network=False)` uses the
-labelled offline corpus. The corpus is **not** a fallback for provider outages
-— an outage must propagate as `unavailable`, never be papered over with
-fixture text.
+`run_research(query, allow_network=False)` uses the labelled offline corpus. That corpus is not an outage fallback — outages must surface as `unavailable`.
 
 ## Layout
 
-One installable package. `veritas/` is the engine plus, as subpackages, the
-agent-native layer (`veritas/autonomous/`), the FastAPI surface
-(`veritas/server.py`), and the evaluation harness (`veritas/evaluations/`).
-`tests/` stays outside the wheel. The wheel must ship exactly one top-level
-package — CI's package job asserts this.
+One installable package. `veritas/` is the engine plus `autonomous/`, `server.py`, and `evaluations/`. `tests/` is outside the wheel. CI asserts exactly one top-level package.
 
-## Invariants that must hold (each is CI-gated or tested)
+## Invariants (CI-gated or tested)
 
-1. **One engine.** All surfaces call `veritas.pipeline.run_research`. Never
-   add a second retrieval/custody/Bayes path.
-2. **Never report absent evidence when retrieval failed.** `unavailable` is
-   not `no_evidence`. This distinction is the product.
-3. **Never bill for our own failure.** `billable: false` on `unavailable` is
-   load-bearing; settlement is gated on it. x402 satisfies this by ordering —
-   it charges last, so any failure before settlement leaves the buyer
-   uncharged. Credits invert that order (the debit precedes the work), so the
-   research handler reverses the debit when a request dies on an unexpected
-   exception. Refunds are idempotent, so the crash guard and the handled
-   refusals cannot double-pay.
-4. **Verify payment before work, settle after.** An unpaid caller must not
-   consume a retrieval pass; a buyer must never be charged for undeliverable
-   work. A payment nonce is claimed before the work too, so a resubmitted
-   `X-PAYMENT` cannot make us pay for the same request twice.
-5. **Retrievers are untrusted.** They may raise and may ignore `max_results`;
-   the pipeline defends against both.
-6. **The wire contract is enforced.** `veritas.schema.validate_response` runs
-   against real pipeline output in tests. Extending the response means
-   extending the contract.
-7. **Misconfiguration never silently becomes free service.** Invalid payment
-   config → `mode: misconfigured` → 503.
-8. **One buyer payment path.** `veritas.payer` owns challenge validation,
-   counterparty diligence, spend caps, the attempt journal, and the `Signer`
-   seam. Signing backends adapt to that seam
-   (`veritas.buyer_payment.LocalAccountSigner` is the testnet one); never add a
-   second path that signs without the gate. Diligence verdicts come from
-   `veritas.diligence` and are opt-in per client (`require_diligence=True`);
-   with the gate off, a spend cap is the only bound on a hostile seller.
-9. **Version is single-sourced.** `veritas.__version__` feeds pyproject
-   (dynamic), the server, the identity document, and the retrieval user-agent.
-   Bump it in exactly one place: `veritas/__init__.py`.
-10. **The money path records itself before it acts.** `veritas.ledger` claims
-   the authorization before work, writes the delivery (fsynced) before
-   settlement is attempted, and appends every settlement attempt. A settlement
-   we never heard back about is `indeterminate`, never `failed`.
-11. **Costs are counted, never invented.** `veritas.metering` records provider
-   calls, bytes and wall time on every request; money is computed only for
-   providers an operator has priced, and an unpriced provider makes the report
-   say so instead of assuming zero.
-12. **What CI runs is pinned, not resolved at run time.** Every Action is a
-   commit SHA; every dependency CI installs comes from `requirements.lock` /
-   `requirements-dev.lock` under `--require-hashes`. The locks are generated
-   only on Linux/CPython 3.12 — `scripts/lock_requirements.py` refuses
-   elsewhere, because pip evaluates environment markers against the running
-   interpreter and an off-target lock fails only at install time. See
-   SECURITY.md for what this does and does not establish.
+1. **One engine.** All surfaces call `veritas.pipeline.run_research`. No second retrieval/custody/Bayes path.
+2. **`unavailable` is not `no_evidence`.** Failed retrieval is not an observed absence.
+3. **Never bill our own failure.** `billable: false` on `unavailable` gates settlement. x402 charges last, so pre-settle failure leaves the buyer uncharged. Credits debit first, so the research handler refunds on unexpected death. Refunds are idempotent.
+4. **Verify payment before work, settle after.** Unpaid callers do not retrieve. Nonces are claimed before work so a resubmitted `X-PAYMENT` cannot buy twice.
+5. **Retrievers are untrusted.** They may raise or ignore `max_results`; the pipeline defends both.
+6. **Wire contract is enforced.** `veritas.schema.validate_response` runs on real pipeline output. Extend the response only with the contract.
+7. **Misconfiguration is not free service.** Invalid payment config → `mode: misconfigured` → 503.
+8. **One buyer payment path.** `veritas.payer` owns challenge validation, diligence, spend caps, the attempt journal, and the `Signer` seam. Backends adapt to that seam (`LocalAccountSigner` is the testnet one). Diligence is opt-in (`require_diligence=True`); with it off, only a spend cap bounds a hostile seller.
+9. **Version is single-sourced.** Bump only `veritas/__init__.py`. It feeds pyproject (dynamic), the server, identity, and the retrieval User-Agent.
+10. **Money records itself before it acts.** Ledger claims the authorization, fsyncs delivery, then settles. No reply → `indeterminate`, never `failed`.
+11. **Costs are counted, never invented.** Metering records calls, bytes, wall time. Money is computed only for priced providers; unpriced is reported as unpriced.
+12. **CI is pinned.** Actions are commit SHAs. CI installs from hashed `requirements.lock` / `requirements-dev.lock`. Locks are generated only on Linux/CPython 3.12 — `scripts/lock_requirements.py` refuses elsewhere. See SECURITY.md.
 
 ## Conventions
 
-- **CI has no soft-fail.** Do not add `|| true` or `continue-on-error`.
-- **`compileall` is not an import check.** The explicit import step in CI
-  exists because compileall passes on unresolvable imports.
-- **`skills/adversarial-code-truth.md` is a locked gate** on all code work
-  here. Emit its PROPERTY / EVIDENCE LEVEL block before any success claim.
-  Tests are L1 ("holds on these cases"), not proof the product works. Banned
-  without carrying evidence: "complete", "live-ready", "ZK", "revenue-ready".
-- **Program roles load `docs/program/MIND.md` before their charters** — the
-  shared operating core: the unblock ladder ("blocked" needs a dated failing
-  probe; the human is the last rung, reached with the agent-executable 90%
-  already prepared), the cooperation contract, and the anti-staleness rule
-  for facts. The single north-star statement is `VISION.md` (root) — program
-  docs point to it and never restate it.
-- Docs state limitations plainly (see README "Known limitations", STATUS.md).
-  Keep that register: narrow claims, evidence cited.
-- **The venue constitution is enforcement-linked.** `veritas/constitution.py`
-  is the normative source; `CONSTITUTION.md` is a sync-tested rendering.
-  Changing an article means changing both and bumping `CONSTITUTION_VERSION`;
-  a new norm is either L1 with a resolving enforcement pointer or L0 marked
-  aspirational — `tests/test_constitution.py` rejects anything else.
+- **No CI soft-fail.** No `|| true` or `continue-on-error`.
+- **`compileall` is not an import check.** CI's explicit import step exists because compileall accepts missing imports.
+- **`skills/adversarial-code-truth.md` is locked.** Emit PROPERTY / EVIDENCE LEVEL before any success claim. Tests are L1. Banned without evidence: "complete", "live-ready", "ZK", "revenue-ready".
+- **Program roles load `docs/program/MIND.md` before their charter.** North star is `VISION.md`; program docs point to it, never restate it. "Blocked" needs a dated failing probe; the human is the last rung, with the agent-executable 90% already done.
+- **Limitations stay plain** (README "Known limitations", STATUS.md). Narrow claims, evidence cited.
+- **Constitution is enforcement-linked.** `veritas/constitution.py` is normative; `CONSTITUTION.md` is a sync-tested rendering. Change both and bump `CONSTITUTION_VERSION`. New norms are L1 with a resolving pointer or L0 marked aspirational — `tests/test_constitution.py` rejects anything else.
 
-## Consuming the service as an agent
+## Consume as an agent
 
-- Discovery: `GET /.well-known/x402` — self-traversing (its `links` object
-  reaches every surface below), plus `GET /v1/identity` and `GET /llms.txt`.
-- Contract: `GET /v1/schema` (wire contract as JSON Schema), `GET /v1/errors`
-  (registered error codes with status and retriability), `GET /openapi.json`.
-- Norms: `GET /v1/constitution` — the venue constitution, each article either
-  pointing at its enforcement artifact or marked aspirational (see
-  `CONSTITUTION.md` and `ECOSYSTEM.md`).
-- Hooks: `GET /v1/hooks` — the registered integration surface (A28): every
-  HTTP route, the MCP tools, CLI exit-code contracts, payment/session
-  headers, durable signal stores — and the stated absence of push delivery
-  (everything is pull). Sync-tested against the live app in both directions.
-- Research: `POST /v1/research` — returns 402 with an `accepts` array in live
-  mode; retry with an `X-PAYMENT` header (base64 x402 payload).
-- Verification: `POST /v1/verify` re-checks any published `content_hash`;
-  `GET /v1/receipts/{request_id}` returns the durable custody receipt;
-  `veritas.custody.verify_chain_records` re-runs chain validation client-side.
-- Trust: `GET /v1/trust` is behaviour-derived and reports `UNPROVEN` below 10
-  recorded outcomes. Treat it as an input, not authorization.
-- Local tools: `veritas-mcp` exposes research/verify/trust/constitution as MCP
-  tools over stdio (free-mode local engine; no payment path over MCP).
-- Vetting a seller: `veritas-diligence <url>` fetches a counterparty's
-  published surfaces and prints a JSON verdict with a reason per check. Exit
-  codes separate the two refusals — `1` fail (a contradiction was observed),
-  `2` unverifiable (the checks could not be run) — so an agent shelling out
-  cannot treat its own network trouble as the seller's misconduct. Fetching
-  follows discovery's `links` and SSRF-guards every one of them, because a
-  hostile discovery document is caller-controlled input into the buyer's
-  fetcher. A pass is not proof a seller will deliver.
-- Self-provisioning: `veritas-agent up` bootstraps config and a local wallet
-  and serves; funding the wallet and public TLS deployment remain external.
-- Observability: JSON access logs on stdout (`VERITAS_LOG_FORMAT=json|text`)
-  carrying method, path, status and duration — **never** the query or the
-  `X-PAYMENT` header. `/metrics` serves Prometheus counters and exists only
-  when `VERITAS_METRICS_TOKEN` is set, because settlement counters are revenue.
-- Operations: `veritas-ops` answers revenue, what is owed, what needs
-  attention, and what serving consumed — all from `veritas/ledger.py`, all as
-  JSON. `reconcile` compares this instance's records against each other only
-  and says so: nothing is checked against the chain (constitution gap G9).
+| Need | Where |
+|------|--------|
+| Discovery | `GET /.well-known/x402` (`links` reaches every surface), `/v1/identity`, `/llms.txt` |
+| Contract | `/v1/schema`, `/v1/errors`, `/openapi.json` |
+| Norms | `/v1/constitution` (enforced or aspirational; see CONSTITUTION.md, ECOSYSTEM.md) |
+| Surfaces | `/v1/hooks` (HTTP, MCP, CLI exits, headers, stores; **no push**). Sync-tested both ways |
+| Research | `POST /v1/research` — live mode 402 + `accepts`; retry with `X-PAYMENT` |
+| Verify | `POST /v1/verify`; `GET /v1/receipts/{request_id}`; client-side `verify_chain_records` |
+| Trust | `/v1/trust` — `UNPROVEN` below 10 outcomes. Input, not authorization |
+| Local | `veritas-mcp` — free-mode engine over stdio; no payment path |
+| Diligence | `veritas-diligence <url>` — 0 pass / 1 fail / 2 unverifiable. Fetches `links` under SSRF guard. Pass ≠ will deliver |
+| Provision | `veritas-agent up` — config + wallet + serve. Funding and TLS stay external |
+| Logs | JSON access logs (`VERITAS_LOG_FORMAT`) — method, path, status, duration. Never the query or `X-PAYMENT`. `/metrics` only if `VERITAS_METRICS_TOKEN` is set |
+| Ops | `veritas-ops` JSON from `veritas/ledger.py`. `reconcile` is intra-instance only (G9) |
 
-## Field notes from live contact (2026-08-09) — read before touching the money path
+## Field notes (money path) — 2026-08-09
 
-The first real settlement (`docs/program/fable/settlement/`, PR #112) found
-defects that internal verification structurally could not. Do not re-learn
-these:
+First live settlement (`docs/program/fable/settlement/`, PR #112) found defects a green suite could not. Do not re-learn them:
 
-1. **Every outbound HTTP client must send a versioned User-Agent.**
-   Cloudflare fronts both x402.org and sepolia.base.org and rejects the
-   default `Python-urllib` agent (error 1010 → HTTP 403) before reading the
-   body. The facilitator client and the G9 RPC transport were both
-   structurally unable to reach their production counterparties while every
-   test stayed green. Pinned by `tests/test_payment.py` — keep the pattern
-   for any new client.
-2. **The reference facilitator speaks x402 v2 only** for exact/eip155:84532:
-   it routes handlers by `x402Version`, renames `maxAmountRequired`→`amount`,
-   moves resource/description/mimeType into a structured `resource` block,
-   and expects the selected requirement echoed as `accepted`. Internal shapes
-   stay v1; the one translation site is `FacilitatorClient`
-   (`_wire_requirements` / `_wire_payment_payload`). Do not add a second
-   translation site, and do not "fix" internal shapes to v2 piecemeal —
-   migrate end to end or not at all.
-3. **Do not trust recorded environment constraints — probe them.** The
-   long-standing "no egress, settlement unprovable from here" premise was one
-   sandbox's, not this machine's. A 60-second probe (`curl` the facilitator
-   `/supported` and the RPC `eth_chainId`) invalidated it. Any environment
-   claim in `docs/program/` needs a last-verified date; treat stale ones as
-   hypotheses.
-4. **The settlement recipe is repeatable.** `scripts/testnet_settlement.py`
-   against a live-mode server; Circle's faucet (faucet.circle.com) is
-   permissionless — 20 testnet USDC per address per 2 hours, no account; the
-   buyer needs no ETH (EIP-3009: the facilitator submits and pays gas). Full
-   walkthrough: `docs/program/fable/STATE.md`.
-5. **An hour of boundary contact beats a week of internal rigor.** Every
-   defect above was invisible to a green 791-test suite and found in minutes
-   of live contact. Prefer one real exchange with a production counterparty
-   over another round of self-verification; record the transcript as
-   evidence.
-6. **Fan-out discipline for agent workflows.** A 28-agent audit workflow died
-   mid-flight on the session usage limit: ~1M tokens spent, zero results
-   returned, nothing recoverable. Keep fleets small (≤8 per wave), stage
-   waves so each checkpoints its results to disk before the next starts, and
-   fall back to inline synthesis when limits are near. Partial results that
-   are persisted beat comprehensive results that never land.
+1. **Versioned User-Agent on every outbound money-path client.** Cloudflare rejects default `Python-urllib` (1010 → 403) on x402.org and sepolia.base.org. Pinned in `tests/test_payment.py`.
+2. **Reference facilitator is x402 v2** for exact/eip155:84532 (`amount`, structured `resource`, echo `accepted`). Internals stay v1. One translation site: `FacilitatorClient` (`_wire_requirements` / `_wire_payment_payload`). No second site; no piecemeal v2.
+3. **Probe environment claims.** "No egress" was one sandbox. A 60s probe of facilitator `/supported` and RPC `eth_chainId` killed it. `docs/program/` facts need a last-verified date; stale = hypothesis.
+4. **Settlement recipe is repeatable.** `scripts/testnet_settlement.py` vs a live-mode server. Circle faucet: 20 testnet USDC / address / 2h, no account. Buyer needs no ETH (EIP-3009). Walkthrough: `docs/program/fable/STATE.md`.
+5. **Boundary contact beats another internal round.** Prefer one real counterparty exchange; persist the transcript.
+6. **Fan-out ≤8 per wave.** A 28-agent audit died at the usage limit (~1M tokens, zero results). Checkpoint each wave to disk. Persisted partials beat comprehensive results that never land.
 
-## Current state, honestly
+## Current state
 
-Structural invariants above are tested and green. Payments have settled
-on-chain in operator-run testnet (Base Sepolia) arcs against the real
-x402.org facilitator, each chain-confirmed by `reconcile-chain` — the count
-and every transcript live at the `docs/program/STATE.md` header and
-`docs/program/fable/settlement/`, deliberately not restated here. Not yet
-proven: mainnet settlement, any buyer we did not operate ourselves, sustained
-volume. Retrieval is snippet-grade and the package is not yet published to
-PyPI. See ROADMAP.md for the full evaluation and sequencing.
+Invariants above are tested and green. Testnet settlements (Base Sepolia, real x402.org facilitator) are chain-confirmed by `reconcile-chain` — count and transcripts at `docs/program/STATE.md` and `docs/program/fable/settlement/`. Not proven: mainnet, unsolicited buyers, sustained volume. Retrieval is snippet-grade. Not on PyPI. See ROADMAP.md.

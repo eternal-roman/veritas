@@ -152,6 +152,9 @@ mainnet without `--i-understand-this-is-real-money`. Invalid config →
 | `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Contract, errors, norms |
 | `GET /v1/identity` | ERC-8004-style identity |
 | `GET /v1/hooks` | Every surface (HTTP, MCP, CLI exits, headers, stores); no push |
+| `GET /v1/operator` | Payment config + local account (visa stripped) |
+| `POST /v1/operator/enroll` | Loopback-only enroll (`veritas-agent enroll`) |
+| `GET /ui` | Human viewer of the same snapshot; enroll form is loopback-only |
 | `GET /.well-known/x402` | Discovery + payment requirements |
 
 Local MCP: register `veritas-mcp` as an stdio server (free-mode engine; paid

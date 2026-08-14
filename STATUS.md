@@ -32,6 +32,7 @@ file described a system that did not import.
 | Discovery | `/.well-known/x402`, `/llms.txt`, `/v1/schema`; identity does not invent a base URL |
 | Wallet self-provisioning | Encrypted keystore; owner-only where POSIX allows. Funding external |
 | `veritas-agent` (enroll/whoami/skills/init/serve/up/status) | One account binds identity, commerce/plane wallets, interest-mapped skills; `init`/`up` enroll if missing |
+| Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only. Visa stripped from GET |
 | MCP (`veritas-mcp`; listed at `/v1/hooks`) | Tested against the SDK. Local free-mode engine; no payment path |
 | Release workflow | Dockerfile CI-built. PyPI job waits on `PYPI_TRUSTED_PUBLISHER=configured` |
 | Credits via SIWx | Double-entry; grant only after settled x402; refund on non-billable `unavailable`. Ledger credit, not a chain refund. Single-instance SQLite |

@@ -15,6 +15,12 @@ def test_bootstrap(tmp_path):
     out = bootstrap(tmp_path)
     assert out["not_x402_settlement"] is True
     assert out["visa_count"] == len(DEFAULT_ROSTER)
+    from veritas.agent_economy import bootstrap_economy
+
+    # Same ledger + visas as the economy bootstrap (stipend 1000).
+    eco = bootstrap_economy(tmp_path / "eco", stipend=1000)
+    assert eco["not_x402_settlement"] is True
+    assert len(eco["accounts"]) == out["visa_count"]
     led = AgentMoneyLedger(tmp_path / "agent_money.sqlite3")
     assert led.balance("money_loop") == 1000
     assert led.balance("overseer") == 1000

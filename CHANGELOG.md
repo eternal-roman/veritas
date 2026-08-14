@@ -2,9 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- Human operator viewer: `GET /ui` (HTML, excluded from hooks) and
+  `GET /v1/operator` (JSON snapshot). `POST /v1/operator/enroll` writes the
+  local account from loopback only. Plane visa is stripped from GET.
+
 ### Changed
 - Tightened agent-facing docs (AGENTS.md, README, STATUS, VISION, CONTRIBUTING)
   without dropping commands, invariants, honesty bounds, or field notes.
+- `plane_bootstrap.bootstrap` is a thin wrapper around
+  `bootstrap_economy(..., stipend=1000)`.
+- `/v1/hooks` 1.3: operator snapshot + loopback enroll.
+- `actions/download-artifact` pin 7.0.0 → 8.0.1 (SHA).
 
 ## [0.10.0] - 2026-08-14
 

@@ -91,6 +91,7 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 | Contract | `/v1/schema`, `/v1/errors`, `/openapi.json` |
 | Norms | `/v1/constitution` (enforced or aspirational; see CONSTITUTION.md, ECOSYSTEM.md) |
 | Surfaces | `/v1/hooks` (HTTP, MCP, CLI exits, headers, stores; **no push**). Sync-tested both ways |
+| Operator | `GET /ui` (HTML, excluded from hooks), `GET /v1/operator`, `POST /v1/operator/enroll` (loopback only) |
 | Research | `POST /v1/research` — live mode 402 + `accepts`; retry with `X-PAYMENT` |
 | Verify | `POST /v1/verify`; `GET /v1/receipts/{request_id}`; client-side `verify_chain_records` |
 | Trust | `/v1/trust` — `UNPROVEN` below 10 outcomes. Input, not authorization |

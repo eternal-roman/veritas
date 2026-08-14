@@ -41,6 +41,8 @@ its own failure.
 - /v1/schema: the wire contract as JSON Schema
 - /v1/errors: registered error codes with status and retriability
 - /v1/payment-config: payment mode and the current price point (configuration, not an offer)
+- /v1/operator: operator snapshot (payment config + local account; visa stripped)
+- /v1/operator/enroll: POST — loopback-only enroll (same as veritas-agent enroll)
 - /openapi.json: OpenAPI description of this API
 - /health: liveness plus payment mode (never rate limited)
 - /readyz: readiness — 503 when the process is alive but cannot serve

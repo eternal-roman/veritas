@@ -21,11 +21,12 @@ from typing import Any
 from fastapi import FastAPI, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from veritas import __version__
+from veritas.agent_account import AgentAccountError
 from veritas.constitution import build_constitution
 from veritas.credits import CreditLedger, InsufficientCredits, RefundNotAllowed
 from veritas.custody import CustodyStore, ReceiptPresence
@@ -45,6 +46,12 @@ from veritas.ledger import REDELIVERABLE_STATES, Ledger, NonceState
 from veritas.metering import Usage
 from veritas.notary.observe import observe
 from veritas.observability import Metrics, configure_logging, log_request
+from veritas.operator_ui import (
+    OPERATOR_HTML,
+    enroll_from_body,
+    is_loopback_client,
+    operator_snapshot,
+)
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
@@ -1537,6 +1544,43 @@ async def identity():
     return build_identity(pay_to=cfg.pay_to, network=cfg.network, price=cfg.price)
 
 
+@app.get("/ui", response_class=HTMLResponse)
+async def operator_ui():
+    """Human viewer + enroll form. Excluded from the hooks registry."""
+    return HTMLResponse(OPERATOR_HTML)
+
+
+@app.get("/v1/operator")
+async def operator():
+    return operator_snapshot()
+
+
+class OperatorEnrollRequest(BaseModel):
+    agent_id: str | None = Field(default=None, max_length=64)
+    role: str | None = Field(default=None, max_length=64)
+    interests: str | None = Field(default=None, max_length=500)
+
+
+@app.post("/v1/operator/enroll")
+async def operator_enroll(req: OperatorEnrollRequest, request: Request):
+    """Local account write. Loopback (and TestClient) only."""
+    if not is_loopback_client(request):
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.UNAUTHORIZED,
+                "enroll is loopback-only; use veritas-agent enroll",
+            ),
+        )
+    try:
+        return enroll_from_body(req.model_dump())
+    except AgentAccountError as exc:
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(ErrorCode.INVALID_REQUEST, str(exc)),
+        )
+
+
 class SiwxChallengeRequest(BaseModel):
     address: str | None = Field(
         default=None,
@@ -1895,6 +1939,8 @@ async def well_known():
             # Payment-config introspection was previously reachable from no
             # discovery document at all.
             "payment_config": "/v1/payment-config",
+            "operator": "/v1/operator",
+            "operator_enroll": "/v1/operator/enroll",
             "siwx_challenge": "/v1/siwx/challenge",
             "siwx_verify": "/v1/siwx/verify",
             "credits": "/v1/credits",

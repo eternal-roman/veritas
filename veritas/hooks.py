@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.2"
+HOOKS_VERSION = "1.3"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -36,7 +36,7 @@ VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"
 #: Routes the app mounts that the registry deliberately does not carry:
 #: human HTML consoles only. Their machine-readable equivalent is
 #: /openapi.json, which is registered.
-EXCLUDED_ROUTE_PATHS = frozenset({"/docs", "/redoc", "/docs/oauth2-redirect"})
+EXCLUDED_ROUTE_PATHS = frozenset({"/docs", "/redoc", "/docs/oauth2-redirect", "/ui"})
 
 #: Interface keys each kind must carry, enforced at construction so a
 #: malformed record fails at import, not at serve time.
@@ -140,6 +140,11 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "Readiness; 503 when the process is alive but cannot serve."),
     _http("payment_config", "GET", "/v1/payment-config",
           "Payment mode and the current price point (configuration, not an offer)."),
+    _http("operator", "GET", "/v1/operator",
+          "Operator snapshot: payment config, local account (visa stripped), skill catalog."),
+    _http("operator_enroll", "POST", "/v1/operator/enroll",
+          "Create or refresh the local agent account. Loopback only; same as veritas-agent enroll.",
+          access="local"),
     _http("research", "POST", "/v1/research",
           "The paid product: evidence-grounded research with custody chain; "
           "402 challenge in live mode, X-PAYMENT or credit session to proceed.",

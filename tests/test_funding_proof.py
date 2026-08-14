@@ -6,6 +6,8 @@ only thing that sets funded=true.
 
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 from veritas.funding_proof import TRANSFER_TOPIC, prove_funding
 from veritas.x402 import USDC_ASSETS
 
@@ -64,7 +66,8 @@ def test_prove_funding_absent_is_not_funded():
     )
     assert proof["funded"] is False
     assert proof["transfers"] == []
-    assert "faucet.circle.com" in proof["next"]
+    assert urlparse(proof["faucet"]).hostname == "faucet.circle.com"
+    assert proof["next"].startswith(proof["faucet"])
 
 
 def test_prove_funding_log_scan_failure_is_not_funded():

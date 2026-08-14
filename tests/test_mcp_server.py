@@ -55,7 +55,7 @@ def test_tool_whoami_unenrolled(tmp_path, monkeypatch):
     monkeypatch.delenv("VERITAS_AGENT_HOME", raising=False)
     body = mcp_server.tool_whoami()
     assert body["enrolled"] is False
-    assert "enroll" in body["next"]
+    assert "adopt" in body["next"] or "enroll" in body["next"]
 
 
 def test_tools_register_with_mcp_sdk():

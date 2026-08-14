@@ -21,10 +21,15 @@ against the real facilitator (count and evidence:
 snippet-grade. See [Known limitations](#known-limitations) and [ROADMAP.md](ROADMAP.md).
 
 ```bash
-pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
-veritas-agent enroll --id self --interests research,verify
+pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
+veritas-agent adopt --id self --interests research,verify
 veritas-agent up
 ```
+
+A stranger agent with only this repository fetches
+[`adopt.json`](https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json).
+There is no public seller URL. Enroll creates a USDC-capable wallet and a
+wallet-signed identity card; it does not fund the wallet or list the service.
 
 ## Core guarantee
 

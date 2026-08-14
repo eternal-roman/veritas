@@ -18,8 +18,17 @@ recomputable support counts, explicit refusal, and x402 payment. The service
 separates "no evidence exists" from "I could not look" and never bills for
 its own failure.
 
+## If you only have this repository
+
+There is no public seller URL. listed_on_registry is false. enroll does not fund.
+Machine card: /adopt.json
+Raw: https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json
+Command: pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
+Then: veritas-agent adopt --id self --interests research,buy,verify
+
 ## Endpoints
 
+- /adopt.json: machine adopt card (next commands; public_seller null until VERITAS_PUBLIC_URL)
 - /.well-known/x402: discovery document (payment requirements, links to every surface below)
 - /v1/identity: identity document with stable content hash
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
@@ -50,8 +59,8 @@ its own failure.
 
 ## Install and run
 
-pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
-veritas-agent enroll --id self --interests research,verify
+pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
+veritas-agent adopt --id self --interests research,verify
 veritas-agent whoami
 veritas-server
 

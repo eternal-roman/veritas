@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.4"
+HOOKS_VERSION = "1.5"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -122,6 +122,9 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "reaches every machine-readable surface."),
     _http("llms_txt", "GET", "/llms.txt",
           "Agent-readable plain-text index of the service."),
+    _http("adopt", "GET", "/adopt.json",
+          "Machine adopt card: next commands; public_seller is null until "
+          "VERITAS_PUBLIC_URL; listed_on_registry stays false."),
     _http("hooks", "GET", "/v1/hooks",
           "This registry: every integration surface, with push absence stated."),
     _http("identity", "GET", "/v1/identity",
@@ -199,7 +202,8 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _cli(
         "veritas-agent",
         "Enroll identity + wallets + interest-bound skills; "
-        "init/up also serve. Subcommands: enroll, whoami, skills, init, up, serve, status.",
+        "init/up also serve. Subcommands: adopt, enroll, whoami, skills, "
+        "fund-proof, init, up, serve, status.",
         _EXIT_OK,
     ),
     _cli("veritas-mcp", "Serve the engine as local MCP tools over stdio.", _EXIT_OK),

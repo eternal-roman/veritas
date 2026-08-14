@@ -76,6 +76,7 @@ def build_identity(
             "constitution": f"{base}/v1/constitution",
             "hooks": f"{base}/v1/hooks",
             "llms": f"{base}/llms.txt",
+            "adopt": f"{base}/adopt.json",
             "wellKnown": f"{base}/.well-known/x402",
         },
         "x402": {"network": network, "price": price},

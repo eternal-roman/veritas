@@ -29,9 +29,9 @@ file described a system that did not import.
 | Replay + ledger | Resubmitted `X-PAYMENT` works once, returns the stored deliverable. Single-instance SQLite. Chain check is `reconcile_against_chain` |
 | Constitution (`/v1/constitution`) | L1 pointers resolve; L0 carry none; `CONSTITUTION.md` sync-tested |
 | Error contract (`/v1/errors`) | Registered codes on every non-402 error |
-| Discovery | `/.well-known/x402`, `/llms.txt`, `/v1/schema`; identity does not invent a base URL |
+| Discovery | `/.well-known/x402`, `/llms.txt`, `/adopt.json`, `/v1/schema`; identity does not invent a base URL |
 | Wallet self-provisioning | Encrypted keystore; owner-only where POSIX allows. Funding external |
-| `veritas-agent` (enroll/whoami/skills/init/serve/up/status) | One account binds identity, commerce/plane wallets, interest-mapped skills; `init`/`up` enroll if missing |
+| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status) | One account binds plane identity, commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing |
 | Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only. Visa stripped from GET |
 | MCP (`veritas-mcp`; listed at `/v1/hooks`) | Tested against the SDK. Local free-mode engine; no payment path |
 | Release workflow | Dockerfile CI-built. PyPI job waits on `PYPI_TRUSTED_PUBLISHER=configured` |

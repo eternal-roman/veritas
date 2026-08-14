@@ -8,15 +8,20 @@ One local account binds identity, wallets, and skills. No signup server.
 
 ```bash
 pip install -e ".[signing,dev]"
-veritas-agent enroll --id <your-name> --interests research,buy,verify
+veritas-agent adopt --id <your-name> --interests research,buy,verify
 veritas-agent whoami
-veritas-agent skills
+veritas-agent fund-proof   # after funding the commerce address at https://faucet.circle.com/
 ```
+
+Machine card (GitHub-only agents): `adopt.json` —
+`https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json`
 
 Interests map to existing capabilities: `research`, `verify`, `diligence`, `audit`, `buy`, `sell`, `notarize`, `ops`, `warranty`, `standing`. Unknown interests stay unmapped.
 
 | Goal | Command |
 |------|---------|
+| Adopt (id + wallet + signed card) | `veritas-agent adopt` |
+| Prove faucet USDC landed | `veritas-agent fund-proof` (after Circle faucet; human captcha) |
 | Sell | `veritas-agent up` (`--paid` charges the commerce wallet) |
 | Buy | `veritas-buy <seller-url>` |
 | Local tools | `veritas-mcp` (includes `whoami`) |
@@ -87,7 +92,7 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 
 | Need | Where |
 |------|--------|
-| Discovery | `GET /.well-known/x402` (`links` reaches every surface), `/v1/identity`, `/llms.txt` |
+| Discovery | `GET /.well-known/x402` (`links` reaches every surface), `/v1/identity`, `/llms.txt`, `/adopt.json` |
 | Contract | `/v1/schema`, `/v1/errors`, `/openapi.json` |
 | Norms | `/v1/constitution` (enforced or aspirational; see CONSTITUTION.md, ECOSYSTEM.md) |
 | Surfaces | `/v1/hooks` (HTTP, MCP, CLI exits, headers, stores; **no push**). Sync-tested both ways |

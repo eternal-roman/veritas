@@ -1545,6 +1545,14 @@ async def constitution():
     return build_constitution()
 
 
+@app.get("/adopt.json")
+async def adopt_card():
+    """Repo/live adopt card. No public seller unless VERITAS_PUBLIC_URL is set."""
+    from veritas.adopt import build_adopt_card
+
+    return build_adopt_card()
+
+
 @app.get("/v1/hooks")
 async def hooks():
     """The integration registry: every surface, push absence stated (A28)."""
@@ -1946,6 +1954,7 @@ async def well_known():
             "schema": "/v1/schema",
             "openapi": "/openapi.json",
             "llms": "/llms.txt",
+            "adopt": "/adopt.json",
             # The paid resource is in resources[]; an agent traversing links
             # alone must still reach it, and verify/receipts close the loop
             # a delivered response starts.

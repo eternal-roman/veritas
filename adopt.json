@@ -1,0 +1,51 @@
+{
+  "schema": "veritas.adopt.v1",
+  "name": "Veritas Research",
+  "repository": "https://github.com/eternal-roman/veritas",
+  "raw_card": "https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json",
+  "public_seller": null,
+  "listed_in_repo": true,
+  "listed_on_registry": false,
+  "funded_by_enroll": false,
+  "identity_resolves_off_box": false,
+  "identity_portable": "did:pkh + EIP-191 card signed by the commerce wallet; verify the JSON anywhere. ERC-8004 is not implemented.",
+  "workflow": [
+    {
+      "id": "install",
+      "command": "pip install \"veritas-research[signing] @ git+https://github.com/eternal-roman/veritas\"",
+      "note": "signing extra creates the USDC-capable keystore"
+    },
+    {
+      "id": "adopt",
+      "command": "veritas-agent adopt --id self --interests research,buy,verify",
+      "note": "creates plane identity, commerce wallet, signed did:pkh card"
+    },
+    {
+      "id": "fund",
+      "command": "veritas-agent fund-proof  # after https://faucet.circle.com/",
+      "note": "Circle faucet needs a human (reCAPTCHA). fund-proof records USDC Transfer custody; enroll does not fund."
+    },
+    {
+      "id": "sell",
+      "command": "veritas-agent up --paid --network eip155:84532",
+      "note": "needs funded wallet + public TLS for strangers to find you"
+    },
+    {
+      "id": "buy",
+      "command": "veritas-buy <seller-url>",
+      "note": "does not settle; payer/money_loop settle"
+    }
+  ],
+  "when_public_url": {
+    "discovery": "/.well-known/x402",
+    "identity": "/v1/identity",
+    "whoami_http": "/v1/operator",
+    "adopt": "/adopt.json"
+  },
+  "honesty": {
+    "unsolicited_buyers": 0,
+    "mainnet_settlements": 0,
+    "erc8004": false,
+    "bazaar": false
+  }
+}

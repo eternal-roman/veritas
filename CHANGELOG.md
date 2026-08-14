@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- Adopt card: root `adopt.json` + `GET /adopt.json` (`/v1/hooks` 1.5). A
+  GitHub-only agent fetches the raw file and runs `veritas-agent adopt`.
+- Wallet-signed ecosystem identity (`did:pkh` + EIP-191) on enroll when
+  the signing extra is present. Recoverable off-box; not ERC-8004.
+- `veritas-agent fund-proof` observes USDC `Transfer` logs to the commerce
+  address. `funded` is true only with a seen Transfer. Not a faucet.
+
+### Changed
+- `whoami` carries `readiness` (listed_on_registry stays false; funded is
+  null until fund-proof). First-engagement docs lead with `adopt`.
+
 ## [0.11.0] - 2026-08-14
 
 ### Added

@@ -21,6 +21,7 @@ from veritas.agent_account import (
     catalog_document,
     enroll_account,
     load_account,
+    record_funding,
     whoami_document,
 )
 from veritas.autonomous.bootstrap import apply_to_env, bootstrap_free_mode, load_config
@@ -147,6 +148,24 @@ def main(argv: list[str] | None = None) -> int:
     )
     sub.add_parser("whoami", help="print the enrolled account, or how to enroll")
     sub.add_parser("skills", help="print bound skills, or the catalog if not enrolled")
+    adopt_p = sub.add_parser(
+        "adopt",
+        help="enroll + sign did:pkh card (does not faucet; --tx optional)",
+    )
+    adopt_p.add_argument("--id", dest="agent_id", default=None)
+    adopt_p.add_argument("--role", default=None)
+    adopt_p.add_argument("--interests", default=None)
+    adopt_p.add_argument(
+        "--tx",
+        dest="tx_hash",
+        default=None,
+        help="optional USDC funding tx to check",
+    )
+    fund_p = sub.add_parser(
+        "fund-proof",
+        help="observe USDC Transfer custody for the commerce wallet (not a faucet)",
+    )
+    fund_p.add_argument("--tx", dest="tx_hash", default=None)
 
     args = parser.parse_args(argv)
 
@@ -158,6 +177,41 @@ def main(argv: list[str] | None = None) -> int:
             interests=args.interests,
         )
         print(json.dumps(account, indent=2))
+        return 0
+
+    if args.command == "adopt":
+        enroll_account(
+            args.base_dir,
+            agent_id=args.agent_id,
+            role=args.role,
+            interests=args.interests,
+        )
+        if args.tx_hash:
+            acc = load_account(args.base_dir)
+            addr = (acc or {}).get("wallets", {}).get("commerce", {}).get("address")
+            if addr:
+                from veritas.funding_proof import prove_funding
+
+                record_funding(
+                    args.base_dir, prove_funding(addr, tx_hash=args.tx_hash)
+                )
+        print(json.dumps(whoami_document(args.base_dir), indent=2))
+        return 0
+
+    if args.command == "fund-proof":
+        acc = load_account(args.base_dir)
+        if acc is None:
+            print(json.dumps(whoami_document(args.base_dir), indent=2))
+            return 1
+        addr = (acc.get("wallets") or {}).get("commerce", {}).get("address")
+        if not addr:
+            print(json.dumps({"error": "no commerce address", **whoami_document(args.base_dir)}, indent=2))
+            return 1
+        from veritas.funding_proof import prove_funding
+
+        proof = prove_funding(addr, tx_hash=args.tx_hash)
+        record_funding(args.base_dir, proof)
+        print(json.dumps({**whoami_document(args.base_dir), "funding_proof": proof}, indent=2))
         return 0
 
     if args.command == "whoami":

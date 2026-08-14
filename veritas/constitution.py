@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.6"
+CONSTITUTION_VERSION = "2.7"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -158,13 +158,13 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     _article(
         "A11",
         "Reputation is earned, not manufactured",
-        "Trust is derived from recorded paid behaviour only; free traffic cannot move it, below the sample floor the service reports UNPROVEN rather than a manufactured score, and the score states that it is the seller's own report.",
+        "Trust served at /v1/trust is derived from independently verified third-party audit records; free traffic cannot move it; without those records the service reports UNPROVEN rather than a manufactured score.",
         "venue",
         "L1",
         [
             {"kind": "test", "pointer": "tests/test_api.py::test_trust_is_unproven_without_data"},
             {"kind": "test", "pointer": "tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score"},
-            {"kind": "test", "pointer": "tests/test_durability.py::test_the_score_states_that_it_counts_paid_requests_only"},
+            {"kind": "test", "pointer": "tests/test_durability.py::test_independent_audits_set_the_recommendation"},
         ],
     ),
     _article(
@@ -481,13 +481,13 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "Free outcomes are still counted and reported in the basis — they are real "
             "behaviour — but cannot manufacture a reputation. An instance nobody has paid "
             "reports UNPROVEN, which is the correct answer. This closes the manipulation "
-            "route only; the score remains self-reported, which is G10."
+            "route only. Independent standing is G10 (closed in 2.7)."
         ),
     },
     {
         "id": "G10",
         "article": "A11",
-        "status": "open",
+        "status": "closed",
         "description": (
             "The trust score is computed by the graded party from its own records. "
             "Nothing external attests to it, and a seller that simply logged favourable "
@@ -495,7 +495,14 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "traffic (G7) raises the cost of manipulation; it does not make the number "
             "verifiable by the buyer relying on it."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported",
+        "resolution": (
+            "Closed in constitution 2.7: GET /v1/trust is UNPROVEN from the "
+            "operator log alone; POST /v1/trust scores only independently "
+            "verified third-party audit records "
+            "(tests/test_durability.py::"
+            "test_independent_audits_set_the_recommendation). Seller outcome "
+            "counters stay in the basis and never set overall."
+        ),
     },
     {
         "id": "G8",
@@ -520,7 +527,7 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G11",
         "article": "A26",
-        "status": "open",
+        "status": "closed",
         "description": (
             "A survival report summarises the audit records provided to it, and "
             "nothing forces an unfavourable record into that set: whoever assembles "
@@ -530,7 +537,12 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "publication the seller cannot filter (the Merkle/anchor axis named in "
             "later N1 work)."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_survival_reports_are_bounded_by_what_auditors_share",
+        "resolution": (
+            "Closed in constitution 2.7: survival_report is surviving only when "
+            "an auditor publication is supplied and no published countable "
+            "record is withheld; otherwise unpublished or curated "
+            "(tests/test_audit.py::test_withheld_publication_is_curated)."
+        ),
     },
     {
         "id": "G12",
@@ -552,7 +564,7 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G9",
         "article": "A13",
-        "status": "open",
+        "status": "closed",
         "description": (
             "Recorded settlements are never reconciled against the chain. The ledger "
             "stores what the facilitator told us, including 'indeterminate' entries "
@@ -560,7 +572,14 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "endpoint. An operator can therefore say what this instance believes it "
             "earned, but not what it actually holds."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_settlements_are_never_checked_against_the_chain",
+        "resolution": (
+            "Closed in constitution 2.7: Ledger.reconcile_against_chain classifies "
+            "recorded settlements via eth_getTransactionReceipt "
+            "(tests/test_chain_reconcile.py::test_ledger_reconcile_against_chain). "
+            "Routine compose is veritas.money_loop and veritas-ops reconcile-chain. "
+            "Report-only: revenue is not rewritten. Mainnet still needs "
+            "VERITAS_RPC_URL; testnet defaults apply otherwise."
+        ),
     },
 )
 

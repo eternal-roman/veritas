@@ -97,8 +97,10 @@ def test_one_warranty_counts_once_and_fired_beats_survived():
 
 def test_survived_challenge_upgrades_surviving():
     seller = _signer()
+    audits = [_confirmed_audit(seller)]
     report = standing_report(
-        audit_records=[_confirmed_audit(seller)],
+        audit_records=audits,
+        audit_publication=audits,
         challenge_outcomes=[_outcome("not_fired", "sha256:" + "dd" * 32)],
     )
     assert report["audits"]["verdict"] == "surviving"
@@ -145,6 +147,6 @@ def test_self_report_is_labeled_floor_never_verdict():
     report = standing_report(self_reported={"recommendation": "RECOMMENDED"})
     assert report["self_reported"]["included"] is True
     assert report["self_reported"]["recommendation"] == "RECOMMENDED"
-    assert "G10" in report["self_reported"]["role"]
+    assert "operator" in report["self_reported"]["role"]
     # A glowing self-report moves nothing:
     assert report["verdict"] == "unaudited"

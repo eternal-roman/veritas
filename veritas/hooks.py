@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.3"
+HOOKS_VERSION = "1.4"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -168,7 +168,9 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _http("receipts", "GET", "/v1/receipts/{request_id}",
           "Durable custody receipt; 410 when pruned, 404 when never issued."),
     _http("trust", "GET", "/v1/trust",
-          "Behaviour-derived trust score; UNPROVEN below 10 paid outcomes."),
+          "Independent-audit score; UNPROVEN until buyer-supplied verified records."),
+    _http("trust_score", "POST", "/v1/trust",
+          "Score caller-supplied audit records after signature verification."),
     _http("siwx_challenge", "POST", "/v1/siwx/challenge",
           "Issue a SIWx challenge for credit-session establishment."),
     _http("siwx_verify", "POST", "/v1/siwx/verify",
@@ -189,7 +191,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _mcp("verify_attestation", "Check an EIP-191 EvidenceRecord attestation."),
     _mcp("verify_pack", "Check a portable EvidencePack's integrity."),
     _mcp("verify_log_inclusion", "Verify a local Merkle inclusion proof."),
-    _mcp("trust", "Behaviour-derived trust score, honestly UNPROVEN when thin."),
+    _mcp("trust", "Operator-log UNPROVEN; POST /v1/trust scores verified audits."),
     _mcp("constitution", "The venue constitution document."),
     _mcp("whoami", "Local agent account (identity, wallets, bound skills) or how to enroll."),
     # --------------------------------------------------------- CLIs —

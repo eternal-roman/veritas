@@ -1487,6 +1487,19 @@ async def trust():
     return s.to_dict()
 
 
+class TrustScoreRequest(BaseModel):
+    records: list[dict[str, Any]] = Field(default_factory=list)
+    publication: list[dict[str, Any]] | None = None
+
+
+@app.post("/v1/trust")
+async def trust_from_records(req: TrustScoreRequest):
+    """Buyer-supplied audit records; this process only verifies signatures."""
+    return score_service(
+        audit_records=req.records, publication=req.publication
+    ).to_dict()
+
+
 @app.get("/v1/schema")
 async def schema():
     """The wire contract as JSON Schema, generated from veritas.schema."""

@@ -53,8 +53,9 @@ settlement.
 
 **Rules we can be held to.** The [venue constitution](CONSTITUTION.md) marks
 each article enforced or aspirational; a test rejects anything in between.
-Open gaps are listed there, including that `/v1/trust` is still computed by
-us from our own records.
+Open gaps are listed there. `/v1/trust` scores independently verified
+audits; GET without those records is UNPROVEN. Warranty bonds are still
+commitments, not escrow (G12).
 
 **No human on the adopt path.** `/.well-known/x402` reaches every surface;
 `/v1/schema` and `/v1/errors` are the contract; payment is x402. `veritas-agent
@@ -69,7 +70,7 @@ up` provisions config and wallet and serves.
 - **Tiered retrieval** — keyed Serper when configured; Wikipedia + DDG IA otherwise; errors surfaced
 - **x402** — real facilitator verify/settle, fail-closed; replay returns the paid deliverable, never a second pass
 - **Durable ledger** (`veritas/ledger.py`) — authorize → fsync delivery → settle; no reply is `indeterminate`
-- **Survival records** (`veritas-audit`) — third-party `confirmed` / `diverged` / `unobserved`; counts per auditor key, self-audits excluded. Diligence vets documents; survival vets history. Held sets may be curated (G11); `/v1/trust` is still self-reported (G10)
+- **Survival records** (`veritas-audit`) — third-party `confirmed` / `diverged` / `unobserved`; counts per auditor key, self-audits excluded. Diligence vets documents; survival vets history. Survival reports are `surviving` only against an auditor publication; `/v1/trust` is independent-audit sourced
 - **Falsifiable commerce W0** (`veritas/warranty.py`) — seller-authored D0 predicates, bonded stake, challenge window; `fired` / `not_fired` / `undecidable`; no predicate → class `U`. Bonds are signed commitments, not escrow (G12). See `docs/program/FALSIFIABLE_COMMERCE.md`
 - **Diligence** (`veritas-diligence <url>`) — 402 must match advertised payee/network/asset/price; L1 articles must name enforcement; a seller claiming no gaps fails. `0` pass / `1` fail / `2` unverifiable. SSRF-guarded. None of this proves delivery
 - **Standalone verifier** (`veritas-verify receipt.json`) — one file, zero deps, imports nothing from `veritas`. Differential test vs the engine. Consistent records ≠ we contacted the named URLs
@@ -148,7 +149,8 @@ mainnet without `--i-understand-this-is-real-money`. Invalid config →
 | `POST /v1/notarize` | Observe-once URL notary; same payment gates |
 | `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`) |
 | `GET /v1/receipts/{id}` | Durable custody receipt |
-| `GET /v1/trust` | Behaviour score; `UNPROVEN` until enough data |
+| `GET /v1/trust` | UNPROVEN from the operator log |
+| `POST /v1/trust` | Score caller-supplied verified audit records |
 | `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Contract, errors, norms |
 | `GET /v1/identity` | ERC-8004-style identity |
 | `GET /v1/hooks` | Every surface (HTTP, MCP, CLI exits, headers, stores); no push |

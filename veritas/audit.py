@@ -35,9 +35,9 @@ docs/program/FABLE_INSIGHTS.md for the full derivation):
 
 Honesty boundaries:
 
-* A survival report describes the records provided to it. Nothing forces an
-  unfavourable record into the set — divergence counts are a floor, never a
-  ceiling (constitution gap G11, witnessed).
+* A survival report is ``surviving`` only when an auditor-side publication
+  is supplied and no published countable record is withheld. Without a
+  publication the verdict is ``unpublished``; a proper subset is ``curated``.
 * A `confirmed` verdict means one auditor's fetch matched the attested hash
   at one time; it does not prove what the origin serves to other parties.
 * Distinct keys are not proven distinct parties. Sybil auditors cost only
@@ -86,9 +86,8 @@ AUDIT_NOTE = (
 
 REPORT_NOTE = (
     "counts over the records provided; independence is per distinct auditor "
-    "key, self-audits excluded; unobserved reported, never scored; records "
-    "may have been withheld by whoever assembled the set (gap G11), so "
-    "divergence counts are a floor, not a ceiling"
+    "key, self-audits excluded; unobserved reported, never scored; "
+    "surviving requires an auditor publication with no withheld records"
 )
 
 _ADDRESS_RE = re.compile(r"^0x[0-9a-f]{40}$")
@@ -250,10 +249,25 @@ def is_self_audit(record: Mapping[str, Any]) -> bool:
     return bool(auditor_key) and auditor_key == attested
 
 
+def audit_record_id(record: Mapping[str, Any]) -> str:
+    """Stable id for publication matching (pack + auditor + verdict)."""
+    import json
+
+    from veritas.hashing import compute_content_hash
+
+    payload = {
+        "pack_hash": record.get("pack_hash"),
+        "auditor": (record.get("auditor") or {}).get("signer"),
+        "verdict": record.get("verdict"),
+    }
+    return compute_content_hash(json.dumps(payload, sort_keys=True))
+
+
 def survival_report(
     records: list[Mapping[str, Any]],
     *,
     seller: str | None = None,
+    publication: list[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Summarise audit records as counts anyone can recompute.
 
@@ -262,11 +276,9 @@ def survival_report(
     whose ``attested_signer`` matches it are counted; the rest are reported
     as ``foreign_excluded``.
 
-    The independence unit is the distinct verified auditor key. Verdict
-    counts (``confirmed_auditors`` / ``diverged_auditors``) count auditors,
-    not records: an auditor who observed divergence even once appears in
-    ``diverged_auditors`` — divergence is history, and history does not
-    average away. ``unobserved`` records are reported and never scored.
+    ``publication`` is the auditor-side set the seller cannot filter. Without
+    it a clean subset cannot be ``surviving`` (``unpublished``). A published
+    countable record missing from ``records`` makes the verdict ``curated``.
     """
     want_seller = seller.lower() if seller else None
 
@@ -306,10 +318,28 @@ def survival_report(
         else:
             diverged_auditors.add(key)
 
-    if not countable:
-        verdict = "unaudited"
-    elif diverged_auditors:
+    withheld = 0
+    if publication is not None:
+        provided_ids = {audit_record_id(r) for r in records}
+        for pub in publication:
+            ok, _reason = verify_audit_record(pub)
+            if not ok:
+                continue
+            if is_self_audit(pub):
+                continue
+            if pub.get("verdict") == VERDICT_UNOBSERVED:
+                continue
+            if audit_record_id(pub) not in provided_ids:
+                withheld += 1
+
+    if diverged_auditors:
         verdict = "contested"
+    elif not countable and withheld == 0:
+        verdict = "unaudited"
+    elif publication is None:
+        verdict = "unpublished"
+    elif withheld:
+        verdict = "curated"
     else:
         verdict = "surviving"
 
@@ -324,6 +354,8 @@ def survival_report(
         "distinct_auditors": len(auditors),
         "confirmed_auditors": len(confirmed_auditors),
         "diverged_auditors": len(diverged_auditors),
+        "withheld_published": withheld,
+        "publication_bound": publication is not None,
         "verdict": verdict,
         "seller": want_seller,
         "method": METHOD,
@@ -343,6 +375,7 @@ __all__ = [
     "AuditError",
     "canonical_audit_message",
     "is_self_audit",
+    "audit_record_id",
     "perform_audit",
     "survival_report",
     "verify_audit_record",

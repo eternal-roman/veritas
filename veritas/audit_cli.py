@@ -137,7 +137,7 @@ def _cmd_report(args: argparse.Namespace) -> int:
             records.append(_load_json(path))
         except (OSError, json.JSONDecodeError):
             unreadable += 1
-    report = survival_report(records, seller=args.seller)
+    report = survival_report(records, seller=args.seller, publication=records)
     if unreadable:
         report["unreadable_files"] = unreadable
     _emit(report)

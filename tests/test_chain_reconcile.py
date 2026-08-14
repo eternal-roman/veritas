@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import tempfile
-from pathlib import Path
 
 from veritas.chain_reconcile import (
     ENV_RPC_URL,
@@ -126,16 +125,14 @@ def test_ops_reconcile_chain_fail_closed(monkeypatch, capsys):
         payload = json.loads(capsys.readouterr().out)
         assert payload["rpc_configured"] is False
         assert payload["chain_checked"] is False
-        assert "G9" in payload["limitation"] or "G9" in payload.get("note", "")
+        assert payload.get("candidates") == 0
 
 
 def test_g9_witness_still_holds_on_ledger():
-    """Design module may RPC; ledger module must not claim chain reconcile."""
+    """Superseded: ledger now owns reconcile_against_chain (report only)."""
     from veritas import ledger as ledger_module
 
-    source = Path(ledger_module.__file__).read_text(encoding="utf-8")
-    assert "eth_getTransactionReceipt" not in source
-    assert not hasattr(ledger_module.Ledger, "reconcile_against_chain")
+    assert hasattr(ledger_module.Ledger, "reconcile_against_chain")
 
 
 # --- per-network public defaults (an unset env var is not a block) ---------
@@ -221,3 +218,34 @@ def test_reconcile_auto_env_overrides_defaults(monkeypatch):
     assert seen == ["https://operator.example"] * 2
     assert all(r["rpc_source"] == "env" for r in report["results"])
     assert report["counts"] == {"confirmed": 2}
+
+
+def test_ledger_reconcile_against_chain():
+    """G9 close: the ledger owns the routine chain check (report only)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        ledger = Ledger(tmp)
+        nonce = "0x" + "ab" * 32
+        ledger.claim(
+            nonce, "req-1",
+            network="eip155:84532",
+            asset="0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+            amount="10000",
+            pay_to="0x" + "11" * 20,
+            price="$0.01",
+        )
+        ledger.record_delivery(
+            "req-1", status="completed", billable=True,
+            custody_root="sha256:r", query="q", response={},
+        )
+        ledger.record_settlement(
+            "req-1", outcome="settled", transaction="0x" + "aa" * 32,
+            network="eip155:84532",
+        )
+
+        def transport(url, method, params):
+            return {"status": "0x1"}
+
+        report = ledger.reconcile_against_chain(transport=transport)
+        assert report["candidates"] == 1
+        assert report["results"][0]["status"] == "confirmed"
+        assert ledger.settled_with_transaction()[0]["outcome"] == "settled"

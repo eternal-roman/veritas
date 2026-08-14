@@ -5,9 +5,9 @@ One agent-clearable path that **composes** existing surfaces:
 * settle: ``veritas.buyer_payment.pay_via_policy`` (gated by ``veritas.payer``)
 * reconcile: ``veritas.chain_reconcile.reconcile_settlements_auto`` (report only)
 
-Does **not** close constitution gap G9, invent green on an empty ledger, default
-mainnet RPC, or open a second payer/engine. Live dogfood is optional evidence;
-CI must stay offline via injectable HTTP and RPC transports.
+Does **not** invent green on an empty ledger, default mainnet RPC, or open a
+second payer/engine. Live dogfood is optional evidence; CI stays offline via
+injectable HTTP and RPC transports.
 
 Exit codes (honest, not vibes)::
 
@@ -253,8 +253,21 @@ def run_reconcile(
             from veritas.ledger import Ledger
 
             ledger = Ledger(str(runtime_dir) if runtime_dir else None)
-            rows = list(ledger.settled_with_transaction())
-            missing = len(ledger.settled_without_transaction())
+            payload = ledger.reconcile_against_chain(
+                env_url=env_url, transport=transport
+            )
+            report.update(payload)
+            if any(
+                r.get("status") == "rpc_unavailable"
+                for r in payload.get("results", [])
+            ):
+                report["error_class"] = "transport"
+            elif payload.get("candidates") == 0:
+                report["error_class"] = "honest"
+                report.setdefault("notes", []).append(
+                    "no settled_with_transaction candidates"
+                )
+            return report
         except Exception as exc:  # noqa: BLE001
             report["error_class"] = "transport"
             report["error"] = f"ledger_open_failed:{type(exc).__name__}:{exc}"

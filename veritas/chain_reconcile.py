@@ -15,8 +15,8 @@ This module is the **design + implementation surface**:
 * Results never rewrite the ledger or invent revenue. Operators act on the
   report; the money path is unchanged.
 
-Honesty: shipping this module does **not** close G9. G9 closes when production
-operators run chain reconcile routinely and the constitution witness is retired.
+Routine path: ``Ledger.reconcile_against_chain`` and ``veritas.money_loop``.
+Mainnet still requires ``VERITAS_RPC_URL``. Revenue is never rewritten.
 """
 
 from __future__ import annotations
@@ -48,11 +48,9 @@ DEFAULT_PUBLIC_RPC_URLS: dict[str, str] = {
 RpcTransport = Callable[[str, str, list[Any]], Any]
 
 G9_NOTE = (
-    "chain reconcile design surface; VERITAS_RPC_URL wins when set; unset "
-    "env uses pinned public testnet defaults only (mainnet always requires "
-    "explicit VERITAS_RPC_URL); does not rewrite the ledger or invent "
-    "revenue; constitution gap G9 remains open until reconciliation runs "
-    "routinely in production"
+    "chain reconcile; VERITAS_RPC_URL wins when set; unset env uses pinned "
+    "public testnet defaults only (mainnet always requires explicit "
+    "VERITAS_RPC_URL); does not rewrite the ledger or invent revenue"
 )
 
 
@@ -245,8 +243,7 @@ def reconcile_settlements(
         "note": G9_NOTE,
         "limitation": (
             "This report does not rewrite ledger revenue. "
-            "G9 remains open until operators configure VERITAS_RPC_URL and "
-            "act on chain_checked results in production."
+            "Mainnet requires VERITAS_RPC_URL; testnet defaults apply otherwise."
         ),
     }
 

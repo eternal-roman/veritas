@@ -185,7 +185,8 @@ def test_unobserved_never_counts_for_or_against_a_seller():
 
     # And mixed in, they change nothing that a confirmed audit established.
     confirmed = _audit(pack, _signer())
-    with_noise = survival_report([confirmed, *unobserved])
+    held = [confirmed, *unobserved]
+    with_noise = survival_report(held, publication=held)
     assert with_noise["verdict"] == "surviving"
     assert with_noise["confirmed_auditors"] == 1
     assert with_noise["unobserved_reported"] == 3
@@ -209,7 +210,7 @@ def test_record_volume_from_one_key_counts_as_one_auditor():
     seller, auditor = _signer(), _signer()
     pack = _pack(seller)
     records = [_audit(pack, auditor) for _ in range(5)]
-    report = survival_report(records)
+    report = survival_report(records, publication=records)
     assert report["n_records"] == 5
     assert report["distinct_auditors"] == 1
     assert report["confirmed_auditors"] == 1
@@ -232,10 +233,28 @@ def test_invalid_records_are_excluded_not_scored():
     record = _audit(_pack(seller), _signer())
     forged = dict(record)
     forged["verdict"] = VERDICT_DIVERGED  # signature no longer matches
-    report = survival_report([record, forged, {}])
+    held = [record, forged, {}]
+    report = survival_report(held, publication=held)
     assert report["invalid_excluded"] == 2
     assert report["diverged_auditors"] == 0
     assert report["verdict"] == "surviving"
+
+
+def test_no_publication_cannot_claim_surviving():
+    seller = _signer()
+    record = _audit(_pack(seller), _signer())
+    report = survival_report([record])
+    assert report["verdict"] == "unpublished"
+
+
+def test_withheld_publication_is_curated():
+    seller = _signer()
+    pack = _pack(seller)
+    confirmed = _audit(pack, _signer())
+    diverged = _audit(pack, _signer(), fetch_body=b"changed underneath")
+    report = survival_report([confirmed], publication=[confirmed, diverged])
+    assert report["verdict"] == "curated"
+    assert report["withheld_published"] == 1
 
 
 def test_seller_filter_excludes_foreign_records():

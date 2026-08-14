@@ -658,10 +658,32 @@ class Ledger:
             (NonceState.SETTLED.value,),
         )
 
+    def reconcile_against_chain(
+        self,
+        *,
+        transport: Any = None,
+        env_url: str | None = None,
+    ) -> dict[str, Any]:
+        """Report-only: classify recorded settlements against RPC.
+
+        Does not rewrite revenue. Routine path is ``veritas.money_loop`` and
+        ``veritas-ops reconcile-chain``. Mainnet still needs VERITAS_RPC_URL.
+        """
+        from veritas.chain_reconcile import reconcile_settlements_auto
+
+        candidates = self.settled_with_transaction()
+        missing = self.settled_without_transaction()
+        out = reconcile_settlements_auto(
+            candidates, env_url=env_url, transport=transport
+        )
+        out["candidates"] = len(candidates)
+        out["settled_without_transaction"] = len(missing)
+        return out
+
     def settled_with_transaction(self) -> list[dict[str, Any]]:
         """Facilitator-reported successes that carry a transaction hash.
 
-        These are the only settlements G9 chain reconcile can ask an RPC about.
+        These are the only settlements chain reconcile can ask an RPC about.
         Presence of a hash is still not on-chain proof until reconcile runs
         (see ``veritas.chain_reconcile``); this query only lists candidates.
         """

@@ -85,7 +85,7 @@ def tool_verify_log_inclusion(proof: dict[str, Any]) -> dict[str, Any]:
 
 
 def tool_trust() -> dict[str, Any]:
-    """Behaviour-derived trust score; UNPROVEN below the sample floor."""
+    """GET-equivalent trust: UNPROVEN from the operator log (no buyer records)."""
     from veritas.trust import score_service
 
     return score_service().to_dict()

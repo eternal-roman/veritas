@@ -1,6 +1,6 @@
 """Veritas Research - High-assurance evidenced research for agents."""
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 # BayesianBelief is deliberately NOT re-exported. The served pipeline publishes
 # support counts (veritas.support), not a posterior; re-exporting the old

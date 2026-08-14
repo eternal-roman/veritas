@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-14
+
 ### Added
 - Human operator viewer: `GET /ui` (HTML, excluded from hooks) and
   `GET /v1/operator` (JSON snapshot). `POST /v1/operator/enroll` writes the
@@ -14,8 +16,6 @@
   escrowed on payment rails).
 - `survival_report` is `surviving` only against an auditor publication.
 - `/v1/hooks` 1.4: POST `/v1/trust`.
-
-### Changed
 - Tightened agent-facing docs (AGENTS.md, README, STATUS, VISION, CONTRIBUTING)
   without dropping commands, invariants, honesty bounds, or field notes.
 - `plane_bootstrap.bootstrap` is a thin wrapper around

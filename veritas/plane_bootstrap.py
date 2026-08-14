@@ -32,7 +32,6 @@ def bootstrap(
         "paths": {
             "money": paths["money"],
             "visas": paths["visas"],
-            "secret": paths["secret"],
         },
         "not_x402_settlement": True,
     }

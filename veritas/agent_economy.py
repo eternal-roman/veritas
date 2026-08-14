@@ -348,7 +348,6 @@ def bootstrap_economy(
             "money": str(eco.money_path),
             "visas": str(eco.visa_path),
             "effort": str(eco.effort_path),
-            "secret": str(eco.secret_path),
         },
     }
     eco.close()

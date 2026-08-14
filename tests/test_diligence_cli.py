@@ -40,7 +40,7 @@ CONSTITUTION = {
     "known_gaps": [{"id": "G10", "status": "open"}],
 }
 TRUST = {"recommendation": "UNPROVEN",
-         "basis": {"min_samples": 10, "self_reported": "our own records"}}
+         "basis": {"min_samples": 10, "score_source": "independent_audits"}}
 
 
 def _install(monkeypatch, pages):

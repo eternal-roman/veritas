@@ -98,15 +98,15 @@ def check_constitution_enforcement_shape(tmp: Path) -> dict[str, Any]:
         return _check("constitution", "200 constitution", f"status={r.status_code}", False)
     body = r.json()
     gaps = body.get("known_gaps") or []
-    g9 = [g for g in gaps if g.get("id") == "G9"]
+    g12 = [g for g in gaps if g.get("id") == "G12"]
     articles = body.get("articles") or []
     # Every article must be L1 with pointer or L0 aspirational (enforced by tests;
-    # here we only require non-empty articles + G9 still disclosed).
-    ok = bool(articles) and len(g9) == 1 and g9[0].get("status") == "open"
+    # here we only require non-empty articles + G12 still disclosed).
+    ok = bool(articles) and len(g12) == 1 and g12[0].get("status") == "open"
     return _check(
-        "constitution_g9_disclosed",
-        "constitution served; G9 still open and disclosed to buyers",
-        f"articles={len(articles)}; g9={g9[0] if g9 else None}",
+        "constitution_g12_disclosed",
+        "constitution served; G12 still open and disclosed to buyers",
+        f"articles={len(articles)}; g12={g12[0] if g12 else None}",
         ok,
     )
 
@@ -186,13 +186,13 @@ def check_trust_is_not_authorization(tmp: Path) -> dict[str, Any]:
     body = r.json()
     # Self-reported markers required for honest consumption
     blob = json.dumps(body).lower()
-    ok = "self_reported" in blob or body.get("self_reported") is True
-    # UNPROVEN or similar below floor is fine
+    ok = (body.get("basis") or {}).get("score_source") == "independent_audits"
+    rec = body.get("recommendation") == "UNPROVEN"
     return _check(
         "trust_not_authz",
-        "trust document discloses self-reported nature (not authorization)",
-        f"keys={sorted(body.keys())[:12]}; self_reported_marker={ok}",
-        ok,
+        "trust is independent-audit sourced (or UNPROVEN), not a seller number",
+        f"keys={sorted(body.keys())[:12]}; independent={ok}; unproven={rec}",
+        ok and rec,
     )
 
 

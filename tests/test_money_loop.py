@@ -242,7 +242,6 @@ def test_g9_note_mentions_testnet_defaults_and_gap_open():
     from veritas.chain_reconcile import G9_NOTE
 
     lower = G9_NOTE.lower()
-    assert "g9" in lower or "gap" in lower
     assert "testnet" in lower or "default" in lower
     assert "mainnet" in lower
     assert "does not rewrite" in lower or "not rewrite" in lower

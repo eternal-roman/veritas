@@ -6,7 +6,7 @@ get paid for, what needs my attention, and what did it cost me.
 
 The rule that governs the reconcile command is the same one that governs the
 ledger: it reports what this instance recorded, and says plainly that it has
-not checked any of it against the chain (constitution gap G9). A reconcile
+not checked any of it against the chain. A reconcile
 report that implies on-chain confirmation it never performed would be the most
 damaging possible lie in this codebase.
 """
@@ -98,13 +98,12 @@ def test_reconcile_flags_a_settlement_with_no_transaction_hash(tmp_path, capsys)
 
 
 def test_reconcile_states_that_it_has_not_checked_the_chain(tmp_path, capsys):
-    """Constitution gap G9. This is the load-bearing assertion in the file:
-    the report must never read as on-chain confirmation."""
+    """The local reconcile report must never read as on-chain confirmation."""
     ledger = Ledger(tmp_path)
     _settled(ledger, "req-1", NONCE)
     report = _run(capsys, "--runtime-dir", str(tmp_path), "reconcile")
     assert report["chain_checked"] is False
-    assert "G9" in report["limitation"]
+    assert "reconcile-chain" in report["limitation"]
 
 
 def test_a_clean_ledger_reconciles_with_nothing_to_do(tmp_path, capsys):
@@ -233,7 +232,7 @@ def test_prune_reports_json_counts_against_tmp_runtime(tmp_path, capsys):
 
     report = _run(capsys, "--runtime-dir", str(tmp_path), "prune", "--days", "30")
     assert report["chain_checked"] is False
-    assert "G9" in report["limitation"]
+    assert "reconcile-chain" in report["limitation"]
     assert report["custody"]["deleted"] == 1
     assert report["ledger"]["authorizations_deleted"] == 1
     assert store.lookup("req-old") is ReceiptPresence.GONE

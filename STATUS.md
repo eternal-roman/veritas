@@ -18,7 +18,7 @@ file described a system that did not import.
 | Payment misconfiguration guard | Tested |
 | Hiding-wallet commitments | Tested |
 | Signed JIT packets (expiry, chain) | Tested |
-| Trust score | Tested; `UNPROVEN` below 10 samples |
+| Trust score | Independent audits via POST; GET is UNPROVEN from the operator log |
 | Evaluation harness + CI quality gates | Working |
 | Installable package (single `veritas` namespace) | CI builds and installs the wheel. Not on PyPI |
 | Keyed Serper tier | Fixture-shaped responses; live key not exercised |
@@ -26,7 +26,7 @@ file described a system that did not import.
 | Container / deploy | Files tested: allowlist context, no `COPY . .`, non-root, declared VOLUME, compose with no baked credentials. Image not built in CI |
 | Observability | JSON access logs; `/metrics` behind token; queries and `X-PAYMENT` absent from logs. Per-node counters |
 | Unit economics (`metering`, `pricing`, `veritas-ops`) | Calls, bytes, wall time on every request. Default cost table is empty — unpriced stays unpriced |
-| Replay + ledger | Resubmitted `X-PAYMENT` works once, returns the stored deliverable. Single-instance SQLite. No chain reconcile here (G9) |
+| Replay + ledger | Resubmitted `X-PAYMENT` works once, returns the stored deliverable. Single-instance SQLite. Chain check is `reconcile_against_chain` |
 | Constitution (`/v1/constitution`) | L1 pointers resolve; L0 carry none; `CONSTITUTION.md` sync-tested |
 | Error contract (`/v1/errors`) | Registered codes on every non-402 error |
 | Discovery | `/.well-known/x402`, `/llms.txt`, `/v1/schema`; identity does not invent a base URL |
@@ -41,7 +41,7 @@ file described a system that did not import.
 | Origin re-fetch (`/v1/verify`) | `url`+hash or receipt id. Legacy content+hash is `caller_supplied` |
 | EvidencePack + Merkle log | Operator-local. Not public CT; not on-chain |
 | Dogfood cycles 1–5 | CI-gated. Offline / no chain |
-| G9 chain reconcile | Ops surface shipped. Gap open until production-routine |
+| G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop. Mainnet still needs env RPC |
 
 ## Found false and fixed (2026-08-05)
 
@@ -73,7 +73,7 @@ Fixed and test-pinned. See `docs/program/STATE.md`.
 | Quality vs strong baselines | High | Harness proves invariants |
 | Cross-instance rate limits | Medium | In-process per node |
 | Shared ledger across instances | Medium | Local disk; replay routed elsewhere still fails (roadmap 6.2) |
-| Production-routine chain reconcile | High | Capability exists; G9 is about routine |
+| Production-routine chain reconcile | Medium | Ledger method + money_loop; mainnet still needs env RPC |
 | Registry auto-registration | Medium | Manual |
 | Durable evidence re-fetch | Medium | Receipts store hashes, not content |
 | Solana settlement | Low | Deliberately not advertised |
@@ -84,7 +84,7 @@ The payment path is real code. After the 2026-08-05 audit the served path no
 longer claims what it cannot support.
 
 What remains is mostly operational: operator-run testnet only, no unsolicited
-buyers, snippet retrieval, PyPI unpublished, G9 not production-routine.
+buyers, snippet retrieval, PyPI unpublished. G12 escrow still open.
 Tracked in `docs/program/STATE.md`.
 
 ## Security / CI

@@ -278,12 +278,11 @@ def check_gap_register_present(constitution: object) -> CheckResult:
 
 
 def check_trust_self_disclosure(trust: object) -> CheckResult:
-    """A self-reported score must say that it is self-reported.
+    """A scored document must come from independent audits, or be UNPROVEN.
 
-    A seller publishing a bare number is *less* trustworthy than one
-    publishing UNPROVEN: the second is telling the buyer what the number is
-    worth. This checks the disclosure, never the value — a high score is not
-    evidence of anything here.
+    A seller publishing a number from its own counters is FAIL. UNPROVEN
+    with score_source independent_audits is honest. RECOMMENDED only if
+    that source is set.
     """
     name = "trust_self_disclosure"
     doc = _mapping(trust)
@@ -293,18 +292,18 @@ def check_trust_self_disclosure(trust: object) -> CheckResult:
     if basis is None:
         return CheckResult(name, Verdict.FAIL,
                            "trust document publishes a score with no basis")
-
-    disclosure = basis.get("self_reported")
-    if not isinstance(disclosure, str) or not disclosure.strip():
+    if basis.get("score_source") != "independent_audits":
         return CheckResult(name, Verdict.FAIL,
-                           "trust document does not disclose that it is self-reported")
-    if basis.get("min_samples") is None:
+                           "trust document is not sourced from independent audits")
+    rec = str(doc.get("recommendation") or "")
+    if doc.get("overall") is not None:
         return CheckResult(name, Verdict.FAIL,
-                           "trust document names no sample floor, so the score "
-                           "cannot be weighed")
+                           "trust overall must not be a seller-computed number")
+    if rec not in {"UNPROVEN", "RECOMMENDED", "NOT_RECOMMENDED"}:
+        return CheckResult(name, Verdict.FAIL,
+                           "trust recommendation is not a known independent verdict")
     return CheckResult(name, Verdict.PASS,
-                       "trust document discloses that it is self-reported and "
-                       "names its sample floor")
+                       "trust is sourced from independent audits (or UNPROVEN)")
 
 
 def assess(

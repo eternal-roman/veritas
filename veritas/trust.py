@@ -22,16 +22,16 @@ the basis, because it is real behaviour and hiding it would be its own
 dishonesty; it simply cannot manufacture a reputation. An instance nobody has
 paid has no commercial track record, and UNPROVEN is the correct answer.
 
-What this still is not: an external attestation. The graded party computes the
-score from its own records. A buyer should treat it as one input, cross-check
-the enforcement pointers in the constitution, and weigh an unverifiable
-self-report accordingly — see constitution gap G10.
+The served score is computed from independently verified third-party audit
+records the caller supplies. This instance's outcome counters stay in the
+basis as an operator log and never set ``overall``.
 """
 
 from __future__ import annotations
 
 import os
 import sqlite3
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -157,65 +157,80 @@ class OutcomeLog:
         return {column: int(row[column]) for column in _COLUMNS} if row else empty
 
 
-def score_service(log: OutcomeLog | None = None) -> TrustScore:
+def verify_external_attestation(record: Mapping[str, Any]) -> tuple[bool, str]:
+    """Verify a third-party audit record. Not this instance's outcome log."""
+    from veritas.audit import verify_audit_record
+
+    return verify_audit_record(record)
+
+
+def score_service(
+    log: OutcomeLog | None = None,
+    *,
+    audit_records: list[Mapping[str, Any]] | None = None,
+    publication: list[Mapping[str, Any]] | None = None,
+) -> TrustScore:
+    """Score from independently verified audit records.
+
+    ``log`` counters stay in the basis as an operator log. They never set
+    ``overall``. GET /v1/trust with no records is UNPROVEN.
+    """
+    from veritas.audit import is_self_audit, survival_report
+
     stats = (log or OutcomeLog()).stats()
-    total = stats["paid_total"]
+    verified: list[Mapping[str, Any]] = []
+    rejected = 0
+    for rec in audit_records or []:
+        ok, _reason = verify_external_attestation(rec)
+        if ok and not is_self_audit(rec):
+            verified.append(rec)
+        else:
+            rejected += 1
+    report = survival_report(list(verified), publication=publication)
     basis: dict[str, Any] = {
         **stats,
         "min_samples": MIN_SAMPLES_FOR_SCORE,
         "counts": (
-            "verified-payment requests, recorded at delivery time — before "
-            "the settlement outcome is known"
+            "independently verified third-party audit records; operator "
+            "paid-request counters are reported but never scored"
         ),
         "excluded": (
             "Unpaid requests are recorded and reported here but never scored: "
             "/v1/trust is free and unauthenticated, so free traffic could "
             "otherwise manufacture a reputation at no cost."
         ),
-        "self_reported": (
-            "Computed by the graded party from its own records. Treat it as "
-            "one input, not as authorization; see constitution gap G10."
+        "score_source": "independent_audits",
+        "independent_records": len(verified),
+        "rejected_records": rejected,
+        "survival": report,
+        "operator_log": (
+            "this instance's own outcome counters; not the score"
         ),
     }
 
-    if total < MIN_SAMPLES_FOR_SCORE:
+    verdict = report["verdict"]
+    if verdict == "contested":
         return TrustScore(
             overall=None,
-            recommendation="UNPROVEN",
-            flags=["INSUFFICIENT_DATA"],
+            recommendation="NOT_RECOMMENDED",
+            flags=["INDEPENDENT_DIVERGENCE"],
             basis=basis,
         )
-
-    custody_rate = stats["paid_custody_ok"] / total
-    availability = 1.0 - (stats["paid_unavailable"] / total)
-    # Refusing sometimes is a positive signal — a service that never refuses is
-    # not exercising its epistemic gate — but refusing almost always is not.
-    refusal_rate = stats["paid_refused"] / total
-    refusal_health = 1.0 if 0.02 <= refusal_rate <= 0.5 else 0.5
-
-    score = 100.0 * (0.5 * custody_rate + 0.3 * availability + 0.2 * refusal_health)
-
-    flags: list[str] = []
-    if custody_rate < 1.0:
-        flags.append("CUSTODY_FAILURES_OBSERVED")
-    if availability < 0.9:
-        flags.append("LOW_AVAILABILITY")
-    if refusal_rate > 0.5:
-        flags.append("EXCESSIVE_REFUSAL")
-
-    if score >= 80:
-        rec = "RECOMMENDED"
-    elif score >= 60:
-        rec = "CAUTION"
-    else:
-        rec = "NOT_RECOMMENDED"
-        flags.append("LOW_SCORE")
-
+    if verdict == "surviving" and report["distinct_auditors"] >= 1:
+        return TrustScore(
+            overall=None,
+            recommendation="RECOMMENDED",
+            flags=[],
+            basis=basis,
+        )
+    flags = ["INSUFFICIENT_INDEPENDENT_EVIDENCE"]
+    if verdict == "curated":
+        flags.append("PUBLICATION_WITHHELD")
+    elif verdict == "unpublished":
+        flags.append("NO_AUDITOR_PUBLICATION")
     return TrustScore(
-        overall=round(score, 1),
-        recommendation=rec,
+        overall=None,
+        recommendation="UNPROVEN",
         flags=flags,
-        basis={**basis, "custody_rate": round(custody_rate, 3),
-               "availability": round(availability, 3),
-               "refusal_rate": round(refusal_rate, 3)},
+        basis=basis,
     )

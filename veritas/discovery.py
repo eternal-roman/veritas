@@ -37,7 +37,7 @@ its own failure.
 - /v1/log/proof: GET — Merkle inclusion proof for a log index
 - /v1/log/verify: POST — free offline verify of an inclusion proof
 - /v1/receipts/{request_id}: durable custody receipt
-- /v1/trust: behaviour-derived trust score; reports UNPROVEN below 10 recorded outcomes
+- /v1/trust: GET is UNPROVEN from the operator log; POST scores independently verified audit records
 - /v1/schema: the wire contract as JSON Schema
 - /v1/errors: registered error codes with status and retriability
 - /v1/payment-config: payment mode and the current price point (configuration, not an offer)

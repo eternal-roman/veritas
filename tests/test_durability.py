@@ -20,6 +20,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 from veritas.custody import CustodyStore, ReceiptPresence
 from veritas.trust import MIN_SAMPLES_FOR_SCORE, OutcomeLog, score_service
 
@@ -73,14 +75,15 @@ def test_free_traffic_does_not_establish_a_trust_score(tmp_path):
     assert score.basis["free_total"] == MIN_SAMPLES_FOR_SCORE * 3
 
 
-def test_paid_traffic_does_establish_a_score(tmp_path):
+def test_paid_traffic_does_not_establish_an_independent_score(tmp_path):
+    """G10 closed: operator paid counters never set overall."""
     log = OutcomeLog(tmp_path)
     _record(log, MIN_SAMPLES_FOR_SCORE, paid=True)
-    # A little honest refusal is a positive signal, not a defect.
     log.record("refused", custody_valid=True, billable=True, paid=True)
     score = score_service(log)
-    assert score.recommendation != "UNPROVEN"
-    assert score.overall is not None
+    assert score.recommendation == "UNPROVEN"
+    assert score.overall is None
+    assert score.basis["score_source"] == "independent_audits"
 
 
 def test_the_score_states_that_it_counts_paid_requests_only(tmp_path):
@@ -88,10 +91,7 @@ def test_the_score_states_that_it_counts_paid_requests_only(tmp_path):
     log = OutcomeLog(tmp_path)
     _record(log, MIN_SAMPLES_FOR_SCORE, paid=True)
     basis = score_service(log).basis
-    assert basis["counts"] == (
-        "verified-payment requests, recorded at delivery time — before "
-        "the settlement outcome is known"
-    )
+    assert "independently verified" in basis["counts"]
     assert basis["free_total"] == 0
 
 
@@ -104,6 +104,57 @@ def test_free_requests_are_still_visible_in_the_basis(tmp_path):
     basis = score_service(log).basis
     assert basis["free_total"] == 5
     assert basis["free_unavailable"] == 5
+
+
+def test_independent_audits_set_the_recommendation(tmp_path):
+    """G10 close: only verified third-party audits move the recommendation."""
+    pytest.importorskip("eth_account")
+    from eth_account import Account
+
+    from veritas.audit import perform_audit
+    from veritas.hashing import compute_content_hash
+    from veritas.notary.fetch import FetchResult
+    from veritas.notary.pack import build_evidence_pack
+    from veritas.notary.sign import OperatorSigner, sign_evidence_record
+
+    def fetch(body: bytes):
+        def fake(request_url, **kwargs):
+            return FetchResult(
+                request_url=request_url, final_url=request_url, status=200,
+                headers={"content-type": "text/plain"}, body=body, truncated=False,
+            )
+        return fake
+
+    def signer():
+        return OperatorSigner("0x" + bytes(Account.create().key).hex())
+
+    body = "independent standing body"
+    seller = signer()
+    fields = {
+        "url": "https://example.org/g10",
+        "content_hash": compute_content_hash(body),
+        "observed_at": "2026-08-08T12:00:00Z",
+        "extract_version": "extract.v1",
+        "request_id": "req-g10",
+    }
+    pack = build_evidence_pack(
+        **fields, attestation=sign_evidence_record(fields, seller)
+    )
+    record = perform_audit(
+        pack, signer=signer(), robots_body="User-agent: *\nAllow: /\n",
+        fetch_fn=fetch(body.encode("utf-8")),
+    )
+    log = OutcomeLog(tmp_path)
+    _record(log, MIN_SAMPLES_FOR_SCORE, paid=True)
+    score = score_service(
+        log, audit_records=[record], publication=[record]
+    )
+    assert score.recommendation == "RECOMMENDED"
+    assert score.overall is None
+    assert score.basis["score_source"] == "independent_audits"
+    assert "verify_external_attestation" in Path(
+        __import__("veritas.trust", fromlist=["score_service"]).__file__
+    ).read_text(encoding="utf-8")
 
 
 # -- O7: a receipt is written atomically or not at all ----------------------

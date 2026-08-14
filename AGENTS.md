@@ -94,7 +94,7 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 | Operator | `GET /ui` (HTML, excluded from hooks), `GET /v1/operator`, `POST /v1/operator/enroll` (loopback only) |
 | Research | `POST /v1/research` — live mode 402 + `accepts`; retry with `X-PAYMENT` |
 | Verify | `POST /v1/verify`; `GET /v1/receipts/{request_id}`; client-side `verify_chain_records` |
-| Trust | `/v1/trust` — `UNPROVEN` below 10 outcomes. Input, not authorization |
+| Trust | `GET /v1/trust` UNPROVEN from operator log; `POST /v1/trust` scores verified audits |
 | Local | `veritas-mcp` — free-mode engine over stdio; no payment path |
 | Diligence | `veritas-diligence <url>` — 0 pass / 1 fail / 2 unverifiable. Fetches `links` under SSRF guard. Pass ≠ will deliver |
 | Provision | `veritas-agent up` — config + wallet + serve. Funding and TLS stay external |

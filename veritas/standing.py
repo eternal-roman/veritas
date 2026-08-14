@@ -49,10 +49,9 @@ EVIDENCE_HIERARCHY = (
 )
 
 STANDING_NOTE = (
-    "composed from records the holder provided; every level may be "
-    "incomplete (gap G11); forfeits are signed commitments until bonds are "
-    "escrowed (gap G12); the self-reported document is the floor of the "
-    "hierarchy and proves nothing by itself (gap G10)"
+    "composed from records the holder provided; surviving audits require "
+    "an auditor publication (withheld published records → curated); "
+    "forfeits are signed commitments until bonds are escrowed (gap G12)"
 )
 
 VERDICT_FORFEITED = "forfeited"
@@ -63,6 +62,7 @@ VERDICT_SURVIVING_CHALLENGED = "surviving_challenged"
 def standing_report(
     *,
     audit_records: list[Mapping[str, Any]] | None = None,
+    audit_publication: list[Mapping[str, Any]] | None = None,
     challenge_outcomes: list[Mapping[str, Any]] | None = None,
     expired_unchallenged_warranties: int = 0,
     self_reported: Mapping[str, Any] | None = None,
@@ -78,7 +78,11 @@ def standing_report(
     conflict means differing inputs, and the seller-signed refuted variant
     is the one that cannot be explained away.
     """
-    audits = survival_report(list(audit_records or []), seller=seller)
+    audits = survival_report(
+        list(audit_records or []),
+        seller=seller,
+        publication=audit_publication,
+    )
 
     fired_warranties: set[str] = set()
     survived_warranties: set[str] = set()
@@ -120,7 +124,7 @@ def standing_report(
         "self_reported": {
             "included": self_reported is not None,
             "recommendation": (self_reported or {}).get("recommendation"),
-            "role": "floor of the hierarchy; self-computed (G10)",
+            "role": "operator counters only; not the independent score",
         },
         "verdict": verdict,
         "seller": seller.lower() if seller else None,

@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.6.** This file
+**The normative source is `veritas/constitution.py`, version 2.7.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -113,7 +113,7 @@ and `tests/test_api.py::test_missing_payment_returns_spec_shaped_402`.
 
 ### A11 — Reputation is earned, not manufactured (L1)
 
-Trust is derived from recorded paid behaviour only; free traffic cannot move it, below the sample floor the service reports UNPROVEN rather than a manufactured score, and the score states that it is the seller's own report.
+Trust served at /v1/trust is derived from independently verified third-party audit records; free traffic cannot move it; without those records the service reports UNPROVEN rather than a manufactured score.
 
 Enforced by `tests/test_api.py::test_trust_is_unproven_without_data`,
 `tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score`,
@@ -359,10 +359,10 @@ service's own reputation signal at no cost.
 Closed in constitution 2.2: only paid requests are scored. Free outcomes are
 still counted and reported in the basis but cannot manufacture a reputation,
 and an instance nobody has paid reports UNPROVEN — the correct answer. This
-closes the manipulation route only; the score is still self-reported, which
-is G10.
+closes the manipulation route only; the score was still self-reported, which
+was G10.
 
-### G10 — The trust score is self-reported (open, article A11)
+### G10 — The trust score is self-reported (closed, article A11)
 
 The score is computed by the graded party from its own records. Nothing
 external attests to it, and a seller that simply logged favourable outcomes
@@ -370,9 +370,11 @@ would produce an identical document. Restricting scoring to paid traffic (G7)
 raises the cost of manipulation; it does not make the number verifiable by the
 buyer relying on it.
 
-Witness: `tests/test_known_gaps.py::test_known_gap_the_trust_score_is_self_reported`.
+Closed in constitution 2.7: GET /v1/trust is UNPROVEN from the operator log
+alone; POST /v1/trust scores only independently verified third-party audit
+records. Seller outcome counters stay in the basis and never set overall.
 
-### G11 — Survival reports are bounded by what auditors share (open, article A26)
+### G11 — Survival reports are bounded by what auditors share (closed, article A26)
 
 A survival report summarises the audit records provided to it, and nothing
 forces an unfavourable record into that set: whoever assembles the records can
@@ -381,7 +383,9 @@ never a ceiling, and a clean report from a curated set is not proof of a clean
 history. Removing this requires auditor-side publication the seller cannot
 filter (the Merkle/anchor axis named in later N1 work).
 
-Witness: `tests/test_known_gaps.py::test_known_gap_survival_reports_are_bounded_by_what_auditors_share`.
+Closed in constitution 2.7: `survival_report` is `surviving` only when an
+auditor publication is supplied and no published countable record is withheld;
+otherwise `unpublished` or `curated`.
 
 ### G12 — Warranty bonds are commitments, not escrow (open, article A27)
 
@@ -407,14 +411,17 @@ authorization, delivery and settlement attempt, and revenue is answerable from
 the ledger alone. Bounded: it records what this instance did, which is not proof
 the chain agrees — see G9.
 
-### G9 — Recorded settlements are never checked against the chain (open, article A13)
+### G9 — Recorded settlements are never checked against the chain (closed, article A13)
 
 The ledger stores what the facilitator told us, including `indeterminate` entries
 where it told us nothing, and no code re-checks any of it against an RPC
 endpoint. An operator can say what this instance believes it earned, not what it
 actually holds.
 
-Witness: `tests/test_known_gaps.py::test_known_gap_settlements_are_never_checked_against_the_chain`.
+Closed in constitution 2.7: `Ledger.reconcile_against_chain` classifies
+recorded settlements via `eth_getTransactionReceipt`. Routine compose is
+`veritas.money_loop` and `veritas-ops reconcile-chain`. Report-only: revenue
+is not rewritten. Mainnet still needs `VERITAS_RPC_URL`.
 
 ---
 

@@ -55,7 +55,7 @@ CONSTITUTION = {
 TRUST = {
     "overall": None, "recommendation": "UNPROVEN",
     "basis": {"min_samples": 10,
-              "self_reported": "Computed by the graded party from its own records."},
+              "score_source": "independent_audits"},
 }
 
 

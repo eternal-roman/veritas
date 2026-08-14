@@ -71,7 +71,7 @@ def _trust():
         "recommendation": "UNPROVEN",
         "basis": {
             "min_samples": 10,
-            "self_reported": "Computed by the graded party from its own records.",
+            "score_source": "independent_audits",
         },
     }
 
@@ -213,7 +213,7 @@ def test_a_bare_trust_number_without_disclosure_fails():
     undisclosed = {"overall": 99.0, "recommendation": "RECOMMENDED", "basis": {}}
     report = assess(**_all(trust=undisclosed))
     assert report.verdict == Verdict.FAIL
-    assert any("self" in r.lower() for r in report.reasons)
+    assert any("independent" in r.lower() for r in report.reasons)
 
 
 def test_unproven_with_disclosure_passes():
@@ -292,7 +292,7 @@ def test_veritas_own_trust_document_passes_its_own_bar():
     from veritas.trust import score_service
 
     report = assess(
-        trust=score_service().to_dict(),
+        trust=score_service().to_dict(),  # UNPROVEN, independent source
         policy=DiligencePolicy(require_challenge_matches_discovery=False,
                                require_constitution=False,
                                require_gap_register=False),

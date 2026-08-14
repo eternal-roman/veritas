@@ -6,6 +6,14 @@
 - Human operator viewer: `GET /ui` (HTML, excluded from hooks) and
   `GET /v1/operator` (JSON snapshot). `POST /v1/operator/enroll` writes the
   local account from loopback only. Plane visa is stripped from GET.
+- `POST /v1/trust` scores caller-supplied independently verified audits.
+- `Ledger.reconcile_against_chain` — report-only RPC classify.
+
+### Changed
+- Constitution 2.7: G9, G10, G11 closed. G12 remains open (bonds are not
+  escrowed on payment rails).
+- `survival_report` is `surviving` only against an auditor publication.
+- `/v1/hooks` 1.4: POST `/v1/trust`.
 
 ### Changed
 - Tightened agent-facing docs (AGENTS.md, README, STATUS, VISION, CONTRIBUTING)

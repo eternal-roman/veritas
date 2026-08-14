@@ -6,7 +6,7 @@ there was no way to ask any of them:
     veritas-ops revenue                  how much did I earn, and what did it cost?
     veritas-ops owed                     what did I deliver and never get paid for?
     veritas-ops reconcile                what needs my attention?
-    veritas-ops reconcile-chain          G9 design: check settled tx hashes via RPC
+    veritas-ops reconcile-chain          classify settled tx hashes via RPC
     veritas-ops existence                Stage-1 landmass + human residues (evidence dir)
     veritas-ops usage                    what did serving actually consume?
     veritas-ops authorization <nonce>    one payment, end to end
@@ -19,19 +19,14 @@ operations CLI for an agent-native service is another agent.
 **What `reconcile` does not do.** It compares this instance's own records
 against each other. It does not contact any chain, so a `settled` entry means
 "the facilitator told us it settled", not "the transfer is confirmed on
-Base". That limit is printed in the report itself and is registered as
-constitution gap G9 — closing it needs an RPC endpoint. A reconcile report
-that implied on-chain confirmation it had not performed would be the most
-damaging untruth this codebase could ship, so it says so every time.
+Base". That limit is printed in the report. Chain contact is
+``reconcile-chain`` / ``Ledger.reconcile_against_chain``.
 
-**`reconcile-chain` (G9 design).** Classifies facilitator-reported transaction
-hashes via ``eth_getTransactionReceipt``. ``VERITAS_RPC_URL`` wins when set;
-unset, settlements on a known public **testnet** are checked against that
-network's pinned default (``chain_reconcile.DEFAULT_PUBLIC_RPC_URLS``, source
-stamped per row) and every other network stays ``rpc_not_configured`` —
-mainnet always requires the explicit variable. Never rewrites the ledger or
-invents revenue. G9 stays open until reconciliation runs routinely in
-production.
+**`reconcile-chain`.** Classifies facilitator-reported transaction hashes via
+``eth_getTransactionReceipt``. ``VERITAS_RPC_URL`` wins when set; unset,
+settlements on a known public **testnet** are checked against that network's
+pinned default and every other network stays ``rpc_not_configured`` —
+mainnet always requires the explicit variable. Never rewrites the ledger.
 
 **What `prune` does not do.** It ages local custody receipts and settled or
 abandoned ledger rows against a shared cutoff. It does not invent settlement
@@ -56,8 +51,8 @@ from veritas.retention import RetentionConfigError, retention_cutoff, retention_
 CHAIN_LIMITATION = (
     "Records are compared only against each other. Nothing here has been "
     "checked against on-chain state: a 'settled' entry means the facilitator "
-    "reported success, not that the transfer is confirmed. See constitution "
-    "gap G9."
+    "reported success, not that the transfer is confirmed. Use "
+    "veritas-ops reconcile-chain / Ledger.reconcile_against_chain."
 )
 
 
@@ -280,13 +275,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "reconcile":
         payload = _reconcile(ledger)
     elif args.command == "reconcile-chain":
-        from veritas.chain_reconcile import reconcile_settlements_auto
-
-        candidates = ledger.settled_with_transaction()
-        missing = ledger.settled_without_transaction()
-        payload = reconcile_settlements_auto(candidates)
-        payload["candidates"] = len(candidates)
-        payload["settled_without_transaction"] = len(missing)
+        payload = ledger.reconcile_against_chain()
     elif args.command == "existence":
         from pathlib import Path
 

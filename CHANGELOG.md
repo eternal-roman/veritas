@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Plugin-and-play agent account: `veritas-agent enroll` / `whoami` / `skills`
+  bind plane identity (DID + visa), commerce wallet, plane VAAT, and
+  interest-mapped catalog skills into one local `account.json`. `init`/`up`
+  enroll a default account when none exists. MCP tool `whoami` reads it.
+  Unknown interests stay unmapped.
+
+### Changed
+- `/v1/hooks` 1.2: `veritas-agent` description covers enroll; MCP `whoami`;
+  durable store for the local account.
+- Single plane roster: `plane_bootstrap.DEFAULT_ROSTER` is
+  `agent_economy.FULL_ROSTER` (includes `researcher`).
+- First-engagement docs (`AGENTS.md`, README, `llms.txt`) lead with enroll.
+- Satellite clone paths retired; canonical tree is this repository.
+
+### Removed
+- Anthropic/Claude authorship trailers, vendor CLI examples, host temp
+  paths, `CLAUDE.md` (use `AGENTS.md`), and local model-pin settings.
+
 ## [0.9.1] - 2026-08-09
 
 Review-driven cleanup, debloat and polish: a six-territory adversarial

@@ -53,7 +53,7 @@ Safe subset **already ancestor of main** (delete anytime):
 | Delete local branches with `: gone]` after worktree remove | Recommended now |
 | Remote mass-delete | **Blocked on Overseer ack** (this conferral) |
 
-Preserve worktrees: `veritas-fable-sr` / `fable-veritas`, `veritas-g10` until harvest, `veritas-lock` until remote delete ack.
+Satellites retired (2026-08-14): `fable-veritas` and `veritas-fable` deleted after harvest. Canonical tree is `C:/Users/elamj/Dev/veritas`.
 
 ---
 

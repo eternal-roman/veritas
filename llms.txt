@@ -36,6 +36,8 @@ its own failure.
 ## Install and run
 
 pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
+veritas-agent enroll --id self --interests research,verify
+veritas-agent whoami
 veritas-server
 
 ## Source and norms

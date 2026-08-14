@@ -2,10 +2,12 @@
 
 Gap-filling, agent-native modules that remove human-in-the-loop requirements.
 
+First engagement is `veritas-agent enroll` (see root `AGENTS.md`), not these
+files directly.
+
 ## Components
 
+- `wallet.py` — Local ETH keystore used as x402 `pay_to`. Funding is external.
 - `zero_key_retrieval.py` — Free multi-source search (DuckDuckGo + Wikipedia). No API keys.
-- `bootstrap.py` — Agent self-provisioning of wallet seed and free-mode configuration.
-- `self_facilitator_notes.md` — How to run or point at open-source x402 facilitators.
-
-These are exposed through the main Veritas interface so an agent can start in fully free, zero-config mode and optionally upgrade later.
+- `bootstrap.py` — Free-mode config that `veritas-agent` applies to the served env.
+- JIT / hiding-wallet prototypes — experiments, not product surfaces (`docs/design/`).

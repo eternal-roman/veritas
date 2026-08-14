@@ -212,7 +212,7 @@ public-goods problem survived the incentive design).*
   **and** the buyer SDK shows no adoption pull → the agent-commerce demand
   thesis is early or wrong; park the venue ambition, keep the notary as a
   small honest service, stop investing.
-- A model-provider platform (Anthropic/OpenAI/Google) ships native
+- A model-provider platform ships native
   commerce with integrated trust guarantees that subsume warranties →
   the independent-substrate thesis dies; the falsifiable-commerce IP's
   value becomes contribution-to-standard, not platform.

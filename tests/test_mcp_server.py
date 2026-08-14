@@ -50,6 +50,14 @@ def test_tool_constitution_serves_validated_document():
     assert validate_constitution(mcp_server.tool_constitution()) == []
 
 
+def test_tool_whoami_unenrolled(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("VERITAS_AGENT_HOME", raising=False)
+    body = mcp_server.tool_whoami()
+    assert body["enrolled"] is False
+    assert "enroll" in body["next"]
+
+
 def test_tools_register_with_mcp_sdk():
     """Absent optional extra → skip. Present but wrong surface → fail.
 
@@ -81,15 +89,8 @@ def test_tools_register_with_mcp_sdk():
     server = mcp_server.build_server()
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}
-    assert names == {
-        "research",
-        "verify",
-        "verify_attestation",
-        "verify_pack",
-        "verify_log_inclusion",
-        "trust",
-        "constitution",
-    }
+    assert names == set(mcp_server.MCP_TOOL_NAMES)
+    assert "whoami" in names
 
 
 def test_declared_mcp_bound_excludes_versions_without_the_shipped_surface():

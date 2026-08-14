@@ -1,6 +1,6 @@
 # Plugin settings (per-project, local)
 
-This repo uses the **plugin-settings** pattern from Claude Code plugin-dev:
+This repo uses a **plugin-settings** pattern (per-project local files):
 
 | Path | Git? | Purpose |
 |------|------|---------|
@@ -21,7 +21,7 @@ SessionStart **hooks were disabled** on Windows (harness failures). Skills/comma
 .claude/superpowers.local.md
 ```
 
-Copy a template from below, then **restart** Claude Code / Grok so hooks/tools re-read state.
+Copy a template from below, then **restart** the agent host so hooks/tools re-read state.
 
 ## Templates
 

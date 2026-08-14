@@ -142,8 +142,7 @@ This does not fix O5. server.py still binds at import and still defaults to a
 relative path; the 23 importlib.reload workarounds are untouched. It makes the
 suite's verdict reproducible, which is a precondition for every enforcement
 pointer in the constitution meaning anything.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+"
 ```
 
 ---
@@ -491,8 +490,7 @@ the buyer.
 Limits: every check is cross-document consistency and register integrity.
 None proves the seller will deliver, and a careful liar with coherent
 documents passes all of them.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+"
 ```
 
 ---
@@ -700,8 +698,7 @@ the line article A20 already draws for a refused payment.
 
 Opt-in per client and off by default, so every existing caller is unchanged
 and turning it on stays the buyer's decision.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+"
 ```
 
 ---
@@ -750,8 +747,7 @@ deliver.
 No constitution article yet: promoting one means bumping CONSTITUTION_VERSION
 and re-rendering CONSTITUTION.md, which is deferred to avoid colliding with
 concurrent work on that surface.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+"
 ```
 
 ---

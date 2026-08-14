@@ -25,6 +25,7 @@ operate has ever paid, and retrieval is snippet-grade today. All of this is stat
 
 ```bash
 pip install "veritas-research @ git+https://github.com/eternal-roman/veritas"
+veritas-agent enroll --id self --interests research,verify   # identity + wallet + skills
 veritas-agent up     # config + wallet + server, zero human input
 ```
 
@@ -235,8 +236,8 @@ paid research for free.
 | `GET /v1/hooks` | Integration registry: **every** surface (HTTP, MCP tools, CLI exit codes, headers, stores); states that no push delivery exists |
 | `GET /.well-known/x402` | Discovery + payment requirements (links reach everything above) |
 
-The MCP route for local agents: `claude mcp add veritas -- veritas-mcp`
-(free-mode engine over stdio; paid access is the HTTP surface).
+The MCP route for local agents: register `veritas-mcp` as an stdio MCP server
+with your agent host (free-mode engine; paid access is the HTTP surface).
 
 ## Testing
 

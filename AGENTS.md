@@ -4,6 +4,41 @@ Guide for agents (and humans) contributing to or consuming Veritas. The README
 covers what the product is; this file covers how to work on it and what rules
 are load-bearing.
 
+## First engagement (arriving agent)
+
+One local account binds **identity**, **wallets**, and **skills**. There is no
+signup server and no human dashboard.
+
+```bash
+pip install -e ".[signing,dev]"
+veritas-agent enroll --id <your-name> --interests research,buy,verify
+veritas-agent whoami          # DID, commerce address, plane VAAT, bound skills
+veritas-agent skills          # catalog mapping + binding hashes
+```
+
+Interests map onto capabilities that already exist (`research`, `verify`,
+`diligence`, `audit`, `buy`, `sell`, `notarize`, `ops`, `warranty`,
+`standing`). Unknown interests are recorded unmapped — they are not invented
+into commands.
+
+Then pick a path:
+
+| Goal | Command |
+|------|---------|
+| Sell research | `veritas-agent up` (add `--paid` to charge the commerce wallet) |
+| Buy from a seller | `veritas-buy <seller-url>` |
+| Local tools | `veritas-mcp` (includes `whoami`) |
+| Vet a seller | `veritas-diligence <url>` |
+| Audit a pack | `veritas-audit run pack.json` |
+
+`init` / `up` enroll a default account (`id=self`, interests `research,verify`)
+if none exists. Funding the commerce wallet and public TLS stay external.
+
+Account files live in `--base-dir` (default `.veritas_agent/`, or
+`VERITAS_AGENT_HOME`): `account.json`, commerce keystore, plane visa/VAAT
+ledger. The commerce wallet is x402 `pay_to`. Plane VAAT is local
+coordination, not settlement.
+
 ## Setup and commands
 
 ```bash
@@ -15,6 +50,7 @@ ruff check veritas tests                 # lint — CI gates on this
 bandit -r veritas scripts -ll -q         # security scan — CI gates on medium and high
 python -m build && twine check dist/*    # packaging — CI builds and installs the wheel
 veritas-server                           # run the service (free mode by default)
+veritas-agent enroll --id self --interests research,verify  # identity + wallets + skills
 veritas-agent up                         # zero-touch: bootstrap config + wallet, then serve
 veritas-mcp                              # serve the engine as local MCP tools (stdio)
 VERITAS_METRICS_TOKEN=... veritas-server # /metrics exists only when a token is set

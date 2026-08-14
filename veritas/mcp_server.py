@@ -98,6 +98,17 @@ def tool_constitution() -> dict[str, Any]:
     return build_constitution()
 
 
+def tool_whoami() -> dict[str, Any]:
+    """Local agent account: identity, wallets, bound skills — or how to enroll.
+
+    Reads the local home (VERITAS_AGENT_HOME or .veritas_agent). Does not
+    create an account and does not touch payment.
+    """
+    from veritas.agent_account import whoami_document
+
+    return whoami_document()
+
+
 #: Tool name → implementation. The single source for what `veritas-mcp`
 #: serves: `build_server` registers from this mapping and the hooks registry
 #: (`veritas/hooks.py`) imports `MCP_TOOL_NAMES`, so the HTTP-discoverable
@@ -110,6 +121,7 @@ _TOOL_IMPLEMENTATIONS = {
     "verify_log_inclusion": tool_verify_log_inclusion,
     "trust": tool_trust,
     "constitution": tool_constitution,
+    "whoami": tool_whoami,
 }
 
 MCP_TOOL_NAMES: tuple[str, ...] = tuple(_TOOL_IMPLEMENTATIONS)
@@ -161,8 +173,7 @@ def main(argv: list[str] | None = None) -> None:
         description=(
             "Serve the Veritas engine as MCP tools over stdio (free-mode "
             "local engine; paid access with settlement is the HTTP surface). "
-            "Register it with an MCP client, e.g.: "
-            "claude mcp add veritas -- veritas-mcp"
+            "Register it with an MCP client as an stdio server: veritas-mcp"
         ),
     )
     parser.parse_args(argv)

@@ -1,16 +1,13 @@
-"""veritas-agent: zero-touch provisioning and serving for an agent operator.
+"""veritas-agent: plugin-and-play account, wallet, skills, and serving.
 
-One command takes a fresh install to a running, self-described service:
+    veritas-agent enroll --id <name> --interests research,buy,verify
+    veritas-agent whoami
+    veritas-agent up            # sell path (enrolls a default account if needed)
+    veritas-buy <seller-url>    # buy path
+    veritas-mcp                 # local free-mode tools
 
-    veritas-agent up            # bootstrap config + wallet, then serve
-    veritas-agent up --paid     # same, requiring payment to the agent's wallet
-
-`init` provisions without serving; `serve` serves an existing config;
-`status` prints what is provisioned. Free mode stays the default: paid mode
-additionally needs a funded counterparty and a reachable facilitator, and
-`PaymentConfig.from_env` validation decides live vs misconfigured exactly as
-for any other deployment. What still requires a human is unchanged and
-stated: funding the wallet and public (TLS) deployment.
+`init`/`up` enroll automatically. Funding the wallet and public TLS remain
+external. Paid mode still needs --paid and, on mainnet, an explicit ack.
 """
 
 from __future__ import annotations
@@ -20,6 +17,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+from veritas.agent_account import (
+    catalog_document,
+    enroll_account,
+    load_account,
+    whoami_document,
+)
 from veritas.autonomous.bootstrap import apply_to_env, bootstrap_free_mode, load_config
 from veritas.networks import DEFAULT_NETWORK, is_testnet, normalize_network
 
@@ -73,12 +76,25 @@ def _provision(
         "Provisioned by veritas-agent. Funding the wallet and public TLS "
         "deployment remain external steps."
     )
+    account = enroll_account(
+        base_dir,
+        agent_id=config.get("agent_id"),
+        commerce_address=config.get("pay_to"),
+    )
+    config["agent_id"] = account["agent_id"]
+    config["did"] = account["did"]
     _write_config(base_dir, config)
     # JSON on stdout, like every sibling CLI: the first consumer is an agent.
     print(json.dumps({
         "config_path": str(Path(base_dir) / CONFIG_NAME),
         "wallet": wallet_note,
         "mode_requested": "paid" if paid else "free",
+        "account": {
+            "agent_id": account["agent_id"],
+            "did": account["did"],
+            "skills": [s["id"] for s in account["skills"]],
+            "binding_hash": account["binding_hash"],
+        },
         "note": "funding the wallet and public TLS deployment remain external",
     }, indent=2))
     return config
@@ -110,14 +126,58 @@ def main(argv: list[str] | None = None) -> int:
             help="required to enable payment on a mainnet network",
         )
 
-    init_p = sub.add_parser("init", help="provision config and wallet, do not serve")
+    init_p = sub.add_parser("init", help="provision config, wallet, and account; do not serve")
     _payment_flags(init_p)
     sub.add_parser("serve", help="apply provisioned config to env and run the server")
     up_p = sub.add_parser("up", help="init if missing, then serve (the zero-touch path)")
     _payment_flags(up_p)
-    sub.add_parser("status", help="print provisioned config and wallet state")
+    sub.add_parser("status", help="print provisioned config, wallet, and account")
+
+    enroll_p = sub.add_parser(
+        "enroll",
+        help="create identity + wallets + interest-bound skills (no server)",
+    )
+    enroll_p.add_argument("--id", dest="agent_id", default=None, help="agent id (default: self)")
+    enroll_p.add_argument("--role", default=None, help="plane role (default: agent)")
+    enroll_p.add_argument(
+        "--interests",
+        default=None,
+        help="comma-separated interests mapped onto catalog skills "
+        "(default: research,verify)",
+    )
+    sub.add_parser("whoami", help="print the enrolled account, or how to enroll")
+    sub.add_parser("skills", help="print bound skills, or the catalog if not enrolled")
 
     args = parser.parse_args(argv)
+
+    if args.command == "enroll":
+        account = enroll_account(
+            args.base_dir,
+            agent_id=args.agent_id,
+            role=args.role,
+            interests=args.interests,
+        )
+        print(json.dumps(account, indent=2))
+        return 0
+
+    if args.command == "whoami":
+        print(json.dumps(whoami_document(args.base_dir), indent=2))
+        return 0
+
+    if args.command == "skills":
+        acc = load_account(args.base_dir)
+        if acc is None:
+            print(json.dumps({"enrolled": False, **catalog_document()}, indent=2))
+        else:
+            print(json.dumps({
+                "enrolled": True,
+                "agent_id": acc["agent_id"],
+                "did": acc["did"],
+                "commerce_address": acc.get("wallets", {}).get("commerce", {}).get("address"),
+                "skills": acc["skills"],
+                "binding_hash": acc["binding_hash"],
+            }, indent=2))
+        return 0
 
     if args.command == "init":
         _provision(args.base_dir, paid=args.paid, network=args.network,
@@ -177,6 +237,7 @@ def main(argv: list[str] | None = None) -> int:
             "pay_to": config.get("pay_to"),
             "wallet": address or "not provisioned",
             "config_path": str(Path(args.base_dir) / CONFIG_NAME),
+            "account": whoami_document(args.base_dir),
             "stage1_readiness": stage1_readiness,
         }, indent=2))
         return 0

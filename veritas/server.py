@@ -1574,10 +1574,13 @@ async def operator_enroll(req: OperatorEnrollRequest, request: Request):
         )
     try:
         return enroll_from_body(req.model_dump())
-    except AgentAccountError as exc:
+    except AgentAccountError:
         return JSONResponse(
             status_code=422,
-            content=error_envelope(ErrorCode.INVALID_REQUEST, str(exc)),
+            content=error_envelope(
+                ErrorCode.INVALID_REQUEST,
+                "account enroll failed; check agent_id and VERITAS_AGENT_HOME",
+            ),
         )
 
 

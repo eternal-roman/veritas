@@ -171,3 +171,26 @@ def load_signer(base_dir: str | Path = ".veritas_agent"):
     from veritas.buyer_payment import LocalAccountSigner
 
     return LocalAccountSigner("0x" + bytes(key).hex())
+
+
+def sign_personal_message(base_dir: str | Path, message: str) -> tuple[str, str]:
+    """EIP-191 personal_sign over text using the local commerce wallet.
+
+    Returns ``(address, signature)``. Decrypts the same keystore ``load_signer``
+    uses; does not go through the payment Signer seam (typed data only).
+    """
+    from eth_account.messages import encode_defunct
+
+    Account = _require_eth_account()
+    base = Path(base_dir)
+    keystore_path = base / KEYSTORE_NAME
+    passphrase_path = base / PASSPHRASE_NAME
+    if not keystore_path.exists() or not passphrase_path.exists():
+        raise WalletError(f"no provisioned wallet under {base}; run ensure_wallet first")
+    key = Account.decrypt(
+        json.loads(keystore_path.read_text(encoding="utf-8")),
+        passphrase_path.read_text(encoding="utf-8"),
+    )
+    account = Account.from_key(key)
+    signature = account.sign_message(encode_defunct(text=message)).signature
+    return account.address, "0x" + signature.hex().removeprefix("0x")

@@ -273,6 +273,11 @@ def enroll_account(
                     if commerce_address
                     else "not provisioned (install the 'signing' extra)"
                 ),
+                **(
+                    {"funding": (existing or {}).get("wallets", {}).get("commerce", {}).get("funding")}
+                    if (existing or {}).get("wallets", {}).get("commerce", {}).get("funding")
+                    else {}
+                ),
             },
             "plane": {
                 "currency": "VAAT",
@@ -281,9 +286,17 @@ def enroll_account(
             },
         },
         "visa": visa,
+        "ecosystem_identity": _issue_ecosystem_identity(
+            home,
+            agent_id=aid,
+            did=did,
+            commerce_address=commerce_address,
+            existing=existing,
+        ),
         "not_x402_settlement": True,
         "next": {
             "whoami": "veritas-agent whoami",
+            "fund_proof": "veritas-agent fund-proof",
             "sell": "veritas-agent up",
             "buy": "veritas-buy <seller-url>",
             "local_tools": "veritas-mcp",
@@ -311,16 +324,126 @@ def enroll_account(
     return body
 
 
+def _issue_ecosystem_identity(
+    home: Path,
+    *,
+    agent_id: str,
+    did: str,
+    commerce_address: str | None,
+    existing: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    if not commerce_address:
+        return None
+    try:
+        from veritas.agent_identity_card import (
+            IdentityCardError,
+            issue_identity_card,
+            verify_identity_card,
+        )
+        from veritas.autonomous.wallet import WalletError, sign_personal_message
+        from veritas.networks import DEFAULT_NETWORK
+    except ImportError:
+        return None
+
+    prior = (existing or {}).get("ecosystem_identity")
+    if isinstance(prior, dict):
+        ok, _reason = verify_identity_card(prior)
+        if (
+            ok
+            and str(prior.get("agent_id")) == agent_id
+            and str(prior.get("commerce_address") or "").lower()
+            == commerce_address.lower()
+        ):
+            return prior
+
+    try:
+        def sign_text(message: str) -> str:
+            _, sig = sign_personal_message(home, message)
+            return sig
+
+        return issue_identity_card(
+            agent_id=agent_id,
+            did_plane=did,
+            commerce_address=commerce_address,
+            network=DEFAULT_NETWORK,
+            sign_text=sign_text,
+        )
+    except (WalletError, IdentityCardError, OSError, ValueError):
+        return None
+
+
+def readiness_document(acc: dict[str, Any] | None) -> dict[str, Any]:
+    """Honest C-readiness. Never claims funded or registry-listed without proof."""
+    public_url = (os.environ.get("VERITAS_PUBLIC_URL") or "").strip().rstrip("/") or None
+    https = bool(public_url and public_url.startswith("https://"))
+    if acc is None:
+        return {
+            "commerce_address": None,
+            "funded": None,
+            "public_url": public_url,
+            "resolves_at": f"{public_url}/v1/operator" if public_url else None,
+            "listed_in_repo": True,
+            "listed_on_registry": False,
+            "identity_off_box": https,
+            "ecosystem_identity_signed": False,
+            "next": "veritas-agent adopt --id <name> --interests research,buy,verify",
+        }
+    commerce = (acc.get("wallets") or {}).get("commerce") or {}
+    funding = commerce.get("funding")
+    funded = None
+    if isinstance(funding, dict) and "funded" in funding:
+        funded = bool(funding["funded"])
+    signed = isinstance(acc.get("ecosystem_identity"), dict)
+    if funded is True:
+        nxt = "veritas-agent up --paid --network eip155:84532"
+    elif commerce.get("address"):
+        nxt = "veritas-agent fund-proof  # after https://faucet.circle.com/"
+    else:
+        nxt = "pip install 'veritas-research[signing]' && veritas-agent adopt"
+    return {
+        "commerce_address": commerce.get("address"),
+        "funded": funded,
+        "public_url": public_url,
+        "resolves_at": f"{public_url}/v1/operator" if public_url else None,
+        "listed_in_repo": True,
+        "listed_on_registry": False,
+        "identity_off_box": https,
+        "ecosystem_identity_signed": signed,
+        "next": nxt,
+    }
+
+
 def whoami_document(base_dir: str | Path | None = None) -> dict[str, Any]:
     acc = load_account(base_dir)
     if acc is None:
         return {
             "enrolled": False,
             "schema": ACCOUNT_SCHEMA,
-            "next": "veritas-agent enroll --id <name> --interests research,buy,verify",
+            "next": "veritas-agent adopt --id <name> --interests research,buy,verify",
             "catalog": sorted(SKILL_CATALOG),
+            "readiness": readiness_document(None),
         }
-    return {"enrolled": True, **acc}
+    return {"enrolled": True, **acc, "readiness": readiness_document(acc)}
+
+
+def record_funding(
+    base_dir: str | Path | None,
+    proof: dict[str, Any],
+) -> dict[str, Any]:
+    """Write observed funding proof onto the local account. Does not invent USDC."""
+    home = resolve_home(base_dir)
+    acc = load_account(home)
+    if acc is None:
+        raise AgentAccountError("not enrolled; run veritas-agent adopt")
+    wallets = dict(acc.get("wallets") or {})
+    commerce = dict(wallets.get("commerce") or {})
+    commerce["funding"] = proof
+    wallets["commerce"] = commerce
+    acc["wallets"] = wallets
+    acc["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    path = home / ACCOUNT_NAME
+    path.write_text(json.dumps(acc, indent=2) + "\n", encoding="utf-8")
+    return acc
 
 
 def catalog_document() -> dict[str, Any]:

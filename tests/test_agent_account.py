@@ -67,7 +67,7 @@ def test_skill_binding_hash_covers_identity_and_wallet(tmp_path):
 def test_whoami_unenrolled(tmp_path):
     doc = whoami_document(tmp_path)
     assert doc["enrolled"] is False
-    assert "enroll" in doc["next"]
+    assert "adopt" in doc["next"] or "enroll" in doc["next"]
     assert set(doc["catalog"]) == set(SKILL_CATALOG)
 
 
@@ -85,6 +85,15 @@ def test_enroll_cli_and_whoami(tmp_path, capsys):
     skills = json.loads(capsys.readouterr().out)
     assert skills["enrolled"] is True
     assert skills["binding_hash"] == out["binding_hash"]
+
+
+def test_reenroll_reuses_valid_identity_card(tmp_path):
+    pytest.importorskip("eth_account")
+    first = enroll_account(tmp_path, agent_id="erin")
+    card = first["ecosystem_identity"]
+    assert card and card.get("signature")
+    second = enroll_account(tmp_path, agent_id="erin")
+    assert second["ecosystem_identity"]["signature"] == card["signature"]
 
 
 def test_init_auto_enrolls_default_account(tmp_path, capsys):

@@ -44,7 +44,7 @@ file described a system that did not import.
 | G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop + `veritas-ops reconcile-loop`. Mainnet still needs env RPC |
 | VCAE escrow (G12) | Library + HTTP lock/release/forfeit. GET never serves the signature. Forfeit re-runs `evaluate_challenge`. Release is loopback-only. Forfeit submit needs live facilitator. Not a vault. G2 closed (EIP-712 recover). Mainnet collect unproven. Research does not auto-attach a warranty. |
 | Prediction-market signals | Public Kalshi/Polymarket snapshots stored as evidence. Arithmetic analysis and history. Prices, not verdicts. No trading |
-| A2A peer connect | `GET /v1/peer` + local `peers.json`. Pulls another agent's `/v1/signals` into SignalStore. No central network. Public TLS is not required for local/LAN (`--allow-local`) |
+| A2A peer connect | `GET /v1/peer` + local `peers.json`. Pulls another agent's `/v1/signals` into SignalStore. Not the Mesh Runner and not stranger discovery: public TLS remains required for strangers; local/LAN A2A does not (`--allow-local`) |
 
 ## Found false and fixed (2026-08-05)
 

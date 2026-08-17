@@ -10,7 +10,7 @@ Dated 2026-08-16. Status of each item is as of this branch's tip.
 
 | Item | Why now |
 |------|---------|
-| **Self-host + connect** | Public TLS always-on central host is the wrong product. Each agent serves and can `connect` to another. No Veritas cloud. |
+| **Self-host + connect** | Public TLS always-on central host is the wrong product. Each agent serves and can `connect` to another. No Veritas cloud. **Not** the program Mesh Runner (`ecosystem_cycle`) and **not** stranger discovery — public TLS remains required for strangers; local/LAN A2A does not. |
 | **G2 signature check** | Local facilitator recovers the EIP-712 signer. Forged payments fail. |
 | **Signals analytics** | Store was not enough. History + arithmetic analysis on venue prices. |
 | **Observe-grade retrieval** | Wikipedia official extracts; served path re-observes search hits. |
@@ -72,4 +72,4 @@ O5, L6, R10 closed on #157.
 ## Honesty bound
 
 Closing G2 does **not** mean: on-chain nonce/balance check, public TLS host, unsolicited volume, or "the local facilitator settles."
-Those stay on this list.
+Those stay on this list. Peer connect is **not** the Mesh Runner and **not** a public seller.

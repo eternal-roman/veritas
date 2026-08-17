@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import json
 from urllib.error import HTTPError
+from urllib.parse import urlsplit
 
 from fastapi.testclient import TestClient
 
@@ -43,6 +44,10 @@ SIGNAL = {
 }
 
 
+def _public_resolver(host, port):
+    return [(2, 1, 6, "", ("93.184.216.34", 0))]
+
+
 def _fetcher(pages):
     def fetch(url: str, *args, **kwargs) -> bytes:
         page = pages.get(url)
@@ -57,13 +62,31 @@ def _fetcher(pages):
     return fetch
 
 
+def _client_fetcher(client):
+    """Map a peer URL onto Agent A's TestClient. No real sockets."""
+
+    def fetch(url: str, *args, **kwargs) -> bytes:
+        parts = urlsplit(url)
+        path = parts.path or "/"
+        if parts.query:
+            path = f"{path}?{parts.query}"
+        response = client.get(path)
+        if response.status_code == 404:
+            raise HTTPError(url, 404, "Not Found", hdrs=None, fp=None)
+        if response.status_code >= 400:
+            raise OSError(f"agent-a HTTP {response.status_code} for {path}")
+        return response.content
+
+    return fetch
+
+
 def test_connect_with_injected_fetcher_stores_a_peer(tmp_path):
     base = "https://peer.example"
     result = connect(
         base,
         fetcher=_fetcher({f"{base}/v1/peer": PEER_CARD}),
         base_dir=tmp_path,
-        resolver=lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))],
+        resolver=_public_resolver,
     )
     assert result["ok"] is True
     assert result["peer_id"] == PEER_CARD["identity_hash"]
@@ -121,7 +144,7 @@ def test_pull_signals_stores_via_signal_store(tmp_path, monkeypatch):
         base,
         fetcher=_fetcher({f"{base}/v1/peer": PEER_CARD}),
         base_dir=tmp_path,
-        resolver=lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))],
+        resolver=_public_resolver,
     )
     store = SignalStore(tmp_path / "runtime")
     result = pull_signals(
@@ -131,7 +154,7 @@ def test_pull_signals_stores_via_signal_store(tmp_path, monkeypatch):
         }),
         base_dir=tmp_path,
         store=store,
-        resolver=lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))],
+        resolver=_public_resolver,
     )
     assert result["ok"] is True
     assert result["stored"] == 1
@@ -191,7 +214,7 @@ def test_connect_falls_back_when_peer_card_is_404(tmp_path):
             f"{base}/.well-known/x402": {"links": {"signals": "/v1/signals"}},
         }),
         base_dir=tmp_path,
-        resolver=lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))],
+        resolver=_public_resolver,
     )
     assert result["ok"] is True
     assert result["source"] == "discovery"
@@ -242,3 +265,93 @@ def test_list_peers_is_local_only():
 
     assert "/v1/peer" in http_paths()
     assert "/v1/peers" not in http_paths()
+
+
+def test_pull_signals_accepts_wrapped_object_and_raw_list(tmp_path):
+    """GET /v1/signals serves `{signals: [...]}`; a raw list must also store."""
+    wrapped_store = SignalStore(tmp_path / "wrapped")
+    wrapped = pull_signals(
+        "https://peer.example",
+        fetcher=_fetcher({
+            "https://peer.example/v1/signals": {"signals": [SIGNAL], "count": 1},
+        }),
+        store=wrapped_store,
+        resolver=_public_resolver,
+    )
+    assert wrapped["ok"] is True
+    assert wrapped["stored"] == 1
+    assert wrapped["skipped"] == 0
+    assert wrapped_store.list()[0]["market_id"] == SIGNAL["market_id"]
+
+    listed_store = SignalStore(tmp_path / "listed")
+    listed = pull_signals(
+        "https://peer.example",
+        fetcher=_fetcher({
+            "https://peer.example/v1/signals": [SIGNAL],
+        }),
+        store=listed_store,
+        resolver=_public_resolver,
+    )
+    assert listed["ok"] is True
+    assert listed["stored"] == 1
+    assert listed["skipped"] == 0
+    assert listed_store.list()[0]["market_id"] == SIGNAL["market_id"]
+
+
+def test_two_agent_handshake_without_a_central_host(tmp_path, monkeypatch):
+    """Agent A serves; Agent B connect+pull via A's TestClient. No central host.
+
+    Peer connect / self-host only. Not the program Mesh Runner, not a
+    public seller, and not stranger discovery (VERITAS_PUBLIC_URL unset).
+    """
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "agent-a-runtime"))
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    monkeypatch.delenv("VERITAS_PUBLIC_URL", raising=False)
+    import veritas.server as server
+
+    importlib.reload(server)
+    written = server.signal_snapshots.put(SIGNAL)
+    assert written
+
+    agent_a = TestClient(server.app)
+    card = agent_a.get("/v1/peer").json()
+    assert card["schema"] == SCHEMA
+    assert card["central_network"] is False
+    assert agent_a.get("/v1/peers").status_code == 404
+    served = agent_a.get("/v1/signals").json()
+    assert isinstance(served.get("signals"), list)
+    assert any(item.get("market_id") == SIGNAL["market_id"] for item in served["signals"])
+    assert agent_a.get("/v1/identity").json()["base_url_configured"] is False
+
+    b_home = tmp_path / "agent-b-home"
+    fetch = _client_fetcher(agent_a)
+    linked = connect(
+        "https://agent-a.example",
+        fetcher=fetch,
+        base_dir=b_home,
+        resolver=_public_resolver,
+    )
+    assert linked["ok"] is True
+    assert linked["source"] == "peer"
+    assert linked["card"]["schema"] == SCHEMA
+    assert linked["card"]["central_network"] is False
+    assert linked["peer_id"] == card["identity_hash"]
+
+    b_store = SignalStore(tmp_path / "agent-b-runtime")
+    pulled = pull_signals(
+        linked["peer_id"],
+        fetcher=fetch,
+        base_dir=b_home,
+        store=b_store,
+        resolver=_public_resolver,
+    )
+    assert pulled["ok"] is True
+    assert pulled["stored"] >= 1
+    copied = b_store.list()
+    assert any(item.get("market_id") == SIGNAL["market_id"] for item in copied)
+    assert find_peer(linked["peer_id"], b_home) is not None
+    # A's store still holds the original snapshot; no central host in between.
+    assert any(
+        item.get("market_id") == SIGNAL["market_id"]
+        for item in server.signal_snapshots.list()
+    )

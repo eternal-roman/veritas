@@ -61,19 +61,6 @@ def test_the_dockerfile_copies_named_paths_never_the_whole_tree():
         assert "." not in sources, f"Dockerfile copies the whole tree: COPY {line}"
 
 
-def test_the_image_installs_dependencies_from_the_hashed_lock():
-    """Defect O16. `pip install "."` resolved the pyproject floors against
-    PyPI at build time, so the image's dependency set was whatever PyPI served
-    that day: two builds of one commit could ship different trees, and a
-    compromised release of any transitive dependency landed unreviewed. O.8
-    hash-pinned CI and the published wheel but explicitly left the image out;
-    this closes that."""
-    dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
-    assert "--require-hashes -r requirements.lock" in dockerfile, (
-        "the image must install its dependencies from the hashed lock"
-    )
-
-
 def _run_commands() -> list[str]:
     """The Dockerfile's RUN commands, comments stripped and continuations joined.
 
@@ -87,6 +74,111 @@ def _run_commands() -> list[str]:
     joined = re.sub(r"\\\s*\n\s*", " ", without_comments)
     return [match.group(1).strip() for match in re.finditer(r"^RUN\s+(.+)$", joined,
                                                             flags=re.MULTILINE)]
+
+
+_PIP_INSTALL_RE = re.compile(r"(?:python\s+-m\s+)?pip(?:3)?\s+install\b")
+
+# Flags whose next token is an argument, not a package.
+_PIP_VALUE_FLAGS = {
+    "-r",
+    "--requirement",
+    "-c",
+    "--constraint",
+    "-i",
+    "--index-url",
+    "--extra-index-url",
+    "--find-links",
+    "-f",
+    "-e",
+    "--editable",
+    "--target",
+    "-t",
+    "--prefix",
+    "--root",
+    "--src",
+    "--upgrade-strategy",
+}
+
+
+def _pip_installs() -> list[str]:
+    """pip install invocations from RUN commands (comments already stripped)."""
+    found = []
+    for cmd in _run_commands():
+        for part in re.split(r"\s*(?:&&|\|\||;)\s*", cmd):
+            if _PIP_INSTALL_RE.search(part):
+                found.append(part.strip())
+    return found
+
+
+def _pip_install_positionals(command: str) -> list[str]:
+    """Package / path arguments to `pip install`, flags stripped."""
+    tokens = command.split()
+    try:
+        index = next(n for n, tok in enumerate(tokens) if tok == "install")
+    except StopIteration as exc:
+        raise AssertionError(f"cannot parse pip install: {command}") from exc
+    positionals: list[str] = []
+    skip_next = False
+    for tok in tokens[index + 1 :]:
+        if skip_next:
+            skip_next = False
+            continue
+        if tok in _PIP_VALUE_FLAGS:
+            skip_next = True
+            continue
+        if tok.startswith("-"):
+            continue
+        positionals.append(tok.strip("'\""))
+    return positionals
+
+
+def test_the_image_installs_dependencies_from_the_hashed_lock():
+    """Defect O16. `pip install "."` resolved the pyproject floors against
+    PyPI at build time, so the image's dependency set was whatever PyPI served
+    that day: two builds of one commit could ship different trees, and a
+    compromised release of any transitive dependency landed unreviewed. O.8
+    hash-pinned CI and the published wheel but explicitly left the image out;
+    this closes that.
+
+    A substring in a comment is not an install. The RUN that pulls third-party
+    code must be `--require-hashes -r requirements.lock`.
+    """
+    installs = _pip_installs()
+    assert installs, "the Dockerfile no longer runs pip install"
+    hashed = [cmd for cmd in installs if "--require-hashes" in cmd]
+    assert hashed, "the image must install its dependencies from the hashed lock"
+    for command in hashed:
+        assert re.search(r"-r\s+requirements\.lock\b", command), (
+            "hashed install must read requirements.lock, not an unhashed file:\n"
+            f"{command}"
+        )
+
+
+def test_the_image_does_not_pip_install_unpinned_third_party_deps():
+    """A `pip install foo` or `pip install -r requirements.txt` would resolve
+    floors at build time and undo the lock.
+
+    Allowed installs:
+    - the hashed lock (`--require-hashes -r requirements.lock`)
+    - the local package only (`--no-deps` plus `"."`)
+    """
+    installs = _pip_installs()
+    assert installs, "the Dockerfile no longer runs pip install"
+    for command in installs:
+        if "--require-hashes" in command:
+            assert "requirements.txt" not in command, (
+                "hashed install must not also read the unhashed floors file:\n"
+                f"{command}"
+            )
+            continue
+        assert "--no-deps" in command, (
+            "unpinned third-party pip install in the image:\n" + command
+        )
+        assert _pip_install_positionals(command) == ["."], (
+            "package install must be the local tree only, not a named "
+            f"third-party dep: {_pip_install_positionals(command)!r} in\n"
+            f"{command}"
+        )
 
 
 def test_the_base_image_python_matches_the_lock_target():

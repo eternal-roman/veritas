@@ -31,7 +31,7 @@ Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists;
 
 | Item | Severity | Note |
 |------|----------|------|
-| Public TLS host | High | None live for strangers. Local/LAN A2A no longer waits on it (`veritas-agent connect --allow-local`). `docs/deploy/PUBLIC_HOST.md` remains the stranger-discovery runbook. |
+| Public TLS host | High | None live for strangers. Local/LAN A2A no longer waits on it (`veritas-agent connect --allow-local`). `docs/deploy/PUBLIC_HOST.md` remains the stranger-discovery runbook. Locked self-host path: `docs/design/IDENTITY_TLS_MESH.md`. |
 | Unsolicited buyers | High | Zero. Operator-run testnet only. |
 | Mainnet settlement | High | None. Base Sepolia only. |
 | PyPI publish | High | Job waits on `PYPI_TRUSTED_PUBLISHER=configured`. |

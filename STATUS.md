@@ -9,7 +9,7 @@ file described a system that did not import.
 |-----------|-------|
 | Hashing + normalization | Tested |
 | Custody chain, delivered with the response | Tested — buyer re-runs `verify_chain_records` on delivered bytes |
-| Durable receipts (`/v1/receipts`) | Tested |
+| Durable receipts (`/v1/receipts`) | Tested — files always; shared row when `VERITAS_DATABASE_URL` is set |
 | Relevance gate on the served path | Tested — irrelevant evidence is refused |
 | Refusal taxonomy (`no_evidence`, `irrelevant_evidence`, `unavailable`) | Tested |
 | Retrieval error surfacing | Tested |
@@ -73,7 +73,7 @@ Fixed and test-pinned. See `docs/program/STATE.md`.
 | Cross-source synthesis | Medium | Lexical NLI-gated; extractive fallback remains. Not an LLM |
 | Public host | High | None |
 | Quality vs strong baselines | High | Harness proves invariants |
-| Cross-instance rate limits | Medium | Shared when `VERITAS_DATABASE_URL` is set; otherwise in-process |
+| Cross-instance rate limits | Medium | Shared when `VERITAS_DATABASE_URL` is set; process-local fallback if that store is down. Unset URL stays in-process (`server.py`) |
 | Shared ledger across instances | Medium | Seam exists (`VERITAS_DATABASE_URL`). Multi-host HA is operator Postgres, not proven behind a balancer |
 | Production-routine chain reconcile | Medium | `veritas-ops reconcile-loop` + optional alert URL; mainnet still needs env RPC |
 | Registry auto-registration | Medium | Manual |

@@ -25,10 +25,8 @@ def is_loopback_client(request: Request) -> bool:
 
 
 def public_account() -> dict[str, Any]:
-    """whoami without the plane visa (HMAC bearer)."""
-    doc = dict(whoami_document())
-    doc.pop("visa", None)
-    return doc
+    """whoami document for the operator viewer."""
+    return dict(whoami_document())
 
 
 def operator_snapshot() -> dict[str, Any]:
@@ -49,7 +47,6 @@ def operator_snapshot() -> dict[str, Any]:
             "access": "loopback",
             "cli": "veritas-agent enroll",
         },
-        "not_x402_settlement": True,
         "note": (
             "Viewer of existing config. Enroll is loopback-only. "
             "Funding the commerce wallet and public TLS stay external."
@@ -141,9 +138,7 @@ function paint(s) {
   row(acct, "did", a.did);
   row(acct, "role", a.role);
   const commerce = (a.wallets && a.wallets.commerce) || {};
-  const plane = (a.wallets && a.wallets.plane) || {};
   row(acct, "commerce", commerce.address);
-  row(acct, "VAAT", plane.balance);
   const sk = document.getElementById("skills"); sk.replaceChildren();
   for (const x of (a.skills || [])) {
     const i = document.createElement("i");

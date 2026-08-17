@@ -21,11 +21,11 @@ def test_enroll_binds_identity_wallet_and_default_skills(tmp_path):
     acc = enroll_account(tmp_path, agent_id="alice")
     assert acc["schema"] == ACCOUNT_SCHEMA
     assert acc["agent_id"] == "alice"
-    assert acc["did"] == "did:veritas:plane:alice"
-    assert acc["plane_id"].startswith("spiffe://veritas.local/")
+    assert acc["did"].startswith("did:")
+    assert "visa" not in acc
+    assert "plane" not in acc.get("wallets", {})
     assert [s["id"] for s in acc["skills"]] == ["research", "verify"]
     assert all(s["mapped"] for s in acc["skills"])
-    assert acc["wallets"]["plane"]["not_x402_settlement"] is True
     assert acc["binding_hash"]
     assert load_account(tmp_path)["binding_hash"] == acc["binding_hash"]
 

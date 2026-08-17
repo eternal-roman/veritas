@@ -93,10 +93,10 @@ locally fed; the rest are architecture waiting on Phases 3–5.
 
 ## What must be true before the flywheel turns
 
-In dependency order (see ROADMAP Part III for sizing):
+In dependency order (see `STATUS.md` for what has already landed):
 
-1. A payment must settle on-chain once (Phase 0) — every commercial claim
-   downstream rests on it.
+1. A payment must settle on-chain once (Phase 0) — operator-run testnet
+   did; unsolicited and mainnet have not.
 2. Retrieval must be worth paying for (Phase 1) — the venue does not reward
    honest plumbing around a weak product.
 3. A buyer side must exist (Phase 3) — signing, key custody, budgets.

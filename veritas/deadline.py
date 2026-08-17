@@ -77,7 +77,3 @@ class Deadline:
     def expired(self, now: float | None = None) -> bool:
         now = time.time() if now is None else now
         return now >= self.expires_at
-
-    def timeout_for(self, per_call_ceiling: float, now: float | None = None) -> float:
-        """The timeout to hand one outbound call, never exceeding what is left."""
-        return max(0.0, min(per_call_ceiling, self.seconds_remaining(now)))

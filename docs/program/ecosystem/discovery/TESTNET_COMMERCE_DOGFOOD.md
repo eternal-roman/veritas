@@ -69,8 +69,7 @@ Buyer needs **no ETH** for x402 exact (EIP-3009; facilitator pays gas).
 1. Each agent has a **wallet** + **budget** (USDC testnet now; mainnet later).  
 2. Services advertise **price + falsifiability class** (community-visible).  
 3. Buyers pay only under **SpendPolicy** (caps, network allowlist).  
-4. Optional **plane VAAT** pays control-plane labor — never confusable with USDC.  
-5. **Community agreement of value** = published norms (constitution + price tables + warranties), not a chat handshake.
+4. **Community agreement of value** = published norms (constitution + price tables + warranties), not a chat handshake.
 
 **What exists today**
 
@@ -79,8 +78,7 @@ Buyer needs **no ETH** for x402 exact (EIP-3009; facilitator pays gas).
 | Wallet mint | L1 (`veritas.autonomous.wallet` / eth_account dogfood) |
 | Single-seller x402 research | L1-live (testnet n=2 prior) |
 | SpendPolicy + payer journal | L1 |
-| Plane multi-agent VAAT economy | L1 local, not product money |
-| Multi-seller USDC mesh | **Missing** |
+| Multi-seller USDC peer A2A | Self-host connect exists; no public seller |
 | Community rate card | **Missing** |
 | Unattended faucet | **Blocked by captcha** |
 | Unsolicited third-party buyer | **0** |

@@ -21,7 +21,7 @@ Honesty bound:
   extra). Stdlib cannot write a SAN URI; the issue path fails closed
   rather than emit a weaker PEM.
 - This module does not serve, connect, or publish a network. It is not
-  the Mesh Runner.
+  a public discovery network.
 """
 
 from __future__ import annotations

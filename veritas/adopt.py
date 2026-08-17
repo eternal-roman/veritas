@@ -50,7 +50,7 @@ def build_adopt_card(*, public_url: str | None = None) -> dict[str, Any]:
                 "command": (
                     "veritas-agent adopt --id self --interests research,buy,verify"
                 ),
-                "note": "creates plane identity, commerce wallet, signed did:pkh card",
+                "note": "creates commerce wallet and a signed did:pkh card",
             },
             {
                 "id": "fund",

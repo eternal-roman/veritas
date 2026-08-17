@@ -11,7 +11,7 @@ link-local, and cloud-metadata destinations are never listed. Missing
 ``eth_account`` fails closed for both sign and verify — no unsigned cards,
 no "signature skipped" accept.
 
-This is **not** the program Mesh Runner.
+This is **not** a public discovery network.
 """
 
 from __future__ import annotations

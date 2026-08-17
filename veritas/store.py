@@ -96,14 +96,6 @@ def _parse_sqlite_url(url: str) -> DatabaseTarget:
     return DatabaseTarget(kind="sqlite", path=path)
 
 
-def resolve_database_url(url: str | None = None) -> DatabaseTarget | None:
-    """Resolve the configured shared store, or None for per-instance files."""
-    try:
-        return parse_database_url(url)
-    except StoreUnavailable:
-        raise
-
-
 class StoreConnection:
     """Minimal DB-API wrapper. Translates sqlite-flavored SQL for postgres.
 

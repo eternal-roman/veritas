@@ -224,9 +224,8 @@ def test_chain_checks_opt_in_accepts_unused_nonce_and_balance(monkeypatch):
 
 
 def test_control_plane_price_follows_payment_config(tmp_path, monkeypatch):
-    """The recorded settlement amount was hardcoded '$0.25'; it must follow
-    the configured price."""
-    monkeypatch.chdir(tmp_path)
+    """Local simulator settlement records must take the configured price
+    (G1 residual: the old second engine hardcoded $0.25)."""
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
     monkeypatch.setenv("VERITAS_PRICE", "$0.10")
 
@@ -234,25 +233,14 @@ def test_control_plane_price_follows_payment_config(tmp_path, monkeypatch):
 
     import veritas.autonomous.local_facilitator as lf
     importlib.reload(lf)
-    import veritas.autonomous.control_plane as cp
-    importlib.reload(cp)
+    from veritas.payment_config import PaymentConfig
 
-    from veritas.autonomous.bootstrap import bootstrap_free_mode
-
-    config = bootstrap_free_mode()
-    config_path = tmp_path / ".veritas_agent" / "config.json"
-    config["require_payment"] = True
-    config_path.write_text(json.dumps(config))
-
-    result = cp.agent_research(
-        "What is x402?", headers={"X-PAYMENT": _encode(_signed_payload())}
-    )
-    assert result["status"] in {"completed", "refused", "unavailable"}
-
+    amount = PaymentConfig.from_env().price
+    lf.record_settlement("req-price", amount)
     settlements = [
         json.loads(line)
-        for line in (tmp_path / "runtime" / "settlements.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / "runtime" / "settlements.jsonl").read_text(
+            encoding="utf-8"
+        ).splitlines()
     ]
-    assert settlements, "no settlement recorded"
-    if result["billable"]:
-        assert settlements[-1]["amount"] == "$0.10"
+    assert settlements[-1]["amount"] == "$0.10"

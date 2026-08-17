@@ -313,7 +313,7 @@ def test_pull_signals_accepts_wrapped_object_and_raw_list(tmp_path):
 def test_two_agent_handshake_without_a_central_host(tmp_path, monkeypatch):
     """Agent A serves; Agent B connect+pull via A's TestClient. No central host.
 
-    Peer connect / self-host only. Not the program Mesh Runner, not a
+    Peer connect / self-host only. Not a public discovery network, not a
     public seller, and not stranger discovery (VERITAS_PUBLIC_URL unset).
     """
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "agent-a-runtime"))

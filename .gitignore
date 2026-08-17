@@ -9,19 +9,9 @@ dist/
 build/
 *.egg-info/
 settlement_runs/
-docs/program/researcher/inbox/
-
 # Local agent plugin settings (never commit)
 .claude/*.local.md
 .claude/*.local.json
 
 # Local dogfood wallets / faucet transcripts (testnet only)
 .veritas_dogfood/
-
-
-# Evolver journal runtime (local SQLite is under .veritas/)
-docs/program/evolver/inbox/
-docs/program/evolver/outbox/
-docs/program/evolver/engineering/
-docs/program/evolver/runs/
-docs/program/evolver/last_run.json

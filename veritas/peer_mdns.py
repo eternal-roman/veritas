@@ -5,8 +5,8 @@ still applies the SSRF guard (``--allow-local`` is required for loopback
 and RFC1918). This module never writes the local peer book and never
 puts LAN addresses in TXT.
 
-This is **not** the program Mesh Runner, not a DHT, and not a public
-address book. The ``zeroconf`` extra is optional: missing it makes
+This is **not** a DHT and not a public address book. The ``zeroconf``
+extra is optional: missing it makes
 ``advertise`` / ``browse`` return a structured unavailable result
 instead of raising. Install with ``pip install 'veritas-research[mdns]'``.
 """

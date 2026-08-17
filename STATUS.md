@@ -16,14 +16,12 @@ file described a system that did not import.
 | x402 402 challenge (atomic amounts) | Tested |
 | Facilitator verify/settle, fail-closed | Tested against unreachable host |
 | Payment misconfiguration guard | Tested |
-| Hiding-wallet commitments | Tested |
-| Signed JIT packets (expiry, chain) | Tested |
 | Trust score | Independent audits via POST; GET is UNPROVEN from the operator log |
 | Evaluation harness + CI quality gates | Working |
 | Installable package (single `veritas` namespace) | CI builds and installs the wheel. Not on PyPI |
 | Keyed Serper tier | Fixture-shaped responses; live key not exercised |
 | Buyer pay + spend policy (`veritas.payer`) | L1 + L2 (I1–I7, 8,720 traces). EIP-712 vs `eth_account`. No on-chain settle in those tests |
-| Container / deploy | Files tested: allowlist context, no `COPY . .`, non-root, declared VOLUME, compose with no baked credentials. Image not built in CI |
+| Container / deploy | Files tested: allowlist context, no `COPY . .`, non-root, declared VOLUME, compose with no baked credentials. CI builds the image; GHCR push is not configured |
 | Observability | JSON access logs; `/metrics` behind token; queries and `X-PAYMENT` absent from logs. Per-node counters |
 | Unit economics (`metering`, `pricing`, `veritas-ops`) | Calls, bytes, wall time on every request. Known-free providers default to 0; paid APIs stay unpriced |
 | Replay + ledger | Resubmitted `X-PAYMENT` works once, returns the stored deliverable. Shared when `VERITAS_DATABASE_URL` is set; otherwise per-instance SQLite. Chain check is `reconcile_against_chain` |
@@ -31,8 +29,8 @@ file described a system that did not import.
 | Error contract (`/v1/errors`) | Registered codes on every non-402 error |
 | Discovery | `/.well-known/x402`, `/llms.txt`, `/adopt.json`, `/v1/schema`; identity does not invent a base URL |
 | Wallet self-provisioning | Encrypted keystore; owner-only where POSIX allows. Funding external |
-| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status/connect/peers/pull-signals) | One account binds plane identity, commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing; `connect` stores another self-hosted agent's card locally |
-| Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only. Visa stripped from GET |
+| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status/connect/peers/pull-signals) | One account binds commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing; `connect` stores another self-hosted agent's card locally |
+| Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only |
 | MCP (`veritas-mcp`; listed at `/v1/hooks`) | Tested against the SDK. Local free-mode engine; no payment path |
 | Release workflow | Dockerfile CI-built. PyPI job waits on `PYPI_TRUSTED_PUBLISHER=configured` |
 | Credits via SIWx | Double-entry; grant only after settled x402; refund on non-billable `unavailable`. Ledger credit, not a chain refund. Shared when `VERITAS_DATABASE_URL` is set |
@@ -44,7 +42,7 @@ file described a system that did not import.
 | G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop + `veritas-ops reconcile-loop`. Mainnet still needs env RPC |
 | VCAE escrow (G12) | Library + HTTP lock/release/forfeit. GET never serves the signature. Forfeit re-runs `evaluate_challenge`. Release is loopback-only. Forfeit submit needs live facilitator. Not a vault. G2 closed (EIP-712 recover). Mainnet collect unproven. Research does not auto-attach a warranty. |
 | Prediction-market signals | Public Kalshi/Polymarket snapshots stored as evidence. Arithmetic analysis and history. Prices, not verdicts. No trading |
-| A2A peer connect | `GET /v1/peer` + local `peers.json`. Pulls another agent's `/v1/signals` into SignalStore. Not the Mesh Runner and not stranger discovery: public TLS remains required for strangers; local/LAN A2A does not (`--allow-local`) |
+| A2A peer connect | `GET /v1/peer` + local `peers.json`. Pulls another agent's `/v1/signals` into SignalStore. Not stranger discovery: public TLS remains required for strangers; local/LAN A2A does not (`--allow-local`) |
 
 ## Found false and fixed (2026-08-05)
 
@@ -89,7 +87,7 @@ longer claims what it cannot support.
 What remains is mostly operational: operator-run testnet only, no unsolicited
 buyers, no public TLS host, PyPI unpublished. G2 and G12 are closed as
 library/HTTP primitives. Research does not auto-warrant. Mainnet collect
-stays unproven. Shared state is a URL the operator must set. Tracked in
+stays unproven. Shared state is a URL the operator must set. NEXT lives in
 `docs/program/STATE.md`.
 
 ## Security / CI

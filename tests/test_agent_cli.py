@@ -1,7 +1,7 @@
 """veritas-agent: the single zero-touch provisioning and serving command.
 
 Before this CLI, `bootstrap_free_mode()` wrote a config file that only the
-in-process control plane read — the HTTP server's `PaymentConfig.from_env`
+in-process config read — the HTTP server's `PaymentConfig.from_env`
 never saw it, so "agent_start()" provisioned nothing the served surface
 used. `veritas-agent up` closes that loop: bootstrap, wallet, env
 application, serve.

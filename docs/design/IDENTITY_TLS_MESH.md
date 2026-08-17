@@ -16,14 +16,14 @@ PROPERTY: self-hosted identity-bound TLS + signed public-URL introductions; no D
 EVIDENCE LEVEL: L0 (locked design)
 CHECKED ARTIFACT: docs/design/IDENTITY_TLS_MESH.md
 ASSUMPTIONS: commerce wallet can EIP-191 personal_sign; local peers.json and SSRF guard stay; TLS key ≠ commerce key
-NOT PROVEN: implementation; WAN reachability; NAT traversal; stranger discovery without a first URL; mainnet settlement; Mesh Runner as a product network
+NOT PROVEN: implementation; WAN reachability; NAT traversal; stranger discovery without a first URL; mainnet settlement
 ```
 
 ## Honesty bound
 
 | This is | This is not |
 |---------|-------------|
-| One agent serves HTTPS; another `connect`s | The program Mesh Runner (`veritas.ecosystem_cycle`, `docs/program/TRACK_MESH_RUNNER.md`) |
+| One agent serves HTTPS; another `connect`s | A public seller, registry, or discovery network |
 | A filtered, signed projection of *this* node's book | A registry, Bazaar listing, or public seller |
 | Base Sepolia commerce keys if that is what the wallet is | Mainnet, invented money, or closing G13 |
 | URI SAN + commerce-key binding | SPIFFE/SPIRE, a public CA, ACME-required |
@@ -34,8 +34,7 @@ NOT PROVEN: implementation; WAN reachability; NAT traversal; stranger discovery 
 `listed_on_registry` stays false. `public_seller` stays null until an
 operator sets `VERITAS_PUBLIC_URL`. Constitution G13 stays open.
 
-Conductor: never present this mesh as settlement or as the Mesh Runner
-kernel.
+Never present this peer path as settlement or as a public network.
 
 ## What already exists (do not rewrite)
 
@@ -467,7 +466,7 @@ revealed." Anyone you introduce can be dialed. That is the product.
 ## What other agents implement
 
 Four work packages. This document is the spec; do not open a fifth
-architecture. Do not edit Mesh Runner.
+architecture.
 
 | Package | Files | Does |
 |---------|-------|------|
@@ -508,7 +507,6 @@ Acceptance pins (implementers write these):
 - ACME / Let's Encrypt implementation
 - Public CA as a substitute for `tls.binding`
 - Serving `peers.json`
-- Mesh Runner (`ecosystem_cycle`) as a product network
 - Closing G13, mainnet settlement, invented money
 - Setting `listed_on_registry` or `public_seller`
 - ERC-8004, W3C-registered DID methods, SPIRE

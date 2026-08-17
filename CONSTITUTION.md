@@ -297,7 +297,7 @@ $0.25 price instead of reading payment config.
 
 Closed in constitution 1.1: the simulator now decodes headers via the shared
 `veritas.x402.decode_payment_header` and requires the x402 structural shape,
-and the control plane's recorded amounts follow payment config (both enforced
+and recorded simulator amounts follow payment config (both enforced
 in `tests/test_autonomous_payment.py`). The remaining weakness is registered
 as G2 — the register does not shrink by forgetting.
 

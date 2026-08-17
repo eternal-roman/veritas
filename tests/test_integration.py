@@ -1,22 +1,5 @@
-"""Smoke integration tests for core + autonomous layers."""
-
-def test_hashing():
-    from veritas.hashing import compute_content_hash, verify_content_hash
-    h = compute_content_hash("hello")
-    assert h.startswith("sha256:")
-    ok, _ = verify_content_hash("hello", h)
-    assert ok
-
-def test_networks():
-    from veritas.networks import CAIP2_NETWORKS, normalize_network
-    assert normalize_network("base") == "eip155:8453"
-    assert "eip155:8453" in CAIP2_NETWORKS.values()
-
-def test_payment_config_free():
-    from veritas.payment_config import PaymentConfig
-    cfg = PaymentConfig.from_env()
-    assert cfg.mode in ("free", "live", "misconfigured")
-    assert isinstance(cfg.supported_networks, list)
+"""Constitution-pinned integration pins. Broader coverage lives in the
+module tests (pipeline, payment, custody)."""
 
 def test_invalid_pay_to_does_not_become_live(monkeypatch):
     """A typo'd wallet previously passed the len>=20 check and went live,
@@ -39,42 +22,39 @@ def test_every_supported_network_has_a_settlement_asset():
     assert not unsettleable, f"advertised but unsettleable networks: {unsettleable}"
 
 def test_control_plane_uses_shared_engine():
-    """The control plane must not reimplement the pipeline."""
-    from veritas.autonomous.control_plane import agent_research
+    """Every research surface calls the one pipeline (A1)."""
+    from veritas.pipeline import run_research
     from veritas.schema import validate_response
-    result = agent_research("What is the x402 protocol?")
-    assert result["status"] in ("completed", "refused", "unavailable", "payment_required")
-    if result["status"] != "payment_required":
-        assert validate_response({k: v for k, v in result.items()}) == []
-        assert result["human_required"] is False
+    result = run_research("What is the x402 protocol?", allow_network=False)
+    assert result["status"] in ("completed", "refused", "unavailable")
+    assert validate_response(result) == []
 
-def test_payment_is_checked_before_work_is_done(monkeypatch):
-    """An unpaid caller must not consume a full retrieval pass. The earlier
-    ordering ran the research first and discarded the result."""
-    import veritas.autonomous.control_plane as cp
 
-    called = []
-    monkeypatch.setattr(cp, "run_research", lambda *a, **k: called.append(1) or {})
-    monkeypatch.setattr(cp, "load_config", lambda: {"require_payment": True})
+def test_payment_is_checked_before_work_is_done(monkeypatch, tmp_path):
+    """An unpaid live-mode caller must not retrieve (A4)."""
+    import importlib
 
-    result = cp.agent_research("anything", headers={})
-    assert result["status"] == "payment_required"
-    assert called == [], "research ran despite payment being required"
+    from fastapi.testclient import TestClient
 
-def test_calibrator_reports_untrained_honestly():
-    from veritas.autonomous.self_calibrator import SelfCalibrator
-    c = SelfCalibrator()
-    summary = c.summary()
-    assert "is_trained" in summary
-    # Untrained calibration must pass the value through unchanged.
-    if not summary["is_trained"]:
-        assert c.calibrate(0.77) == 0.77
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "ab" * 20)
+    monkeypatch.setenv("VERITAS_NETWORK", "eip155:84532")
+
+    import veritas.server as main_module
+    importlib.reload(main_module)
+    called: list[int] = []
+    monkeypatch.setattr(
+        main_module, "run_research", lambda *a, **k: called.append(1) or {}
+    )
+    client = TestClient(main_module.app)
+    response = client.post("/v1/research", json={"query": "anything"})
+    assert response.status_code == 402
+    assert called == []
+
 
 if __name__ == "__main__":
-    test_hashing()
-    test_networks()
-    test_payment_config_free()
     test_every_supported_network_has_a_settlement_asset()
     test_control_plane_uses_shared_engine()
-    test_calibrator_reports_untrained_honestly()
     print("integration smoke tests passed")

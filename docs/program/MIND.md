@@ -1,11 +1,9 @@
 # The Mind — shared operating core for every Veritas agent
 
-**Status:** binding on every role, track, workflow, and tick prompt under
-`docs/program/`. Load this before your charter. Your card states only your
-delta — what you own, what you refuse. This file states how we all think.
+**Status:** binding on every agent in this repository. Load this before
+you assign yourself a commerce profile. This file states how we all think.
 **Authority:** subordinate to [`GUARDIAN.md`](GUARDIAN.md) and
-`skills/adversarial-code-truth.md`; [`GOVERNING.md`](GOVERNING.md) binds it
-into the role stack.
+`skills/adversarial-code-truth.md`.
 
 ---
 
@@ -67,9 +65,8 @@ GUARDIAN or the constitution.
 
 ## 4. Cooperation contract
 
-- **Owned surfaces.** Write only your own CURRENT/log; read peers' evidence,
-  not their adjectives. Stock first: `git fetch origin` +
-  `python -m veritas.plane_stock` (read `stall.*` on every tick).
+- **Owned surfaces.** Write the files you own. Read peers' evidence, not
+  their adjectives. Stock first: `git fetch origin`.
 - **In-flight work is sacred.** Never force-push over, close, or duplicate
   another agent's open PR. Merge green ones when your charter allows.
 - **Checkpoint before you fan out.** Fleets ≤8 agents per wave; each wave
@@ -78,13 +75,8 @@ GUARDIAN or the constitution.
 - **Handoffs carry evidence.** A handoff names what changed, where the proof
   is, what remains, and the first command to resume. `STATE.md` is the
   resume point; keep it true in the same PR.
-- **Claim is a lock, not a story.** Taking `building` obligates a product PR
-  (or free with reason) in the same builder cycle — see WORKFLOW_HYGIENE §7.
-- **Merge frees the lock.** Product landmass on tip must not leave claim
-  building (§8).
-- **The noop is honorable.** Under free + HOLD with nothing green to merge, a
-  truthful `noop_idle` beats a restock PR
-  ([`WORKFLOW_HYGIENE.md`](WORKFLOW_HYGIENE.md) §1).
+- **The noop is honorable.** When nothing is ready to land, say so. Do not
+  invent a hygiene PR.
 
 ## 5. Anti-staleness rule for facts
 
@@ -102,15 +94,15 @@ not. Before opening any PR, name which scorecard axis
 ([`INNOVATION_LOOP.md`](INNOVATION_LOOP.md)) or registered gap it moves.
 "The cards are tidier" is not an axis.
 
-## 7. Role deltas
+## 7. Profiles
 
-Each role card adds, under its title, a **Mindset** block: what the role
-optimizes, what it refuses, and its unblock bias — the ladder rung it is most
-tempted to skip. Nothing in a role card may weaken this file; conflicts
-resolve upward: GUARDIAN → this file → GOVERNING loops → role card.
+Agents self-assign commerce profiles in `AGENTS.md` (Seller, Buyer,
+Researcher, Notary, Auditor, Operator, Bonded, Standing). Nothing in a
+profile may weaken this file. Conflicts resolve: GUARDIAN → this file →
+`AGENTS.md`.
 
 ```
-PROPERTY: shared operating core binding all program roles; unblock ladder replaces wait-for-human doctrine
+PROPERTY: shared operating core; unblock ladder replaces wait-for-human doctrine
 EVIDENCE LEVEL: L1 for the precedents cited (settlement evidence, field notes); L0 for behavioural adoption
-NOT PROVEN: that every scheduled agent obeys without host re-arm
+NOT PROVEN: that every agent obeys without host re-arm
 ```

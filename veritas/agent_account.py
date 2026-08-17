@@ -1,17 +1,17 @@
-"""Personal agent account: identity + wallets + interest-bound skills.
+"""Personal agent account: commerce wallet + signed card + interest-bound skills.
 
 One local record an arriving agent creates with ``veritas-agent enroll``
 (or ``init`` / ``up``, which enroll automatically):
 
-1. **Identity** — plane DID + HMAC visa (local coordination, not ERC-8004 / SPIFFE).
-2. **Wallets** — commerce address (x402 ``pay_to``, funding external) and
-   plane VAAT (not on-chain settlement).
+1. **Identity** — ``did:pkh`` when a commerce wallet exists, else a local
+   ``did:veritas:agent:`` label. The portable proof is the EIP-191 card.
+2. **Wallet** — commerce address (x402 ``pay_to``). Funding is external.
 3. **Skills** — catalog entries derived from declared interests, hashed to
    the identity and commerce wallet so the binding is checkable.
 
 Honesty bound: this is a local agent home, not an account server, not KYC,
 and not on-chain identity. Unknown interests are recorded unmapped rather
-than invented into capabilities.
+than invented into capabilities. There is no second currency and no HMAC visa.
 """
 
 from __future__ import annotations
@@ -22,7 +22,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from veritas.agent_economy import AgentEconomy
 from veritas.hashing import compute_content_hash
 
 ACCOUNT_SCHEMA = "veritas.agent.account.v1"
@@ -31,7 +30,7 @@ DEFAULT_HOME = ".veritas_agent"
 DEFAULT_AGENT_ID = "self"
 DEFAULT_ROLE = "agent"
 DEFAULT_INTERESTS: tuple[str, ...] = ("research", "verify")
-DEFAULT_STIPEND = 100
+DEFAULT_STIPEND = 0  # retained so older callers of enroll_account() still bind
 
 # Interest keyword → catalog skill id.
 INTEREST_ALIASES: dict[str, str] = {
@@ -224,6 +223,7 @@ def enroll_account(
     stipend: int = DEFAULT_STIPEND,
 ) -> dict[str, Any]:
     """Create or refresh the local account. Idempotent on the same agent_id."""
+    del stipend  # no second currency
     home = resolve_home(base_dir)
     home.mkdir(parents=True, exist_ok=True)
 
@@ -256,15 +256,13 @@ def enroll_account(
         except ValueError:
             commerce_address = None
 
-    eco = AgentEconomy(home)
-    try:
-        acc = eco.ensure_agent(aid, arole, stipend=stipend)
-        plane_balance = acc.balance_vaat
-        did = acc.did
-        plane_id = acc.plane_id
-        visa = acc.visa
-    finally:
-        eco.close()
+    if commerce_address:
+        from veritas.agent_identity_card import did_pkh_for
+        from veritas.networks import DEFAULT_NETWORK
+
+        did = did_pkh_for(DEFAULT_NETWORK, commerce_address)
+    else:
+        did = f"did:veritas:agent:{aid}"
 
     skills = bind_skills(
         declared, agent_id=aid, did=did, commerce_address=commerce_address
@@ -274,7 +272,6 @@ def enroll_account(
         "agent_id": aid,
         "role": arole,
         "did": did,
-        "plane_id": plane_id,
         "interests": declared,
         "skills": skills,
         "wallets": {
@@ -291,13 +288,7 @@ def enroll_account(
                     else {}
                 ),
             },
-            "plane": {
-                "currency": "VAAT",
-                "balance": plane_balance,
-                "not_x402_settlement": True,
-            },
         },
-        "visa": visa,
         "ecosystem_identity": _issue_ecosystem_identity(
             home,
             agent_id=aid,
@@ -305,7 +296,6 @@ def enroll_account(
             commerce_address=commerce_address,
             existing=existing,
         ),
-        "not_x402_settlement": True,
         "next": {
             "whoami": "veritas-agent whoami",
             "fund_proof": "veritas-agent fund-proof",

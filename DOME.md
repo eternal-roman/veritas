@@ -55,8 +55,8 @@ Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists;
 | Item | Severity | Note |
 |------|----------|------|
 | Balancer proof | Medium | `VERITAS_DATABASE_URL` is the seam. Two nodes behind a real balancer: not proven. |
-| Shared receipts | Medium | Receipts are files. Multi-host needs a shared disk or a later object store. |
-| Rate-limit fail-open | Low | Shared limiter returns "not limited" if the store cannot open, so an outage does not 503 the API. |
+| Shared receipts | Medium | File backend remains. When `VERITAS_DATABASE_URL` is set, `custody_receipts` is also upserted so a sibling can `GET /v1/receipts/{id}`. Two sqlite-file nodes: L1. Multi-host Postgres / real balancer: not proven. |
+| Rate-limit fail-open | Low | When DATABASE_URL is set but the store cannot open, `shared_rate_limited` uses a process-local limiter (same limit/window). Unset URL still uses server.py buckets. Outage is not a free pass. |
 | Abuse 10× load | Medium | Roadmap 6.3 acceptance unmet. |
 | Docker hash-lock + signed SBOM | Medium | O15 partial. |
 | Wallet ACLs on Windows (O16) | Medium | Linux/Docker is the deploy target. |

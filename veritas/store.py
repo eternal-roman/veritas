@@ -1,4 +1,4 @@
-"""Shared durable-store resolution for ledger, credits, and rate limits.
+"""Shared durable-store resolution for ledger, credits, receipts, and rate limits.
 
 Ledger and credits default to per-instance SQLite files under
 ``VERITAS_RUNTIME_DIR``. Set ``VERITAS_DATABASE_URL`` to share one store
@@ -23,9 +23,11 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from collections import deque
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 DATABASE_URL_ENV = "VERITAS_DATABASE_URL"
@@ -236,6 +238,156 @@ def sqlite_file_url(path: Path | str) -> str:
     return f"sqlite:///{resolved.as_posix()}"
 
 
+def probe_shared_store() -> bool:
+    """True when ``VERITAS_DATABASE_URL`` is set and the store can be opened.
+
+    Not wired into the request path. Tests (and operators) can ask whether
+    the shared seam is actually reachable; a False is "not usable", not a
+    503.
+    """
+    try:
+        target = parse_database_url()
+    except StoreUnavailable:
+        return False
+    if target is None:
+        return False
+    try:
+        conn = connect_target(target)
+    except StoreUnavailable:
+        return False
+    try:
+        conn.execute("SELECT 1")
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def _open_shared() -> StoreConnection | None:
+    """Open the configured shared store, or None if unset / unusable."""
+    try:
+        target = parse_database_url()
+    except StoreUnavailable:
+        return None
+    if target is None:
+        return None
+    try:
+        return connect_target(target)
+    except StoreUnavailable:
+        return None
+
+
+# -- shared custody receipts ------------------------------------------------
+
+_RECEIPT_SCHEMA = """
+CREATE TABLE IF NOT EXISTS custody_receipts (
+    request_id TEXT PRIMARY KEY,
+    body       TEXT NOT NULL,
+    written_at TEXT NOT NULL,
+    gone       INTEGER NOT NULL DEFAULT 0
+);
+"""
+
+
+@dataclass(frozen=True)
+class SharedReceipt:
+    """One row from ``custody_receipts``. ``body`` is the file-shaped JSON."""
+
+    request_id: str
+    body: str
+    written_at: str
+    gone: bool
+
+
+def _open_receipts() -> StoreConnection | None:
+    conn = _open_shared()
+    if conn is None:
+        return None
+    try:
+        conn.executescript(_RECEIPT_SCHEMA)
+    except Exception:
+        conn.close()
+        return None
+    return conn
+
+
+def upsert_shared_receipt(request_id: str, body: str, written_at: str) -> bool:
+    """Write or revive a receipt in the shared store. False on miss / failure.
+
+    Never raises: a shared-store outage must not fail a paid path whose
+    file write already succeeded. ``gone`` is cleared so a re-saved id is
+    live again for sibling nodes.
+    """
+    conn = _open_receipts()
+    if conn is None:
+        return False
+    try:
+        conn.execute(
+            "INSERT INTO custody_receipts (request_id, body, written_at, gone)"
+            " VALUES (?, ?, ?, 0)"
+            " ON CONFLICT(request_id) DO UPDATE SET"
+            " body=excluded.body, written_at=excluded.written_at, gone=0",
+            (request_id, body, written_at),
+        )
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def load_shared_receipt(request_id: str) -> SharedReceipt | None:
+    """Load one shared receipt row. None if unset, down, or no row."""
+    conn = _open_receipts()
+    if conn is None:
+        return None
+    try:
+        row = conn.execute(
+            "SELECT request_id, body, written_at, gone"
+            " FROM custody_receipts WHERE request_id = ?",
+            (request_id,),
+        ).fetchone()
+    except Exception:
+        return None
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    return SharedReceipt(
+        request_id=str(row["request_id"]),
+        body="" if row["body"] is None else str(row["body"]),
+        written_at="" if row["written_at"] is None else str(row["written_at"]),
+        gone=int(row["gone"] or 0) != 0,
+    )
+
+
+def tombstone_shared_receipt(request_id: str, written_at: str) -> bool:
+    """Mark ``gone=1`` so a sibling serves 410. False on miss / failure.
+
+    Upserts: a prune after a failed shared save still replicates the
+    tombstone. On conflict the existing body is kept.
+    """
+    conn = _open_receipts()
+    if conn is None:
+        return False
+    try:
+        conn.execute(
+            "INSERT INTO custody_receipts (request_id, body, written_at, gone)"
+            " VALUES (?, '', ?, 1)"
+            " ON CONFLICT(request_id) DO UPDATE SET"
+            " gone=1, written_at=excluded.written_at",
+            (request_id, written_at),
+        )
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+# -- shared rate limiter ----------------------------------------------------
+
 _RATE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS rate_hits (
     caller  TEXT NOT NULL,
@@ -244,27 +396,65 @@ CREATE TABLE IF NOT EXISTS rate_hits (
 CREATE INDEX IF NOT EXISTS rate_hits_by_caller ON rate_hits(caller, hit_at);
 """
 
+_FALLBACK_LOCK = Lock()
+_FALLBACK_BUCKETS: dict[str, deque[float]] = {}
+_FALLBACK_BUCKET_CAP = 10_000
+
+
+def _local_rate_limited(
+    caller: str, *, limit: int, window_seconds: float, now: float
+) -> bool:
+    """Process-local sliding window. Same shape as server.py in-process buckets.
+
+    Used only when DATABASE_URL is set but the shared store cannot be
+    used. Must not be a free pass.
+    """
+    cutoff = now - window_seconds
+    with _FALLBACK_LOCK:
+        bucket = _FALLBACK_BUCKETS.setdefault(caller, deque())
+        while bucket and bucket[0] < cutoff:
+            bucket.popleft()
+        if len(bucket) >= limit:
+            return True
+        bucket.append(now)
+        if len(_FALLBACK_BUCKETS) > _FALLBACK_BUCKET_CAP:
+            stale = [
+                key
+                for key, hits in _FALLBACK_BUCKETS.items()
+                if not hits or hits[-1] < cutoff
+            ]
+            for key in stale:
+                _FALLBACK_BUCKETS.pop(key, None)
+        return False
+
 
 def shared_rate_limited(caller: str, *, limit: int, window_seconds: float, now: float) -> bool:
     """True when ``caller`` has already used ``limit`` hits in the window.
 
-    Uses the shared store. Callers that have no DATABASE_URL should keep
-    the in-process limiter — this function refuses (fail closed as
-    "not limited") only if the store cannot be opened, so a missing
-    shared table never becomes a free pass *and* never 503s every
-    request. The in-process limiter remains the fallback.
+    Uses the shared store when ``VERITAS_DATABASE_URL`` is set and
+    reachable. Callers that have no DATABASE_URL keep the in-process
+    limiter in server.py — this function returns False so that path is
+    unchanged.
+
+    When DATABASE_URL *is* set but parse / connect / exec fails, a
+    process-local limiter with the same (limit, window) runs instead.
+    An outage is not a free pass.
     """
     try:
         target = parse_database_url()
     except StoreUnavailable:
-        return False
+        return _local_rate_limited(
+            caller, limit=limit, window_seconds=window_seconds, now=now
+        )
     if target is None:
         return False
-    cutoff = now - window_seconds
     try:
         conn = connect_target(target)
     except StoreUnavailable:
-        return False
+        return _local_rate_limited(
+            caller, limit=limit, window_seconds=window_seconds, now=now
+        )
+    cutoff = now - window_seconds
     try:
         conn.executescript(_RATE_SCHEMA)
         conn.execute("BEGIN IMMEDIATE")
@@ -288,7 +478,8 @@ def shared_rate_limited(caller: str, *, limit: int, window_seconds: float, now: 
             conn.execute("ROLLBACK")
         except Exception:
             pass
-        return False
+        return _local_rate_limited(
+            caller, limit=limit, window_seconds=window_seconds, now=now
+        )
     finally:
         conn.close()
-

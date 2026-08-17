@@ -15,6 +15,15 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## Progress log
 
+> **Shared receipts + rate-limit fallback (2026-08-16, feat/store-receipts-limits):**
+> When `VERITAS_DATABASE_URL` is set, `CustodyStore` upserts the same
+> redacted receipt body into `custody_receipts` so a sibling node can
+> serve `GET /v1/receipts/{id}`. Tombstones set `gone=1`. Shared-write
+> failure does not fail a paid save. `shared_rate_limited` falls back to
+> a process-local limiter when the configured store cannot be used —
+> not a free pass. Unset URL is unchanged (server.py buckets). O6 stays
+> open (balancer / replay / trust). G13 stays open.
+
 > **G2 + signals analyze + observe retrieval (2026-08-16, feat/g2-signals-observe):**
 > G2 closed — local facilitator recovers the EIP-712 signer of
 > `transferWithAuthorization` against the pinned USDC domain; forged,
@@ -407,7 +416,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | **closed** — SQLite counters, one row regardless of lifetime request count (`tests/test_durability.py::test_stats_are_counters_not_a_rescan`) |
 | O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
 | O5 | high | Relative runtime dir + cwd dependence → silent 503s | **closed** — `veritas.runtime.resolve_runtime_dir` is absolute; default is XDG/home, not cwd; `/readyz` probes writability; `veritas-agent` binds `{base-dir}/runtime` (`tests/test_runtime.py`) |
-| O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
+| O6 | high | Two instances: replay, receipt 404s, divergent trust | open — receipts share when `VERITAS_DATABASE_URL` is set (L1 sqlite file URL). Replay/trust/balancer still unproven. |
 | O7 | high | Receipt writes neither atomic nor fsynced | **closed** — temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
 | O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |

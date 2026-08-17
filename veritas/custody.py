@@ -15,6 +15,11 @@ from typing import Any
 from .hashing import compute_content_hash
 from .retention import is_expired
 from .runtime import resolve_runtime_dir
+from .store import (
+    load_shared_receipt,
+    tombstone_shared_receipt,
+    upsert_shared_receipt,
+)
 
 
 def _now() -> str:
@@ -197,6 +202,12 @@ class CustodyStore:
     tombstone so `GET /v1/receipts/{id}` can answer 410 Gone rather than
     collapsing "we deleted this" into 404 "never existed". Tombstones are never
     pruned: re-deleting them would reintroduce the 410→404 collapse.
+
+    The file backend is the default and always runs. When
+    ``VERITAS_DATABASE_URL`` is set, the same redacted body is upserted
+    into ``custody_receipts`` so a sibling node can serve a receipt it
+    did not write locally. Shared-write failures are swallowed: file
+    success is enough for the paid path.
     """
 
     def __init__(self, base_dir: str | None = None):
@@ -236,6 +247,17 @@ class CustodyStore:
             tomb = self._tombstone_path(record["request_id"])
             if tomb is not None:
                 tomb.unlink(missing_ok=True)
+            # Shared replica is best-effort: file success is enough for
+            # this node. A sibling reads the row when its local file
+            # is missing. Failures must not raise into a paid path.
+            try:
+                upsert_shared_receipt(
+                    str(record["request_id"]),
+                    json.dumps(record, indent=2),
+                    str(record.get("stored_at") or _now()),
+                )
+            except Exception:
+                pass
             record["persisted"] = True
         except ValueError:
             record["persisted"] = False
@@ -286,6 +308,8 @@ class CustodyStore:
 
         Unsafe ids are unknown: they never name a receipt we would mint, so
         they are not "gone" either. Path guards still run on every branch.
+        When the local file and tombstone miss, the shared store is asked
+        so a sibling node can serve a receipt it did not write locally.
         """
         path = self._receipt_path(request_id)
         if path is not None and path.is_file():
@@ -293,7 +317,14 @@ class CustodyStore:
         tomb = self._tombstone_path(request_id)
         if tomb is not None and tomb.is_file():
             return ReceiptPresence.GONE
-        return ReceiptPresence.UNKNOWN
+        if path is None:
+            return ReceiptPresence.UNKNOWN
+        shared = load_shared_receipt(request_id)
+        if shared is None:
+            return ReceiptPresence.UNKNOWN
+        if shared.gone:
+            return ReceiptPresence.GONE
+        return ReceiptPresence.PRESENT
 
     def load(self, request_id: str) -> dict[str, Any] | None:
         # Resolve before opening, never after: a check that runs after the read
@@ -304,7 +335,17 @@ class CustodyStore:
         try:
             return json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
+            pass
+        shared = load_shared_receipt(request_id)
+        if shared is None or shared.gone:
             return None
+        try:
+            parsed = json.loads(shared.body)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(parsed, dict):
+            return None
+        return parsed
 
     def prune(self, cutoff: datetime | str) -> dict[str, int]:
         """Delete receipt bodies older than `cutoff`; leave durable tombstones.
@@ -387,6 +428,10 @@ class CustodyStore:
             except OSError:
                 skipped += 1
                 continue
+            try:
+                tombstone_shared_receipt(request_id, str(marker["pruned_at"]))
+            except Exception:
+                pass
             deleted += 1
             tombstoned += 1
         return {

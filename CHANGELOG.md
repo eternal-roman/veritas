@@ -2,20 +2,29 @@
 
 ## [Unreleased]
 
+### Removed
+- Second product in the wheel: VAAT ledger, HMAC plane visas, org-cycle
+  mesh runner, evolver CLI, block board, plane stock. Enroll is commerce
+  wallet + did:pkh card only.
+- Off-path prototypes: `zk_wallet`, JIT packets, self-calibrator, the
+  unused `control_plane` entry. Local facilitator remains for G13.
+- Program theater (role ticks, CURRENT stamps, Rhai org workflows,
+  Superpowers diligence plan). Tenets stay in `AGENTS.md` / `MIND.md`.
+- Duplicate status files (`DOME.md`, `fable/STATE.md`). `STATUS.md` is
+  measured state; `docs/program/STATE.md` is resume only.
+- Tests for the removed wheel/theater surfaces, the empty
+  `test_known_gaps.py` register, duplicate integration smokes, and an
+  untracked copy-hygiene walk. Constitution-pinned tests stay.
+- CI import of `veritas.autonomous.control_plane` (module deleted).
+
 ### Added
 - Identity-bound self-hosted HTTPS (`serve --tls`), optional LAN mDNS
   browse, and signed public-URL introductions (`GET /v1/peer/introductions`).
-  TLS key is not the commerce key. Not a registry, not the Mesh Runner.
+  TLS key is not the commerce key. Not a registry, not a public network.
 - Self-host A2A peer connect (`veritas.peer.v1`): `GET /v1/peer` advertises
   this node; `veritas-agent connect` / `peers` / `pull-signals` talk to
   another self-hosted agent. No central network, no public peer list.
   Local/LAN needs `--allow-local`. Cloud metadata stays refused.
-
-### Changed
-- Adopt sell step: public TLS is optional for stranger discovery;
-  local/LAN A2A works with `--allow-local`.
-
-### Added
 - Local facilitator recovers the EIP-712 signer of an EIP-3009
   `transferWithAuthorization` (constitution G2 closed, 2.9). Forged,
   expired, and incomplete authorizations fail closed. Balance and
@@ -33,13 +42,6 @@
   Serper/DDG hits are labelled `search_snippet`.
 - Operator deploy runbook: `docs/deploy/PUBLIC_HOST.md`, `deploy/Caddyfile`,
   `deploy/fly.toml`. No public host is claimed.
-
-### Changed
-- Identity and product copy: prediction-market signals and x402
-  commerce first. Research is an observe primitive and does not
-  auto-attach a warranty.
-
-### Added
 - VCAE (`veritas.escrow`, `veritas.escrow.v1`): EIP-3009 authorization
   is the lock. `escrow_bond` / `escrow_stake` persist; `settle_forfeit`
   submits through the existing facilitator after a fired challenge. A
@@ -79,6 +81,13 @@
   Paid APIs stay unpriced. A rejected env override drops that default.
 
 ### Changed
+- Adopt sell step: public TLS is optional for stranger discovery;
+  local/LAN A2A works with `--allow-local`.
+- Identity and product copy: prediction-market signals and x402
+  commerce first. Research is an observe primitive and does not
+  auto-attach a warranty.
+- ROADMAP Part I no longer names the removed Bayesian module as live
+  architecture. Changelog Unreleased is one Added / one Changed block.
 - Constitution 2.8: G12 closed. Warranties that carry an EIP-3009 lock
   are `bond_binding: eip3009_authorization` and collectable via
   `settle_forfeit`. Warranties that omit a lock stay
@@ -118,6 +127,13 @@
   unset or truthy. `run_research()` itself still defaults off. Tests pin
   the env to `0`.
 - Metric path collapse covers `/v1/evidence/{content_hash}`.
+
+### Removed
+- Unused helpers with no callers: `_unb64`, `ensure_agents`,
+  `list_agent_ids`, `list_for_agent`, `timeout_for`, `hash_excerpt`,
+  `is_free_mode`, `resolve_database_url`, unused `PopulationMember`.
+- `evolutionary_ensemble/` scaffold (implementation is `veritas.evolver`).
+- Spent Superpowers diligence plan under `docs/superpowers/` (shipped).
 
 ## [0.12.0] - 2026-08-14
 

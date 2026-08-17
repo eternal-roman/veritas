@@ -5,11 +5,8 @@ fetch another agent's card and pull that agent's prediction-market
 snapshots through the existing SignalStore. There is no central
 network, no DHT, no gossip, no relay, and no push.
 
-This is **not** the program Mesh Runner (`veritas.ecosystem_cycle`,
-`docs/program/TRACK_MESH_RUNNER.md`). That kernel ranks offline
-research tracks. Conductor forbids presenting that kernel as a
-product network or as settlement. This module is only: one agent
-serves, another agent connects.
+This is peer A2A only: one agent serves, another agent connects.
+It is not a public seller, not settlement, and not a discovery registry.
 
 The card at ``GET /v1/peer`` advertises *this* node. The address book
 lives only on disk (``peers.json``) and is never served over HTTP —

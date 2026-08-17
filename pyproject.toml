@@ -58,12 +58,6 @@ mcp = ["mcp>=1.0,<2"]
 # Optional shared-store backend for multi-host HA. Same-host multi-process
 # uses a sqlite file URL and needs no extra.
 postgres = ["psycopg[binary]>=3.1"]
-# Optional evolutionary Idea graph (Evolver). Offline mock works without this;
-# install for LangGraph-native state machine wiring.
-evolver = [
-    "langgraph>=0.2",
-    "langchain-core>=0.3",
-]
 # Optional LAN mDNS advertise/browse for self-hosted peers. The module
 # imports without it; advertise()/browse() return structured unavailable.
 mdns = ["zeroconf>=0.132"]
@@ -89,7 +83,6 @@ veritas-diligence = "veritas.diligence_cli:main"
 veritas-buy = "veritas.buyer_journey:main"
 veritas-audit = "veritas.audit_cli:main"
 veritas-verify = "veritas.verifier:main"
-veritas-evolver = "veritas.evolver.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/eternal-roman/veritas"

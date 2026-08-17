@@ -18,7 +18,7 @@
     {
       "id": "adopt",
       "command": "veritas-agent adopt --id self --interests research,buy,verify",
-      "note": "creates plane identity, commerce wallet, signed did:pkh card"
+      "note": "creates commerce wallet and a signed did:pkh card"
     },
     {
       "id": "fund",

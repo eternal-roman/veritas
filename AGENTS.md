@@ -30,7 +30,7 @@ Interests map to existing capabilities: `research`, `verify`, `diligence`, `audi
 
 `init` / `up` enroll `id=self` with interests `research,verify` if no account exists. Funding the commerce wallet and public TLS stay external.
 
-Home is `--base-dir` (default `.veritas_agent/`, or `VERITAS_AGENT_HOME`): `account.json`, commerce keystore, plane visa/VAAT ledger. Commerce address is x402 `pay_to`. VAAT is local coordination, not settlement.
+Home is `--base-dir` (default `.veritas_agent/`, or `VERITAS_AGENT_HOME`): `account.json`, commerce keystore, signed did:pkh card. Commerce address is x402 `pay_to`. There is no second currency.
 
 ## Setup and commands
 
@@ -85,7 +85,7 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 - **No CI soft-fail.** No `|| true` or `continue-on-error`.
 - **`compileall` is not an import check.** CI's explicit import step exists because compileall accepts missing imports.
 - **`skills/adversarial-code-truth.md` is locked.** Emit PROPERTY / EVIDENCE LEVEL before any success claim. Tests are L1. Banned without evidence: "complete", "live-ready", "ZK", "revenue-ready".
-- **Program roles load `docs/program/MIND.md` before their charter.** North star is `VISION.md`; program docs point to it, never restate it. "Blocked" needs a dated failing probe; the human is the last rung, with the agent-executable 90% already done.
+- **Agents self-assign commerce profiles, not org job titles.** Load `docs/program/MIND.md` (unblock ladder, boundary contact) and `VISION.md` (L0 north star). "Blocked" needs a dated failing probe; the human is the last rung, with the agent-executable 90% already done. Profiles map to adopt interests: Seller (`sell`), Buyer (`buy,diligence`), Researcher (`research`), Notary (`notarize`), Auditor (`verify,audit`), Operator (`ops`), Bonded (`warranty,escrow`), Standing (`standing,signals`).
 - **Limitations stay plain** (README "Known limitations", STATUS.md). Narrow claims, evidence cited.
 - **Constitution is enforcement-linked.** `veritas/constitution.py` is normative; `CONSTITUTION.md` is a sync-tested rendering. Change both and bump `CONSTITUTION_VERSION`. New norms are L1 with a resolving pointer or L0 marked aspirational — `tests/test_constitution.py` rejects anything else.
 
@@ -114,11 +114,11 @@ First live settlement (`docs/program/fable/settlement/`, PR #112) found defects 
 1. **Versioned User-Agent on every outbound money-path client.** Cloudflare rejects default `Python-urllib` (1010 → 403) on x402.org and sepolia.base.org. Pinned in `tests/test_payment.py`.
 2. **Reference facilitator is x402 v2** for exact/eip155:84532 (`amount`, structured `resource`, echo `accepted`). Internals stay v1. One translation site: `FacilitatorClient` (`_wire_requirements` / `_wire_payment_payload`). No second site; no piecemeal v2.
 3. **Probe environment claims.** "No egress" was one sandbox. A 60s probe of facilitator `/supported` and RPC `eth_chainId` killed it. `docs/program/` facts need a last-verified date; stale = hypothesis.
-4. **Settlement recipe is repeatable.** `scripts/testnet_settlement.py` vs a live-mode server. Circle faucet: 20 testnet USDC / address / 2h, no account. Buyer needs no ETH (EIP-3009). Walkthrough: `docs/program/fable/STATE.md`.
+4. **Settlement recipe is repeatable.** `scripts/testnet_settlement.py` vs a live-mode server. Circle faucet: 20 testnet USDC / address / 2h, no account. Buyer needs no ETH (EIP-3009). Transcripts: `docs/program/fable/settlement/`.
 5. **Boundary contact beats another internal round.** Prefer one real counterparty exchange; persist the transcript.
 6. **Fan-out ≤8 per wave.** A 28-agent audit died at the usage limit (~1M tokens, zero results). Checkpoint each wave to disk. Persisted partials beat comprehensive results that never land.
 
 ## Current state
 
-Invariants above are tested and green. Testnet settlements (Base Sepolia, real x402.org facilitator) are chain-confirmed by `reconcile-chain` — count and transcripts at `docs/program/STATE.md` and `docs/program/fable/settlement/`. Not proven: mainnet, unsolicited buyers, sustained volume. Retrieval: Wikipedia official extracts + `notary.observe` on the served path; unobserved search hits stay `search_snippet`. Not on PyPI. See ROADMAP.md.
+See `STATUS.md` (measured) and `docs/program/STATE.md` (NEXT). Do not restate either here.
 

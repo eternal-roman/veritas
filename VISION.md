@@ -3,8 +3,7 @@
 **Status: L0 direction — never claim proven.** This document binds every
 agent and worker in this repository: program docs point here instead of
 restating the north star (MIND §5), and nothing here overrides honesty law —
-precedence stays GUARDIAN → MIND → GOVERNING loops → role cards
-(`docs/program/GOVERNING.md` §0). Success-word claims without carried
+precedence stays GUARDIAN → MIND → `AGENTS.md`. Success-word claims without carried
 evidence are gate failures under the locked gate
 (`skills/adversarial-code-truth.md`); this file states direction, not
 achievement.
@@ -74,10 +73,10 @@ means shipped and tested in this repository; "L0 next" is direction.
 |---|---|---|---|
 | Agent onboarding | Self-traversing discovery + zero-account payment: no signup, no API key, no human — find, verify, pay per request | discovery chain + hooks registry (`tests/test_discovery.py`, `tests/test_hooks.py`); 402→pay→deliver (`tests/test_money_path.py`) | registry listings; ERC-8004 identity (A16) |
 | Money ingress | Per-request x402 (EIP-3009: the buyer needs no gas) or prepaid credits over SIWx sessions | settlement recipe + evidence in `docs/program/fable/settlement/`; credits (`tests/test_credits_api.py`) | mainnet (explicit env + human-owned pay-to only); unsolicited buyers |
-| Money egress | Operator-held keys; the service never custodies buyer funds; ledger→chain reconcile is report-only and independent | `veritas-ops reconcile-chain` (gap G9's witness); `veritas-money-loop` | routine production reconcile (closes G9) |
+| Money egress | Operator-held keys; the service never custodies buyer funds; ledger→chain reconcile is report-only and independent | `veritas-ops reconcile-chain`; `veritas-money-loop` | routine production reconcile on mainnet (human RPC) |
 | Human onboarding | One command to a serving instance; an honesty register instead of marketing | `veritas-agent enroll` / `up`; README "Known limitations" | hosted instance; PyPI wheel |
-| Business incorporation | Legal-identity claims a counterparty can verify, not assert | nothing yet — `TRACK_LEGAL_IDENTITY` exploration only | entity, terms, compliance (human-rung work) |
-| Trust cold-start | Never fake standing: `/v1/trust` reports UNPROVEN below 10 paid outcomes; falsifiable warranties substitute for reputation at n=0 — the seller stakes on a refutation experiment instead of asking for belief | UNPROVEN rule (`tests/test_api.py`); warranty/audit/standing A26/A27 (`tests/test_warranty.py`, `tests/test_audit.py`) | portable attestations (A16); dispute path (A17) |
+| Business incorporation | Legal-identity claims a counterparty can verify, not assert | nothing yet | entity, terms, compliance (human-rung work) |
+| Trust cold-start | Never fake standing: `/v1/trust` GET is UNPROVEN from the operator log; falsifiable warranties substitute for reputation at n=0 — the seller stakes on a refutation experiment instead of asking for belief | UNPROVEN rule (`tests/test_api.py`); warranty/audit/standing A26/A27 (`tests/test_warranty.py`, `tests/test_audit.py`) | portable attestations (A16); dispute path (A17) |
 | Integration friction | One machine-readable registry of every surface including what does **not** exist (no push) — absence stated beats absence inferred | `/v1/hooks` + A28 sync tests (`tests/test_hooks.py`) | SDKs; framework adapters |
 
 ## 6. Structural draw — why agents come, why scale compounds
@@ -111,29 +110,24 @@ No projections. The kill criteria for the whole ambition are REFOUNDING §5.
 
 ## 8. The continuous improvement loop
 
-Already owned; this section names it, it does not invent it:
+1. **Merge** — green PR lands.
+2. **Measure** — `veritas-ops` (revenue, owed, reconcile-chain, existence),
+   `veritas-money-loop`, `/v1/trust`,
+   `python -m veritas.evaluations.product_worth`.
+3. **Judge** — `STATUS.md` and `docs/program/STATE.md`. Default hold beats
+   invented work.
+4. **Build** — one product surface; Guardian gates honesty.
+5. **Learn** — persist live-contact transcripts under
+   `docs/program/fable/`.
 
-1. **Merge** — green PR lands (Conductor; owner automation backs it).
-2. **Measure** — `veritas-ops` (revenue, owed, reconcile-chain, Stage-1
-   existence), `veritas-money-loop`, `/v1/trust`,
-   `python -m veritas.evaluations.product_worth`,
-   `python -m veritas.unblock_probe`.
-3. **Judge** — Overseer names the next singular bet
-   (`ecosystem/OVERSEER_CONFERRAL.md`); default hold beats invented work.
-4. **Build** — Flywheel/Implementers ship it (`INNOVATION_LOOP.md`);
-   Guardian/Pruner gate it.
-5. **Learn** — `docs/program/cycles/` records what shipped; every 5 product
-   cycles Optimizer adjusts the org, Overseer vetoes thrash.
-
-Role cards must agree with `ORG_LOOPS.md`. Facts live at evidence (MIND §5).
-The only human rung is unblock-ladder 6.
+Facts live at evidence (MIND §5). The only human rung is unblock-ladder 6.
 
 ## 9. What this document is not
 
 Not evidence, and not a claim of demand, revenue, or readiness. Every
-measured number lives at its evidence (settlement counts:
-`docs/program/STATE.md` header and `docs/program/fable/settlement/`); this
-file deliberately carries none, so it cannot rot.
+measured number lives at its evidence (`STATUS.md` and
+`docs/program/fable/settlement/`); this file deliberately carries none,
+so it cannot rot.
 
 ---
 

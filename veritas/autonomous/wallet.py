@@ -1,10 +1,10 @@
 """Self-provisioned agent wallet: a real keypair, created locally.
 
 Nothing in this repository could previously produce a receiving address —
-`generate_local_seed` is a bare hash that was never a key, and
-`zk_wallet.derive_stealth_address` deliberately raises because hash-derived
-addresses have no private key and burn funds. This module provisions the
-real thing with zero human input: `eth_account.Account.create()` → an
+`generate_local_seed` is a bare hash that was never a key. Hash-derived
+"stealth" addresses have no private key and burn funds, so they are not
+offered. This module provisions the real thing with zero human input:
+`eth_account.Account.create()` → an
 encrypted eth-keystore-v3 file plus a locally generated random passphrase,
 both written owner-only **where the platform enforces POSIX mode bits**.
 

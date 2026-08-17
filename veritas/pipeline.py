@@ -1,9 +1,8 @@
 """Evidence-first research pipeline with grounded claims and a delivered custody chain.
 
-This is the single research engine for the whole system. Both the HTTP surface
-(`veritas/server.py`) and the agent-native control plane (`veritas/autonomous/control_plane.py`)
-call into it, so there is exactly one implementation of retrieval, hashing and
-custody to audit.
+This is the single research engine for the whole system. HTTP, MCP, and
+CLI research all call into it, so there is exactly one implementation of
+retrieval, hashing and custody to audit.
 
 Outcome taxonomy — the distinction matters commercially and epistemically:
 

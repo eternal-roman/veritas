@@ -7,7 +7,8 @@ ERC-8004 registry. That is off-box *verification*, not off-box *resolution*.
 Honesty bound:
 - Not ERC-8004. Not a W3C-registered DID method. Not a Bazaar listing.
 - ``did:pkh`` is the CAIP-10 account id; the wallet *is* the identity key.
-- Plane ``did:veritas:plane:…`` stays local HMAC coordination.
+- ``did_plane`` on the card is a bound label (usually the same ``did:pkh``).
+  It is not a second verifier and not an HMAC ticket.
 """
 
 from __future__ import annotations

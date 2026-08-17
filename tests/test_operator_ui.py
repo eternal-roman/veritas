@@ -63,11 +63,10 @@ def test_ui_is_html_and_excluded(free_client):
     assert "/ui" not in http_paths()
 
 
-def test_operator_snapshot_strips_visa(free_client):
+def test_operator_snapshot_has_account(free_client):
     unenrolled = free_client.get("/v1/operator").json()
     assert unenrolled["account"]["enrolled"] is False
     assert "visa" not in unenrolled["account"]
-    assert unenrolled["not_x402_settlement"] is True
     assert unenrolled["payment"]["mode"] == "free"
 
     posted = free_client.post(
@@ -77,7 +76,7 @@ def test_operator_snapshot_strips_visa(free_client):
     assert posted.status_code == 200
     body = posted.json()
     assert body["agent_id"] == "viewer"
-    assert body["visa"]["agent_id"] == "viewer"
+    assert "visa" not in body
     ids = {s["id"] for s in body["skills"]}
     assert "research" in ids and "ops" in ids
 

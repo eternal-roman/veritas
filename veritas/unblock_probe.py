@@ -1,6 +1,6 @@
 """Unblock Agent probe — update human-ops checklist in place (no docs thrash).
 
-Writes/updates ``docs/program/ecosystem/unblock/CHECKLIST.md`` with honest
+Writes a checklist (default path under the repo, or an explicit path) with honest
 env/network probe results. Does **not** invent funded wallets or settlement.
 
 Run: ``python -m veritas.unblock_probe``
@@ -163,9 +163,7 @@ def write_checklist(
     probes: dict[str, dict[str, Any]],
     path: Path | None = None,
 ) -> Path:
-    path = path or (
-        Path.cwd() / "docs" / "program" / "ecosystem" / "unblock" / "CHECKLIST.md"
-    )
+    path = path or (Path.cwd() / ".veritas" / "unblock-checklist.md")
     path.parent.mkdir(parents=True, exist_ok=True)
     ts = time.strftime("%Y-%m-%dT%H:%MZ", time.gmtime())
     rows = []
@@ -205,8 +203,8 @@ row flips with new evidence. Settlement count lives with its evidence
 
 ## Next
 
-If required automated ready → confer Overseer: singular product NEXT =
-Phase 0.1 repeat / G9 routine reconcile (recipe: docs/program/fable/STATE.md).
+If required automated ready → resume at `docs/program/STATE.md`.
+G9 classify exists; mainnet still needs env RPC.
 
 ```
 PROPERTY: unblock checklist reflects live probes with sources labelled; no invented settle

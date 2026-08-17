@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .hashing import compute_content_hash, verify_content_hash
+from .hashing import verify_content_hash
 from .runtime import resolve_runtime_dir
 from .store import StoreUnavailable, connect_target, parse_database_url
 
@@ -239,8 +239,3 @@ class EvidenceStore:
             "title": row["title"],
             "stored_at": row["stored_at"],
         }
-
-
-def hash_excerpt(excerpt: str) -> str:
-    """Public alias so callers do not have to import hashing themselves."""
-    return compute_content_hash(excerpt)

@@ -92,8 +92,6 @@ def bootstrap(agent_id: str = "self", base_dir: str = ".veritas_agent") -> dict:
     """Zero-config entry point used by the control plane."""
     return bootstrap_free_mode(agent_id=agent_id, base_dir=base_dir)
 
-def is_free_mode() -> bool:
-    return os.getenv("VERITAS_MODE", "free").lower() == "free"
 
 if __name__ == "__main__":
     cfg = bootstrap_free_mode()

@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.12"
+HOOKS_VERSION = "1.13"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -151,7 +151,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _http("payment_config", "GET", "/v1/payment-config",
           "Payment mode and the current price point (configuration, not an offer)."),
     _http("operator", "GET", "/v1/operator",
-          "Operator snapshot: payment config, local account (visa stripped), skill catalog."),
+          "Operator snapshot: payment config, local account, skill catalog."),
     _http("operator_enroll", "POST", "/v1/operator/enroll",
           "Create or refresh the local agent account. Loopback only; same as veritas-agent enroll.",
           access="local"),
@@ -277,10 +277,6 @@ HOOKS: tuple[dict[str, Any], ...] = (
          # flattening these re-created the could-not-check/failed conflation
          # the whole exit-code family exists to prevent.
          {"0": "valid", "1": "invalid", "2": "input_unreadable"}),
-    _cli("veritas-evolver",
-         "Evolutionary idea engine for the Evolver role: journaled "
-         "first-principles recombination; WATCH output, never approval.",
-         _EXIT_OK),
     # ------------------------------------------------------ headers —
     _hook("header_x_payment", "header", "X-PAYMENT",
           "Base64 x402 payment payload answering a 402 challenge.",
@@ -376,7 +372,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
            "read_via": "GET /metrics (VERITAS_METRICS_TOKEN required)"},
           names=sorted(METRIC_HELP)),
     _hook("store_agent_account", "store", "agent account",
-          "Local identity, commerce/plane wallets, and interest-bound skills "
+          "Local commerce wallet, signed did:pkh card, and interest-bound skills "
           "for this agent. Not on-chain identity.",
           "local",
           {"location": "$VERITAS_AGENT_HOME/account.json (default .veritas_agent/)",

@@ -373,8 +373,8 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "Closed in constitution 1.1: the simulator now decodes headers via the "
             "shared veritas.x402.decode_payment_header and requires the x402 "
             "structural shape (tests/test_autonomous_payment.py::"
-            "test_simulator_rejects_malformed_header_when_required), and the control "
-            "plane's recorded amounts follow payment config (tests/"
+            "test_simulator_rejects_malformed_header_when_required), and recorded "
+            "simulator amounts follow payment config (tests/"
             "test_autonomous_payment.py::test_control_plane_price_follows_payment_config). "
             "The remaining weakness is registered as G2."
         ),

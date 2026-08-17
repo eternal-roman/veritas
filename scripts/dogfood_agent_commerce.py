@@ -150,12 +150,6 @@ def commerce_gap_report(
                 "optional rate-card negotiation protocol",
             },
             {
-                "id": "plane_vaat_vs_product_usdc",
-                "severity": "medium",
-                "gap": "Plane VAAT quality-pay ≠ USDC; must never auto-convert",
-                "plan": "Explicit bridge policy; SIWx map; label not_x402 always",
-            },
-            {
                 "id": "peer_seller_export",
                 "severity": "high",
                 "gap": "Only Veritas research sells; peers cannot list services under same norms",

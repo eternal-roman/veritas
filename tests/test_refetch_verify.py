@@ -163,6 +163,8 @@ def test_refetch_404_uses_stored_excerpt_when_present(tmp_path):
     assert out["valid"] is True
     assert out["actual"] == digest
     assert out["binding"] != "origin_refetch"
+    assert out["origin_reason"] == "origin_gone"
+    assert out["status"] != "completed"
 
 
 def test_refetch_no_stored_excerpt_keeps_origin_failure(tmp_path):
@@ -185,8 +187,8 @@ def test_refetch_no_stored_excerpt_keeps_origin_failure(tmp_path):
     assert out["reason"] != STORED_EXCERPT_BINDING
 
 
-def test_refetch_404_without_store_stays_diverged(tmp_path):
-    """No stored excerpt: a 404 body is still a completed (diverged) observe."""
+def test_refetch_404_without_store_is_gone_not_a_live_origin(tmp_path):
+    """No stored excerpt: a 404 error page is unavailable/gone, not origin_refetch completed."""
     expected = compute_content_hash("the original page")
     store = EvidenceStore(tmp_path)
     out = refetch_verify(
@@ -196,10 +198,48 @@ def test_refetch_404_without_store_stays_diverged(tmp_path):
         robots_body=ROBOTS_ALLOW,
         fetch_fn=_status_fetch(b"Not Found", 404),
     )
-    assert out["binding"] == "origin_refetch"
     assert out["valid"] is False
-    assert out["reason"] == "diverged"
-    assert out["status"] == "completed"
+    assert out["match"] is False
+    assert out["actual"] is None
+    assert out["status"] != "completed"
+    assert out["reason"] == "origin_gone"
+    assert out["reason"] != "match"
+    assert out["reason"] != "diverged"
+
+
+def test_refetch_404_body_hash_is_not_a_live_origin_match(tmp_path):
+    """Witness: even if the 404 page hashes to the claimed digest, that is not origin."""
+    error_body = "Not Found"
+    digest = compute_content_hash(error_body)
+    store = EvidenceStore(tmp_path)
+    out = refetch_verify(
+        "https://example.org/gone",
+        digest,
+        evidence_store=store,
+        robots_body=ROBOTS_ALLOW,
+        fetch_fn=_status_fetch(error_body.encode("utf-8"), 404),
+    )
+    assert out["valid"] is False
+    assert out["match"] is False
+    assert out["status"] != "completed"
+    assert out["reason"] == "origin_gone"
+    assert out["actual"] is None
+    assert out["binding"] != "stored_excerpt"
+
+
+def test_refetch_410_without_store_is_gone_not_a_live_origin(tmp_path):
+    expected = compute_content_hash("retired page")
+    out = refetch_verify(
+        "https://example.org/retired",
+        expected,
+        evidence_store=EvidenceStore(tmp_path),
+        robots_body=ROBOTS_ALLOW,
+        fetch_fn=_status_fetch(b"Gone", 410),
+    )
+    assert out["valid"] is False
+    assert out["status"] != "completed"
+    assert out["reason"] == "origin_gone"
+    assert out["actual"] is None
 
 
 def test_refetch_live_origin_unchanged_even_when_store_has_bytes(tmp_path):

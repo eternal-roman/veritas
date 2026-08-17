@@ -138,7 +138,13 @@ def refetch_verify(
 
     observation = observe(url, **observe_kwargs)
     status = observation.get("status")
-    origin_reason = observation.get("refusal_reason") or status or "unavailable"
+    http_status = _http_status(observation)
+    gone = http_status in _GONE_HTTP
+    origin_reason = (
+        "origin_gone"
+        if gone
+        else (observation.get("refusal_reason") or status or "unavailable")
+    )
 
     if not _live_origin_observed(observation):
         stored = _stored_excerpt_hit(
@@ -149,14 +155,15 @@ def refetch_verify(
         )
         if stored is not None:
             return stored
-
-    if status != "completed":
+        # Store miss: a 404/410 error page is not a live origin body.
+        # observe() marks those fetches "completed"; that must not become
+        # origin_refetch match/diverged.
         return {
             "valid": False,
             "binding": "origin_refetch",
             "match": False,
-            "status": status,
-            "reason": origin_reason,
+            "status": "unavailable" if gone else status,
+            "reason": str(origin_reason),
             "expected": expected_content_hash,
             "actual": None,
             "url": url,

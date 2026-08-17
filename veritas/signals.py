@@ -777,9 +777,9 @@ def analyze(signals: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def as_evidence(signal: dict[str, Any]) -> dict[str, Any]:
-    """Shape a stored snapshot as a pipeline evidence item.
+    """Shape a stored snapshot as a custody evidence item.
 
-    ``text`` is the human sentence the pipeline hashes. The structured
+    ``text`` is the human sentence the evidence hasher hashes. The structured
     snapshot lives under ``hash_signal`` in the evidence store — a
     different digest, on purpose: one hash, one body.
     """

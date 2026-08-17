@@ -429,10 +429,9 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "evaluation harness certified a filter production never applied."
         ),
         "resolution": (
-            "Closed in constitution 2.0: the gate runs in the pipeline evidence loop and "
-            "an all-irrelevant result is an 'irrelevant_evidence' refusal "
-            "(tests/test_truth_restoration.py::"
-            "test_irrelevant_evidence_is_refused_on_the_production_path)."
+            "Closed in constitution 2.0 on the research path. Constitution 3.0 "
+            "removed that engine "
+            "(tests/test_integration.py::test_catalog_engine_is_signals_not_research)."
         ),
     },
     {
@@ -446,9 +445,10 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "provenance label, inside a product selling provenance."
         ),
         "resolution": (
-            "Closed in constitution 2.0: the metasearch dependency is removed and each "
-            "provider is named as the engine actually queried "
-            "(tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used)."
+            "Closed in constitution 2.0: the metasearch dependency is removed. "
+            "Constitution 3.0 dropped the research retrievers; venue hosts are "
+            "allowlisted "
+            "(tests/test_signals.py::test_off_allowlist_host_is_refused)."
         ),
     },
     {
@@ -463,7 +463,7 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
         "resolution": (
             "Closed in constitution 2.0: the chain ships in the response and a buyer "
             "re-runs verify_chain_records over delivered data "
-            "(tests/test_truth_restoration.py::"
+            "(tests/test_custody.py::"
             "test_delivered_chain_is_verifiable_without_the_seller)."
         ),
     },

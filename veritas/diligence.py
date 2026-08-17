@@ -15,8 +15,8 @@ Every surface here was seller-side, so a buyer adopting the pattern still
 needed a human to go and read a test suite.
 
 The discipline is the buyer-side form of the one this service sells. Where the
-pipeline refuses to report `no_evidence` when it could not look, this module
-refuses to report FAIL when it could not check: **UNVERIFIABLE is not FAIL.**
+catalog pull refuses to report an empty book when it could not look, this
+module refuses to report FAIL when it could not check: **UNVERIFIABLE is not FAIL.**
 "I could not check this seller" and "this seller failed the check" are
 different facts. Both refuse a payment, because the gate is fail-closed, but a
 buyer answers them differently — FAIL means find another seller, UNVERIFIABLE

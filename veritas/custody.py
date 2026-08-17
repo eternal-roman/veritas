@@ -51,7 +51,7 @@ def redact_receipt_for_wire(record: dict[str, Any]) -> dict[str, Any]:
 
 @dataclass
 class CustodyEvent:
-    event_type: str          # names are defined at their emit sites (pipeline.py, notary/observe.py)
+    event_type: str          # names are defined at their emit sites (signals.py, notary/observe.py)
     actor: str
     timestamp: str
     prev_hash: str | None

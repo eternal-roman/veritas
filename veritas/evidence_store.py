@@ -52,7 +52,7 @@ def is_safe_content_hash(value: object) -> bool:
 
 
 class EvidenceStore:
-    """Put / get excerpts by the hash the pipeline published."""
+    """Put / get excerpts by the hash the served path published."""
 
     def __init__(self, base_dir: str | Path | None = None) -> None:
         runtime = resolve_runtime_dir(base_dir)

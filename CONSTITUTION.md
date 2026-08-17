@@ -117,7 +117,7 @@ Trust served at /v1/trust is derived from independently verified third-party aud
 
 Enforced by `tests/test_api.py::test_trust_is_unproven_without_data`,
 `tests/test_durability.py::test_free_traffic_does_not_establish_a_trust_score`,
-and `tests/test_durability.py::test_the_score_states_that_it_counts_paid_requests_only`.
+and `tests/test_durability.py::test_independent_audits_set_the_recommendation`.
 `/v1/trust` is free and unauthenticated, so counting unpaid requests let anyone
 manufacture the service's reputation at no cost. Free outcomes are still
 recorded and reported in the basis — they are real behaviour — and simply do
@@ -127,16 +127,17 @@ not score. The number remains the seller's own report: see G10.
 
 The seller may refuse honestly and bill for the refusal, and the buyer can verify every published hash and receipt without the seller's cooperation.
 
-Enforced by `tests/test_pipeline.py::test_genuine_emptiness_is_billable_refusal`,
-`tests/test_api.py::test_verify_endpoint_checks_hashes`, and
-`tests/test_custody.py::test_ledger_detects_tampering`.
+Enforced by `tests/test_signals.py::test_polymarket_search_miss_does_not_dump_the_book`,
+`tests/test_custody.py::test_delivered_chain_is_verifiable_without_the_seller`,
+and `tests/test_custody.py::test_ledger_detects_tampering`.
 
 ### A13 — Settlement fairness (L1)
 
 A request whose retrieval failed is never billed and never settled.
 
-Enforced by `tests/test_pipeline.py::test_outage_is_not_billable` and the
-`unavailability_honesty` gate in CI.
+Enforced by `tests/test_signals.py::test_venue_unavailable_is_not_settled`,
+`tests/test_money_path.py::test_venue_failure_abandons_the_authorization_and_never_settles`,
+and the `catalog_honesty` gate in CI.
 
 ### A14 — Simulators declare themselves (L1)
 
@@ -181,7 +182,7 @@ and `tests/test_agent_cli.py::test_up_configures_server_from_bootstrap_config`.
 
 A record attests what this service received from a source at a time, not what that source served to any other party.
 
-Enforced by `tests/test_truth_restoration.py::test_responses_state_what_they_attest`.
+Enforced by `tests/test_signals.py::test_snapshots_state_they_are_not_verdicts`.
 Proving what an origin served to *someone else* would need something like
 TLSNotary, zkTLS, or a trusted execution environment. We have none of those, so
 the limit is published in every response rather than left for a buyer to find.
@@ -190,8 +191,8 @@ the limit is published in every response rather than left for a buyer to find.
 
 The provider named in a piece of evidence is the provider that was actually queried, and evidence carries the licence under which it may be reused.
 
-Enforced by `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used`
-and `tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response`.
+Enforced by `tests/test_signals.py::test_off_allowlist_host_is_refused`
+and `tests/test_signals.py::test_as_evidence_is_not_a_verdict_and_uses_license`.
 
 ### A24 — Delivery is recorded before payment is captured (L1)
 
@@ -335,8 +336,8 @@ any source of 40 or more characters produced a billable `completed` answer
 however unrelated to the query — and the evaluation harness certified a filter
 production never applied.
 
-Closed in constitution 2.0: the gate runs in the pipeline evidence loop and an
-all-irrelevant result is an `irrelevant_evidence` refusal.
+Closed in constitution 2.0 on the research path. Constitution 3.0 removed
+that engine; an unavailable venue is not an empty catalog.
 
 ### G4 — Falsified provenance in the keyless tier (closed, article A23)
 

@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.8"
+HOOKS_VERSION = "1.10"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -129,6 +129,9 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "This registry: every integration surface, with push absence stated."),
     _http("identity", "GET", "/v1/identity",
           "Identity document with a stable content hash."),
+    _http("peer", "GET", "/v1/peer",
+          "This node's A2A peer card (veritas.peer.v1). Not an address book. "
+          "central_network is false: another agent self-hosts; no Veritas cloud."),
     _http("constitution", "GET", "/v1/constitution",
           "The venue constitution: each article enforced or marked aspirational."),
     _http("schema", "GET", "/v1/schema",
@@ -186,11 +189,14 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "required; free mode refuses rather than inventing."),
     _http("signals", "GET", "/v1/signals",
           "Recent prediction-market snapshots. Prices, not verdicts."),
+    _http("signals_history", "GET", "/v1/signals/history",
+          "Time-ordered snapshots of one venue market, plus arithmetic analysis. "
+          "Not a forecast."),
     _http("signals_item", "GET", "/v1/signals/{content_hash}",
           "One stored snapshot by content hash; 404 when never stored."),
     _http("signals_pull", "POST", "/v1/signals",
-          "Pull public Kalshi/Polymarket books and store snapshots via the "
-          "evidence channel. No trading, no keys."),
+          "Pull public Kalshi/Polymarket books, store snapshots, and return "
+          "arithmetic analysis. No trading, no keys."),
     _http("trust", "GET", "/v1/trust",
           "Independent-audit score; UNPROVEN until buyer-supplied verified records."),
     _http("trust_score", "POST", "/v1/trust",
@@ -224,7 +230,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
         "veritas-agent",
         "Enroll identity + wallets + interest-bound skills; "
         "init/up also serve. Subcommands: adopt, enroll, whoami, skills, "
-        "fund-proof, init, up, serve, status.",
+        "fund-proof, init, up, serve, status, connect, peers, pull-signals.",
         _EXIT_OK,
     ),
     _cli("veritas-mcp", "Serve the engine as local MCP tools over stdio.", _EXIT_OK),

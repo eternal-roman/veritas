@@ -9,7 +9,7 @@ file described a system that did not import.
 |-----------|-------|
 | Hashing + normalization | Tested |
 | Custody chain, delivered with the response | Tested — buyer re-runs `verify_chain_records` on delivered bytes |
-| Durable receipts (`/v1/receipts`) | Tested |
+| Durable receipts (`/v1/receipts`) | Tested — files always; shared row when `VERITAS_DATABASE_URL` is set |
 | Relevance gate on the served path | Tested — irrelevant evidence is refused |
 | Refusal taxonomy (`no_evidence`, `irrelevant_evidence`, `unavailable`) | Tested |
 | Retrieval error surfacing | Tested |
@@ -31,7 +31,7 @@ file described a system that did not import.
 | Error contract (`/v1/errors`) | Registered codes on every non-402 error |
 | Discovery | `/.well-known/x402`, `/llms.txt`, `/adopt.json`, `/v1/schema`; identity does not invent a base URL |
 | Wallet self-provisioning | Encrypted keystore; owner-only where POSIX allows. Funding external |
-| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status) | One account binds plane identity, commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing |
+| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status/connect/peers/pull-signals) | One account binds plane identity, commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing; `connect` stores another self-hosted agent's card locally |
 | Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only. Visa stripped from GET |
 | MCP (`veritas-mcp`; listed at `/v1/hooks`) | Tested against the SDK. Local free-mode engine; no payment path |
 | Release workflow | Dockerfile CI-built. PyPI job waits on `PYPI_TRUSTED_PUBLISHER=configured` |
@@ -42,8 +42,9 @@ file described a system that did not import.
 | EvidencePack + Merkle log | Operator-local. Not public CT; not on-chain |
 | Dogfood cycles 1–5 | CI-gated. Offline / no chain |
 | G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop + `veritas-ops reconcile-loop`. Mainnet still needs env RPC |
-| VCAE escrow (G12) | Library + HTTP lock/release/forfeit. GET never serves the signature. Forfeit re-runs `evaluate_challenge`. Release is loopback-only. Forfeit submit needs live facilitator. Not a vault. G2 open. Mainnet collect unproven. Research does not auto-attach a warranty. |
-| Prediction-market signals | Public Kalshi/Polymarket snapshots stored as evidence. Prices, not verdicts. No trading |
+| VCAE escrow (G12) | Library + HTTP lock/release/forfeit. GET never serves the signature. Forfeit re-runs `evaluate_challenge`. Release is loopback-only. Forfeit submit needs live facilitator. Not a vault. G2 closed (EIP-712 recover). Mainnet collect unproven. Research does not auto-attach a warranty. |
+| Prediction-market signals | Public Kalshi/Polymarket snapshots stored as evidence. Arithmetic analysis and history. Prices, not verdicts. No trading |
+| A2A peer connect | `GET /v1/peer` + local `peers.json`. Pulls another agent's `/v1/signals` into SignalStore. Not the Mesh Runner and not stranger discovery: public TLS remains required for strangers; local/LAN A2A does not (`--allow-local`) |
 
 ## Found false and fixed (2026-08-05)
 
@@ -62,18 +63,18 @@ Fixed and test-pinned. See `docs/program/STATE.md`.
 - **Refunds-as-credits** reverse a non-billable debit in the credit journal. Not a chain refund.
 - **Calibration** reports `passthrough_untrained` — no labelled outcomes.
 - **Aspirational articles** A16–A18 are L0: named, unenforced.
-- **G2:** local facilitator checks payment structure (G1 closed) but not signatures. Do not expose the control plane as a paid network surface while G2 is open.
+- **G2 closed:** local facilitator recovers the EIP-712 signer of an EIP-3009 authorization. Forged signatures fail. Balance and nonce-unused stay on-chain (**G13**, open).
 - **Still needs a human:** fund the wallet, TLS/public host, PyPI trusted publisher, GHCR push.
 
 ## Missing
 
 | Gap | Severity | Note |
 |-----|----------|------|
-| Commercial-grade retrieval | High | Snippets plus optional notary observation; still not a paid search stack |
+| Commercial-grade retrieval | Medium | Wikipedia official extracts; search hits re-observed through notary.observe on the served path. Serper/DDG remain snippet-grade until observed |
 | Cross-source synthesis | Medium | Lexical NLI-gated; extractive fallback remains. Not an LLM |
-| Public host | High | None |
+| Public host | High | None for strangers. Local/LAN A2A works with `veritas-agent connect --allow-local`; public TLS is not the only sell path |
 | Quality vs strong baselines | High | Harness proves invariants |
-| Cross-instance rate limits | Medium | Shared when `VERITAS_DATABASE_URL` is set; otherwise in-process |
+| Cross-instance rate limits | Medium | Shared when `VERITAS_DATABASE_URL` is set; process-local fallback if that store is down. Unset URL stays in-process (`server.py`) |
 | Shared ledger across instances | Medium | Seam exists (`VERITAS_DATABASE_URL`). Multi-host HA is operator Postgres, not proven behind a balancer |
 | Production-routine chain reconcile | Medium | `veritas-ops reconcile-loop` + optional alert URL; mainnet still needs env RPC |
 | Registry auto-registration | Medium | Manual |
@@ -86,10 +87,9 @@ The payment path is real code. After the 2026-08-05 audit the served path no
 longer claims what it cannot support.
 
 What remains is mostly operational: operator-run testnet only, no unsolicited
-buyers, snippet retrieval with lexical synthesis, PyPI unpublished. G12
-library/HTTP is closed (collect re-runs the challenge; GET does not leak
-the signature). Research does not auto-warrant. Mainnet collect and G2
-stay open. Shared state is a URL the operator must set. Tracked in
+buyers, no public TLS host, PyPI unpublished. G2 and G12 are closed as
+library/HTTP primitives. Research does not auto-warrant. Mainnet collect
+stays unproven. Shared state is a URL the operator must set. Tracked in
 `docs/program/STATE.md`.
 
 ## Security / CI

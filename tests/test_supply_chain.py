@@ -1,8 +1,8 @@
 """Supply-chain pins: hashed lockfiles, SHA-pinned Actions, hard CI SBOM gate.
 
 O.8 / O15. These tests pin local, reviewable artefacts only — not that an
-install is uncompromised in the wild, and not that the Docker image path is
-hash-locked (it still installs from pyproject floors).
+install is uncompromised in the wild. The Docker image path is hash-locked
+(``tests/test_container.py``); signed SBOM is still open.
 
 Three things decay silently without a test:
 
@@ -330,6 +330,33 @@ def test_ci_sbom_step_is_hard_gate():
         assert "||true" not in block.replace(" ", ""), (
             "SBOM path must not soft-fail with ||true:\n" + block
         )
+
+
+def test_ci_checksums_the_sbom_artifact():
+    """A checksum is not a signature. It lets a downloader notice a bit-flip
+    of the uploaded SBOM; it does not bind the document to a publisher
+    identity. Signed SBOM stays open (O15).
+
+    The sidecar must be generated next to the JSON and uploaded with it —
+    otherwise the checksum exists only as a log line.
+    """
+    text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
+    sidecar = "sbom/veritas-artifact.cdx.json.sha256"
+    assert sidecar in text, "ci.yml must write a sha256 sidecar next to the SBOM"
+    assert re.search(r"\bsha256sum\b", text), "ci.yml must checksum the SBOM with sha256sum"
+    # The upload step must carry the sidecar, not only the JSON.
+    upload = re.search(
+        r"name:\s+sbom-cyclonedx\s+path:\s+\|(.*?)(?:\n\s{0,4}\w|\n\S|$)",
+        text,
+        re.S,
+    )
+    assert upload, "ci.yml no longer uploads artifact name sbom-cyclonedx"
+    uploaded = upload.group(1)
+    assert "sbom/veritas-artifact.cdx.json" in uploaded
+    assert sidecar in uploaded, (
+        "the SBOM checksum sidecar must be uploaded next to the JSON, not "
+        "left as a job log line"
+    )
 
 
 def test_bandit_remains_hard_gate_in_ci():

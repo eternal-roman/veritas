@@ -26,6 +26,7 @@ repaired — see `veritas/support.py` for why, and for the counts that replace i
 
 from __future__ import annotations
 
+import os
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -100,6 +101,17 @@ def _envelope(
     }
 
 
+def observe_urls_enabled() -> bool:
+    """Served-path default: re-observe search hits through notary.observe.
+
+    Offline callers and the test corpus leave this off (``run_research``
+    itself defaults false). The HTTP surface and the control plane read
+    this helper so they cannot drift. ``VERITAS_OBSERVE_URLS=0`` disables.
+    """
+    raw = (os.getenv("VERITAS_OBSERVE_URLS") or "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
 def _default_observer(url: str, **kwargs: Any) -> dict[str, Any]:
     """Sole research-side URL observation path: notary.observe (N0-A)."""
     from veritas.notary.observe import observe as notary_observe
@@ -119,7 +131,7 @@ def _apply_observation(src: dict[str, Any], observation: dict[str, Any]) -> dict
         policy = observation.get("policy") or {}
         if policy.get("license"):
             src["license"] = policy["license"]
-        src["provenance"] = src.get("provenance") or "notary.observe"
+        src["provenance"] = "notary.observe"
     return src
 
 

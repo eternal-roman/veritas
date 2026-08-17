@@ -96,6 +96,83 @@ def test_wikipedia_sources_carry_their_licence_and_attribution():
     assert source["license"]["url"].startswith("https://creativecommons.org/")
     assert source["attribution"]["required"] is True
     assert "Wikipedia" in source["attribution"]["text"]
+    assert source["provenance"] == "wikipedia_extract"
+
+
+def test_wikipedia_uses_official_extracts_api():
+    """Snippet-grade REST summary is not the live path. MediaWiki
+    ``prop=extracts&explaintext=1`` is the documented plaintext extract.
+
+    ``exintro`` must be absent: MediaWiki treats a present boolean as
+    true, so ``exintro=0`` still returns the lead only. Titles are
+    fetched one at a time because TextExtracts will not return more
+    than one full-article extract per request.
+    """
+    from veritas.autonomous import zero_key_retrieval
+
+    source = inspect.getsource(zero_key_retrieval)
+    assert "prop=extracts" in source or '"prop": "extracts|info"' in source
+    assert "explaintext" in source
+    assert "rest_v1/page/summary" not in source
+    assert zero_key_retrieval.WIKIPEDIA_EXTRACT_CHARS >= 2000
+    extract_fn = inspect.getsource(zero_key_retrieval._wikipedia_extract_page)
+    assert '"titles": title' in extract_fn or '"titles":title' in extract_fn
+    assert '"|"' not in extract_fn
+    # The request dict must not send exintro (MediaWiki boolean). Mentions
+    # in comments are allowed; the encoded keys are not.
+    assert '"exintro"' not in extract_fn
+
+
+
+def test_wikipedia_extract_omits_exintro_and_fetches_one_title(monkeypatch):
+    """Live-shaped fixture: MediaWiki boolean + one-title constraint."""
+    from veritas.autonomous import zero_key_retrieval
+
+    calls: list[str] = []
+
+    search_payload = {
+        "query": {"search": [{"title": "United States"}, {"title": "France"}]},
+    }
+    extracts = {
+        "United States": {
+            "query": {"pages": {"1": {
+                "title": "United States",
+                "extract": "A" * 5000,
+                "fullurl": "https://en.wikipedia.org/wiki/United_States",
+            }}},
+        },
+        "France": {
+            "query": {"pages": {"2": {
+                "title": "France",
+                "extract": "B" * 1200,
+                "fullurl": "https://en.wikipedia.org/wiki/France",
+            }}},
+        },
+    }
+
+    def fake_get_json(url: str):
+        calls.append(url)
+        if "list=search" in url or "srsearch=" in url:
+            return search_payload
+        if "titles=United+States" in url or "titles=United%20States" in url:
+            return extracts["United States"]
+        if "titles=France" in url:
+            return extracts["France"]
+        raise AssertionError(f"unexpected url {url}")
+
+    monkeypatch.setattr(zero_key_retrieval, "_get_json", fake_get_json)
+    result = zero_key_retrieval.wikipedia_summary("United States", limit=2)
+
+    extract_urls = [u for u in calls if "prop=" in u and "extracts" in u]
+    assert extract_urls, calls
+    assert all("exintro" not in u for u in extract_urls), extract_urls
+    assert len(extract_urls) == 2
+    titles_params = [u.split("titles=", 1)[1].split("&", 1)[0] for u in extract_urls]
+    assert all("%7C" not in t for t in titles_params), titles_params
+    assert len(result.sources) == 2
+    assert all(s["provenance"] == "wikipedia_extract" for s in result.sources)
+    assert len(result.sources[0]["text"]) == zero_key_retrieval.WIKIPEDIA_EXTRACT_CHARS
+    assert result.sources[0]["license"]["id"] == "CC-BY-SA-4.0"
 
 
 def test_evidence_carries_licence_through_to_the_response():

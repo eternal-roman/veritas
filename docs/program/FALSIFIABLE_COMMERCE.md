@@ -229,7 +229,7 @@ evidence of prior art, checked, not proof.
   fired challenge. Two collects cannot both submit. A facilitator
   refusal reverts to `locked`. Warranties that omit a lock stay
   `signed_commitment_not_escrow`. Not a deployed vault. Local facilitator
-  still G2. Mainnet collect is unproven.
+  recovers EIP-712 signatures (G2 closed). Mainnet collect is unproven.
 - Collusion between a seller and friendly challengers can farm "survived
   challenges" at the cost of the venue cut; the cut parameterization that
   makes this uneconomic is future calibration work, stated, not solved.
@@ -243,7 +243,7 @@ evidence of prior art, checked, not proof.
 - **W1 — escrowed bonds over x402 rails.** VCAE: the EIP-3009
   authorization *is* the lock (Lightning/HTLC timeout + x402 exact).
   `settle_forfeit` claims then submits; that is a settlement event. Implemented in
-  `veritas/escrow.py`. Mainnet collect unproven; G2 still open.
+  `veritas/escrow.py`. Mainnet collect unproven; G2 closed.
 - **W2 — with ROADMAP 1.1/1.3.** D2 predicates: pinned-model entailment
   warranties on synthesized claims; synthesis ships only warranted-or-
   labeled.

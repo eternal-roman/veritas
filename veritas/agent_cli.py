@@ -167,6 +167,36 @@ def main(argv: list[str] | None = None) -> int:
     )
     fund_p.add_argument("--tx", dest="tx_hash", default=None)
 
+    connect_p = sub.add_parser(
+        "connect",
+        help="fetch another agent's peer card into the local book (no central network)",
+    )
+    connect_p.add_argument("url", help="base URL of the other self-hosted agent")
+    connect_p.add_argument(
+        "--allow-local",
+        action="store_true",
+        help="permit loopback and RFC1918; never permits cloud metadata IPs",
+    )
+    sub.add_parser(
+        "peers",
+        help="list the local peer book as JSON (never published over HTTP)",
+    )
+    pull_p = sub.add_parser(
+        "pull-signals",
+        help="GET another agent's /v1/signals and store snapshots locally",
+    )
+    pull_p.add_argument("peer", help="peer_id from the local book, or a base URL")
+    pull_p.add_argument(
+        "--query",
+        default=None,
+        help="optional query string forwarded to GET /v1/signals",
+    )
+    pull_p.add_argument(
+        "--allow-local",
+        action="store_true",
+        help="permit loopback and RFC1918; never permits cloud metadata IPs",
+    )
+
     args = parser.parse_args(argv)
     args.base_dir = str(Path(args.base_dir).expanduser().resolve())
 
@@ -233,6 +263,37 @@ def main(argv: list[str] | None = None) -> int:
                 "binding_hash": acc["binding_hash"],
             }, indent=2))
         return 0
+
+    if args.command == "connect":
+        from veritas.peer import connect as connect_peer
+
+        result = connect_peer(
+            args.url, allow_local=args.allow_local, base_dir=args.base_dir
+        )
+        print(json.dumps(result, indent=2))
+        if result.get("ok"):
+            return 0
+        return 2 if result.get("code") == "unreachable" else 1
+
+    if args.command == "peers":
+        from veritas.peer import list_peers
+
+        print(json.dumps(list_peers(args.base_dir), indent=2))
+        return 0
+
+    if args.command == "pull-signals":
+        from veritas.peer import pull_signals as pull_peer_signals
+
+        result = pull_peer_signals(
+            args.peer,
+            query=args.query,
+            allow_local=args.allow_local,
+            base_dir=args.base_dir,
+        )
+        print(json.dumps(result, indent=2))
+        if result.get("ok"):
+            return 0
+        return 2 if result.get("code") == "unreachable" else 1
 
     if args.command == "init":
         _provision(args.base_dir, paid=args.paid, network=args.network,

@@ -31,11 +31,13 @@ def build_identity(
     # product surface (see veritas/support.py and pipeline.py) — advertising it
     # here was a discovery-document lie that survived the Phase T retract.
     doc: dict[str, Any] = {
-        "name": "Veritas Research",
+        "name": "Veritas",
         "description": (
-            "Evidence-grounded research with a hash-chained custody ledger, "
-            "recomputable support counts, explicit refusal, escrowed warranty "
-            "bonds, and prediction-market signal snapshots (prices, not verdicts)."
+            "Multi-agent commerce venue: prediction-market signal snapshots "
+            "(prices, not verdicts), x402 settlement, and escrowed warranty "
+            "bonds. Research is an observe primitive with hash-chained custody "
+            "and explicit refusal — not a truth arbiter, and it does not "
+            "auto-attach a warranty."
         ),
         "paymentAddress": pay_to,
         "capabilities": [
@@ -52,6 +54,7 @@ def build_identity(
             "prepaid-credit-sessions",
             "conditional-authorization-escrow",
             "prediction-market-signals",
+            "prediction-market-signal-analysis",
         ],
         "base_url_configured": configured is not None,
         # The complete surface lives at /v1/hooks; these are the endpoints an
@@ -71,6 +74,7 @@ def build_identity(
             "escrow": f"{base}/v1/escrow/{{lock_id}}",
             "escrow_lock": f"{base}/v1/escrow",
             "signals": f"{base}/v1/signals",
+            "signals_history": f"{base}/v1/signals/history",
             "trust": f"{base}/v1/trust",
             "schema": f"{base}/v1/schema",
             "errors": f"{base}/v1/errors",
@@ -82,6 +86,7 @@ def build_identity(
             "identity": f"{base}/v1/identity",
             "constitution": f"{base}/v1/constitution",
             "hooks": f"{base}/v1/hooks",
+            "peer": f"{base}/v1/peer",
             "llms": f"{base}/llms.txt",
             "adopt": f"{base}/adopt.json",
             "wellKnown": f"{base}/.well-known/x402",

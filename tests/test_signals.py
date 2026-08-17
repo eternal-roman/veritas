@@ -19,6 +19,7 @@ from veritas.signals import (
     PredictionMarketRetriever,
     SignalsError,
     SignalStore,
+    analyze,
     as_evidence,
     fetch_json,
     hash_signal,
@@ -233,6 +234,9 @@ def test_http_pull_persists_and_lists(tmp_path, monkeypatch):
     body = pulled.json()
     assert body["method"] == METHOD
     assert body["signals"]
+    assert "analysis" in body
+    assert body["analysis"]["note"].startswith("arithmetic")
+    assert body["analysis"]["n_signals"] == len(body["signals"])
     digest = body["signals"][0]["content_hash"]
     fetched = client.get(f"/v1/signals/{digest}")
     assert fetched.status_code == 200
@@ -240,6 +244,13 @@ def test_http_pull_persists_and_lists(tmp_path, monkeypatch):
     listed = client.get("/v1/signals")
     assert listed.status_code == 200
     assert listed.json()["count"] >= 1
+    hist = client.get(
+        "/v1/signals/history",
+        params={"venue": "polymarket", "market_id": body["signals"][0]["market_id"]},
+    )
+    assert hist.status_code == 200
+    assert hist.json()["count"] >= 1
+    assert hist.json()["analysis"]["n_signals"] >= 1
     evidence = client.get(f"/v1/evidence/{digest}")
     assert evidence.status_code == 200
     empty = client.post("/v1/signals", json={"query": ""})
@@ -247,3 +258,18 @@ def test_http_pull_persists_and_lists(tmp_path, monkeypatch):
     unknown = client.post("/v1/signals", json={"query": "fed", "venues": ["betfair"]})
     assert unknown.status_code == 422
     assert client.get("/v1/signals/not-a-hash").status_code == 404
+    bad_hist = client.get(
+        "/v1/signals/history", params={"venue": "betfair", "market_id": "x"}
+    )
+    assert bad_hist.status_code == 422
+
+
+def test_analyze_is_arithmetic_not_a_forecast():
+    signals = pull_polymarket("fed", opener=_opener_for(POLYMARKET_SEARCH))
+    report = analyze(signals)
+    assert report["method"] == "veritas.signals.analyze.v1"
+    assert "not a forecast" in report["note"]
+    assert report["n_signals"] == len(signals)
+    assert report["markets"]
+    assert report["markets"][0]["price_mean"] == 0.42
+

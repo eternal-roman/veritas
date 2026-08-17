@@ -546,6 +546,111 @@ class SignalStore:
             out.append(parsed)
         return out
 
+    def history(
+        self,
+        *,
+        venue: str,
+        market_id: str,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Time-ordered snapshots for one venue market. Arithmetic input, not a forecast."""
+        if venue not in VENUES or not market_id:
+            return []
+        cap = max(1, min(int(limit), 100))
+        conn = None
+        try:
+            conn = self._connect()
+            rows = conn.execute(
+                "SELECT body, content_hash FROM signal_snapshots "
+                "WHERE venue = ? AND market_id = ? "
+                "ORDER BY observed_at ASC LIMIT ?",
+                (venue, market_id, cap),
+            ).fetchall()
+        except Exception:
+            return []
+        finally:
+            if conn is not None:
+                conn.close()
+        out: list[dict[str, Any]] = []
+        for row in rows:
+            try:
+                parsed = json.loads(row["body"])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if not isinstance(parsed, dict):
+                continue
+            parsed["content_hash"] = row["content_hash"]
+            out.append(parsed)
+        return out
+
+
+ANALYZE_METHOD = "veritas.signals.analyze.v1"
+
+
+def _primary_price(outcomes: Any) -> float | None:
+    """Yes-price if present, else the first numeric outcome. Not a forecast."""
+    if not isinstance(outcomes, list):
+        return None
+    named = None
+    first = None
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        price = item.get("price")
+        if not isinstance(price, (int, float)):
+            continue
+        if first is None:
+            first = float(price)
+        if str(item.get("name") or "").strip().lower() in {"yes", "y"}:
+            named = float(price)
+            break
+    return named if named is not None else first
+
+
+def analyze(signals: list[dict[str, Any]]) -> dict[str, Any]:
+    """Arithmetic on stored venue prices. Not a forecast and not a verdict."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for signal in signals:
+        if not isinstance(signal, dict):
+            continue
+        key = str(signal.get("question") or signal.get("market_id") or "").strip().lower()
+        if not key:
+            continue
+        grouped.setdefault(key, []).append(signal)
+    markets: list[dict[str, Any]] = []
+    for rows in grouped.values():
+        points: list[dict[str, Any]] = []
+        prices: list[float] = []
+        for row in rows:
+            price = _primary_price(row.get("outcomes"))
+            points.append({
+                "venue": row.get("venue"),
+                "market_id": row.get("market_id"),
+                "price": price,
+                "observed_at": row.get("observed_at"),
+                "content_hash": row.get("content_hash"),
+            })
+            if price is not None:
+                prices.append(price)
+        markets.append({
+            "question": rows[0].get("question"),
+            "n_snapshots": len(rows),
+            "points": points,
+            "price_min": min(prices) if prices else None,
+            "price_max": max(prices) if prices else None,
+            "price_mean": round(sum(prices) / len(prices), 6) if prices else None,
+            "venue_disagreement": (
+                round(max(prices) - min(prices), 6) if len(prices) >= 2 else None
+            ),
+        })
+    return {
+        "method": ANALYZE_METHOD,
+        "n_signals": len(signals),
+        "n_markets": len(markets),
+        "markets": markets,
+        "note": "arithmetic on stored venue prices; not a forecast and not a verdict",
+    }
+
 
 def as_evidence(signal: dict[str, Any]) -> dict[str, Any]:
     """Shape a stored snapshot as a pipeline evidence item.

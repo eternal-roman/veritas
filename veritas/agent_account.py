@@ -102,7 +102,7 @@ SKILL_CATALOG: dict[str, dict[str, str]] = {
         "title": "Falsifiable warranties (W0/W1)",
         "command": "",
         "http": "POST /v1/escrow",
-        "note": "veritas.warranty — escrowed EIP-3009 lock when authorization present; else signed_commitment_not_escrow (G12 closed; G2 and mainnet remain)",
+        "note": "veritas.warranty — escrowed EIP-3009 lock when authorization present; else signed_commitment_not_escrow (G12 closed; G2 closed; mainnet remains)",
     },
     "standing": {
         "title": "Composed standing from records you hold",

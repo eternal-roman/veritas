@@ -5,15 +5,43 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next:** claim **free**. Product glue **#155** and VCAE/signals
-> **#156** are on main (`9bf043a`). This branch closes O5 (absolute
-> runtime dir + `/readyz` write probe), L6 (receipts no longer serve a
-> research question), R10 (Serper stays off in free mode), and the VCAE
-> collect holes (signature not on GET; forfeit re-runs the challenge;
-> release is loopback). Default **HOLD invent money**; Stage-1 human
-> owns PyPI · public TLS · mainnet pay-to. G2 remains open.
+> **Do this next:** claim **free**. Product glue **#155**, VCAE/signals
+> **#156**, and product-quality **#157** are on main (`3b06f6b`). This
+> integration branch stacks G2/signals/observe, self-host peer connect,
+> shared receipts, P13 `stored_excerpt`, optional G13 chain checks, and
+> O15 SBOM checksum. Default **HOLD invent money**; Stage-1 human owns
+> PyPI · public TLS for strangers · mainnet pay-to.
 
 ## Progress log
+
+> **P13 stored_excerpt fallback (2026-08-16, feat/p13-durable-origin):**
+> `POST /v1/verify` url+hash still re-observes through `notary.observe`.
+> When that fails (dead host, 404/410, timeout, SSRF-safe refusal) and
+> EvidenceStore has a body whose excerpt still hashes to the claimed
+> digest, the result is `binding: stored_excerpt` — not `origin_refetch`,
+> not a fresh observe, not an independent observation. No stored body
+> keeps the existing failure class. Live match/diverge is unchanged.
+> Research receipts stay `receipt_not_refetchable`. Origin independence
+> still needs the live URL for a *fresh* observation.
+
+> **Shared receipts + rate-limit fallback (2026-08-16, feat/store-receipts-limits):**
+> When `VERITAS_DATABASE_URL` is set, `CustodyStore` upserts the same
+> redacted receipt body into `custody_receipts` so a sibling node can
+> serve `GET /v1/receipts/{id}`. Tombstones set `gone=1`. Shared-write
+> failure does not fail a paid save. `shared_rate_limited` falls back to
+> a process-local limiter when the configured store cannot be used —
+> not a free pass. Unset URL is unchanged (server.py buckets). O6 stays
+> open (balancer / replay / trust). G13 stays open.
+
+> **G2 + signals analyze + observe retrieval (2026-08-16, feat/g2-signals-observe):**
+> G2 closed — local facilitator recovers the EIP-712 signer of
+> `transferWithAuthorization` against the pinned USDC domain; forged,
+> expired, and incomplete authorizations fail closed. Signals grow
+> `analyze` (arithmetic, not a forecast) and `GET /v1/signals/history`.
+> Wikipedia uses the official MediaWiki extracts API; Serper/DDG hits
+> stay `search_snippet` until `notary.observe` replaces the body.
+> Research does not auto-attach a warranty (G12 stays a primitive).
+> Public TLS host is still operator-owned (`docs/deploy/PUBLIC_HOST.md`).
 
 > **Product-quality pass (2026-08-16, fix/product-quality-o5-l6-r10):**
 > O5 closed — `veritas.runtime.resolve_runtime_dir` is absolute;
@@ -349,7 +377,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
 - [x] O.6 Retention/pruning; 410 Gone ≠ 404 (`veritas/retention.py`, custody tombstones, `Ledger.prune`, `veritas-ops prune`)
 - [x] O.7 `.dockerignore` allowlist, VOLUME, docker-compose.yml (O12, O13)
-- [x] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15 partial — pins on main `96b9013`; Docker hash-lock + signed SBOM still open)
+- [x] O.8 Supply chain: lockfile with hashes, SHA-pinned actions, SBOM, bandit `-ll` (O15 partial — pins on main `96b9013`; Docker hash-lock + SBOM checksum landed; signed SBOM still open)
 
 ### Phase L — Legal
 - [ ] L.1 TERMS.md, PRIVACY.md, provider compliance matrix, retention policy
@@ -379,7 +407,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** — branch removed with the posterior |
 | P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
 | P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | **closed** for origin-bound paths — `tests/test_refetch_verify.py`; legacy `content`+hash remains `binding: caller_supplied` only (`4697c8d` #38). Not multi-party origin proof; not on-chain |
-| P13 | med | Evidence text never stored; hashes only | **partial** — excerpt store + `GET /v1/evidence/{hash}` on #155; origin re-fetch still depends on the live URL |
+| P13 | med | Evidence text never stored; hashes only | **partial** — excerpt store + `GET /v1/evidence/{hash}` on #155; `POST /v1/verify` now returns honest `stored_excerpt` when the origin is gone and the store still has the body (`feat/p13-durable-origin`). A *fresh* independent observation still needs the live URL. Not a public CT |
 | L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** — `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
 | L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
 | L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |
@@ -397,13 +425,13 @@ Ids from the three audits. `open` until a test pins the fix.
 | O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | **closed** — SQLite counters, one row regardless of lifetime request count (`tests/test_durability.py::test_stats_are_counters_not_a_rescan`) |
 | O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
 | O5 | high | Relative runtime dir + cwd dependence → silent 503s | **closed** — `veritas.runtime.resolve_runtime_dir` is absolute; default is XDG/home, not cwd; `/readyz` probes writability; `veritas-agent` binds `{base-dir}/runtime` (`tests/test_runtime.py`) |
-| O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
+| O6 | high | Two instances: replay, receipt 404s, divergent trust | open — receipts share when `VERITAS_DATABASE_URL` is set (L1 sqlite file URL). Replay/trust/balancer still unproven. |
 | O7 | high | Receipt writes neither atomic nor fsynced | **closed** — temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
 | O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |
 | O11 | high | `veritas-agent up --paid` targets Base mainnet by default | **closed** — testnet default + explicit acknowledgement flag |
 | O12 | high | No `.dockerignore` beside a plaintext wallet passphrase; no VOLUME | **closed** — `.dockerignore` is an allowlist (`*` then `!`), the Dockerfile is asserted never to `COPY .`, the runtime dir is a declared VOLUME (`tests/test_container.py`). Verified by reading the shipped files, not by building an image |
 | O14 | med | Unhandled exceptions escape the error envelope as text/plain | **closed** — catch-all handler returns the registered `internal_error` envelope, carrying no exception text (`::test_the_internal_error_body_carries_no_exception_text`) |
-| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | **partial** — bandit `-ll`; lockfile/hashes + SHA Actions + artifact SBOM on main `96b9013` (#22); Docker hash-lock + signed SBOM still open |
+| O15 | med | No lockfile/hashes, mutable action refs, vacuous bandit gate | **partial** — bandit `-ll`; lockfile/hashes + SHA Actions + artifact SBOM on main `96b9013` (#22); Docker hash-lock + SBOM checksum landed; signed SBOM still open |
 | O16 | high | Wallet keystore + plaintext passphrase written world-readable where POSIX mode bits are not enforced (observed `0o666` on Windows); `_write_owner_only` never checked that its own name was true | **reported, not fixed** — the mode is read back after each write and `WalletPermissionWarning` names the unprotected file (`tests/test_wallet.py::test_keystore_files_are_owner_only_or_say_they_are_not`). The POSIX assertion is now its own test, skipped off-POSIX. Enforcing ACLs on Windows is not implemented; deployment target is Linux/Docker |
 | O17 | **critical** | `GET /v1/receipts/{request_id}` interpolated the caller's string into a filesystem path. Starlette refuses a path parameter containing `/`, which hid it on Linux — but `\` is a Windows separator and is not a URL separator, so `GET /v1/receipts/..%5Ccanary` arrived intact. **Verified exploitable against a running server: HTTP 200 with the contents of a `.json` file outside the receipt directory.** Any `*.json` the process could read was readable unauthenticated, and `.veritas_agent/wallet.keystore.json` is such a file | **closed** — allowlist `custody.is_safe_request_id` validates *before* the path is built, on read and write both (`tests/test_durability.py::test_a_receipt_id_cannot_escape_the_receipt_directory`, `::test_a_traversing_id_is_refused_before_it_reaches_the_filesystem`, `::test_a_receipt_is_never_written_outside_its_directory`). Re-tested against a live server: 404, no contents. Found by CodeQL `py/path-injection`, which had been open on `main` |
 | O18 | med | Exception text reached a buyer through the 402 body: `_challenge(cfg, f"…: {exc}")` on `DeadlineTooShort`. The message is only timings today, but 4f2321c established that exception text does not go on the wire | **closed** — the message is built from `MIN_USABLE_SECONDS` / `SETTLEMENT_MARGIN_SECONDS`, never from the exception. Found by CodeQL `py/stack-trace-exposure` |

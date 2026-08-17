@@ -96,8 +96,8 @@ a { color:var(--acc); }
 </head>
 <body>
 <header>
-  <h1>VERITAS <span>operator</span></h1>
-  <p class="note">Local viewer. Enroll writes only from loopback. Not an account server.</p>
+  <h1>VERITAS <span>catalog</span></h1>
+  <p class="note">Local viewer of this node's Kalshi/Polymarket store. Enroll is loopback-only. Not an account server.</p>
 </header>
 <main>
   <section>

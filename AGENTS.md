@@ -28,7 +28,7 @@ Interests map to existing capabilities: `research`, `verify`, `diligence`, `audi
 | Vet a seller | `veritas-diligence <url>` |
 | Audit a pack | `veritas-audit run pack.json` |
 
-`init` / `up` enroll `id=self` with interests `research,verify` if no account exists. Funding the commerce wallet and public TLS stay external.
+`init` / `up` enroll `id=self` with interests `signals,verify` if no account exists (`research` still aliases to `signals`). Funding the commerce wallet and public TLS stay external.
 
 Home is `--base-dir` (default `.veritas_agent/`, or `VERITAS_AGENT_HOME`): `account.json`, commerce keystore, signed did:pkh card. Commerce address is x402 `pay_to`. There is no second currency.
 

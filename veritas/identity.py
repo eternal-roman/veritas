@@ -35,10 +35,10 @@ def build_identity(
     doc: dict[str, Any] = {
         "name": "Veritas",
         "description": (
-            "Multi-agent commerce venue: prediction-market signal snapshots "
-            "(prices, not verdicts), x402 settlement, and escrowed warranty "
-            "bonds. Catalog pull is the sold observe SKU. It is not a truth "
-            "arbiter and does not auto-attach a warranty."
+            "Self-hosted agent-to-agent seller of Kalshi and Polymarket "
+            "books. Catalog pull is the sold SKU (prices, not verdicts). "
+            "It is not a research Q&A service, not a truth arbiter, and "
+            "does not auto-attach a warranty."
         ),
         "paymentAddress": pay_to,
         "capabilities": [

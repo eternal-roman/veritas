@@ -14,7 +14,8 @@
   `CONSTITUTION.md` enforcement lines match `constitution.py` (A11,
   A12, A13, A22, A23); the markdown sync test now requires every
   pointer. Adopt card name is Veritas. First-boot copy and cycle-1
-  report drop `run_research`.
+  report drop `run_research`. README, identity, `/llms.txt`, and the
+  package abstract describe the catalog seller, not a research API.
 - Catalog: `GET /v1/signals` is latest-per-market and store-searchable
   (`q`). History is newest-first. Kalshi pull pages a cursor. A
   Polymarket search miss is empty, not an open-book dump. `veritas-ops

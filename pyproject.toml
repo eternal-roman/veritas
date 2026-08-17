@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "veritas-research"
 dynamic = ["version"]
-description = "Multi-agent commerce venue: Kalshi/Polymarket catalog, x402 settlement, and escrowed bonds."
+description = "Self-hosted agent-to-agent seller of Kalshi/Polymarket books over x402. Prices, not verdicts."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -13,7 +13,10 @@ license-files = ["LICENSE"]
 keywords = [
     "agents",
     "x402",
-    "research",
+    "prediction-markets",
+    "kalshi",
+    "polymarket",
+    "catalog",
     "evidence",
     "provenance",
     "custody",

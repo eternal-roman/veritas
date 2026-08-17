@@ -16,7 +16,6 @@
 | G13 | Code | Local simulator does not check nonce-unused or balance |
 | O6 | Ops | Shared receipts/rate-limit across a real balancer unproven |
 | O15 | Ops | SBOM checksummed, not signed |
-| Commercial-grade retrieval | Product | Wikipedia extracts; Serper/DDG stay snippets until observe |
 | Calibration | Product | Unused; `passthrough_untrained` |
 
 Phase sequencing that already landed (constitution, packaging, one engine,

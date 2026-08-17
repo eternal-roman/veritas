@@ -21,7 +21,7 @@ hot path, where sub-dollar pricing makes human approval uneconomic
 | Role | What it does | Instances today |
 |------|--------------|-----------------|
 | Buyer agent | Discovers services, evaluates them, signs x402 payments, verifies deliverables | `veritas-buy` + `veritas.payer` ship locally; no unsolicited external buyer yet |
-| Seller service | Publishes identity, constitution, and prices; does the work; settles after delivery | Veritas (this repository) |
+| Seller service | Publishes identity, constitution, and prices; pulls Kalshi/Polymarket books; settles after delivery | Veritas (this repository; catalog pull is the SKU) |
 | Facilitator | Verifies payment payloads and settles them on-chain (`POST /verify`, `POST /settle`) | x402 facilitator API; a local simulator for free mode |
 | Registry | Lists services so buyers can find them | CDP x402 Bazaar, ERC-8004 (planned, Phase 4); nothing announces Veritas yet |
 | Attester | Signs statements about outcomes against a `request_id` | None; Phase 5 |

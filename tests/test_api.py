@@ -125,10 +125,10 @@ def test_public_receipt_does_not_serve_a_research_question(free_client):
     import veritas.server as main_module
     from veritas.hashing import compute_content_hash
 
-    secret = "buyer-only research question about a merger"
+    question = "buyer-only research question about a merger"
     record = main_module.store.save({
         "request_id": "req-l6-question",
-        "query": secret,
+        "query": question,
         "status": "completed",
         "custody_root": "sha256:x",
         "custody_valid": True,
@@ -136,18 +136,18 @@ def test_public_receipt_does_not_serve_a_research_question(free_client):
     })
     assert record["persisted"] is True
     assert "query" not in record
-    assert record["query_hash"] == compute_content_hash(secret)
+    assert record["query_hash"] == compute_content_hash(question)
 
     body = free_client.get("/v1/receipts/req-l6-question").json()
-    assert secret not in json.dumps(body)
+    assert question not in json.dumps(body)
     assert "query" not in body
-    assert body["query_hash"] == compute_content_hash(secret)
+    assert body["query_hash"] == compute_content_hash(question)
     assert body.get("query_redacted") is not True
 
     # Legacy on-disk receipts that still carry a question are redacted on GET.
     main_module.store.save({
         "request_id": "req-l6-legacy",
-        "query": secret,
+        "query": question,
         "status": "completed",
         "custody_root": "sha256:x",
         "custody_valid": True,
@@ -155,12 +155,12 @@ def test_public_receipt_does_not_serve_a_research_question(free_client):
     })
     path = main_module.store.base_dir / "req-l6-legacy.json"
     raw = json.loads(path.read_text(encoding="utf-8"))
-    raw["query"] = secret
+    raw["query"] = question
     path.write_text(json.dumps(raw), encoding="utf-8")
     leaked = free_client.get("/v1/receipts/req-l6-legacy").json()
     assert "query" not in leaked
     assert leaked["query_redacted"] is True
-    assert secret not in json.dumps(leaked)
+    assert question not in json.dumps(leaked)
 
 
 def test_public_receipt_keeps_an_origin_url_for_refetch(free_client):

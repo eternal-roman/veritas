@@ -3,6 +3,30 @@
 ## [Unreleased]
 
 ### Added
+- Local facilitator recovers the EIP-712 signer of an EIP-3009
+  `transferWithAuthorization` (constitution G2 closed, 2.9). Forged,
+  expired, and incomplete authorizations fail closed. Balance and
+  nonce-unused stay on-chain and are not claimed.
+- Signal analysis (`veritas.signals.analyze.v1`) and
+  `GET /v1/signals/history`. Arithmetic on stored venue prices, not a
+  forecast. POST `/v1/signals` returns `analysis` with the snapshots.
+- Wikipedia retrieval uses the official MediaWiki Extracts API
+  (`prop=extracts&explaintext=1`) instead of the REST lead-paragraph
+  summary. ``exintro`` is omitted (MediaWiki treats a present boolean
+  as true, so ``exintro=0`` still returned the lead). Each title is
+  fetched on its own request because TextExtracts will not return
+  more than one full-article extract. Served-path research
+  re-observes search hits through `notary.observe`. Unobserved
+  Serper/DDG hits are labelled `search_snippet`.
+- Operator deploy runbook: `docs/deploy/PUBLIC_HOST.md`, `deploy/Caddyfile`,
+  `deploy/fly.toml`. No public host is claimed.
+
+### Changed
+- Identity and product copy: prediction-market signals and x402
+  commerce first. Research is an observe primitive and does not
+  auto-attach a warranty.
+
+### Added
 - VCAE (`veritas.escrow`, `veritas.escrow.v1`): EIP-3009 authorization
   is the lock. `escrow_bond` / `escrow_stake` persist; `settle_forfeit`
   submits through the existing facilitator after a fired challenge. A
@@ -11,7 +35,7 @@
   `POST /v1/escrow/{lock_id}/release` (never submits),
   `POST /v1/escrow/{lock_id}/forfeit` (live facilitator required).
   `veritas-ops escrow-sweep` / `escrow <lock_id>`. Not a vault contract.
-  Local facilitator still G2. Mainnet collect unproven.
+  Mainnet collect unproven.
 - Prediction-market signals (`veritas.signals`, `veritas.signals.v1`):
   public Kalshi + Polymarket book snapshots stored through the evidence
   channel. Prices, not verdicts. No trading, no keys. Hosts allowlisted;

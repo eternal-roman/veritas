@@ -1,0 +1,28 @@
+# Reverse proxy in front of the Veritas process.
+# Replace {$VERITAS_DOMAIN} with the hostname you control.
+# Caddy obtains and renews the certificate. Do not terminate TLS in Python.
+#
+# The container and `veritas-server` default to port 8000
+# (see Dockerfile VERITAS_PORT and docker-compose.yml).
+
+{$VERITAS_DOMAIN:localhost} {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000 {
+		flush_interval -1
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	@health path /health /readyz
+	handle @health {
+		reverse_proxy 127.0.0.1:8000
+	}
+}

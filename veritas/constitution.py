@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.8"
+CONSTITUTION_VERSION = "2.9"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -382,7 +382,7 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G2",
         "article": "A14",
-        "status": "open",
+        "status": "closed",
         "description": (
             "The local simulator validates payment structure and configuration, not "
             "signatures: a structurally valid payload with a forged signature passes. "
@@ -390,7 +390,33 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "the control plane must not be exposed as a paid network surface while "
             "this gap is open."
         ),
-        "witness_test": "tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures",
+        "resolution": (
+            "Closed in constitution 2.9: verify_payment(require=True) recovers the "
+            "EIP-712 signer of the EIP-3009 transferWithAuthorization (pinned USDC "
+            "domain) and refuses unless it equals authorization.from. Forged, "
+            "expired, and incomplete authorizations fail closed. Missing "
+            "eth_account fails closed. Balance and nonce-unused stay on-chain and "
+            "are not claimed "
+            "(tests/test_autonomous_payment.py::"
+            "test_simulator_rejects_structurally_valid_forged_signature, "
+            "tests/test_eip3009.py::test_valid_authorization_passes). "
+            "The remaining weakness is registered as G13."
+        ),
+    },
+    {
+        "id": "G13",
+        "article": "A14",
+        "status": "open",
+        "description": (
+            "The local simulator recovers the EIP-712 signer (G2 closed) but "
+            "does not check that the nonce is unused on chain or that the "
+            "payer has balance. A valid signature over an empty or already-"
+            "spent authorization still passes. The HTTP path's live "
+            "facilitator remains the strong gate for settlement. The control "
+            "plane must not be exposed as a paid network surface while this "
+            "gap is open."
+        ),
+        "witness_test": "tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_check_nonce_or_balance",
     },
     {
         "id": "G3",
@@ -567,7 +593,7 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "tests/test_warranty.py::test_escrowed_warranty_forfeit_is_collectable). "
             "Warranties that omit a lock stay labeled "
             "signed_commitment_not_escrow and do not claim collectability. "
-            "Not a deployed vault contract. Local facilitator still G2. "
+            "Not a deployed vault contract. "
             "Mainnet collect unproven."
         ),
     },

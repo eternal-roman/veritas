@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.8"
+HOOKS_VERSION = "1.9"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -186,11 +186,14 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "required; free mode refuses rather than inventing."),
     _http("signals", "GET", "/v1/signals",
           "Recent prediction-market snapshots. Prices, not verdicts."),
+    _http("signals_history", "GET", "/v1/signals/history",
+          "Time-ordered snapshots of one venue market, plus arithmetic analysis. "
+          "Not a forecast."),
     _http("signals_item", "GET", "/v1/signals/{content_hash}",
           "One stored snapshot by content hash; 404 when never stored."),
     _http("signals_pull", "POST", "/v1/signals",
-          "Pull public Kalshi/Polymarket books and store snapshots via the "
-          "evidence channel. No trading, no keys."),
+          "Pull public Kalshi/Polymarket books, store snapshots, and return "
+          "arithmetic analysis. No trading, no keys."),
     _http("trust", "GET", "/v1/trust",
           "Independent-audit score; UNPROVEN until buyer-supplied verified records."),
     _http("trust_score", "POST", "/v1/trust",

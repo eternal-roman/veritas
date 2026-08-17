@@ -32,7 +32,7 @@ Scale: the lock table lives in the shared store when
 indexed scan of ``state='locked'`` rows.
 
 Honesty: this is not a deployed vault contract. The local facilitator
-still does not check signatures (G2). Mainnet collect is unproven, same
+recovers EIP-712 signatures (G2 closed). Mainnet collect is unproven, same
 as payments. A warranty that omits a lock stays
 ``signed_commitment_not_escrow`` and cannot be collected. A facilitator
 refusal leaves the lock ``locked`` so a later collect can retry.
@@ -537,8 +537,7 @@ def settle_forfeit(
 
     Requires ``outcome['outcome'] == 'fired'``. Does not invent a
     settlement: the facilitator result is recorded as-is. A missing or
-    unsigned authorization is refused rather than waved through (G2 still
-    applies to the local facilitator).
+    unsigned authorization is refused rather than waved through.
 
     A facilitator *refusal* leaves the lock ``locked`` so a later collect
     can retry. Success or an indeterminate answer (the rail may have
@@ -617,7 +616,6 @@ def settle_forfeit(
         "method": METHOD,
         "note": (
             "Forfeit submitted through the existing facilitator. "
-            "Local facilitator does not check signatures (G2). "
             "Mainnet collect is unproven."
         ),
     }

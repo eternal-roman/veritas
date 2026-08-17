@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.8.** This file
+**The normative source is `veritas/constitution.py`, version 2.9.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -301,15 +301,32 @@ and the control plane's recorded amounts follow payment config (both enforced
 in `tests/test_autonomous_payment.py`). The remaining weakness is registered
 as G2 — the register does not shrink by forgetting.
 
-### G2 — Local simulator does not verify signatures (open, article A14)
+### G2 — Local simulator does not verify signatures (closed, article A14)
 
 The local simulator validates payment structure and configuration, not
 signatures: a structurally valid payload with a forged signature passes. The
 HTTP path's facilitator verification remains the strong gate, and the control
 plane must not be exposed as a paid network surface while this gap is open.
 
-Witness: `tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_verify_signatures`.
-If that test fails, the gap has been fixed — close G2 and delete the witness.
+Closed in constitution 2.9: `verify_payment(require=True)` recovers the EIP-712
+signer of the EIP-3009 `transferWithAuthorization` (pinned USDC domain) and
+refuses unless it equals `authorization.from`. Forged, expired, and incomplete
+authorizations fail closed. Missing `eth_account` fails closed. Balance and
+nonce-unused stay on-chain and are not claimed
+(`tests/test_autonomous_payment.py::test_simulator_rejects_structurally_valid_forged_signature`,
+`tests/test_eip3009.py::test_valid_authorization_passes`). The remaining
+weakness is registered as G13.
+
+### G13 — Local simulator does not check nonce or balance (open, article A14)
+
+The local simulator recovers the EIP-712 signer (G2 closed) but does not check
+that the nonce is unused on chain or that the payer has balance. A valid
+signature over an empty or already-spent authorization still passes. The HTTP
+path's live facilitator remains the strong gate for settlement. The control
+plane must not be exposed as a paid network surface while this gap is open.
+
+Witness: `tests/test_autonomous_payment.py::test_known_gap_simulator_does_not_check_nonce_or_balance`.
+If that test fails, the gap has been fixed — close G13 and delete the witness.
 
 ### G3 — Relevance gate absent from the served path (closed, article A2)
 
@@ -402,8 +419,8 @@ bonds over routine proven settlement (W1).
 Closed in constitution 2.8: `escrow_bond` persists an EIP-3009 authorization
 as the lock; `settle_forfeit` submits it through the existing facilitator.
 Warranties that omit a lock stay labeled `signed_commitment_not_escrow` and
-do not claim collectability. Not a deployed vault contract. Local
-facilitator still G2. Mainnet collect unproven.
+do not claim collectability. Not a deployed vault contract.
+Mainnet collect unproven.
 
 ### G8 — No financial ledger (closed, article A13)
 

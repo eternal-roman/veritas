@@ -120,4 +120,5 @@ First live settlement (`docs/program/fable/settlement/`, PR #112) found defects 
 
 ## Current state
 
-Invariants above are tested and green. Testnet settlements (Base Sepolia, real x402.org facilitator) are chain-confirmed by `reconcile-chain` — count and transcripts at `docs/program/STATE.md` and `docs/program/fable/settlement/`. Not proven: mainnet, unsolicited buyers, sustained volume. Retrieval is snippet-grade with lexical synthesis. Not on PyPI. See ROADMAP.md.
+Invariants above are tested and green. Testnet settlements (Base Sepolia, real x402.org facilitator) are chain-confirmed by `reconcile-chain` — count and transcripts at `docs/program/STATE.md` and `docs/program/fable/settlement/`. Not proven: mainnet, unsolicited buyers, sustained volume. Retrieval: Wikipedia official extracts + `notary.observe` on the served path; unobserved search hits stay `search_snippet`. Not on PyPI. See ROADMAP.md.
+

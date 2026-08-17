@@ -112,7 +112,7 @@ class SerperRetriever:
                     "title": item.get("title") or "",
                     "text": text,
                     "provider": self.name,
-                    "provenance": "live_fetch",
+                    "provenance": "search_snippet",
                 })
 
         result.providers_succeeded.append(self.name)

@@ -127,9 +127,12 @@ NOT PROVEN:  - No payment has ever settled. Fail-closed is exercised; success is
 **Structural vs application success.** Everything green below is structural: it
 proves the code does what its design says on the cases exercised. It does not
 prove the product works. A skeptical external agent cannot today discover this
-service, pay it, and receive research competitive with a direct search API —
-because nothing is deployed, nothing has settled, and retrieval is snippet-grade.
-Those are the product-killing gaps, and they are Phases 0, 1 and 4 below.
+service, pay it, and receive a competitive deliverable — because nothing is
+deployed and nothing has settled with an unsolicited buyer. Retrieval on the
+served path re-observes origins through `notary.observe`; unobserved search
+hits stay labelled `search_snippet`. Those are the product-killing gaps, and
+they are Phases 0, 1 and 4 below.
+
 
 ## Verified working (structural, L1)
 
@@ -189,7 +192,7 @@ gaps a production deployment would hit.
 | # | Issue | Severity | Notes |
 |---|-------|----------|-------|
 | 1 | Live settlement never exercised | High | Client matches the documented API and is tested against unreachable hosts. That verifies fail-closed, not that a payment completes. |
-| 2 | Retrieval is snippet-grade | High | Wikipedia + DuckDuckGo. Will not sustain a paid price against a buyer who can call a search API directly. |
+| 2 | Retrieval still depends on observe | Medium | Wikipedia official extracts + `notary.observe` on the served path. Unobserved Serper/DDG stay labelled `search_snippet`. Not a paid search stack. |
 | 3 | Claims are extractive | High | A claim is a grounded excerpt, not an answer synthesised across sources. |
 | 4 | ~~No replay protection~~ | — | Fixed (0.4): nonces are claimed before work; a resubmission returns the stored deliverable rather than a 409. Single-instance scope. |
 | 5 | ~~No rate limiting~~ | — | Fixed: per-IP window limit, 256KB body cap, and a concurrency cap that sheds rather than queues. In-process, so each node has its own budget. |
@@ -537,8 +540,8 @@ against an unproven payment path produces failed settlements.
   seller-authored deterministic falsification predicates + signed bond +
   challenge window; evaluation is re-execution, not arbitration (A27).
   Bond **escrow** is VCAE (EIP-3009 authorization as the lock; G12 closed
-  in constitution 2.8). Mainnet collect unproven; local facilitator still
-  G2. Methodology: `docs/program/FALSIFIABLE_COMMERCE.md`.
+  in constitution 2.8). Mainnet collect unproven; local facilitator
+  recovers EIP-712 signatures (G2 closed). Methodology: `docs/program/FALSIFIABLE_COMMERCE.md`.
 - **5.0c Prediction-market signals.** `veritas/signals.py`: public Kalshi
   and Polymarket books stored as evidence. Prices, not verdicts. Not the
   default research retriever.

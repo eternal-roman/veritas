@@ -117,7 +117,7 @@ def test_malformed_lock_id_is_a_miss(tmp_path):
 def test_settle_forfeit_submits_locked_authorization(tmp_path):
     """G12. A fired challenge submits the locked EIP-3009 authorization
     through the existing facilitator and records a settlement. Not a vault
-    contract; local facilitator still G2."""
+    contract. Mainnet collect unproven."""
     store = EscrowStore(tmp_path)
     lock = escrow_bond(_auth(nonce="0x" + "44" * 32), network=NETWORK, store=store)
     sim = SimulatedFacilitatorClient()

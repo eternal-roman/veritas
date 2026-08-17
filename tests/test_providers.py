@@ -66,7 +66,7 @@ def test_serper_parses_organic_and_sends_key_as_header(monkeypatch):
     assert not result.errors
     assert [s["url"] for s in result.sources] == ["https://x402.org",
                                                   "https://linuxfoundation.org/x402"]
-    assert all(s["provenance"] == "live_fetch" and s["provider"] == "serper"
+    assert all(s["provenance"] == "search_snippet" and s["provider"] == "serper"
                for s in result.sources)
 
 

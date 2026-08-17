@@ -1,8 +1,13 @@
 """Zero-key multi-source retrieval for fully agent-native operation.
 
 Uses only free, no-API-key sources:
-- Wikipedia REST API
+- Wikipedia MediaWiki Extracts API (official ``prop=extracts&explaintext=1``)
 - DuckDuckGo Instant Answer API (keyless)
+
+Search hits that are only a snippet stay labelled ``search_snippet``.
+Wikipedia extracts are the publisher's own plaintext. Full-page bodies
+for other URLs go through ``notary.observe`` on the served path
+(``observe_urls``, default on) — not a second scraper.
 
 Every failure path records a RetrievalError instead of silently returning an
 empty list. The previous version wrapped all network access in bare
@@ -31,6 +36,11 @@ from veritas.safeurl import require_http_url
 
 TIMEOUT_SECONDS = 8
 
+#: Official MediaWiki extracts can be the whole article (tens of KB). Cap
+#: so one article cannot dominate a paid request's evidence budget. 4000
+#: is well above the REST summary (~400–800) and below a full dump.
+WIKIPEDIA_EXTRACT_CHARS = 4000
+
 
 def _classify(exc: Exception) -> tuple[str, str]:
     """Map an exception onto a stable (error_type, detail) pair."""
@@ -47,6 +57,18 @@ def _get_json(url: str) -> dict[str, Any]:
 
 
 def wikipedia_summary(query: str, limit: int = 2) -> RetrievalResult:
+    """Wikipedia via the official MediaWiki Extracts API.
+
+    ``action=query&prop=extracts&explaintext=1`` is the documented plaintext
+    extract (https://www.mediawiki.org/wiki/Extension:TextExtracts). This
+    replaces the REST ``page/summary`` endpoint, which is a lead-paragraph
+    snippet by design.
+
+    MediaWiki booleans are true if the parameter is *present* at all, so
+    ``exintro`` is omitted (sending ``exintro=0`` would still request the
+    lead only). Multiple extracts are only returned when ``exintro`` is
+    set, so each title is fetched on its own request.
+    """
     result = RetrievalResult(providers_attempted=["wikipedia"])
     try:
         search_url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
@@ -59,33 +81,64 @@ def wikipedia_summary(query: str, limit: int = 2) -> RetrievalResult:
         result.errors.append(RetrievalError("wikipedia", etype, detail))
         return result
 
-    for item in data.get("query", {}).get("search", [])[:limit]:
-        title = item.get("title", "")
-        if not title:
-            continue
+    titles = [
+        item.get("title", "")
+        for item in data.get("query", {}).get("search", [])[:limit]
+        if item.get("title")
+    ]
+    if not titles:
+        result.providers_succeeded.append("wikipedia")
+        return result
+
+    extracted_any = False
+    for title in titles:
         try:
-            summary_url = (
-                "https://en.wikipedia.org/api/rest_v1/page/summary/"
-                + urllib.parse.quote(title, safe="")
-            )
-            sdata = _get_json(summary_url)
-            extract = sdata.get("extract") or ""
-            page_url = (
-                sdata.get("content_urls", {}).get("desktop", {}).get("page")
-                or f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title, safe='')}"
-            )
+            page = _wikipedia_extract_page(title)
         except Exception as exc:  # noqa: BLE001
             etype, detail = _classify(exc)
-            result.errors.append(RetrievalError("wikipedia", etype, f"{title}: {detail}"))
+            result.errors.append(RetrievalError("wikipedia", etype, detail))
             continue
+        if page is None:
+            continue
+        extracted_any = True
+        extract = (page.get("extract") or "").strip()
+        if not extract:
+            continue
+        page_url = (
+            page.get("fullurl")
+            or f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title, safe='')}"
+        )
+        result.sources.append(_wikipedia_source(title, extract, page_url))
 
-        if extract:
-            result.sources.append(_wikipedia_source(title, extract, page_url))
-
-    # The search call itself succeeded, so the provider is reachable even if
-    # individual page fetches failed or the topic genuinely has no article.
-    result.providers_succeeded.append("wikipedia")
+    if extracted_any or not result.errors:
+        result.providers_succeeded.append("wikipedia")
     return result
+
+
+def _wikipedia_extract_page(title: str) -> dict[str, Any] | None:
+    """One title, one extract. ``exintro`` is deliberately absent.
+
+    TextExtracts will not return more than one full-article extract per
+    request. Sending ``exintro`` at all (even as 0) requests the lead
+    only — MediaWiki treats a present boolean as true.
+    """
+    extract_url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
+        "action": "query",
+        "prop": "extracts|info",
+        "explaintext": 1,
+        "inprop": "url",
+        "redirects": 1,
+        "format": "json",
+        "titles": title,
+    })
+    extracted = _get_json(extract_url)
+    pages = (extracted.get("query") or {}).get("pages") or {}
+    if not isinstance(pages, dict):
+        return None
+    for page in pages.values():
+        if isinstance(page, dict) and page.get("extract"):
+            return page
+    return None
 
 
 def _wikipedia_source(title: str, extract: str, page_url: str) -> dict:
@@ -98,9 +151,9 @@ def _wikipedia_source(title: str, extract: str, page_url: str) -> dict:
     return {
         "url": page_url,
         "title": title,
-        "text": extract[:800],
+        "text": extract[:WIKIPEDIA_EXTRACT_CHARS],
         "provider": "wikipedia",
-        "provenance": "live_fetch",
+        "provenance": "wikipedia_extract",
         "license": {
             "id": "CC-BY-SA-4.0",
             "url": "https://creativecommons.org/licenses/by-sa/4.0/",
@@ -121,7 +174,8 @@ def duckduckgo_instant_answer(query: str, max_results: int = 4) -> RetrievalResu
     `provider: "duckduckgo"`. That is both a redistribution problem and, in a
     product selling provenance, a falsified provenance label. The Instant Answer
     API is a documented keyless endpoint, and the answers it returns credit the
-    publisher they came from.
+    publisher they came from. The abstract is a snippet; the served path
+    re-observes ``AbstractURL`` through notary.observe when observe_urls is on.
     """
     result = RetrievalResult(providers_attempted=["duckduckgo_instant_answer"])
     try:
@@ -145,7 +199,7 @@ def duckduckgo_instant_answer(query: str, max_results: int = 4) -> RetrievalResu
             "title": data.get("Heading") or query,
             "text": abstract[:600],
             "provider": "duckduckgo_instant_answer",
-            "provenance": "live_fetch",
+            "provenance": "search_snippet",
             "license": dict(UNKNOWN_LICENSE),
             "attribution": {
                 "required": True,

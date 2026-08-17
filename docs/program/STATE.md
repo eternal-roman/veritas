@@ -5,15 +5,25 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next:** claim **free**. Product glue **#155** and VCAE/signals
-> **#156** are on main (`9bf043a`). This branch closes O5 (absolute
-> runtime dir + `/readyz` write probe), L6 (receipts no longer serve a
-> research question), R10 (Serper stays off in free mode), and the VCAE
-> collect holes (signature not on GET; forfeit re-runs the challenge;
-> release is loopback). Default **HOLD invent money**; Stage-1 human
-> owns PyPI · public TLS · mainnet pay-to. G2 remains open.
+> **Do this next:** claim **free**. Product glue **#155**, VCAE/signals
+> **#156**, and product-quality **#157** are on main (`3b06f6b`). This
+> branch closes G2 (local facilitator recovers the EIP-712 signer),
+> turns signals into a store+analyze surface, and upgrades retrieval
+> off snippet-only (Wikipedia official extracts; served path observes
+> origins). Research does not auto-attach a warranty. Default **HOLD
+> invent money**; Stage-1 human owns PyPI · public TLS · mainnet pay-to.
 
 ## Progress log
+
+> **G2 + signals analyze + observe retrieval (2026-08-16, feat/g2-signals-observe):**
+> G2 closed — local facilitator recovers the EIP-712 signer of
+> `transferWithAuthorization` against the pinned USDC domain; forged,
+> expired, and incomplete authorizations fail closed. Signals grow
+> `analyze` (arithmetic, not a forecast) and `GET /v1/signals/history`.
+> Wikipedia uses the official MediaWiki extracts API; Serper/DDG hits
+> stay `search_snippet` until `notary.observe` replaces the body.
+> Research does not auto-attach a warranty (G12 stays a primitive).
+> Public TLS host is still operator-owned (`docs/deploy/PUBLIC_HOST.md`).
 
 > **Product-quality pass (2026-08-16, fix/product-quality-o5-l6-r10):**
 > O5 closed — `veritas.runtime.resolve_runtime_dir` is absolute;

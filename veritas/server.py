@@ -55,10 +55,11 @@ from veritas.operator_ui import (
     operator_snapshot,
 )
 from veritas.payment_config import get_payment_config
-from veritas.pipeline import run_research
+from veritas.pipeline import observe_urls_enabled, run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
 from veritas.runtime import probe_runtime_dir
 from veritas.signals import VENUES, SignalsError, SignalStore
+from veritas.signals import analyze as analyze_signals
 from veritas.signals import pull as pull_signals
 from veritas.siwx import SiwxError, SiwxSessionError, SiwxSessionStore, SiwxVerifyError
 from veritas.trust import OutcomeLog, score_service
@@ -85,6 +86,7 @@ ESCROW_LOCK_PATH = "/v1/escrow"
 ESCROW_PATH = "/v1/escrow/{lock_id}"
 SIGNALS_PATH = "/v1/signals"
 SIGNALS_PULL_PATH = "/v1/signals"
+SIGNALS_HISTORY_PATH = "/v1/signals/history"
 SIGNALS_ITEM_PATH = "/v1/signals/{content_hash}"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
@@ -226,12 +228,7 @@ def _is_operator_scrape(request: Request) -> bool:
 
 
 def _observe_urls_enabled() -> bool:
-    """Server-side observation switch. ``run_research`` itself stays off
-    by default so offline callers and the test corpus do not hit the
-    network. The served path defaults on; tests set ``VERITAS_OBSERVE_URLS=0``.
-    """
-    raw = (os.getenv("VERITAS_OBSERVE_URLS") or "1").strip().lower()
-    return raw not in {"0", "false", "no", "off"}
+    return observe_urls_enabled()
 
 
 def _rate_limited(caller: str) -> bool:
@@ -321,6 +318,8 @@ def _metric_path(path: str) -> str:
             return ESCROW_LOCK_PATH
         return "/v1/escrow/{lock_id}"
     if path.startswith("/v1/signals/"):
+        if path == SIGNALS_HISTORY_PATH:
+            return SIGNALS_HISTORY_PATH
         if path == SIGNALS_PULL_PATH:
             return SIGNALS_PULL_PATH
         return "/v1/signals/{content_hash}"
@@ -1711,6 +1710,27 @@ async def signals_list(
     }
 
 
+@app.get(SIGNALS_HISTORY_PATH)
+async def signals_history(
+    venue: str = Query(...),
+    market_id: str = Query(...),
+    limit: int = Query(default=50, ge=1, le=100),
+):
+    if venue not in VENUES:
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(ErrorCode.SIGNALS_REFUSED),
+        )
+    items = signal_snapshots.history(venue=venue, market_id=market_id, limit=limit)
+    return {
+        "signals": items,
+        "count": len(items),
+        "analysis": analyze_signals(items),
+        "method": "veritas.signals.v1",
+        "note": "time-ordered snapshots of one market; arithmetic, not a forecast",
+    }
+
+
 @app.get(SIGNALS_ITEM_PATH)
 async def signals_get(content_hash: str):
     if not is_safe_content_hash(content_hash):
@@ -1746,6 +1766,7 @@ async def signals_pull(req: SignalsPullRequest):
     return {
         "signals": items,
         "stored": written,
+        "analysis": analyze_signals(items),
         "method": "veritas.signals.v1",
         "note": "market-implied prices, not a verdict",
     }
@@ -2252,6 +2273,7 @@ async def well_known():
             "escrow": "/v1/escrow/{lock_id}",
             "escrow_lock": ESCROW_LOCK_PATH,
             "signals": SIGNALS_PATH,
+            "signals_history": SIGNALS_HISTORY_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

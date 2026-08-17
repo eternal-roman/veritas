@@ -8,12 +8,14 @@ the same interface can be switched to live verification.
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from veritas.eip3009 import verify_payment_signature
 from veritas.runtime import resolve_runtime_dir
-from veritas.x402 import decode_payment_header, payment_authorization
+from veritas.x402 import decode_payment_header
 
 
 def _runtime() -> Path:
@@ -64,19 +66,15 @@ def record_settlement(request_id: str, amount: str, status: str = "recorded", me
 
 
 def verify_payment(headers: dict[str, str], require: bool = False) -> bool:
-    """Structural payment check for the local simulator.
+    """Payment check for the local simulator.
 
-    `require=False` is free mode: the request is allowed through and nothing
-    is verified — that is stated, not disguised as verification.
+    ``require=False`` is free mode: the request is allowed through and
+    nothing is verified — that is stated, not disguised as verification.
 
-    `require=True` decodes the header with the same logic the HTTP surface
-    uses (`veritas.x402.decode_payment_header`) and demands the x402
-    structural minimum: a payload carrying an authorization object. This
-    closed gap G1 (any non-empty string previously bought access). What it
-    still does not do is verify signatures — that is gap G2 in the
-    constitution's register, and it is why this module must never be exposed
-    as a paid network surface; the server's facilitator verification is the
-    strong gate.
+    ``require=True`` decodes the header and recovers the EIP-712 signer of
+    the EIP-3009 authorization (constitution G2, closed 2.9). A forged or
+    expired signature is refused. This still does not prove the nonce is
+    unused on chain or that the payer has balance (G13).
     """
     if not require:
         return True
@@ -89,4 +87,5 @@ def verify_payment(headers: dict[str, str], require: bool = False) -> bool:
     payload = decode_payment_header(raw)
     if payload is None:
         return False
-    return payment_authorization(payload) is not None
+    ok, _reason = verify_payment_signature(payload, now=int(time.time()))
+    return ok

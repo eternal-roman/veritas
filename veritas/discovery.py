@@ -11,10 +11,12 @@ do not exist.
 from __future__ import annotations
 
 LLMS_TXT = """\
-# Veritas Research
+# Veritas
 
-Evidence-grounded research service for agents: hash-chained custody,
-recomputable support counts, explicit refusal, and x402 payment. The service
+Multi-agent commerce venue: prediction-market signal snapshots (prices, not
+verdicts), x402 settlement, and escrowed warranty bonds. Research is an
+observe primitive with hash-chained custody and explicit refusal — not a
+truth arbiter, and it does not auto-attach a warranty. The service
 separates "no evidence exists" from "I could not look" and never bills for
 its own failure.
 
@@ -33,7 +35,7 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 - /v1/identity: identity document with stable content hash
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
 - /v1/hooks: machine-readable integration registry — HTTP surfaces, MCP tools, CLI exit codes, headers, signal stores; states that no push delivery exists
-- /v1/research: POST — the paid product; returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
+- /v1/research: POST — observe primitive (not a warranted product); returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
 - /v1/notarize: POST — observe-once evidence notary for a URL; same payment gates as research (X-PAYMENT or X-VERITAS-SESSION); stores evidence text with a retention class; unavailable is non-billable
 - /v1/siwx/challenge: POST — issue a SIWx challenge for credit-session establishment
 - /v1/siwx/verify: POST — verify SIWx signature and receive an X-VERITAS-SESSION token
@@ -49,7 +51,8 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 - /v1/evidence/{content_hash}: stored excerpt body for a published content hash (404 if never stored)
 - /v1/escrow: POST — persist an EIP-3009 authorization as a VCAE lock (does not settle)
 - /v1/escrow/{lock_id}: GET one lock without the signature; POST /v1/escrow/{lock_id}/release is loopback-only and never submits; POST /v1/escrow/{lock_id}/forfeit re-runs the challenge then submits (live facilitator required)
-- /v1/signals: GET recent snapshots; POST pull public Kalshi/Polymarket books and store via the evidence channel (prices, not verdicts)
+- /v1/signals: GET recent snapshots; POST pull public Kalshi/Polymarket books, store via the evidence channel, and return arithmetic analysis (prices, not verdicts)
+- /v1/signals/history: GET time-ordered snapshots of one venue market plus analysis
 - /v1/signals/{content_hash}: one stored snapshot
 - /v1/trust: GET is UNPROVEN from the operator log; POST scores independently verified audit records
 - /v1/schema: the wire contract as JSON Schema

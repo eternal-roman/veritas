@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from veritas.payment_config import get_payment_config
-from veritas.pipeline import run_research
+from veritas.pipeline import observe_urls_enabled, run_research
 from veritas.trust import OutcomeLog
 
 from .bootstrap import bootstrap, load_config
@@ -66,7 +66,9 @@ def agent_research(
             },
         }
 
-    result = run_research(query, max_results=max_results)
+    result = run_research(
+        query, max_results=max_results, observe_urls=observe_urls_enabled()
+    )
     # The pipeline mints its own request_id; keep the one already recorded
     # against the payment attempt so settlement and research reconcile.
     result["request_id"] = request_id

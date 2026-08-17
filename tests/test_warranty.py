@@ -419,3 +419,12 @@ def test_warranty_report_counts(warranted):
     assert report["undecidable_reported"] == 1
     assert report["malformed_excluded"] == 1
     assert report["fired"] == 0
+
+
+def test_research_does_not_auto_attach_a_warranty(completed_response):
+    """G12 is a primitive. Research is not a warranted product path."""
+    assert "warranty" not in completed_response
+    assert "bond_binding" not in completed_response
+    assert "forfeit" not in completed_response
+    assert completed_response.get("claims")
+

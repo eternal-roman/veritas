@@ -1,7 +1,6 @@
-# Veritas Research
+# Veritas
 
-**A research API for AI agents that refuses to guess — and never charges you
-when it fails.**
+**A multi-agent commerce venue: prediction-market signals, x402 settlement, and escrowed bonds. Research is an observe primitive — it refuses to guess, and never charges you when it fails.**
 
 [![CI](https://github.com/eternal-roman/veritas/actions/workflows/ci.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml)
@@ -9,16 +8,15 @@ when it fails.**
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![x402](https://img.shields.io/badge/payments-x402-8A2BE2.svg)](https://x402.org)
 
-Every answer carries a hash-chained custody record the caller can verify,
-per-source licence and attribution, and a status that separates *"I looked
-and found nothing"* from *"I could not look."* Payment is [x402](https://x402.org):
-one query, no account, no API key, no human.
+Markets already price claims. Veritas stores those prices as evidence, with
+hash-chained custody a caller can verify, and settles agent-to-agent over
+[x402](https://x402.org). It is not an arbiter of truth.
 
 **Status: working software, unproven economics.** Invariants below are tested
 and CI-gated. On-chain settlement exists only in operator-run testnet arcs
 against the real facilitator (count and evidence:
-`docs/program/fable/settlement/`). No unsolicited buyer has paid. Retrieval is
-snippet-grade. See [Known limitations](#known-limitations) and [ROADMAP.md](ROADMAP.md).
+`docs/program/fable/settlement/`). No unsolicited buyer has paid. There is no
+public seller URL. See [Known limitations](#known-limitations) and [ROADMAP.md](ROADMAP.md).
 
 ```bash
 pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
@@ -61,24 +59,26 @@ each article enforced or aspirational; a test rejects anything in between.
 Open gaps are listed there. `/v1/trust` scores independently verified
 audits; GET without those records is UNPROVEN. Warranty bonds that carry
 an EIP-3009 lock are collectable via `settle_forfeit` (G12); omitting a
-lock stays `signed_commitment_not_escrow`. Mainnet collect is unproven.
+lock stays `signed_commitment_not_escrow`. Research does not auto-attach
+a warranty. Mainnet collect is unproven.
 
 **No human on the adopt path.** `/.well-known/x402` reaches every surface;
 `/v1/schema` and `/v1/errors` are the contract; payment is x402. `veritas-agent
-up` provisions config and wallet and serves.
+up` provisions config and wallet and serves. Public TLS is the operator's
+(see `docs/deploy/PUBLIC_HOST.md`).
 
 ## Capabilities
 
-- **Evidence-first research** — custody chain delivered with the response
+- **Prediction-market signals** (`veritas/signals.py`) — public Kalshi and Polymarket book snapshots stored through the evidence channel. `POST /v1/signals` returns arithmetic analysis (min/max/mean, venue disagreement). `GET /v1/signals/history` is the time series. The snapshot attests a price at a time, not that an event happened.
+- **Evidence-first observe** — custody chain delivered with the response. Research does not auto-attach a warranty.
 - **Countable support** — independent domains, providers, verdict (not a confidence score)
 - **First-class refusal** — below-threshold evidence is `irrelevant_evidence`, not an answer
 - **Per-source licence and attribution** — unknown stays unknown
-- **Tiered retrieval** — keyed Serper when configured; Wikipedia + DDG IA otherwise; errors surfaced
+- **Tiered retrieval** — Wikipedia official extracts; keyed Serper when configured (snippets, then observed); DDG Instant Answer otherwise. Search hits re-observed through `notary.observe` on the served path. Errors surfaced.
 - **x402** — real facilitator verify/settle, fail-closed; replay returns the paid deliverable, never a second pass
 - **Durable ledger** (`veritas/ledger.py`) — authorize → fsync delivery → settle; no reply is `indeterminate`
 - **Survival records** (`veritas-audit`) — third-party `confirmed` / `diverged` / `unobserved`; counts per auditor key, self-audits excluded. Diligence vets documents; survival vets history. Survival reports are `surviving` only against an auditor publication; `/v1/trust` is independent-audit sourced
 - **Falsifiable commerce W0/W1** (`veritas/warranty.py`, `veritas/escrow.py`) — seller-authored D0 predicates, bonded stake, challenge window; `fired` / `not_fired` / `undecidable`; no predicate → class `U`. An EIP-3009 lock is collectable via `settle_forfeit`; omitting it stays `signed_commitment_not_escrow`. Not a vault contract. See `docs/program/FALSIFIABLE_COMMERCE.md`
-- **Prediction-market signals** (`veritas/signals.py`) — public Kalshi and Polymarket book snapshots stored through the evidence channel. The snapshot attests a price at a time, not that an event happened.
 - **Diligence** (`veritas-diligence <url>`) — 402 must match advertised payee/network/asset/price; L1 articles must name enforcement; a seller claiming no gaps fails. `0` pass / `1` fail / `2` unverifiable. SSRF-guarded. None of this proves delivery
 - **Standalone verifier** (`veritas-verify receipt.json`) — one file, zero deps, imports nothing from `veritas`. Differential test vs the engine. Consistent records ≠ we contacted the named URLs
 - **Privacy prototypes** — hiding-wallet commitments and JIT packets in `veritas/autonomous/`; experiments (`docs/design/`)
@@ -118,7 +118,11 @@ run_research("What is x402?", allow_network=False)  # labelled offline corpus
 
 ## Retrieval
 
-Zero-key (Wikipedia + DuckDuckGo) needs no config. To rank a keyed provider:
+Wikipedia uses the official MediaWiki Extracts API (plaintext article body,
+capped). DuckDuckGo Instant Answer and Serper return snippets labelled
+`search_snippet`. The served path then re-observes those URLs through
+`notary.observe` (set `VERITAS_OBSERVE_URLS=0` to disable). To rank a keyed
+provider:
 
 ```bash
 export VERITAS_SERPER_API_KEY=...   # or SERPER_API_KEY
@@ -160,7 +164,8 @@ mainnet without `--i-understand-this-is-real-money`. Invalid config →
 | `POST /v1/escrow` · `GET /v1/escrow/{id}` | Lock an EIP-3009 authorization; GET omits the signature |
 | `POST /v1/escrow/{id}/release` | Loopback-only; never submits |
 | `POST /v1/escrow/{id}/forfeit` | Re-run the challenge; submit only if it fired (live facilitator) |
-| `GET /v1/signals` · `POST /v1/signals` | Prediction-market snapshots (prices, not verdicts) |
+| `GET /v1/signals` · `POST /v1/signals` | Prediction-market snapshots + arithmetic analysis (prices, not verdicts) |
+| `GET /v1/signals/history` | Time-ordered snapshots of one venue market |
 | `GET /v1/trust` | UNPROVEN from the operator log |
 | `POST /v1/trust` | Score caller-supplied verified audit records |
 | `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Contract, errors, norms |
@@ -185,7 +190,11 @@ ruff check veritas tests
 
 ## Known limitations
 
-- **Retrieval is thin.** Wikipedia and Instant Answer snippets are not a paid search stack.
+- **Retrieval is observe-then-excerpt, not a paid search stack.** Wikipedia
+  extracts are official API plaintext. Serper/DDG remain snippets until
+  `notary.observe` replaces the body.
+- **There is no public seller URL.** `docs/deploy/PUBLIC_HOST.md` is the
+  operator runbook. This repository does not claim a live host.
 - **Settlement is operator-run testnet only.** Count and evidence:
   `docs/program/fable/settlement/` and `docs/program/STATE.md`. Mainnet: none.
   Unsolicited buyers: none.

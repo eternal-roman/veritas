@@ -39,7 +39,7 @@ Honesty boundaries:
 * A warranty that carries an EIP-3009 lock has ``bond_binding:
   eip3009_authorization``. ``settle_forfeit`` submits that lock through
   the existing facilitator (W1 / G12 closed). Mainnet collect is
-  unproven; the local facilitator still does not check signatures (G2).
+  unproven; the local facilitator recovers EIP-712 signatures (G2 closed).
 * A warranty that omits a lock is labeled ``signed_commitment_not_escrow``
   and cannot be collected. That label is the honest opt-out, not the
   default product.

@@ -134,11 +134,37 @@ def test_status_includes_stage1_readiness_scorecard(tmp_path, capsys):
     assert readiness["stage1_prep"]["vision_stage"] == "1_public_existence"
 
 
-def test_serve_tls_without_files_exits_1(tmp_path, monkeypatch):
-    """--tls with no env and no {base-dir}/tls PEMs is a hard refusal."""
+def test_serve_tls_without_files_issues_material(tmp_path, monkeypatch):
+    """--tls with no PEMs issues identity-bound material when peer_tls works."""
+    pytest.importorskip("cryptography")
+    home = tmp_path / "home"
+    monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
+    seen: dict[str, str | None] = {}
+
+    def fake_serve(argv=None):
+        seen["cert"] = os.environ.get("VERITAS_TLS_CERT")
+        seen["key"] = os.environ.get("VERITAS_TLS_KEY")
+
+    monkeypatch.setattr("veritas.server.main", fake_serve)
+    assert main(["--base-dir", str(home), "serve", "--tls"]) == 0
+    cert = home / "tls" / "cert.pem"
+    key = home / "tls" / "key.pem"
+    assert cert.is_file()
+    assert key.is_file()
+    assert seen["cert"] == str(cert.resolve())
+    assert seen["key"] == str(key.resolve())
+
+
+def test_serve_tls_without_files_exits_1_when_issuer_missing(tmp_path, monkeypatch):
+    """--tls with no PEMs is a hard refusal if peer_tls cannot issue."""
     monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
     monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
     monkeypatch.setattr("veritas.server.main", lambda argv=None: None)
+
+    monkeypatch.setattr(
+        "veritas.agent_cli._issue_tls_material", lambda *a, **k: False
+    )
     with pytest.raises(SystemExit, match="TLS requested") as exc:
         main(["--base-dir", str(tmp_path / "home"), "serve", "--tls"])
     code = exc.value.code

@@ -90,6 +90,7 @@ SIGNALS_PULL_PATH = "/v1/signals"
 SIGNALS_HISTORY_PATH = "/v1/signals/history"
 SIGNALS_ITEM_PATH = "/v1/signals/{content_hash}"
 PEER_PATH = "/v1/peer"
+PEER_INTRODUCTIONS_PATH = "/v1/peer/introductions"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -1865,6 +1866,30 @@ async def peer():
     return build_peer_card()
 
 
+@app.get(PEER_INTRODUCTIONS_PATH)
+async def peer_introductions():
+    """Signed public-URL peers this node already connected to.
+
+    Empty without a commerce signer. Never lists LAN or metadata URLs.
+    Not an address book of *this* node — that stays in peers.json.
+    """
+    from veritas.peer import load_peers
+    from veritas.peer_intro import DEFAULT_LIMIT, public_introductions
+
+    items = public_introductions(load_peers(), limit=DEFAULT_LIMIT)
+    return {
+        "schema": "veritas.peer.introductions.v1",
+        "items": items,
+        "count": len(items),
+        "cap": DEFAULT_LIMIT,
+        "central_network": False,
+        "note": (
+            "public-URL peers only; empty without a commerce signer; "
+            "the local book is never published"
+        ),
+    }
+
+
 @app.get("/ui", response_class=HTMLResponse)
 async def operator_ui():
     """Human viewer + enroll form. Excluded from the hooks registry."""
@@ -2284,6 +2309,7 @@ async def well_known():
             "signals": SIGNALS_PATH,
             "signals_history": SIGNALS_HISTORY_PATH,
             "peer": PEER_PATH,
+            "peer_introductions": PEER_INTRODUCTIONS_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

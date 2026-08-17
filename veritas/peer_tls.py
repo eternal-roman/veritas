@@ -35,8 +35,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-CERT_FILENAME = "tls-cert.pem"
-KEY_FILENAME = "tls-key.pem"
+CERT_FILENAME = "cert.pem"
+KEY_FILENAME = "key.pem"
 META_FILENAME = "tls.json"
 
 _PEM_CERT_BEGIN = b"-----BEGIN CERTIFICATE-----"

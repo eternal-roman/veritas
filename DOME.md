@@ -1,7 +1,7 @@
 # DOME — do-me punch list
 
-What is still unresolved after `main` @ `3b06f6b` plus this branch
-(`feat/a2a-hosting-and-remediation`). No GitHub issues were open. This is the
+What is still unresolved after `main` @ `2fddf73` plus this branch
+(`feat/identity-tls-mesh`). No GitHub issues were open. This is the
 honest remainder, not a wish list.
 
 Dated 2026-08-16. Status of each item is as of this branch's tip.
@@ -11,6 +11,8 @@ Dated 2026-08-16. Status of each item is as of this branch's tip.
 | Item | Why now |
 |------|---------|
 | **Self-host + connect** | Public TLS always-on central host is the wrong product. Each agent serves and can `connect` to another. No Veritas cloud. **Not** the program Mesh Runner (`ecosystem_cycle`) and **not** stranger discovery — public TLS remains required for strangers; local/LAN A2A does not. |
+| **Identity-bound TLS** | `serve --tls` issues a self-signed cert (SAN = did:pkh when known). TLS key ≠ commerce key. Card may carry fingerprint + EIP-191 binding. |
+| **Signed introductions** | `GET /v1/peer/introductions` is public-URL-only PEX. Empty without a commerce signer. Never LAN. |
 | **G2 signature check** | Local facilitator recovers the EIP-712 signer. Forged payments fail. |
 | **Optional chain checks** | When `VERITAS_FACILITATOR_CHAIN_CHECKS` is set **and** `VERITAS_RPC_URL` is configured, `verify_payment` may also read USDC `authorizationState` and `balanceOf`. Default path unchanged. **G13 stays open.** |
 | **Signals analytics** | Store was not enough. History + arithmetic analysis on venue prices. |
@@ -31,7 +33,7 @@ Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists;
 
 | Item | Severity | Note |
 |------|----------|------|
-| Public TLS host | High | None live for strangers. Local/LAN A2A no longer waits on it (`veritas-agent connect --allow-local`). `docs/deploy/PUBLIC_HOST.md` remains the stranger-discovery runbook. Locked self-host path: `docs/design/IDENTITY_TLS_MESH.md`. |
+| Public TLS host | High | None live for strangers. Agents can self-host HTTPS (`--tls`). Stranger discovery still needs a first public URL. `docs/design/IDENTITY_TLS_MESH.md`. |
 | Unsolicited buyers | High | Zero. Operator-run testnet only. |
 | Mainnet settlement | High | None. Base Sepolia only. |
 | PyPI publish | High | Job waits on `PYPI_TRUSTED_PUBLISHER=configured`. |

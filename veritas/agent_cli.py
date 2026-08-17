@@ -275,6 +275,14 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="permit loopback and RFC1918; never permits cloud metadata IPs",
     )
+    sub.add_parser(
+        "browse",
+        help="mDNS browse for LAN peer card URLs (no-op without zeroconf extra)",
+    )
+    sub.add_parser(
+        "introductions",
+        help="print signed public-URL introductions from the local book (empty without a signer)",
+    )
 
     args = parser.parse_args(argv)
     args.base_dir = str(Path(args.base_dir).expanduser().resolve())
@@ -373,6 +381,30 @@ def main(argv: list[str] | None = None) -> int:
         if result.get("ok"):
             return 0
         return 2 if result.get("code") == "unreachable" else 1
+
+    if args.command == "browse":
+        from veritas.peer_mdns import browse
+
+        result = browse()
+        print(json.dumps(result, indent=2))
+        if isinstance(result, list):
+            return 0
+        return 0 if result.get("unavailable") else 1
+
+    if args.command == "introductions":
+        from veritas.peer import load_peers
+        from veritas.peer_intro import DEFAULT_LIMIT, public_introductions
+
+        items = public_introductions(load_peers(args.base_dir), limit=DEFAULT_LIMIT)
+        print(json.dumps({
+            "schema": "veritas.peer.introductions.v1",
+            "items": items,
+            "count": len(items),
+            "cap": DEFAULT_LIMIT,
+            "central_network": False,
+            "note": "public-URL only; empty without a commerce signer",
+        }, indent=2))
+        return 0
 
     if args.command == "init":
         _provision(args.base_dir, paid=args.paid, network=args.network,

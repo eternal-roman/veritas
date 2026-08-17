@@ -93,14 +93,23 @@ def tls_cert_fingerprint(cert_path: str | Path) -> str | None:
 
 
 def _tls_card_fields() -> dict[str, Any] | None:
-    """Attach ``tls.fingerprint`` when a readable cert is configured.
+    """Attach ``tls`` when a readable cert is configured.
 
-    Binding signature is optional and left to ``veritas.peer_tls`` when
-    that module exists; this branch never invents one.
+    Prefer ``peer_tls.tls_block_for_card`` so a commerce-key binding is
+    included when that material exists. Fall back to a fingerprint-only
+    block from the stdlib PEM reader.
     """
     cert = (os.getenv("VERITAS_TLS_CERT") or "").strip()
     if not cert:
         return None
+    try:
+        from veritas.peer_tls import tls_block_for_card
+
+        block = tls_block_for_card(Path(cert).parent)
+        if block:
+            return block
+    except Exception:  # noqa: BLE001 - card stays useful without binding
+        pass
     fingerprint = tls_cert_fingerprint(cert)
     if not fingerprint:
         return None

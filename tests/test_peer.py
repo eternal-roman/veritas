@@ -207,6 +207,13 @@ def test_get_v1_peer_returns_schema_and_no_central_network(tmp_path, monkeypatch
     assert client.get(links["peer"]).status_code == 200
     # The book is never published.
     assert client.get("/v1/peers").status_code == 404
+    intros = client.get("/v1/peer/introductions")
+    assert intros.status_code == 200
+    intro_body = intros.json()
+    assert intro_body["schema"] == "veritas.peer.introductions.v1"
+    assert intro_body["central_network"] is False
+    assert intro_body["items"] == []
+    assert links["peer_introductions"] == "/v1/peer/introductions"
 
 
 def test_connect_falls_back_when_peer_card_is_404(tmp_path):

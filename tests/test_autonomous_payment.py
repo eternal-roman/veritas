@@ -15,8 +15,14 @@ import time
 
 import pytest
 
-from veritas.autonomous.local_facilitator import verify_payment
-from veritas.eip3009 import typed_data_for_authorization
+from veritas.autonomous.local_facilitator import ENV_CHAIN_CHECKS, verify_payment
+from veritas.chain_reconcile import ENV_RPC_URL, ChainReconcileError
+from veritas.eip3009 import (
+    AUTHORIZATION_STATE_SELECTOR,
+    BALANCE_OF_SELECTOR,
+    typed_data_for_authorization,
+)
+from veritas.x402 import USDC_ASSETS
 
 pytest.importorskip("eth_account")
 
@@ -26,6 +32,7 @@ def _encode(payload: dict) -> str:
 
 
 NETWORK = "eip155:84532"
+USDC = USDC_ASSETS[NETWORK]["address"]
 
 
 def _signed_payload(*, now: int | None = None, valid_for: int = 600) -> dict:
@@ -71,6 +78,11 @@ STRUCTURAL_PAYLOAD = {
 }
 
 
+def _enable_chain_checks(monkeypatch) -> None:
+    monkeypatch.setenv(ENV_CHAIN_CHECKS, "1")
+    monkeypatch.setenv(ENV_RPC_URL, "https://rpc.example")
+
+
 def test_simulator_rejects_malformed_header_when_required():
     """Previously any non-empty string bought access (gap G1, now closed)."""
     assert verify_payment({"X-PAYMENT": "garbage-not-a-payment"}, require=True) is False
@@ -88,12 +100,13 @@ def test_simulator_accepts_a_real_eip3009_signature():
     assert verify_payment({"X-PAYMENT": _encode(_signed_payload())}, require=True) is True
 
 
-def test_known_gap_simulator_does_not_check_nonce_or_balance():
+def test_known_gap_simulator_does_not_check_nonce_or_balance(monkeypatch):
     """Witness for gap G13: a freshly signed authorization passes with no
     chain lookup. The signer may have zero USDC and the nonce may already
     have been submitted; the local simulator cannot see either. If this
     test fails, the gap has been fixed — close G13 in
     veritas/constitution.py and delete this test."""
+    monkeypatch.delenv(ENV_CHAIN_CHECKS, raising=False)
     payload = _signed_payload()
     assert verify_payment({"X-PAYMENT": _encode(payload)}, require=True) is True
     # A second presentation of the same nonce is still accepted locally.
@@ -104,6 +117,110 @@ def test_simulator_free_mode_performs_no_verification():
     """require=False means free mode: allowed through, and documented as
     unverified rather than pretended-verified."""
     assert verify_payment({}, require=False) is True
+
+
+def test_chain_checks_opt_in_rejects_used_nonce(monkeypatch):
+    """Opt-in + RPC saying the EIP-3009 nonce is already used → refuse."""
+    _enable_chain_checks(monkeypatch)
+    payload = _signed_payload()
+    auth = payload["payload"]["authorization"]
+    calls: list[str] = []
+
+    def transport(url: str, method: str, params: list):
+        assert url == "https://rpc.example"
+        assert method == "eth_call"
+        data = params[0]["data"]
+        calls.append(data)
+        if data.startswith(AUTHORIZATION_STATE_SELECTOR):
+            assert params[0]["to"] == USDC
+            assert auth["from"].lower().removeprefix("0x") in data.lower()
+            assert auth["nonce"].removeprefix("0x").lower() in data.lower()
+            return "0x" + "0" * 63 + "1"
+        raise AssertionError(f"unexpected call {data}")
+
+    assert verify_payment(
+        {"X-PAYMENT": _encode(payload)}, require=True, transport=transport
+    ) is False
+    assert calls and calls[0].startswith(AUTHORIZATION_STATE_SELECTOR)
+
+
+def test_chain_checks_opt_in_rejects_zero_balance(monkeypatch):
+    """Opt-in + unused nonce but balanceOf == 0 → refuse."""
+    _enable_chain_checks(monkeypatch)
+    payload = _signed_payload()
+
+    def transport(_url: str, method: str, params: list):
+        assert method == "eth_call"
+        data = params[0]["data"]
+        if data.startswith(AUTHORIZATION_STATE_SELECTOR):
+            return "0x" + "0" * 64
+        if data.startswith(BALANCE_OF_SELECTOR):
+            return "0x" + "0" * 64
+        raise AssertionError(data)
+
+    assert verify_payment(
+        {"X-PAYMENT": _encode(payload)}, require=True, transport=transport
+    ) is False
+
+
+def test_chain_checks_opt_in_rpc_error_fails_closed(monkeypatch):
+    """Opt-in + RPC error/timeout → refuse; do not pass an unchecked payment."""
+    _enable_chain_checks(monkeypatch)
+    payload = _signed_payload()
+
+    def transport(_url: str, _method: str, _params: list):
+        raise ChainReconcileError("rpc_transport_error:TimeoutError")
+
+    assert verify_payment(
+        {"X-PAYMENT": _encode(payload)}, require=True, transport=transport
+    ) is False
+
+
+def test_chain_checks_opt_out_does_not_consult_chain(monkeypatch):
+    """Opt-in off: even a failing RPC is never consulted. Witness stays meaningful."""
+    monkeypatch.delenv(ENV_CHAIN_CHECKS, raising=False)
+    monkeypatch.setenv(ENV_RPC_URL, "https://rpc.example")
+    called: list[str] = []
+
+    def transport(_url: str, method: str, _params: list):
+        called.append(method)
+        raise RuntimeError("rpc would fail")
+
+    payload = _signed_payload()
+    assert verify_payment(
+        {"X-PAYMENT": _encode(payload)}, require=True, transport=transport
+    ) is True
+    assert verify_payment(
+        {"X-PAYMENT": _encode(payload)}, require=True, transport=transport
+    ) is True
+    assert called == []
+
+
+def test_chain_checks_opt_in_without_rpc_fails_closed(monkeypatch):
+    """Flag on but no VERITAS_RPC_URL: cannot check, so refuse."""
+    monkeypatch.setenv(ENV_CHAIN_CHECKS, "1")
+    monkeypatch.delenv(ENV_RPC_URL, raising=False)
+    payload = _signed_payload()
+    assert verify_payment({"X-PAYMENT": _encode(payload)}, require=True) is False
+
+
+def test_chain_checks_opt_in_accepts_unused_nonce_and_balance(monkeypatch):
+    """Opt-in + unused nonce + balance >= value → still accept."""
+    _enable_chain_checks(monkeypatch)
+    payload = _signed_payload()
+
+    def transport(_url: str, method: str, params: list):
+        assert method == "eth_call"
+        data = params[0]["data"]
+        if data.startswith(AUTHORIZATION_STATE_SELECTOR):
+            return "0x" + "0" * 64
+        if data.startswith(BALANCE_OF_SELECTOR):
+            return hex(10_000)
+        raise AssertionError(data)
+
+    assert verify_payment(
+        {"X-PAYMENT": _encode(payload)}, require=True, transport=transport
+    ) is True
 
 
 def test_control_plane_price_follows_payment_config(tmp_path, monkeypatch):

@@ -79,13 +79,22 @@ def money_client(tmp_path, monkeypatch):
     control.ledger = server.ledger
     monkeypatch.setattr(server, "get_facilitator", lambda *a, **k: control)
 
-    real_run = server.run_research
-
     def counting_run(query, **kwargs):
         control.work_calls += 1
-        return real_run(query, allow_network=False, **kwargs)
+        return [
+            {
+                "venue": "polymarket",
+                "market_id": "m-x402",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-x402",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ]
 
-    monkeypatch.setattr(server, "run_research", counting_run)
+    monkeypatch.setattr(server, "pull_signals", counting_run)
     return server, TestClient(server.app), control
 
 
@@ -109,7 +118,7 @@ def test_a_payload_with_no_usable_nonce_never_reaches_the_facilitator(money_clie
                  base64.b64encode(json.dumps({"payload": {}}).encode()).decode(),
                  base64.b64encode(json.dumps(
                      {"payload": {"authorization": {"nonce": "0xzz"}}}).encode()).decode()):
-        client.post("/v1/research", json=BODY, headers={"X-PAYMENT": junk})
+        client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": junk})
 
     assert len(control.verify_calls) == calls_before
 
@@ -117,7 +126,7 @@ def test_a_payload_with_no_usable_nonce_never_reaches_the_facilitator(money_clie
 def test_a_missing_nonce_is_named_before_verification(money_client):
     _server, client, _control = money_client
     naked = base64.b64encode(json.dumps({"x402Version": 1, "scheme": "exact"}).encode()).decode()
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": naked})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": naked})
     assert response.status_code == 409
     assert response.json()["error"] == "payment_nonce_missing"
 
@@ -127,7 +136,7 @@ def test_a_malformed_nonce_is_named_before_verification(money_client):
     header = base64.b64encode(json.dumps({
         "payload": {"authorization": {"nonce": "0x' OR 1=1 --"}},
     }).encode()).decode()
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": header})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": header})
     assert response.status_code == 409
     assert response.json()["error"] == "payment_nonce_malformed"
 
@@ -135,7 +144,7 @@ def test_a_malformed_nonce_is_named_before_verification(money_client):
 def test_settlement_is_recorded_durably(money_client):
     """G8/R5. The transaction hash used to exist only in the response."""
     server, client, _control = money_client
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     assert response.status_code == 200, response.text
     request_id = response.json()["request_id"]
 
@@ -148,7 +157,7 @@ def test_settlement_is_recorded_durably(money_client):
 def test_revenue_is_answerable_from_the_ledger_alone(money_client):
     server, client, _control = money_client
     for nonce in (NONCE, OTHER_NONCE):
-        assert client.post("/v1/research", json=BODY,
+        assert client.post("/v1/signals", json=BODY,
                            headers={"X-PAYMENT": _header(nonce)}).status_code == 200
     summary = server.ledger.summary()
     assert summary["settled_count"] == 2
@@ -159,7 +168,7 @@ def test_revenue_is_answerable_from_the_ledger_alone(money_client):
 def test_the_nonce_is_joined_to_the_request_it_burned_for(money_client):
     """R6. `claim` accepted a request_id no caller ever passed."""
     server, client, _control = money_client
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     assert server.ledger.authorization(NONCE).request_id == response.json()["request_id"]
 
 
@@ -167,7 +176,7 @@ def test_delivery_is_durable_before_settlement_is_attempted(money_client):
     """A crash between the two must leave a record that we owe the buyer,
     not silence. The facilitator stub reads the ledger as it is called."""
     _server, client, control = money_client
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     assert control.owed_at_settle_time == [response.json()["request_id"]]
 
 
@@ -180,13 +189,13 @@ def test_replayed_authorization_returns_the_deliverable_it_paid_for(money_client
     _server, client, control = money_client
     headers = {"X-PAYMENT": _header()}
 
-    first = client.post("/v1/research", json=BODY, headers=headers)
+    first = client.post("/v1/signals", json=BODY, headers=headers)
     assert first.status_code == 200
 
-    second = client.post("/v1/research", json=BODY, headers=headers)
+    second = client.post("/v1/signals", json=BODY, headers=headers)
     assert second.status_code == 200, second.text
     assert second.json()["request_id"] == first.json()["request_id"]
-    assert second.json()["claims"] == first.json()["claims"]
+    assert second.json()["signals"] == first.json()["signals"]
     assert second.json()["payment"]["replayed"] is True
     assert second.json()["payment"]["transaction"] == "0xdeadbeef"
 
@@ -196,8 +205,8 @@ def test_a_replay_does_not_run_the_work_again(money_client):
     retrieval pass we are not paid twice for must not run twice."""
     _server, client, control = money_client
     headers = {"X-PAYMENT": _header()}
-    client.post("/v1/research", json=BODY, headers=headers)
-    client.post("/v1/research", json=BODY, headers=headers)
+    client.post("/v1/signals", json=BODY, headers=headers)
+    client.post("/v1/signals", json=BODY, headers=headers)
     assert control.work_calls == 1
 
 
@@ -206,8 +215,8 @@ def test_a_replay_does_not_settle_again(money_client):
     second facilitator call for money that already moved."""
     server, client, _control = money_client
     headers = {"X-PAYMENT": _header()}
-    request_id = client.post("/v1/research", json=BODY, headers=headers).json()["request_id"]
-    client.post("/v1/research", json=BODY, headers=headers)
+    request_id = client.post("/v1/signals", json=BODY, headers=headers).json()["request_id"]
+    client.post("/v1/signals", json=BODY, headers=headers)
     assert len(server.ledger.settlements(request_id)) == 1
 
 
@@ -219,9 +228,9 @@ def test_a_replay_asking_a_different_question_is_refused(money_client):
     `query`, which a client has no reason to do on a success."""
     _server, client, control = money_client
     headers = {"X-PAYMENT": _header()}
-    client.post("/v1/research", json=BODY, headers=headers)
+    client.post("/v1/signals", json=BODY, headers=headers)
 
-    other = client.post("/v1/research", json={"query": "What is EIP-3009?"},
+    other = client.post("/v1/signals", json={"query": "What is EIP-3009?"},
                         headers=headers)
     assert other.status_code == 409
     assert other.json()["error"] == "payment_authorization_bound_to_another_request"
@@ -232,17 +241,17 @@ def test_the_mismatch_refusal_names_the_request_the_authorization_bought(money_c
     """So the buyer can retry with the right question rather than guess."""
     _server, client, _control = money_client
     headers = {"X-PAYMENT": _header()}
-    first = client.post("/v1/research", json=BODY, headers=headers)
-    other = client.post("/v1/research", json={"query": "What is EIP-3009?"},
+    first = client.post("/v1/signals", json=BODY, headers=headers)
+    other = client.post("/v1/signals", json={"query": "What is EIP-3009?"},
                         headers=headers)
     assert other.json()["request_id"] == first.json()["request_id"]
 
 
 def test_a_fresh_nonce_still_works_after_a_replay(money_client):
     _server, client, control = money_client
-    client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
-    client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
-    third = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header(OTHER_NONCE)})
+    client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
+    client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
+    third = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header(OTHER_NONCE)})
     assert third.status_code == 200
     assert control.work_calls == 2
 
@@ -256,19 +265,19 @@ def test_indeterminate_settlement_delivers_and_says_so(money_client):
     server, client, control = money_client
     control.settle_result = SettlementResult(False, error_reason="facilitator_timeout")
 
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     assert response.status_code == 200, response.text
     payment = response.json()["payment"]
     assert payment["settled"] is False
     assert payment["state"] == "indeterminate"
-    assert response.json()["claims"], "the deliverable must still be delivered"
+    assert response.json()["signals"], "the deliverable must still be delivered"
     assert server.ledger.authorization(NONCE).state == NonceState.INDETERMINATE
 
 
 def test_indeterminate_settlement_is_visible_as_exposure(money_client):
     server, client, control = money_client
     control.settle_result = SettlementResult(False, error_reason="facilitator_bad_response")
-    client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     summary = server.ledger.summary()
     assert summary["indeterminate_count"] == 1
     assert summary["failed_count"] == 0
@@ -281,7 +290,7 @@ def test_definite_settlement_failure_returns_402_and_is_recorded(money_client):
     server, client, control = money_client
     control.settle_result = SettlementResult(False, error_reason="insufficient_funds")
 
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     assert response.status_code == 402
     assert response.json()["error"] == "settlement_failed"
     assert server.ledger.authorization(NONCE).state == NonceState.SETTLEMENT_FAILED
@@ -294,10 +303,10 @@ def test_a_failed_settlement_can_be_retried_and_is_appended(money_client):
     server, client, control = money_client
     headers = {"X-PAYMENT": _header()}
     control.settle_result = SettlementResult(False, error_reason="insufficient_funds")
-    assert client.post("/v1/research", json=BODY, headers=headers).status_code == 402
+    assert client.post("/v1/signals", json=BODY, headers=headers).status_code == 402
 
     control.settle_result = SettlementResult(True, transaction="0xlater")
-    second = client.post("/v1/research", json=BODY, headers=headers)
+    second = client.post("/v1/signals", json=BODY, headers=headers)
     assert second.status_code == 200, second.text
     request_id = second.json()["request_id"]
     assert [e["outcome"] for e in server.ledger.settlements(request_id)] == [
@@ -309,26 +318,19 @@ def test_a_failed_settlement_can_be_retried_and_is_appended(money_client):
 # -- our own failures are never billed --------------------------------------
 
 
-def test_retrieval_failure_abandons_the_authorization_and_never_settles(money_client):
+def test_venue_failure_abandons_the_authorization_and_never_settles(money_client):
     """Invariant 3: never bill for our own failure. The ledger enforces it
     rather than trusting the handler to skip the settle call."""
+    from veritas.signals import SignalsError
+
     server, client, control = money_client
-
-    class _Broken:
-        name = "broken"
-
-        def retrieve(self, query, max_results=5):
-            raise ConnectionError("simulated outage")
-
-    from veritas.pipeline import run_research as real
 
     def failing(query, **kwargs):
         control.work_calls += 1
-        return real(query, retriever=_Broken(), **{k: v for k, v in kwargs.items()
-                                                   if k != "allow_network"})
+        raise SignalsError("venues_unavailable:down")
 
-    server.run_research = failing
-    response = client.post("/v1/research", json=BODY, headers={"X-PAYMENT": _header()})
+    server.pull_signals = failing
+    response = client.post("/v1/signals", json=BODY, headers={"X-PAYMENT": _header()})
     assert response.status_code == 503
     assert response.json()["billable"] is False
     assert server.ledger.authorization(NONCE).state == NonceState.ABANDONED
@@ -343,10 +345,22 @@ def test_free_mode_writes_nothing_to_the_financial_ledger(tmp_path, monkeypatch)
     import veritas.server as server
     importlib.reload(server)
 
-    from veritas.pipeline import run_research as real
     monkeypatch.setattr(
-        server, "run_research", lambda query, **kw: real(query, allow_network=False, **kw)
+        server,
+        "pull_signals",
+        lambda query, **kw: [
+            {
+                "venue": "polymarket",
+                "market_id": "m-free",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-free",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ],
     )
     client = TestClient(server.app)
-    assert client.post("/v1/research", json=BODY).status_code == 200
+    assert client.post("/v1/signals", json=BODY).status_code == 200
     assert server.ledger.summary()["deliveries"] == 0

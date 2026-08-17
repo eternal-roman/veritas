@@ -1,14 +1,9 @@
-"""Veritas Research - High-assurance evidenced research for agents."""
+"""Veritas — prediction-market catalog, x402 settlement, verifiable observe."""
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
-# BayesianBelief is deliberately NOT re-exported. The served pipeline publishes
-# support counts (veritas.support), not a posterior; re-exporting the old
-# module at package root kept advertising a capability the product path dropped.
 from .custody import CustodyEvent, CustodyLedger, CustodyStore, verify_chain_records
 from .hashing import compute_content_hash, normalize_content, verify_content_hash
-from .pipeline import run_research
-from .retrieval import RetrievalError, RetrievalResult, StaticCorpusRetriever, default_retriever
 from .schema import Status, validate_response
 
 __all__ = [
@@ -21,9 +16,4 @@ __all__ = [
     "verify_chain_records",
     "Status",
     "validate_response",
-    "RetrievalResult",
-    "RetrievalError",
-    "StaticCorpusRetriever",
-    "default_retriever",
-    "run_research",
 ]

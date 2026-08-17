@@ -1,7 +1,4 @@
-"""Agent-native layer: zero-key retrieval, wallet self-provisioning,
-and the local facilitator simulator.
+"""Agent-native layer: wallet self-provisioning and the local facilitator.
 
-This subpackage adds agent-facing concerns on top of the core engine in
-`veritas`. It never reimplements the research pipeline — there is exactly one
-engine (`veritas.pipeline`).
+Catalog pull lives in ``veritas.signals``. There is no research engine.
 """

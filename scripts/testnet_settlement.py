@@ -108,7 +108,7 @@ def main() -> int:
         print(json.dumps(report, indent=2))
         return 1
 
-    status, body, hdrs = http_json("POST", f"{BASE_URL}/v1/research", {"query": QUERY})
+    status, body, hdrs = http_json("POST", f"{BASE_URL}/v1/signals", {"query": QUERY})
     challenge: dict[str, Any] = {
         "step": "unpaid_challenge",
         "http_status": status,
@@ -145,7 +145,7 @@ def main() -> int:
 
     paid_status, paid_body, paid_hdrs = http_json(
         "POST",
-        f"{BASE_URL}/v1/research",
+        f"{BASE_URL}/v1/signals",
         {"query": QUERY},
         headers={"X-PAYMENT": x_payment},
     )

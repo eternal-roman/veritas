@@ -32,7 +32,7 @@ def test_well_known_is_self_traversing(free_client):
     body = free_client.get("/.well-known/x402").json()
     links = body["links"]
     for name in ("identity", "trust", "constitution", "errors", "schema",
-                 "openapi", "llms", "hooks", "research", "verify",
+                 "openapi", "llms", "hooks", "signals", "verify",
                  "payment_config"):
         assert name in links, f"well-known does not link {name}"
     for name, path in links.items():
@@ -114,7 +114,7 @@ def test_identity_with_public_url_is_absolute(free_client, tmp_path, monkeypatch
     client = TestClient(main_module.app)
     body = client.get("/v1/identity").json()
     assert body["base_url_configured"] is True
-    assert body["endpoints"]["research"] == "https://research.example.org/v1/research"
+    assert body["endpoints"]["signals"] == "https://research.example.org/v1/signals"
 
 
 def test_llms_txt_served_and_in_sync_with_repo_root(free_client):

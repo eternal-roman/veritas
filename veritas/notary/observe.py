@@ -1,7 +1,7 @@
 """Compose fetch → extract → record(+policy) into one observation.
 
 This is the sole URL-observation entry for the notary product surface and for
-research when it needs an observed page (``pipeline.run_research`` routes
+observe-once when it needs an observed page (notary is the URL observe path;
 through here rather than growing a parallel scraper — N0-A / A1).
 
 Unavailable / transport failure is non-billable. Robots deny and unknown are

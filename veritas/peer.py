@@ -27,7 +27,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit
 
 from veritas import __version__
 from veritas.hashing import compute_content_hash
@@ -214,6 +214,122 @@ def _default_fetch(
         return response.read(MAX_DOCUMENT_BYTES + 1)
 
 
+def _tls_client_context() -> ssl.SSLContext:
+    """Trust nothing from a public CA. Identity is the peer-card pin."""
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+    return context
+
+
+def _fetch_with_peer_cert(
+    url: str,
+    timeout: int = DEFAULT_TIMEOUT_SECONDS,
+    *,
+    allow_local: bool = False,
+    resolver=None,
+) -> tuple[bytes, bytes | None]:
+    """GET a URL and return ``(body, presented_cert_der_or_none)``.
+
+    HTTPS uses a context that does **not** consult a public CA. The
+    caller pins the DER against the peer card. HTTP is LAN-only
+    (``allow_local``) and returns no cert.
+    """
+    require_http_url(url)
+    assert_connect_destination(url, allow_local=allow_local, resolver=resolver)
+    parts = urlsplit(url)
+    if parts.scheme != "https":
+        return _default_fetch(
+            url, timeout, allow_local=allow_local, resolver=resolver
+        ), None
+    import http.client
+
+    host = parts.hostname or ""
+    port = parts.port or 443
+    path = parts.path or "/"
+    if parts.query:
+        path = f"{path}?{parts.query}"
+    connection = http.client.HTTPSConnection(
+        host,
+        port,
+        timeout=timeout,
+        context=_tls_client_context(),
+    )
+    try:
+        connection.request(
+            "GET",
+            path,
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+        )
+        response = connection.getresponse()
+        if response.status in {301, 302, 303, 307, 308}:
+            location = response.getheader("Location")
+            if not location:
+                raise urllib.error.URLError("https redirect without Location")
+            assert_connect_destination(
+                location, allow_local=allow_local, resolver=resolver
+            )
+            redirected = urlsplit(location)
+            if redirected.scheme != "https":
+                raise urllib.error.URLError("https redirect left TLS")
+            return _fetch_with_peer_cert(
+                location,
+                timeout,
+                allow_local=allow_local,
+                resolver=resolver,
+            )
+        body = response.read(MAX_DOCUMENT_BYTES + 1)
+        sock = connection.sock
+        cert_der = sock.getpeercert(binary_form=True) if sock is not None else None
+    finally:
+        connection.close()
+    return body, cert_der if isinstance(cert_der, bytes) else None
+
+
+def apply_tls_pin(
+    card: dict[str, Any],
+    cert_der: bytes | None,
+    *,
+    injected: bool,
+    allow_local: bool,
+    url: str,
+) -> str | None:
+    """Return an error string when the mesh TLS pin fails.
+
+    Injected fetchers (tests) skip the pin unless ``cert_der`` is supplied.
+    A public HTTPS peer that advertises no ``tls`` block is refused — we
+    do not fall back to a public CA. LAN ``--allow-local`` may skip.
+    """
+    tls = card.get("tls") if isinstance(card.get("tls"), dict) else None
+    fingerprint = tls.get("fingerprint") if tls else None
+    advertised = isinstance(fingerprint, str) and fingerprint.startswith("sha256:")
+    if advertised:
+        if cert_der is None:
+            if injected:
+                return None
+            return "tls advertised but no presented certificate"
+        from veritas.peer_tls import verify_presented_cert
+
+        binding = tls.get("binding") if isinstance(tls.get("binding"), str) else None
+        expected = card.get("commerce_address")
+        if not isinstance(expected, str):
+            expected = None
+        ok, reason = verify_presented_cert(
+            cert_der,
+            fingerprint=fingerprint,
+            binding=binding,
+            expected_address=expected,
+        )
+        if not ok:
+            return f"tls pin failed: {reason}"
+        return None
+    if injected or allow_local:
+        return None
+    if urlsplit(url).scheme == "https":
+        return "peer_tls_required"
+    return None
+
+
 def _http_status(exc: BaseException) -> int | None:
     code = getattr(exc, "code", None)
     return code if isinstance(code, int) else None
@@ -353,15 +469,25 @@ def connect(
     fetcher: Fetcher | None = None,
     base_dir: Path | str | None = None,
     resolver=None,
+    presented_der: bytes | None = None,
 ) -> dict[str, Any]:
     """Fetch another agent's card and persist it in the local book.
 
     Returns a structured result. Does not raise into a caller path.
-    Does not require ``VERITAS_PUBLIC_URL``.
+    Does not require ``VERITAS_PUBLIC_URL``. When the card advertises
+    ``tls.fingerprint``, the presented certificate is pinned — no public
+    CA is consulted.
     """
-    fetch = fetcher or (
-        lambda url: _default_fetch(url, allow_local=allow_local, resolver=resolver)
-    )
+    captured: dict[str, bytes | None] = {"der": presented_der}
+
+    def fetch(url: str) -> bytes:
+        if fetcher is not None:
+            return fetcher(url)
+        body, der = _fetch_with_peer_cert(
+            url, allow_local=allow_local, resolver=resolver
+        )
+        captured["der"] = der
+        return body
     raw_url = (base_url or "").strip()
     if not raw_url:
         return _fail("refused", "empty url")
@@ -392,6 +518,16 @@ def connect(
         code = "unreachable" if status != 200 else "unparseable"
         return _fail(code, error or "could not read a peer card", base_url=base)
 
+    pin_error = apply_tls_pin(
+        card,
+        captured.get("der") if isinstance(captured.get("der"), bytes) else presented_der,
+        injected=fetcher is not None,
+        allow_local=allow_local,
+        url=base,
+    )
+    if pin_error:
+        return _fail("refused", pin_error, base_url=base)
+
     identity_hash = card.get("identity_hash")
     if not isinstance(identity_hash, str) or not identity_hash.strip():
         identity_hash = None
@@ -404,6 +540,9 @@ def connect(
     }
     if identity_hash:
         record["identity_hash"] = identity_hash
+    tls = card.get("tls") if isinstance(card.get("tls"), dict) else None
+    if tls and isinstance(tls.get("fingerprint"), str):
+        record["tls"] = {"fingerprint": tls["fingerprint"]}
     try:
         _upsert_peer(record, base_dir)
     except OSError as exc:
@@ -432,7 +571,9 @@ def _signals_url(base: str, query: str | None) -> str:
         return url
     if text.startswith("?"):
         return url + text
-    return url + "?" + text
+    if "=" in text:
+        return url + "?" + text
+    return url + "?q=" + quote(text)
 
 
 def _extract_signals(payload: Any) -> list[Any]:
@@ -475,15 +616,24 @@ def pull_signals(
     base_dir: Path | str | None = None,
     store: SignalStore | None = None,
     resolver=None,
+    presented_der: bytes | None = None,
 ) -> dict[str, Any]:
     """GET another agent's ``/v1/signals`` and store snapshots via SignalStore.
 
     Prices are not interpreted as truth. Failures record ``last_error``
-    on the local book entry when one exists.
+    on the local book entry when one exists. HTTPS peers that advertised
+    a TLS pin on ``connect`` are pinned again here — no public CA.
     """
-    fetch = fetcher or (
-        lambda url: _default_fetch(url, allow_local=allow_local, resolver=resolver)
-    )
+    captured: dict[str, bytes | None] = {"der": presented_der}
+
+    def fetch(url: str) -> bytes:
+        if fetcher is not None:
+            return fetcher(url)
+        body, der = _fetch_with_peer_cert(
+            url, allow_local=allow_local, resolver=resolver
+        )
+        captured["der"] = der
+        return body
     wanted = (peer_id_or_url or "").strip()
     if not wanted:
         return _fail("refused", "empty peer id or url")
@@ -514,6 +664,23 @@ def pull_signals(
         message = error or "signals: empty response"
         _record_last_error(peer_id or base, message, base_dir)
         return _fail("unreachable", message, base_url=base, peer_id=peer_id)
+
+    card = known.get("card") if isinstance(known, dict) else None
+    if not isinstance(card, dict):
+        card = {}
+        pinned = known.get("tls") if isinstance(known, dict) else None
+        if isinstance(pinned, dict) and isinstance(pinned.get("fingerprint"), str):
+            card = {"tls": {"fingerprint": pinned["fingerprint"]}}
+    pin_error = apply_tls_pin(
+        card,
+        captured.get("der") if isinstance(captured.get("der"), bytes) else presented_der,
+        injected=fetcher is not None,
+        allow_local=allow_local,
+        url=base,
+    )
+    if pin_error:
+        _record_last_error(peer_id or base, pin_error, base_dir)
+        return _fail("refused", pin_error, base_url=base, peer_id=peer_id)
 
     items = _extract_signals(payload)
     # SignalStore lives under the runtime dir (evidence + signals.sqlite3),

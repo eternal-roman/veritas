@@ -15,10 +15,9 @@ from pathlib import Path
 
 import pytest
 
-from veritas.custody import verify_chain_records
+from veritas.custody import CustodyLedger, verify_chain_records
 from veritas.hashing import compute_content_hash as engine_hash
 from veritas.hashing import normalize_content as engine_normalize
-from veritas.pipeline import run_research
 from veritas.verifier import (
     EXIT_INVALID,
     EXIT_UNREADABLE,
@@ -35,7 +34,40 @@ VERIFIER_PATH = Path(__file__).resolve().parent.parent / "veritas" / "verifier.p
 
 @pytest.fixture
 def response():
-    return run_research("What is x402?", allow_network=False)
+    excerpt = "catalog snapshot body"
+    digest = engine_hash(excerpt)
+    ledger = CustodyLedger()
+    ledger.append("created", "catalog", {"query": "fed"})
+    ledger.append("delivered", "catalog", {"hash": digest})
+    return {
+        "request_id": "v1",
+        "status": "completed",
+        "query": "fed",
+        "claims": [
+            {
+                "id": "c1",
+                "statement": excerpt,
+                "evidence_hash": digest,
+                "source_url": "https://example.test/m",
+            }
+        ],
+        "evidence": [
+            {
+                "url": "https://example.test/m",
+                "excerpt": excerpt,
+                "content_hash": digest,
+            }
+        ],
+        "custody_root": ledger.root_hash(),
+        "custody_valid": True,
+        "custody_chain": ledger.to_list(),
+        "support": {"n_evidence": 1},
+        "attests": "fixture",
+        "retrieval": {},
+        "refusal_reason": None,
+        "billable": True,
+        "timestamp": "2026-08-17T00:00:00Z",
+    }
 
 
 # -- it must actually be standalone -----------------------------------------
@@ -123,7 +155,7 @@ def test_chain_verdict_matches_the_engine_on_a_rehashed_forgery(response):
 
 def test_chain_verdict_matches_the_engine_on_a_dropped_event(response):
     tampered = copy.deepcopy(response["custody_chain"])
-    del tampered[1]
+    del tampered[0]
     assert verify_chain(tampered).valid is verify_chain_records(tampered) is False
 
 

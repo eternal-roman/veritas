@@ -71,14 +71,14 @@ def test_operator_snapshot_has_account(free_client):
 
     posted = free_client.post(
         "/v1/operator/enroll",
-        json={"agent_id": "viewer", "interests": "research,ops"},
+        json={"agent_id": "viewer", "interests": "signals,ops"},
     )
     assert posted.status_code == 200
     body = posted.json()
     assert body["agent_id"] == "viewer"
     assert "visa" not in body
     ids = {s["id"] for s in body["skills"]}
-    assert "research" in ids and "ops" in ids
+    assert "signals" in ids and "ops" in ids
 
     snap = free_client.get("/v1/operator").json()
     assert snap["account"]["enrolled"] is True

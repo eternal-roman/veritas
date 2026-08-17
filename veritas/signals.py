@@ -20,13 +20,14 @@ Hosts are allowlisted. Fetches go through ``require_http_url`` and
 allowlist. A caller cannot steer us at an internal address by supplying
 a venue name.
 
-Writes never raise into a paid research path: a full disk or a dead
-venue is a miss, not a crash.
+Writes never raise into a paid path: a full disk or a dead venue is a
+miss, not a crash. A search miss is empty, not an unfiltered book dump.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import urllib.error
 import urllib.parse
@@ -38,7 +39,6 @@ from typing import Any
 from veritas import __version__
 from veritas.evidence_store import EvidenceStore, is_safe_content_hash
 from veritas.hashing import compute_content_hash
-from veritas.retrieval import RetrievalError, RetrievalResult
 from veritas.runtime import resolve_runtime_dir
 from veritas.safeurl import UnsafeUrlError, assert_public_destination, require_http_url
 from veritas.store import StoreUnavailable, connect_target, parse_database_url
@@ -47,6 +47,10 @@ METHOD = "veritas.signals.v1"
 USER_AGENT = f"veritas-signals/{__version__}"
 FETCH_TIMEOUT_SECONDS = 8.0
 MAX_MARKETS = 8
+MAX_PAGES = 5
+MAX_LIST = 100
+WATCHLIST_ENV = "VERITAS_SIGNALS_WATCHLIST"
+OPEN_BOOK_TOKEN = "*"
 
 VENUE_POLYMARKET = "polymarket"
 VENUE_KALSHI = "kalshi"
@@ -325,53 +329,95 @@ def _finish_signals(raw_items: list[Any], *, venue_norm, limit: int) -> list[dic
     return out
 
 
+def _kalshi_blob(item: dict[str, Any]) -> str:
+    return " ".join(
+        str(item.get(key) or "")
+        for key in ("title", "ticker", "yes_sub_title", "subtitle", "event_ticker")
+    ).lower()
+
+
 def pull_polymarket(
-    query: str, *, limit: int = MAX_MARKETS, opener: Any = None
+    query: str,
+    *,
+    limit: int = MAX_MARKETS,
+    opener: Any = None,
+    dump_book: bool = False,
 ) -> list[dict[str, Any]]:
+    """Search Polymarket. A miss is empty — never an unfiltered open book.
+
+    ``dump_book=True`` is the explicit ingest path (watchlist ``*``).
+    """
     spec = VENUE_ENDPOINTS[VENUE_POLYMARKET]
-    q = urllib.parse.quote(query.strip())
-    markets: list[Any] = []
-    try:
+    cap = max(1, min(int(limit), MAX_MARKETS))
+    text = (query or "").strip()
+    if dump_book and not text:
         payload = fetch_json(
-            f"{spec['search']}?q={q}&limit={int(limit)}", opener=opener
-        )
-        markets = _markets_from_polymarket_payload(payload)
-    except SignalsError:
-        markets = []
-    if not markets:
-        payload = fetch_json(
-            f"{spec['markets']}?closed=false&limit={int(limit)}",
+            f"{spec['markets']}?closed=false&limit={cap}",
             opener=opener,
         )
         markets = _markets_from_polymarket_payload(payload)
-    return _finish_signals(markets, venue_norm=_normalize_polymarket, limit=limit)
+        return _finish_signals(markets, venue_norm=_normalize_polymarket, limit=cap)
+    if not text:
+        return []
+    payload = fetch_json(
+        f"{spec['search']}?q={urllib.parse.quote(text)}&limit={cap}",
+        opener=opener,
+    )
+    markets = _markets_from_polymarket_payload(payload)
+    return _finish_signals(markets, venue_norm=_normalize_polymarket, limit=cap)
 
 
 def pull_kalshi(
-    query: str, *, limit: int = MAX_MARKETS, opener: Any = None
+    query: str,
+    *,
+    limit: int = MAX_MARKETS,
+    opener: Any = None,
+    dump_book: bool = False,
 ) -> list[dict[str, Any]]:
+    """Page Kalshi open markets until ``limit`` matches or ``MAX_PAGES``.
+
+    Client-side token filter. A miss is empty, not the open book, unless
+    ``dump_book=True`` (watchlist ``*``).
+    """
     spec = VENUE_ENDPOINTS[VENUE_KALSHI]
-    payload = fetch_json(
-        f"{spec['markets']}?limit={int(limit)}&status=open",
-        opener=opener,
-    )
-    markets = payload.get("markets") if isinstance(payload, dict) else payload
-    if not isinstance(markets, list):
-        markets = []
-    tokens = {tok for tok in query.lower().split() if len(tok) >= 2}
-    if not tokens:
+    cap = max(1, min(int(limit), MAX_MARKETS))
+    tokens = {tok for tok in (query or "").lower().split() if len(tok) >= 2}
+    if not dump_book and not tokens:
         return []
-    filtered = []
-    for item in markets:
-        if not isinstance(item, dict):
-            continue
-        blob = " ".join(
-            str(item.get(key) or "")
-            for key in ("title", "ticker", "yes_sub_title", "subtitle", "event_ticker")
-        ).lower()
-        if any(tok in blob for tok in tokens):
-            filtered.append(item)
-    return _finish_signals(filtered, venue_norm=_normalize_kalshi, limit=limit)
+    raw_items: list[Any] = []
+    cursor: str | None = None
+    page_size = min(200, max(cap, 8))
+    for _ in range(MAX_PAGES):
+        url = f"{spec['markets']}?limit={page_size}&status=open"
+        if cursor:
+            url += f"&cursor={urllib.parse.quote(str(cursor))}"
+        payload = fetch_json(url, opener=opener)
+        page = payload.get("markets") if isinstance(payload, dict) else payload
+        if not isinstance(page, list):
+            page = []
+        raw_items.extend(item for item in page if isinstance(item, dict))
+        if not dump_book and tokens:
+            matched = sum(
+                1
+                for item in raw_items
+                if isinstance(item, dict)
+                and any(tok in _kalshi_blob(item) for tok in tokens)
+            )
+            if matched >= cap:
+                break
+        elif dump_book and len(raw_items) >= cap:
+            break
+        cursor = payload.get("cursor") if isinstance(payload, dict) else None
+        if not cursor or not page:
+            break
+    if dump_book:
+        return _finish_signals(raw_items, venue_norm=_normalize_kalshi, limit=cap)
+    filtered = [
+        item
+        for item in raw_items
+        if isinstance(item, dict) and any(tok in _kalshi_blob(item) for tok in tokens)
+    ]
+    return _finish_signals(filtered, venue_norm=_normalize_kalshi, limit=cap)
 
 
 def pull(
@@ -380,10 +426,14 @@ def pull(
     venues: list[str] | None = None,
     limit: int = MAX_MARKETS,
     opener: Any = None,
+    dump_book: bool = False,
 ) -> list[dict[str, Any]]:
-    """Pull snapshots from the named venues. Unknown venues are refused."""
+    """Pull snapshots from the named venues. Unknown venues are refused.
+
+    Each venue is capped separately so a Polymarket hit does not hide Kalshi.
+    """
     text = (query or "").strip()
-    if not text:
+    if not dump_book and not text:
         raise SignalsError("query_empty")
     wanted = list(venues) if venues else [VENUE_POLYMARKET, VENUE_KALSHI]
     for venue in wanted:
@@ -395,14 +445,67 @@ def pull(
     for venue in wanted:
         try:
             if venue == VENUE_POLYMARKET:
-                collected.extend(pull_polymarket(text, limit=cap, opener=opener))
+                collected.extend(
+                    pull_polymarket(
+                        text, limit=cap, opener=opener, dump_book=dump_book
+                    )
+                )
             else:
-                collected.extend(pull_kalshi(text, limit=cap, opener=opener))
+                collected.extend(
+                    pull_kalshi(text, limit=cap, opener=opener, dump_book=dump_book)
+                )
         except SignalsError as exc:
             errors.append(f"{venue}:{exc}")
     if not collected and errors:
         raise SignalsError("venues_unavailable:" + ",".join(errors))
-    return collected[:cap]
+    return collected
+
+
+def ingest(
+    queries: list[str] | None = None,
+    *,
+    venues: list[str] | None = None,
+    limit: int = MAX_MARKETS,
+    opener: Any = None,
+    store: SignalStore | None = None,
+) -> dict[str, Any]:
+    """Pull a watchlist into the catalog. ``*`` means the open-book dump.
+
+    Queries come from ``queries`` or ``VERITAS_SIGNALS_WATCHLIST`` (comma
+    separated). Empty watchlist is refused rather than inventing a universe.
+    """
+    wanted = [q.strip() for q in (queries or []) if isinstance(q, str) and q.strip()]
+    if not wanted:
+        raw = (os.getenv(WATCHLIST_ENV) or "").strip()
+        wanted = [part.strip() for part in raw.split(",") if part.strip()]
+    if not wanted:
+        raise SignalsError("watchlist_empty")
+    target = store or SignalStore()
+    collected: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for query in wanted:
+        dump = query == OPEN_BOOK_TOKEN
+        try:
+            batch = pull(
+                "" if dump else query,
+                venues=venues,
+                limit=limit,
+                opener=opener,
+                dump_book=dump,
+            )
+        except SignalsError as exc:
+            errors.append(f"{query}:{exc}")
+            continue
+        collected.extend(batch)
+    written = target.put_many(collected)
+    return {
+        "method": METHOD,
+        "queries": wanted,
+        "pulled": len(collected),
+        "stored": written,
+        "errors": errors,
+        "note": "market-implied prices, not a verdict",
+    }
 
 
 class SignalStore:
@@ -511,24 +614,36 @@ class SignalStore:
         return body
 
     def list(
-        self, *, venue: str | None = None, limit: int = 20
+        self,
+        *,
+        venue: str | None = None,
+        q: str | None = None,
+        limit: int = 20,
     ) -> list[dict[str, Any]]:
-        cap = max(1, min(int(limit), 50))
+        """Latest snapshot per (venue, market_id). Optional store-side ``q``."""
+        cap = max(1, min(int(limit), MAX_LIST))
+        needle = (q or "").strip().lower()
+        sql = (
+            "SELECT body, content_hash, venue, market_id, question, observed_at "
+            "FROM ("
+            " SELECT body, content_hash, venue, market_id, question, observed_at,"
+            " ROW_NUMBER() OVER ("
+            "  PARTITION BY venue, market_id ORDER BY observed_at DESC"
+            " ) AS rn"
+            " FROM signal_snapshots"
+            ") ranked WHERE rn = 1"
+        )
+        params: list[Any] = []
+        if venue:
+            sql += " AND venue = ?"
+            params.append(venue)
+        sql += " ORDER BY observed_at DESC LIMIT ?"
+        # Over-fetch when filtering in process so ``q`` still sees a catalog.
+        params.append(cap if not needle else min(MAX_LIST, cap * 8))
         conn = None
         try:
             conn = self._connect()
-            if venue:
-                rows = conn.execute(
-                    "SELECT body, content_hash FROM signal_snapshots "
-                    "WHERE venue = ? ORDER BY observed_at DESC LIMIT ?",
-                    (venue, cap),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT body, content_hash FROM signal_snapshots "
-                    "ORDER BY observed_at DESC LIMIT ?",
-                    (cap,),
-                ).fetchall()
+            rows = conn.execute(sql, tuple(params)).fetchall()
         except Exception:
             return []
         finally:
@@ -543,7 +658,16 @@ class SignalStore:
             if not isinstance(parsed, dict):
                 continue
             parsed["content_hash"] = row["content_hash"]
+            if needle:
+                blob = (
+                    f"{parsed.get('question') or ''} "
+                    f"{parsed.get('market_id') or ''}"
+                ).lower()
+                if needle not in blob:
+                    continue
             out.append(parsed)
+            if len(out) >= cap:
+                break
         return out
 
     def history(
@@ -553,17 +677,17 @@ class SignalStore:
         market_id: str,
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        """Time-ordered snapshots for one venue market. Arithmetic input, not a forecast."""
+        """Newest-first snapshots for one venue market. Arithmetic input, not a forecast."""
         if venue not in VENUES or not market_id:
             return []
-        cap = max(1, min(int(limit), 100))
+        cap = max(1, min(int(limit), MAX_LIST))
         conn = None
         try:
             conn = self._connect()
             rows = conn.execute(
                 "SELECT body, content_hash FROM signal_snapshots "
                 "WHERE venue = ? AND market_id = ? "
-                "ORDER BY observed_at ASC LIMIT ?",
+                "ORDER BY observed_at DESC LIMIT ?",
                 (venue, market_id, cap),
             ).fetchall()
         except Exception:
@@ -684,52 +808,3 @@ def as_evidence(signal: dict[str, Any]) -> dict[str, Any]:
             "note": "snapshot of a public venue book; reuse subject to the venue's terms",
         },
     }
-
-
-class PredictionMarketRetriever:
-    """Opt-in retriever. Never registered in ``default_retriever``.
-
-    Tests inject ``opener``. Production callers that want live books
-    construct this explicitly; the research path does not hit venues
-    unless they do.
-    """
-
-    name = "prediction_markets"
-
-    def __init__(
-        self,
-        *,
-        opener: Any = None,
-        venues: list[str] | None = None,
-        store: SignalStore | None = None,
-        persist: bool = True,
-    ) -> None:
-        self.opener = opener
-        self.venues = venues
-        self.store = store
-        self.persist = persist
-
-    def retrieve(self, query: str, max_results: int = 5) -> RetrievalResult:
-        attempted = list(self.venues) if self.venues else [VENUE_POLYMARKET, VENUE_KALSHI]
-        try:
-            signals = pull(
-                query, venues=self.venues, limit=max_results, opener=self.opener
-            )
-        except SignalsError as exc:
-            return RetrievalResult(
-                errors=[RetrievalError(
-                    provider=self.name,
-                    error_type="venue_unavailable",
-                    detail=str(exc)[:200],
-                )],
-                providers_attempted=attempted,
-            )
-        if self.persist:
-            (self.store or SignalStore()).put_many(signals)
-        sources = [as_evidence(s) for s in signals]
-        succeeded = sorted({s.get("venue") for s in signals if s.get("venue")})
-        return RetrievalResult(
-            sources=sources,
-            providers_attempted=attempted,
-            providers_succeeded=succeeded,
-        )

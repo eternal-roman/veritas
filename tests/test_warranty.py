@@ -13,9 +13,9 @@ from __future__ import annotations
 import pytest
 from eth_account import Account
 
+from veritas.custody import CustodyLedger
+from veritas.hashing import compute_content_hash
 from veritas.notary.sign import OperatorSigner, verify_attestation
-from veritas.pipeline import run_research
-from veritas.retrieval import StaticCorpusRetriever
 from veritas.warranty import (
     CLASS_D0,
     CLASS_U,
@@ -44,9 +44,40 @@ def _signer():
 
 @pytest.fixture(scope="module")
 def completed_response():
-    r = run_research("What is the x402 protocol?", retriever=StaticCorpusRetriever())
-    assert r["status"] == "completed"
-    return r
+    excerpt = "Kalshi yes price 0.42 at observe time."
+    digest = compute_content_hash(excerpt)
+    ledger = CustodyLedger()
+    ledger.append("created", "catalog", {"query": "fed"})
+    ledger.append("delivered", "catalog", {"stored": 1})
+    return {
+        "request_id": "w1",
+        "status": "completed",
+        "query": "fed",
+        "claims": [
+            {
+                "id": "c1",
+                "statement": excerpt,
+                "evidence_hash": digest,
+                "source_url": "https://gamma-api.polymarket.com/markets/m",
+            }
+        ],
+        "evidence": [
+            {
+                "url": "https://gamma-api.polymarket.com/markets/m",
+                "excerpt": excerpt,
+                "content_hash": digest,
+            }
+        ],
+        "custody_root": ledger.root_hash(),
+        "custody_valid": True,
+        "custody_chain": ledger.to_list(),
+        "support": {"n_evidence": 1, "verdict": "supported"},
+        "attests": "what this service received from these sources at this time",
+        "retrieval": {},
+        "refusal_reason": None,
+        "billable": True,
+        "timestamp": "2026-08-17T00:00:00Z",
+    }
 
 
 @pytest.fixture

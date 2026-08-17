@@ -1,6 +1,6 @@
 """veritas-agent: plugin-and-play account, wallet, skills, and serving.
 
-    veritas-agent enroll --id <name> --interests research,buy,verify
+    veritas-agent enroll --id <name> --interests signals,buy,verify
     veritas-agent whoami
     veritas-agent up            # sell path (enrolls a default account if needed)
     veritas-buy <seller-url>    # buy path
@@ -223,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
         "--interests",
         default=None,
         help="comma-separated interests mapped onto catalog skills "
-        "(default: research,verify)",
+        "(default: signals,verify)",
     )
     sub.add_parser("whoami", help="print the enrolled account, or how to enroll")
     sub.add_parser("skills", help="print bound skills, or the catalog if not enrolled")

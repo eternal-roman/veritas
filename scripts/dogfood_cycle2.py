@@ -79,14 +79,24 @@ def _build_client(tmp: Path, facilitator):
 
     # Offline retrieval: this cycle is about the money path, and a provider
     # outage would be measuring the sandbox's egress rather than the product.
-    from veritas.pipeline import run_research as real_run
     calls = {"n": 0}
 
     def counting(query, **kwargs):
         calls["n"] += 1
-        return real_run(query, allow_network=False, **kwargs)
+        return [
+            {
+                "venue": "polymarket",
+                "market_id": "m-cycle2",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-cycle2",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ]
 
-    server.run_research = counting
+    server.pull_signals = counting
     return server, TestClient(server.app, raise_server_exceptions=False), calls
 
 
@@ -128,7 +138,7 @@ class Facilitator:
 
 def _challenge(client) -> dict[str, Any]:
     """Do what a buyer does first: ask, and be told the price."""
-    response = client.post("/v1/research", json={"query": QUERY})
+    response = client.post("/v1/signals", json={"query": QUERY})
     assert response.status_code == 402, f"expected a challenge, got {response.status_code}"
     return response.json()["accepts"][0]
 
@@ -154,7 +164,7 @@ def scenario_happy(tmp: Path) -> dict[str, Any]:
     server, client, calls = _build_client(tmp / "happy", Facilitator())
     accepts = _challenge(client)
     header = _pay(accepts, tmp / "happy-journal")
-    response = client.post("/v1/research", json={"query": QUERY},
+    response = client.post("/v1/signals", json={"query": QUERY},
                            headers={"X-PAYMENT": header})
     body = response.json() if response.status_code == 200 else {}
     request_id = body.get("request_id", "")
@@ -186,14 +196,14 @@ def scenario_replay(tmp: Path) -> dict[str, Any]:
     another for the money that already moved."""
     server, client, calls = _build_client(tmp / "replay", Facilitator())
     header = _pay(_challenge(client), tmp / "replay-journal")
-    first = client.post("/v1/research", json={"query": QUERY},
+    first = client.post("/v1/signals", json={"query": QUERY},
                         headers={"X-PAYMENT": header})
-    second = client.post("/v1/research", json={"query": QUERY},
+    second = client.post("/v1/signals", json={"query": QUERY},
                          headers={"X-PAYMENT": header})
     same = (
         first.status_code == 200 and second.status_code == 200
         and first.json()["request_id"] == second.json()["request_id"]
-        and first.json()["claims"] == second.json()["claims"]
+        and first.json()["signals"] == second.json()["signals"]
     )
     ok = same and calls["n"] == 1 and second.json()["payment"].get("replayed") is True
     return _finding(
@@ -216,8 +226,8 @@ def scenario_double_spend(tmp: Path) -> dict[str, Any]:
     """
     server, client, calls = _build_client(tmp / "double", Facilitator())
     header = _pay(_challenge(client), tmp / "double-journal")
-    client.post("/v1/research", json={"query": QUERY}, headers={"X-PAYMENT": header})
-    other = client.post("/v1/research", json={"query": "What is EIP-3009?"},
+    client.post("/v1/signals", json={"query": QUERY}, headers={"X-PAYMENT": header})
+    other = client.post("/v1/signals", json={"query": "What is EIP-3009?"},
                         headers={"X-PAYMENT": header})
     ok = (
         other.status_code == 409
@@ -248,7 +258,7 @@ def scenario_buyer_reads_an_indeterminate_settlement(tmp: Path) -> dict[str, Any
 
     server, client, _calls = _build_client(tmp / "buyerview", Facilitator("timeout"))
     header = _pay(_challenge(client), tmp / "buyerview-journal")
-    response = client.post("/v1/research", json={"query": QUERY},
+    response = client.post("/v1/signals", json={"query": QUERY},
                            headers={"X-PAYMENT": header})
     body = response.json()
     proof = extract_settlement_proof(body)
@@ -267,14 +277,14 @@ def scenario_settle_timeout(tmp: Path) -> dict[str, Any]:
     must get their work and the exposure must be recorded, not written off."""
     server, client, _calls = _build_client(tmp / "timeout", Facilitator("timeout"))
     header = _pay(_challenge(client), tmp / "timeout-journal")
-    response = client.post("/v1/research", json={"query": QUERY},
+    response = client.post("/v1/signals", json={"query": QUERY},
                            headers={"X-PAYMENT": header})
     body = response.json() if response.status_code == 200 else {}
     summary = server.ledger.summary()
     ok = (
         response.status_code == 200
         and body.get("payment", {}).get("state") == "indeterminate"
-        and bool(body.get("claims"))
+        and bool(body.get("signals"))
         and summary["indeterminate_count"] == 1
         and summary["failed_count"] == 0
     )
@@ -290,7 +300,7 @@ def scenario_settle_timeout(tmp: Path) -> dict[str, Any]:
 def scenario_settle_refused(tmp: Path) -> dict[str, Any]:
     server, client, _calls = _build_client(tmp / "refused", Facilitator("refused"))
     header = _pay(_challenge(client), tmp / "refused-journal")
-    response = client.post("/v1/research", json={"query": QUERY},
+    response = client.post("/v1/signals", json={"query": QUERY},
                            headers={"X-PAYMENT": header})
     summary = server.ledger.summary()
     ok = (
@@ -314,7 +324,7 @@ def scenario_expired_window(tmp: Path) -> dict[str, Any]:
     server, client, calls = _build_client(tmp / "expired", Facilitator())
     accepts = _challenge(client)
     header = _pay(accepts, tmp / "expired-journal", validity_seconds=1)
-    response = client.post("/v1/research", json={"query": QUERY},
+    response = client.post("/v1/signals", json={"query": QUERY},
                            headers={"X-PAYMENT": header})
     summary = server.ledger.summary()
     ok = (

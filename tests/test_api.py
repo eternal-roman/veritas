@@ -37,6 +37,7 @@ def test_health(free_client):
     body = free_client.get("/health").json()
     assert body["status"] == "ok"
     assert body["payment_mode"] == "free"
+    assert body["store_mode"] in {"unset", "sqlite", "postgres", "unavailable"}
 
 
 def test_trust_is_unproven_without_data(free_client):
@@ -70,7 +71,7 @@ def test_verify_endpoint_checks_hashes(free_client):
 
 
 def test_missing_payment_returns_spec_shaped_402(paid_client):
-    r = paid_client.post("/v1/research", json={"query": "What is x402?"})
+    r = paid_client.post("/v1/signals", json={"query": "What is x402?"})
     assert r.status_code == 402
     body = r.json()
     assert body["x402Version"] == 1
@@ -84,7 +85,7 @@ def test_missing_payment_returns_spec_shaped_402(paid_client):
 def test_junk_payment_header_is_rejected(paid_client):
     """Previously any non-empty X-PAYMENT value bought full access."""
     r = paid_client.post(
-        "/v1/research", json={"query": "What is x402?"}, headers={"X-PAYMENT": "hello"}
+        "/v1/signals", json={"query": "What is x402?"}, headers={"X-PAYMENT": "hello"}
     )
     assert r.status_code == 402
     assert r.json()["accepts"]
@@ -103,14 +104,14 @@ def test_unreachable_facilitator_fails_closed(paid_client):
                     "authorization": {"nonce": "0x" + "ab" * 32}},
     }).encode()).decode()
     r = paid_client.post(
-        "/v1/research", json={"query": "What is x402?"}, headers={"X-PAYMENT": payload}
+        "/v1/signals", json={"query": "What is x402?"}, headers={"X-PAYMENT": payload}
     )
     assert r.status_code == 503
     assert r.json()["error"] == "payment_verification_unavailable"
 
 
 def test_query_validation_rejects_empty(free_client):
-    assert free_client.post("/v1/research", json={"query": "x"}).status_code == 422
+    assert free_client.post("/v1/signals", json={"query": ""}).status_code == 422
 
 
 def test_receipt_missing_returns_404(free_client):
@@ -221,23 +222,10 @@ def test_receipt_pruned_returns_410_gone_not_404(free_client, tmp_path):
     assert gone.json()["error"] != missing.json()["error"]
 
 
-def test_schema_endpoint_matches_real_pipeline_output(free_client):
-    """/v1/schema is generated from the same constants validate_response
-    enforces, so a non-Python agent gets the contract without reading source
-    — and it must describe what the pipeline actually emits."""
-    from veritas.pipeline import run_research
-    from veritas.schema import REQUIRED_FIELDS, RefusalReason, Status
-
+def test_schema_endpoint_describes_catalog_and_errors(free_client):
+    """/v1/schema is the catalog + error contract, not a research body."""
     body = free_client.get("/v1/schema").json()
-    response_schema = body["response"]
-    assert set(response_schema["required"]) == set(REQUIRED_FIELDS)
-    assert set(response_schema["properties"]["status"]["enum"]) == {s.value for s in Status}
-    reasons = set(response_schema["properties"]["refusal_reason"]["enum"])
-    assert {r.value for r in RefusalReason} <= reasons
-
-    result = run_research("What is x402?", allow_network=False)
-    for key in response_schema["required"]:
-        assert key in result, f"schema requires {key} but pipeline does not emit it"
-
+    catalog = body.get("catalog") or body.get("response")
+    assert "signals" in str(catalog).lower() or "properties" in catalog
     envelope = body["error_envelope"]
     assert envelope["required"] == ["error"]

@@ -58,6 +58,17 @@ def database_url_from_env() -> str | None:
     return raw or None
 
 
+def store_mode() -> str:
+    """How durable state is resolved. Not a claim that HA is proven."""
+    try:
+        target = parse_database_url()
+    except StoreUnavailable:
+        return "unavailable"
+    if target is None:
+        return "unset"
+    return target.kind
+
+
 def parse_database_url(url: str | None = None) -> DatabaseTarget | None:
     """Parse a database URL. ``None`` / empty means per-instance default files."""
     raw = database_url_from_env() if url is None else url

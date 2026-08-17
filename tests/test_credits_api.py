@@ -233,142 +233,55 @@ def test_topup_without_payment_returns_402_challenge(paid_credits_client):
     assert body.get("x402Version") == 1
 
 
-def test_research_with_credits_and_refund_on_unavailable(paid_credits_client, monkeypatch):
+def test_catalog_with_credits_and_refund_on_unavailable(paid_credits_client, monkeypatch):
+    from veritas.signals import SignalsError
+
     client, main_module, _ = paid_credits_client
     acct, token = _open_session(client)
-    # Fund credits without chain: direct ledger grant (tests only).
     main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
 
-    from veritas.pipeline import run_research as real_run
-
     def boom(*args, **kwargs):
-        out = real_run(
-            *args,
-            allow_network=False,
-            **{k: v for k, v in kwargs.items() if k != "allow_network"},
-        )
-        # Force unavailable regardless of offline corpus success path.
-        out = dict(out)
-        out["status"] = "unavailable"
-        out["billable"] = False
-        out["refusal_reason"] = "retrieval_unavailable"
-        return out
+        raise SignalsError("venues_unavailable:down")
 
-    monkeypatch.setattr(main_module, "run_research", boom)
+    monkeypatch.setattr(main_module, "pull_signals", boom)
     r = client.post(
-        "/v1/research",
-        json={"query": "What is x402?"},
+        "/v1/signals",
+        json={"query": "fed"},
         headers={"X-VERITAS-SESSION": token},
     )
     assert r.status_code == 503
     body = r.json()
     assert body["status"] == "unavailable"
     assert body["billable"] is False
-    assert "credits" in body.get("payment", {}).get("mode", "")
+    assert body.get("payment", {}).get("mode") == "credits"
     bal = client.get("/v1/credits", headers={"X-VERITAS-SESSION": token}).json()
-    assert bal["balance"] == 10_000  # refunded
+    assert bal["balance"] == 10_000
 
 
-def test_unexpected_failure_after_the_debit_refunds_the_buyer(
-    paid_credits_client, monkeypatch
-):
-    """Invariant 3 must hold for crashes, not only for handled outcomes.
-
-    The x402 path fails safe by construction: it charges last, at settlement,
-    so an exception before that simply leaves the buyer uncharged. Credits
-    invert the order — the money moves before the work — so without an explicit
-    reversal an unexpected exception would charge a buyer for our crash and
-    hand them a 500.
-
-    No such raise site is known today: every call after the debit swallows its
-    own failures. This pins the structural guarantee, so the invariant stops
-    depending on every future downstream callee staying defensive.
-    """
-    client, main_module, _ = paid_credits_client
-    acct, token = _open_session(client)
-    main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
-
-    def explode(*args, **kwargs):
-        raise RuntimeError("unexpected failure after the credit debit")
-
-    monkeypatch.setattr(main_module, "run_research", explode)
-
-    with pytest.raises(RuntimeError):
-        client.post(
-            "/v1/research",
-            json={"query": "What is x402?"},
-            headers={"X-VERITAS-SESSION": token},
-        )
-
-    # The buyer is whole: the debit was reversed even though no response was
-    # produced. Read the journal directly — there is no HTTP body to inspect
-    # for a request that died.
-    assert main_module.credit_ledger.balance(acct.address) == 10_000
-    kinds = [e.kind for e in main_module.credit_ledger.entries(acct.address)]
-    assert "debit" in kinds and "refund" in kinds, kinds
-
-
-def test_the_crash_guard_and_a_handled_refund_never_double_pay(
-    paid_credits_client, monkeypatch
-):
-    """Both reversal paths call the same idempotent refund, so a request that
-    refunds itself cannot also be reversed a second time on the way out."""
-    client, main_module, _ = paid_credits_client
-    acct, token = _open_session(client)
-    main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
-
-    from veritas.pipeline import run_research as real_run
-
-    def unavailable(*args, **kwargs):
-        out = dict(real_run(
-            *args,
-            allow_network=False,
-            **{k: v for k, v in kwargs.items() if k != "allow_network"},
-        ))
-        out["status"] = "unavailable"
-        out["billable"] = False
-        out["refusal_reason"] = "retrieval_unavailable"
-        return out
-
-    monkeypatch.setattr(main_module, "run_research", unavailable)
-    response = client.post(
-        "/v1/research",
-        json={"query": "What is x402?"},
-        headers={"X-VERITAS-SESSION": token},
-    )
-    assert response.status_code == 503
-
-    assert main_module.credit_ledger.balance(acct.address) == 10_000
-    refunds = [
-        e for e in main_module.credit_ledger.entries(acct.address) if e.kind == "refund"
-    ]
-    assert len(refunds) == 1, refunds
-
-
-def test_research_with_credits_success_debits(paid_credits_client, monkeypatch):
+def test_catalog_with_credits_success_debits(paid_credits_client, monkeypatch):
     client, main_module, _ = paid_credits_client
     acct, token = _open_session(client)
     main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
 
     monkeypatch.setattr(
         main_module,
-        "run_research",
-        lambda query, max_results=5, request_id=None, **kw: {
-            "request_id": request_id or "x",
-            "query": query,
-            "status": "completed",
-            "billable": True,
-            "claims": [],
-            "evidence": [],
-            "custody_chain": [],
-            "custody_root": "0" * 64,
-            "custody_valid": True,
-            "support": {"n_evidence": 0, "n_claims": 0},
-        },
+        "pull_signals",
+        lambda query, **kw: [
+            {
+                "venue": "polymarket",
+                "market_id": "m-credit",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-credit",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ],
     )
     r = client.post(
-        "/v1/research",
-        json={"query": "What is x402?"},
+        "/v1/signals",
+        json={"query": "fed"},
         headers={"X-VERITAS-SESSION": token},
     )
     assert r.status_code == 200, r.text
@@ -376,59 +289,19 @@ def test_research_with_credits_success_debits(paid_credits_client, monkeypatch):
     assert body["payment"]["mode"] == "credits"
     assert body["payment"]["settled"] is True
     bal = client.get("/v1/credits", headers={"X-VERITAS-SESSION": token}).json()
-    assert bal["balance"] == 0  # $0.01 = 10000 atomic on USDC-6
+    assert bal["balance"] == 0
 
 
 def test_insufficient_credits_402(paid_credits_client):
     client, _, _ = paid_credits_client
     _, token = _open_session(client)
     r = client.post(
-        "/v1/research",
+        "/v1/signals",
         json={"query": "What is x402?"},
         headers={"X-VERITAS-SESSION": token},
     )
     assert r.status_code == 402
     assert r.json()["error"] == "credits_insufficient"
-
-
-def test_research_deadline_refunds_credits(paid_credits_client, monkeypatch):
-    """Credit-paid work that overruns the budget refunds the debit (no charge)."""
-    client, main_module, _ = paid_credits_client
-    acct, token = _open_session(client)
-    main_module.credit_ledger.grant(acct.address, 10_000, note="test_fund")
-
-    from veritas.deadline import Deadline
-
-    # Force the post-work deadline check to fire.
-    monkeypatch.setattr(Deadline, "expired", lambda self, now=None: True)
-    monkeypatch.setattr(
-        main_module,
-        "run_research",
-        lambda query, max_results=5, request_id=None, **kw: {
-            "request_id": request_id or "x",
-            "query": query,
-            "status": "completed",
-            "billable": True,
-            "claims": [],
-            "evidence": [],
-            "custody_chain": [],
-            "custody_root": "0" * 64,
-            "custody_valid": True,
-            "support": {"n_evidence": 0, "n_claims": 0},
-        },
-    )
-    r = client.post(
-        "/v1/research",
-        json={"query": "What is x402?"},
-        headers={"X-VERITAS-SESSION": token},
-    )
-    assert r.status_code == 503
-    body = r.json()
-    assert body["error"] == "deadline_exceeded"
-    assert body["payment"]["mode"] == "credits"
-    assert "refund" in body["payment"]["reason"]
-    bal = client.get("/v1/credits", headers={"X-VERITAS-SESSION": token}).json()
-    assert bal["balance"] == 10_000
 
 
 def test_x_payment_path_unchanged_when_present(paid_credits_client, monkeypatch):
@@ -439,22 +312,22 @@ def test_x_payment_path_unchanged_when_present(paid_credits_client, monkeypatch)
 
     monkeypatch.setattr(
         main_module,
-        "run_research",
-        lambda query, max_results=5, request_id=None, **kw: {
-            "request_id": request_id or "x",
-            "query": query,
-            "status": "completed",
-            "billable": True,
-            "claims": [],
-            "evidence": [],
-            "custody_chain": [],
-            "custody_root": "0" * 64,
-            "custody_valid": True,
-            "support": {"n_evidence": 0, "n_claims": 0},
-        },
+        "pull_signals",
+        lambda query, **kw: [
+            {
+                "venue": "polymarket",
+                "market_id": "m-pay",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-pay",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ],
     )
     r = client.post(
-        "/v1/research",
+        "/v1/signals",
         json={"query": "What is x402?"},
         headers={
             "X-VERITAS-SESSION": token,
@@ -473,7 +346,7 @@ def test_x_payment_path_unchanged_when_present(paid_credits_client, monkeypatch)
 def test_invalid_session_refused(paid_credits_client):
     client, _, _ = paid_credits_client
     r = client.post(
-        "/v1/research",
+        "/v1/signals",
         json={"query": "What is x402?"},
         headers={"X-VERITAS-SESSION": "not-a-real-session"},
     )

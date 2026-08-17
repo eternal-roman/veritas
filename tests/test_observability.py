@@ -35,9 +35,21 @@ def client(tmp_path, monkeypatch):
     import veritas.server as server
     importlib.reload(server)
 
-    from veritas.pipeline import run_research as real
     monkeypatch.setattr(
-        server, "run_research", lambda query, **kw: real(query, allow_network=False, **kw)
+        server,
+        "pull_signals",
+        lambda query, **kw: [
+            {
+                "venue": "polymarket",
+                "market_id": "m-obs",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-obs",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ],
     )
     return server, TestClient(server.app, raise_server_exceptions=False)
 
@@ -63,9 +75,9 @@ def test_metrics_are_exposed_in_prometheus_text_format(client):
 
 def test_requests_are_counted_by_status(client):
     _server, http = client
-    http.post("/v1/research", json=BODY)
+    http.post("/v1/signals", json=BODY)
     body = _metrics(http)
-    assert 'veritas_requests_total{path="/v1/research",status="200"} 1' in body
+    assert 'veritas_requests_total{path="/v1/signals",status="200"} 1' in body
 
 
 def test_shed_requests_are_counted(client):
@@ -75,17 +87,11 @@ def test_shed_requests_are_counted(client):
     held = [server.research_slots.acquire(blocking=False)
             for _ in range(server.MAX_CONCURRENT_RESEARCH)]
     try:
-        http.post("/v1/research", json=BODY)
+        http.post("/v1/signals", json=BODY)
     finally:
         for _ in held:
             server.research_slots.release()
     assert "veritas_research_shed_total 1" in _metrics(http)
-
-
-def test_research_outcomes_are_counted_by_status(client):
-    _server, http = client
-    http.post("/v1/research", json=BODY)
-    assert 'veritas_research_total{status=' in _metrics(http)
 
 
 def test_rate_limited_requests_are_counted(tmp_path, monkeypatch):
@@ -139,12 +145,12 @@ def test_request_logs_are_one_json_object_per_line(client, caplog):
 
     _server, http = client
     with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
-        http.post("/v1/research", json=BODY)
+        http.post("/v1/signals", json=BODY)
 
     lines = [format_record(r) for r in caplog.records if r.name == ACCESS_LOGGER]
     assert lines
     entry = json.loads(lines[0])
-    assert entry["path"] == "/v1/research"
+    assert entry["path"] == "/v1/signals"
     assert entry["status"] == 200
     assert isinstance(entry["duration_ms"], int)
 
@@ -156,7 +162,7 @@ def test_the_buyer_query_never_reaches_a_log_line(client, caplog):
 
     _server, http = client
     with caplog.at_level(logging.DEBUG):
-        http.post("/v1/research", json=BODY)
+        http.post("/v1/signals", json=BODY)
 
     logged = "\n".join(
         format_record(r) if r.name == ACCESS_LOGGER else r.getMessage()
@@ -171,7 +177,7 @@ def test_the_payment_header_never_reaches_a_log_line(client, caplog):
     _server, http = client
     secret = "c2VjcmV0LXBheW1lbnQtaGVhZGVy"
     with caplog.at_level(logging.DEBUG):
-        http.post("/v1/research", json=BODY, headers={"X-PAYMENT": secret})
+        http.post("/v1/signals", json=BODY, headers={"X-PAYMENT": secret})
 
     logged = "\n".join(
         format_record(r) if r.name == ACCESS_LOGGER else r.getMessage()

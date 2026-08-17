@@ -29,13 +29,14 @@ ACCOUNT_NAME = "account.json"
 DEFAULT_HOME = ".veritas_agent"
 DEFAULT_AGENT_ID = "self"
 DEFAULT_ROLE = "agent"
-DEFAULT_INTERESTS: tuple[str, ...] = ("research", "verify")
+DEFAULT_INTERESTS: tuple[str, ...] = ("signals", "verify")
 DEFAULT_STIPEND = 0  # retained so older callers of enroll_account() still bind
 
 # Interest keyword → catalog skill id.
 INTEREST_ALIASES: dict[str, str] = {
-    "search": "research",
-    "lookup": "research",
+    "search": "signals",
+    "lookup": "signals",
+    "research": "signals",
     "check": "verify",
     "vet": "diligence",
     "purchase": "buy",
@@ -49,11 +50,11 @@ INTEREST_ALIASES: dict[str, str] = {
 
 # Capabilities that already exist in this package. Interests map here or stay unmapped.
 SKILL_CATALOG: dict[str, dict[str, str]] = {
-    "research": {
-        "title": "Evidence-grounded research",
-        "command": "veritas-mcp",
-        "http": "POST /v1/research",
-        "note": "Paid on HTTP; MCP is the local free-mode engine",
+    "signals": {
+        "title": "Prediction-market catalog",
+        "command": "veritas-ops signals-ingest",
+        "http": "POST /v1/signals",
+        "note": "Paid on HTTP live pull; GET catalog is free; MCP is local free-mode",
     },
     "verify": {
         "title": "Independent receipt / origin verification",
@@ -80,16 +81,16 @@ SKILL_CATALOG: dict[str, dict[str, str]] = {
         "note": "Never settles payment",
     },
     "sell": {
-        "title": "Serve research paid to this agent's commerce wallet",
+        "title": "Serve catalog pull paid to this agent's commerce wallet",
         "command": "veritas-agent up --paid",
-        "http": "POST /v1/research",
+        "http": "POST /v1/signals",
         "note": "Requires a funded wallet and a reachable facilitator",
     },
     "notarize": {
         "title": "Observe-once evidence notary",
         "command": "",
         "http": "POST /v1/notarize",
-        "note": "Same payment gates as research; unavailable is not billable",
+        "note": "Same payment gates as catalog pull; unavailable is not billable",
     },
     "ops": {
         "title": "Operator ledger reports",
@@ -114,12 +115,6 @@ SKILL_CATALOG: dict[str, dict[str, str]] = {
         "command": "veritas-ops escrow-sweep",
         "http": "GET /v1/escrow/{lock_id}",
         "note": "Authorization is the lock; forfeit submits via facilitator; not a vault contract",
-    },
-    "signals": {
-        "title": "Prediction-market snapshots",
-        "command": "",
-        "http": "GET /v1/signals",
-        "note": "Kalshi/Polymarket prices stored as evidence; not a verdict",
     },
 }
 
@@ -388,7 +383,7 @@ def readiness_document(acc: dict[str, Any] | None) -> dict[str, Any]:
             "listed_on_registry": False,
             "identity_off_box": https,
             "ecosystem_identity_signed": False,
-            "next": "veritas-agent adopt --id <name> --interests research,buy,verify",
+            "next": "veritas-agent adopt --id <name> --interests signals,buy,verify",
         }
     commerce = (acc.get("wallets") or {}).get("commerce") or {}
     funding = commerce.get("funding")
@@ -421,7 +416,7 @@ def whoami_document(base_dir: str | Path | None = None) -> dict[str, Any]:
         return {
             "enrolled": False,
             "schema": ACCOUNT_SCHEMA,
-            "next": "veritas-agent adopt --id <name> --interests research,buy,verify",
+            "next": "veritas-agent adopt --id <name> --interests signals,buy,verify",
             "catalog": sorted(SKILL_CATALOG),
             "readiness": readiness_document(None),
         }

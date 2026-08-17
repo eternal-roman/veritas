@@ -17,7 +17,7 @@
     },
     {
       "id": "adopt",
-      "command": "veritas-agent adopt --id self --interests research,buy,verify",
+      "command": "veritas-agent adopt --id self --interests signals,buy,verify",
       "note": "creates commerce wallet and a signed did:pkh card"
     },
     {

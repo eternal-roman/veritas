@@ -13,10 +13,10 @@ It is not SPIRE, not Secure Scuttlebutt, and not BitTorrent.
 
 ```
 PROPERTY: self-hosted identity-bound TLS + signed public-URL introductions; no DHT, no libp2p, no always-on relay
-EVIDENCE LEVEL: L0 (locked design)
-CHECKED ARTIFACT: docs/design/IDENTITY_TLS_MESH.md
+EVIDENCE LEVEL: L1 for issue/card/introductions (`peer_tls`, `peer_intro`, `serve --tls`, tests); L0 for pin-on-fetch and WAN
+CHECKED ARTIFACT: veritas/peer_tls.py, veritas/peer_intro.py, tests/test_peer_tls.py
 ASSUMPTIONS: commerce wallet can EIP-191 personal_sign; local peers.json and SSRF guard stay; TLS key ≠ commerce key
-NOT PROVEN: implementation; WAN reachability; NAT traversal; stranger discovery without a first URL; mainnet settlement
+NOT PROVEN: WAN reachability; NAT traversal; stranger discovery without a first URL; mainnet settlement
 ```
 
 ## Honesty bound
@@ -46,8 +46,12 @@ Never present this peer path as settlement or as a public network.
 | `veritas/safeurl.py` | scheme allowlist; public-destination guard |
 | `docs/deploy/PUBLIC_HOST.md` | operator runbook for a *human-published* HTTPS origin |
 
-Connect today fetches a card and stores it. It does not pin a certificate
-and does not walk any graph. This document adds those two things.
+Issue, card `tls` block, mDNS browse, and signed introductions shipped
+in `#160`. `connect` / `pull-signals` pin the presented DER to the card
+fingerprint (`apply_tls_pin`); no public CA is consulted. A public
+HTTPS peer that advertises no `tls` block is refused (`peer_tls_required`).
+WAN/NAT and stranger-without-a-first-URL stay unproven. Walking more
+than one hop stays an explicit caller choice.
 
 ---
 

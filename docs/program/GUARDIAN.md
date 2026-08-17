@@ -30,7 +30,7 @@ replace `skills/adversarial-code-truth.md` or `AGENTS.md`.
 |---|------|----------------------|
 | G1 | **Battery before ship.** `pytest tests/ -q` must exit 0 on the branch. Ruff, harness, and payment_model when those entry points exist in the tree — not "if convenient". | Shipping after skipped tests |
 | G2 | **No soft-fail.** No `\|\| true`, no `continue-on-error`, no treating "command not found" as green. | CI or agent scripts that hide red |
-| G3 | **One engine / one payer.** All research through `pipeline.run_research`; all buyer signing through `veritas.payer` + Signer seam. | Second path "for agents" |
+| G3 | **One engine / one payer.** Catalog through `veritas.signals`; all buyer signing through `veritas.payer` + Signer seam. | Second path "for agents" |
 | G4 | **Unavailable stays non-billable.** Never map retrieval failure to `no_evidence` or `billable: true`. | Outage sold as empty result |
 | G5 | **Money path order.** Verify → claim nonce → work → fsync delivery → settle. Indeterminate ≠ failed. | Settle before delivery; invent costs |
 | G6 | **Settlement claims need a tx hash.** Local facilitator green is not on-chain. G9 (classify vs chain) is closed; mainnet still needs env RPC. | "Live payments work" from unit tests |

@@ -15,6 +15,7 @@ there was no way to ask any of them:
     veritas-ops prune                    drop expired receipts and ledger rows
     veritas-ops escrow-sweep             expire locked escrow rows past validBefore
     veritas-ops escrow <lock_id>         one VCAE lock
+    veritas-ops signals-ingest           pull a watchlist into the catalog
 
 Every command prints JSON to stdout, because the first consumer of an
 operations CLI for an agent-native service is another agent.
@@ -291,6 +292,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     one_lock = sub.add_parser("escrow", help="One VCAE lock, by lock_id.")
     one_lock.add_argument("lock_id", help="64-hex lock id.")
+    ingest = sub.add_parser(
+        "signals-ingest",
+        help=(
+            "Pull a Kalshi/Polymarket watchlist into the catalog. "
+            "Queries from --query (repeatable) or VERITAS_SIGNALS_WATCHLIST. "
+            "Token * dumps the open book (bounded). No daemon."
+        ),
+    )
+    ingest.add_argument(
+        "--query",
+        action="append",
+        default=[],
+        help="Watchlist entry (repeat). * = bounded open book.",
+    )
+    ingest.add_argument(
+        "--venue",
+        action="append",
+        default=None,
+        help="Limit to polymarket or kalshi (repeatable).",
+    )
+    ingest.add_argument(
+        "--limit",
+        type=int,
+        default=8,
+        help="Max markets per venue per query (default 8, hard cap 8).",
+    )
     return parser
 
 
@@ -355,6 +382,18 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"error": "lock_not_found", "lock_id": args.lock_id}))
             return 1
         payload = found
+    elif args.command == "signals-ingest":
+        from veritas.signals import SignalsError, ingest
+
+        try:
+            payload = ingest(
+                args.query or None,
+                venues=args.venue,
+                limit=args.limit,
+            )
+        except SignalsError as exc:
+            print(json.dumps({"error": str(exc), "method": "veritas.signals.v1"}))
+            return 1
     else:  # authorization
         found = _authorization(ledger, args.nonce)
         if found is None:

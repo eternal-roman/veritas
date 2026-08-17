@@ -49,7 +49,7 @@ REQUIRED_SCRIPTS = (
 )
 
 REQUIRED_MODULES = (
-    "veritas.pipeline",
+    "veritas.signals",
     "veritas.server",
     "veritas.notary.observe",
     "veritas.notary.pack",
@@ -227,19 +227,26 @@ def check_free_server_surfaces(tmp: Path) -> dict[str, Any]:
 
 
 def check_offline_research(tmp: Path) -> dict[str, Any]:
-    os.environ["VERITAS_RUNTIME_DIR"] = str(tmp / "research")
-    from veritas.pipeline import run_research
+    os.environ["VERITAS_RUNTIME_DIR"] = str(tmp / "catalog")
+    from veritas.signals import METHOD, SignalStore
 
-    result = run_research(
-        "What is the x402 payment protocol?",
-        allow_network=False,
-        request_id="cycle1-offline-research",
-    )
-    ok = result.get("status") in {"completed", "refused"} and "custody_root" in result
+    store = SignalStore(tmp / "catalog")
+    digest = store.put({
+        "venue": "polymarket",
+        "market_id": "m-cycle1",
+        "question": "cycle1 fixture",
+        "outcomes": [{"name": "Yes", "price": 0.5}],
+        "observed_at": "2026-08-17T00:00:00Z",
+        "source_url": "https://gamma-api.polymarket.com/markets/m-cycle1",
+        "method": METHOD,
+        "note": "market-implied prices, not a verdict",
+    })
+    listed = store.list()
+    ok = bool(digest) and any(item.get("market_id") == "m-cycle1" for item in listed)
     return _check(
-        "offline_research",
-        "run_research(allow_network=False) returns a contract-shaped body",
-        f"status={result.get('status')}, has_custody={('custody_root' in result)}",
+        "offline_catalog",
+        "SignalStore persist + list works offline",
+        f"digest={digest}, n={len(listed)}",
         ok,
     )
 

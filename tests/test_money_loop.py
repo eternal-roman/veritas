@@ -78,7 +78,7 @@ def test_run_settle_simulated_is_honest():
                         "maxAmountRequired": "10000",
                         "asset": "0x" + "aa" * 20,
                         "payTo": "0x" + "bb" * 20,
-                        "resource": "http://127.0.0.1:8000/v1/research",
+                        "resource": "http://127.0.0.1:8000/v1/signals",
                         "description": "t",
                         "mimeType": "application/json",
                         "maxTimeoutSeconds": 60,

@@ -269,7 +269,7 @@ def main() -> int:
         try:
             st, body, _hdrs = http_json(
                 "POST",
-                f"{args.base_url.rstrip('/')}/v1/research",
+                f"{args.base_url.rstrip('/')}/v1/signals",
                 {"query": args.query},
             )
             report["steps"].append(
@@ -297,7 +297,7 @@ def main() -> int:
                 )
                 paid_st, paid_body, paid_hdrs = http_json(
                     "POST",
-                    f"{args.base_url.rstrip('/')}/v1/research",
+                    f"{args.base_url.rstrip('/')}/v1/signals",
                     {"query": args.query},
                     headers={"X-PAYMENT": x_payment},
                 )

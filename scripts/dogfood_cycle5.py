@@ -47,11 +47,18 @@ def _free_client(tmp: Path):
     import veritas.server as server
 
     importlib.reload(server)
-    from veritas.pipeline import run_research as real_run
-
-    server.run_research = lambda query, **kw: real_run(
-        query, allow_network=False, **kw
-    )
+    server.pull_signals = lambda query, **kw: [
+        {
+            "venue": "polymarket",
+            "market_id": "m-cycle5",
+            "question": query,
+            "outcomes": [{"name": "Yes", "price": 0.5}],
+            "observed_at": "2026-08-17T00:00:00Z",
+            "source_url": "https://gamma-api.polymarket.com/markets/m-cycle5",
+            "method": "veritas.signals.v1",
+            "note": "market-implied prices, not a verdict",
+        }
+    ]
     return server, TestClient(server.app, raise_server_exceptions=False)
 
 
@@ -111,20 +118,50 @@ def check_constitution_enforcement_shape(tmp: Path) -> dict[str, Any]:
 
 
 def check_standalone_verifier_on_research(tmp: Path) -> dict[str, Any]:
-    from veritas.pipeline import run_research
+    from veritas.custody import CustodyLedger
+    from veritas.hashing import compute_content_hash
     from veritas.verifier import verify_response
 
     os.environ["VERITAS_RUNTIME_DIR"] = str(tmp / "res")
-    response = run_research(
-        "What is the x402 payment protocol?",
-        allow_network=False,
-        request_id="cycle5-research",
-    )
+    excerpt = "catalog snapshot for cycle5"
+    digest = compute_content_hash(excerpt)
+    ledger = CustodyLedger()
+    ledger.append("created", "catalog", {"query": "fed"})
+    ledger.append("delivered", "catalog", {"hash": digest})
+    response = {
+        "request_id": "cycle5",
+        "status": "completed",
+        "query": "fed",
+        "claims": [
+            {
+                "id": "c1",
+                "statement": excerpt,
+                "evidence_hash": digest,
+                "source_url": "https://example.test/m",
+            }
+        ],
+        "evidence": [
+            {
+                "url": "https://example.test/m",
+                "excerpt": excerpt,
+                "content_hash": digest,
+            }
+        ],
+        "custody_root": ledger.root_hash(),
+        "custody_valid": True,
+        "custody_chain": ledger.to_list(),
+        "support": {"n_evidence": 1},
+        "attests": "fixture",
+        "retrieval": {},
+        "refusal_reason": None,
+        "billable": True,
+        "timestamp": "2026-08-17T00:00:00Z",
+    }
     report = verify_response(response)
     ok = report.valid is True and response.get("status") in {"completed", "refused"}
     return _check(
         "standalone_verifier",
-        "zero-dep verifier accepts offline research custody chain",
+        "zero-dep verifier accepts a catalog custody chain",
         f"status={response.get('status')}; valid={report.valid}; "
         f"failed={[c.name for c in report.checks if not c.valid]}",
         ok,

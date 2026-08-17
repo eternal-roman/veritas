@@ -16,8 +16,6 @@ from fastapi.testclient import TestClient
 
 from veritas.evidence_store import EvidenceStore, is_safe_content_hash
 from veritas.hashing import compute_content_hash
-from veritas.pipeline import run_research
-from veritas.retrieval import StaticCorpusRetriever
 
 
 def test_hash_allowlist_rejects_path_traversal():
@@ -58,20 +56,6 @@ def test_get_refuses_tampered_excerpt(tmp_path):
         encoding="utf-8",
     )
     assert store.get(digest) is None
-
-
-def test_pipeline_persists_excerpts_for_later_fetch(tmp_path, monkeypatch):
-    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
-    result = run_research(
-        "What is the x402 protocol?",
-        retriever=StaticCorpusRetriever(),
-    )
-    assert result["status"] == "completed"
-    store = EvidenceStore(tmp_path)
-    for ev in result["evidence"]:
-        got = store.get(ev["content_hash"])
-        assert got is not None
-        assert got["excerpt"] == ev["excerpt"]
 
 
 def test_http_surface_returns_stored_excerpt(tmp_path, monkeypatch):

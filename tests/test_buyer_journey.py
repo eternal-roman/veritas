@@ -34,7 +34,7 @@ def _fetch_map():
             "asset": ASSET,
             "payTo": PAY_TO,
             "maxAmountRequired": "10000",
-            "resource": f"{BASE}/v1/research",
+            "resource": f"{BASE}/v1/signals",
             "extra": {"name": "USD Coin", "version": "2"},
         }],
         "links": {"constitution": "/v1/constitution", "trust": "/v1/trust"},
@@ -84,7 +84,7 @@ def _fetch_map():
 
 
 def _exchange_402(url: str, **kwargs) -> dict:
-    if url.endswith("/v1/research") and kwargs.get("method") == "POST":
+    if url.endswith("/v1/signals") and kwargs.get("method") == "POST":
         body = json.dumps({
             "x402Version": 1,
             "accepts": [{"scheme": "exact", "network": "eip155:84532"}],
@@ -97,7 +97,7 @@ def _exchange_402(url: str, **kwargs) -> dict:
 
 
 def _exchange_free(url: str, **kwargs) -> dict:
-    if url.endswith("/v1/research") and kwargs.get("method") == "POST":
+    if url.endswith("/v1/signals") and kwargs.get("method") == "POST":
         body = json.dumps({
             "status": "supported",
             "request_id": "req-free-1",

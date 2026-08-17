@@ -56,7 +56,6 @@ from veritas.operator_ui import (
 )
 from veritas.payment_config import get_payment_config
 from veritas.peer import build_peer_card
-from veritas.pipeline import observe_urls_enabled, run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
 from veritas.runtime import probe_runtime_dir
 from veritas.signals import VENUES, SignalsError, SignalStore
@@ -74,7 +73,7 @@ from veritas.x402 import (
     to_atomic_amount,
 )
 
-app = FastAPI(title="Veritas Research", version=__version__)
+app = FastAPI(title="Veritas", version=__version__)
 
 RESOURCE_PATH = "/v1/research"
 NOTARIZE_PATH = "/v1/notarize"
@@ -130,6 +129,12 @@ def notarize_resource_url() -> str:
     """Absolute URL of the paid notarize resource (same public-base rules)."""
     base = (os.getenv("VERITAS_PUBLIC_URL") or "").strip().rstrip("/")
     return f"{base}{NOTARIZE_PATH}" if base else NOTARIZE_PATH
+
+
+def signals_resource_url() -> str:
+    """Absolute URL of the paid catalog-pull resource (same public-base rules)."""
+    base = (os.getenv("VERITAS_PUBLIC_URL") or "").strip().rstrip("/")
+    return f"{base}{SIGNALS_PULL_PATH}" if base else SIGNALS_PULL_PATH
 
 
 store = CustodyStore()
@@ -228,10 +233,6 @@ def _is_operator_scrape(request: Request) -> bool:
         and request.url.path == "/metrics"
         and hmac.compare_digest(_presented_metrics_token(request), METRICS_TOKEN)
     )
-
-
-def _observe_urls_enabled() -> bool:
-    return observe_urls_enabled()
 
 
 def _rate_limited(caller: str) -> bool:
@@ -432,6 +433,8 @@ class LogVerifyRequest(BaseModel):
 @app.get("/health")
 async def health():
     """Liveness: is this process running? Never rate limited, never blocked."""
+    from veritas.store import store_mode
+
     cfg = get_payment_config()
     return {
         "status": "ok",
@@ -439,6 +442,7 @@ async def health():
         "version": app.version,
         "payment_mode": cfg.mode,
         "live_ready": cfg.is_live_ready(),
+        "store_mode": store_mode(),
     }
 
 
@@ -680,45 +684,15 @@ def _resubmitted_authorization(claim, facilitator, payment_payload,
 
 
 @app.post(RESOURCE_PATH)
-async def research(req: ResearchRequest, request: Request):
-    """Bound the one expensive endpoint, then run it off the event loop.
-
-    The cap is taken *before* the thread hop, so a shed request costs nothing:
-    no retrieval pass, no facilitator call, no claimed payment authorization.
-    The payment header is read here rather than passed through, so no Request
-    object crosses into the worker thread.
-    """
-    if not research_slots.acquire(blocking=False):
-        return _research_slot_shed_response()
-    # A credit debit is taken *before* the work, so unlike the x402 path it does
-    # not fail safe on its own. x402 charges last — an exception before
-    # settlement means the buyer is simply not charged. Credits invert that: the
-    # money has already moved, so an exception anywhere after the debit would
-    # leave the buyer paying for our crash, which invariant 3 forbids.
-    #
-    # `_research` records the debit here as soon as it takes one, and this
-    # handler reverses it if the request dies on an unexpected exception. Every
-    # *expected* outcome (deadline, unavailable) already refunds inside
-    # `_research`; refund is idempotent, so the two cannot double-refund.
-    #
-    # Today every call after the debit swallows its own failures, so no
-    # reachable path is known — this is the structural guarantee rather than a
-    # fix for an observed bug. Without it the invariant holds only for as long
-    # as every downstream callee stays defensive.
-    charge: dict[str, str] = {}
-    try:
-        return await run_in_threadpool(
-            _research,
-            req,
-            request.headers.get("X-PAYMENT"),
-            request.headers.get(SESSION_HEADER),
-            charge,
-        )
-    except Exception:
-        _refund_unfinished_charge(charge)
-        raise
-    finally:
-        research_slots.release()
+async def research_removed():
+    """Research is not a product. Catalog pull is POST /v1/signals."""
+    return JSONResponse(
+        status_code=410,
+        content=error_envelope(
+            ErrorCode.PRODUCT_REMOVED,
+            "POST /v1/signals (catalog pull) or POST /v1/notarize (observe-once)",
+        ),
+    )
 
 
 def _refund_unfinished_charge(charge: dict[str, str]) -> None:
@@ -739,299 +713,6 @@ def _refund_unfinished_charge(charge: dict[str, str]) -> None:
         )
     except Exception:
         metrics.increment("veritas_credit_refund_failed_total")
-
-
-def _research(
-    req: ResearchRequest,
-    payment_header: str | None,
-    session_header: str | None = None,
-    charge: dict[str, str] | None = None,
-):
-    cfg = get_payment_config()
-    payment_payload: dict[str, Any] | None = None
-    requirements_dict: dict[str, Any] | None = None
-    facilitator = None
-    deadline: Deadline | None = None
-    credit_account: str | None = None
-    paid_with_credits = False
-    # Allocated here, not inside the pipeline, so the authorization claim, the
-    # custody receipt, the ledger and the response all name the same request
-    # (defect R6: `claim` accepted a request_id no caller ever passed).
-    request_id = str(uuid.uuid4())
-
-    # Payment was demanded but the configuration is invalid. Refuse to serve
-    # rather than silently falling back to giving the paid service away.
-    if cfg.mode == "misconfigured":
-        return JSONResponse(
-            status_code=503,
-            content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, cfg.config_errors),
-        )
-
-    # M7 credit path: live mode + SIWx session + no X-PAYMENT → debit prepaid
-    # credits (one payer path still owns signing; this is spend of already-
-    # settled top-up, not a second signing seam).
-    if cfg.require_payment and not payment_header and session_header:
-        try:
-            session = siwx_store.resolve(session_header)
-        except SiwxSessionError:
-            # Category only — exception text never reaches a buyer (4f2321c).
-            return JSONResponse(
-                status_code=401,
-                content=error_envelope(
-                    ErrorCode.SESSION_INVALID,
-                    "SIWx session missing, unknown, or expired",
-                ),
-            )
-        try:
-            atomic = int(to_atomic_amount(cfg.price, cfg.network))
-        except (PriceError, TypeError, ValueError):
-            return JSONResponse(
-                status_code=503,
-                content=error_envelope(
-                    ErrorCode.PAYMENT_MISCONFIGURED,
-                    "price configuration rejected at credit debit",
-                ),
-            )
-        try:
-            credit_ledger.debit(
-                session.address,
-                atomic,
-                request_id=request_id,
-                note="research_debit",
-            )
-        except InsufficientCredits:
-            # Balance/required are structured fields; do not echo exception text.
-            return JSONResponse(
-                status_code=402,
-                content=error_envelope(
-                    ErrorCode.CREDITS_INSUFFICIENT,
-                    "prepaid credits insufficient for this research debit",
-                    balance=credit_ledger.balance(session.address),
-                    required=atomic,
-                ),
-            )
-        credit_account = session.address
-        paid_with_credits = True
-        # The debit is now committed. Publish it to the caller so that a
-        # request dying on an unexpected exception still reverses the charge
-        # (see `research`); every expected outcome refunds below instead.
-        if charge is not None:
-            charge["account"] = session.address
-            charge["request_id"] = request_id
-        # Same work ceiling as x402-paid research; overruns refund the debit
-        # (no payment authorization window — credits are already prepaid).
-        deadline = Deadline.after(MAX_WORK_SECONDS)
-
-    if cfg.require_payment and not paid_with_credits:
-        try:
-            requirements = build_payment_requirements(
-                pay_to=cfg.pay_to,
-                network=cfg.network,
-                price=cfg.price,
-                resource=resource_url(),
-            )
-        except PriceError:
-            # Misconfiguration must not silently become free service. The
-            # exception text describes server-side configuration, so it stays
-            # out of the response body (CodeQL: information exposure); the
-            # operator inspects config via /v1/payment-config, not this error.
-            return JSONResponse(
-                status_code=500,
-                content=error_envelope(
-                    ErrorCode.PAYMENT_MISCONFIGURED,
-                    "price configuration rejected at challenge construction",
-                ),
-            )
-        requirements_dict = requirements.to_dict()
-
-        if not payment_header:
-            return _challenge(cfg)
-
-        payment_payload = decode_payment_header(payment_header)
-        if payment_payload is None:
-            return _challenge(cfg, "X-PAYMENT header is not valid base64-encoded JSON")
-
-        # Structural admissibility first. A payload with no usable
-        # authorization nonce can never be admitted, and finding that out
-        # costs nothing — so it must not cost a facilitator round trip. Doing
-        # this after verification let an unpaid caller spend our outbound
-        # request budget one junk header at a time (dogfood cycle 3). It
-        # claims nothing and changes no state, so it does not weaken the
-        # verify-before-claim ordering below.
-        nonce = extract_nonce(payment_payload)
-        if nonce is None:
-            reason = (
-                ErrorCode.PAYMENT_NONCE_MALFORMED
-                if _carries_a_nonce_field(payment_payload)
-                else ErrorCode.PAYMENT_NONCE_MISSING
-            )
-            return JSONResponse(status_code=409, content=error_envelope(
-                reason,
-                "This payment authorization cannot be admitted. Request a "
-                "fresh 402 challenge and sign a new authorization.",
-            ))
-
-        facilitator = get_facilitator(cfg.facilitator, live=True)
-        verification = facilitator.verify(payment_payload, requirements_dict)
-        if not verification.is_valid:
-            reason = verification.invalid_reason or "payment_invalid"
-            # Facilitator outages fail closed as 503 so buyers retry rather
-            # than treating the refusal as a permanent payment rejection.
-            if reason.startswith(VERIFICATION_OUTAGE_PREFIXES):
-                return JSONResponse(status_code=503, content=error_envelope(
-                    ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason,
-                ))
-            return _challenge(cfg, reason)
-
-        # Budget the work against the authorization that pays for it. Doing
-        # this before the claim means an authorization too short to finish
-        # costs the buyer nothing: no work, no burned nonce.
-        try:
-            deadline = Deadline.for_authorization(
-                valid_before=_authorization_valid_before(payment_payload),
-                max_work_seconds=MAX_WORK_SECONDS,
-            )
-        except DeadlineTooShort:
-            # Built from our own constants, never from the exception. The
-            # current DeadlineTooShort message is only timings, but the rule
-            # here is that exception text does not reach a buyer (4f2321c) —
-            # a message that is safe today is a leak one refactor from now,
-            # and this body goes out to an unauthenticated caller.
-            return _challenge(cfg, (
-                "authorization window too short: it must leave at least "
-                f"{MIN_USABLE_SECONDS}s of work time plus a "
-                f"{SETTLEMENT_MARGIN_SECONDS}s settlement margin"
-            ))
-
-        # Claim the authorization after the facilitator accepts it and BEFORE
-        # any retrieval pass, so a resubmitted header cannot make us do the
-        # work a second time. The claim is never released — the authorization
-        # stays live on chain — but it is no longer a dead end: see
-        # `_resubmitted_authorization` for what a replay is answered with.
-        claim = ledger.claim(
-            nonce, request_id,
-            network=requirements_dict.get("network"),
-            asset=requirements_dict.get("asset"),
-            amount=requirements_dict.get("maxAmountRequired"),
-            pay_to=requirements_dict.get("payTo"),
-            payer=verification.payer,
-            price=cfg.price,
-            price_version=PRICE_TABLE_VERSION,
-        )
-        if not claim.claimed:
-            return _resubmitted_authorization(
-                claim, facilitator, payment_payload, requirements_dict,
-                req.query,
-            )
-
-    started = time.monotonic()
-    result = run_research(
-        req.query,
-        max_results=req.max_results,
-        request_id=request_id,
-        observe_urls=_observe_urls_enabled(),
-    )
-    _meter(result, request_id, started, paid=cfg.require_payment)
-
-    def _refund_credits_if_needed(reason: str) -> None:
-        if not paid_with_credits or not credit_account:
-            return
-        try:
-            credit_ledger.refund(
-                credit_account, request_id=request_id, note=reason,
-            )
-        except RefundNotAllowed:
-            pass
-
-    # The window may have closed while we worked. Settling now would present an
-    # expired authorization; the buyer is not charged and is told to retry with
-    # a fresh one, which is the honest outcome for our own slowness.
-    if deadline is not None and deadline.expired():
-        result["billable"] = False
-        result["status"] = "unavailable"
-        result["refusal_reason"] = "retrieval_unavailable"
-        result["error"] = ErrorCode.DEADLINE_EXCEEDED.value
-        _refund_credits_if_needed("refund_deadline_exceeded")
-        if paid_with_credits:
-            result["payment"] = {
-                "settled": False,
-                "mode": "credits",
-                "reason": "deadline_exceeded_credits_refunded",
-            }
-        else:
-            result["payment"] = {
-                "settled": False,
-                "reason": "deadline_exceeded_before_settlement",
-            }
-        if not paid_with_credits and cfg.require_payment:
-            ledger.record_delivery(
-                request_id, status=result["status"], billable=False,
-                custody_root=result.get("custody_root"), query=req.query, response=result,
-            )
-        outcomes.record(result["status"], bool(result["custody_valid"]), False,
-                        paid=False)
-        return JSONResponse(status_code=503, content=result)
-
-    metrics.increment("veritas_research_total", {"status": result["status"]})
-    record = store.save(result)
-    result["custody_receipt"] = record
-    # Only paid traffic scores. /v1/trust is free and unauthenticated, so
-    # counting free requests would let anyone manufacture our reputation
-    # (constitution gap G7). Free outcomes are still recorded and reported.
-    outcomes.record(
-        result["status"],
-        bool(result["custody_valid"]),
-        bool(result["billable"]),
-        paid=cfg.require_payment and (not paid_with_credits or bool(result["billable"])),
-    )
-
-    # Record what we produced BEFORE settlement is attempted, and fsync it. A
-    # crash between the two then leaves a durable statement that we owe this
-    # buyer a deliverable and may or may not have been paid — which is
-    # reconcilable — rather than silence, which is not. Non-billable work
-    # abandons the authorization, so the ledger refuses to settle it.
-    # Credit-paid requests never claim an x402 nonce, so they skip this ledger.
-    if cfg.require_payment and not paid_with_credits:
-        ledger.record_delivery(
-            request_id, status=result["status"], billable=bool(result["billable"]),
-            custody_root=result.get("custody_root"), query=req.query, response=result,
-        )
-
-    # Retrieval failures are ours, not the buyer's: never settle for them.
-    # Credit debits are refunded so the buyer is not charged for our outage.
-    if result["status"] == "unavailable":
-        _refund_credits_if_needed("refund_retrieval_unavailable")
-        result["payment"] = {
-            "settled": False,
-            "reason": (
-                "not_billable_retrieval_unavailable_credits_refunded"
-                if paid_with_credits
-                else "not_billable_retrieval_unavailable"
-            ),
-            **({"mode": "credits"} if paid_with_credits else {}),
-        }
-        # The registry code is additive: the full research body stays because
-        # the unavailability report is itself the deliverable here.
-        result["error"] = ErrorCode.RETRIEVAL_UNAVAILABLE.value
-        return JSONResponse(status_code=503, content=result)
-
-    if paid_with_credits:
-        result["payment"] = {
-            "settled": True,
-            "mode": "credits",
-            "reason": "prepaid_credits",
-            "account": credit_account,
-            "balance": credit_ledger.balance(credit_account) if credit_account else None,
-        }
-        return result
-
-    if cfg.require_payment and facilitator is not None:
-        return _settle_and_respond(
-            result, request_id, facilitator, payment_payload, requirements_dict,
-        )
-
-    result["payment"] = {"settled": False, "mode": cfg.mode, "reason": "free_mode"}
-    return result
 
 
 @app.post(NOTARIZE_PATH)
@@ -1244,6 +925,7 @@ def _notarize(
                 "settled": False,
                 "mode": "credits",
                 "reason": "deadline_exceeded_credits_refunded",
+                "refund_rail": "ledger_credit",
             }
         else:
             result["payment"] = {
@@ -1287,6 +969,7 @@ def _notarize(
                 else "not_billable_fetch_unavailable"
             ),
             **({"mode": "credits"} if paid_with_credits else {}),
+            **({"refund_rail": "ledger_credit"} if paid_with_credits else {}),
         }
         result["error"] = ErrorCode.RETRIEVAL_UNAVAILABLE.value
         return JSONResponse(status_code=503, content=result)
@@ -1703,14 +1386,15 @@ class SignalsPullRequest(BaseModel):
 @app.get(SIGNALS_PATH)
 async def signals_list(
     venue: str | None = Query(default=None),
-    limit: int = Query(default=20, ge=1, le=50),
+    q: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
 ):
-    items = signal_snapshots.list(venue=venue, limit=limit)
+    items = signal_snapshots.list(venue=venue, q=q, limit=limit)
     return {
         "signals": items,
         "count": len(items),
         "method": "veritas.signals.v1",
-        "note": "market-implied prices, not a verdict",
+        "note": "latest snapshot per market; prices, not a verdict",
     }
 
 
@@ -1752,28 +1436,224 @@ async def signals_get(content_hash: str):
 
 
 @app.post(SIGNALS_PULL_PATH)
-async def signals_pull(req: SignalsPullRequest):
-    """Pull public venue books and store snapshots via the evidence channel."""
+async def signals_pull(req: SignalsPullRequest, request: Request):
+    """Pull public venue books. GET catalog stays free. Live POST is x402."""
     if req.venues and any(v not in VENUES for v in req.venues):
         return JSONResponse(
             status_code=422,
             content=error_envelope(ErrorCode.SIGNALS_REFUSED),
         )
+    if not research_slots.acquire(blocking=False):
+        return _research_slot_shed_response()
+    try:
+        return await _signals_pull_inner(req, request)
+    finally:
+        research_slots.release()
+
+
+async def _signals_pull_inner(req: SignalsPullRequest, request: Request):
+    cfg = get_payment_config()
+    if cfg.mode == "misconfigured":
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(ErrorCode.PAYMENT_MISCONFIGURED, cfg.config_errors),
+        )
+    payment_header = request.headers.get("X-PAYMENT")
+    session_header = request.headers.get(SESSION_HEADER)
+    payment_payload: dict[str, Any] | None = None
+    requirements_dict: dict[str, Any] | None = None
+    facilitator = None
+    request_id = str(uuid.uuid4())
+    paid_with_credits = False
+    credit_account: str | None = None
+    if cfg.require_payment and not payment_header and session_header:
+        try:
+            session = siwx_store.resolve(session_header)
+        except SiwxSessionError:
+            return JSONResponse(
+                status_code=401,
+                content=error_envelope(
+                    ErrorCode.SESSION_INVALID,
+                    "SIWx session missing, unknown, or expired",
+                ),
+            )
+        try:
+            atomic = int(to_atomic_amount(cfg.price, cfg.network))
+        except (PriceError, TypeError, ValueError):
+            return JSONResponse(
+                status_code=503,
+                content=error_envelope(
+                    ErrorCode.PAYMENT_MISCONFIGURED,
+                    "price configuration rejected at credit debit",
+                ),
+            )
+        try:
+            credit_ledger.debit(
+                session.address,
+                atomic,
+                request_id=request_id,
+                note="signals_debit",
+            )
+        except InsufficientCredits:
+            return JSONResponse(
+                status_code=402,
+                content=error_envelope(
+                    ErrorCode.CREDITS_INSUFFICIENT,
+                    "prepaid credits insufficient for this catalog debit",
+                    balance=credit_ledger.balance(session.address),
+                    required=atomic,
+                ),
+            )
+        credit_account = session.address
+        paid_with_credits = True
+    if cfg.require_payment and not paid_with_credits:
+        if not payment_header:
+            return _challenge(
+                cfg,
+                "X-PAYMENT header is required",
+                resource=signals_resource_url(),
+            )
+        payment_payload = decode_payment_header(payment_header)
+        if payment_payload is None:
+            return _challenge(
+                cfg,
+                "X-PAYMENT header is not valid base64-encoded JSON",
+                resource=signals_resource_url(),
+            )
+        nonce = extract_nonce(payment_payload)
+        if nonce is None:
+            reason = (
+                ErrorCode.PAYMENT_NONCE_MALFORMED
+                if _carries_a_nonce_field(payment_payload)
+                else ErrorCode.PAYMENT_NONCE_MISSING
+            )
+            return JSONResponse(status_code=409, content=error_envelope(
+                reason,
+                "This payment authorization cannot be admitted. Request a "
+                "fresh 402 challenge and sign a new authorization.",
+            ))
+        try:
+            requirements = build_payment_requirements(
+                pay_to=cfg.pay_to,
+                network=cfg.network,
+                price=cfg.price,
+                resource=signals_resource_url(),
+            )
+        except PriceError:
+            return JSONResponse(
+                status_code=503,
+                content=error_envelope(
+                    ErrorCode.PAYMENT_MISCONFIGURED,
+                    "price configuration rejected at challenge construction",
+                ),
+            )
+        requirements_dict = requirements.to_dict()
+        facilitator = get_facilitator(cfg.facilitator, live=True)
+        verification = facilitator.verify(payment_payload, requirements_dict)
+        if not verification.is_valid:
+            reason = verification.invalid_reason or "payment_invalid"
+            if reason.startswith(VERIFICATION_OUTAGE_PREFIXES):
+                return JSONResponse(
+                    status_code=503,
+                    content=error_envelope(
+                        ErrorCode.PAYMENT_VERIFICATION_UNAVAILABLE, reason,
+                    ),
+                )
+            return _challenge(cfg, reason, resource=signals_resource_url())
+        try:
+            Deadline.for_authorization(
+                valid_before=_authorization_valid_before(payment_payload),
+                max_work_seconds=MAX_WORK_SECONDS,
+            )
+        except DeadlineTooShort:
+            return _challenge(
+                cfg,
+                (
+                    "authorization window too short: it must leave at least "
+                    f"{MIN_USABLE_SECONDS}s of work time plus a "
+                    f"{SETTLEMENT_MARGIN_SECONDS}s settlement margin"
+                ),
+                resource=signals_resource_url(),
+            )
+        claim = ledger.claim(
+            nonce, request_id,
+            network=requirements_dict.get("network"),
+            asset=requirements_dict.get("asset"),
+            amount=requirements_dict.get("maxAmountRequired"),
+            pay_to=requirements_dict.get("payTo"),
+            payer=verification.payer,
+            price=cfg.price,
+            price_version=PRICE_TABLE_VERSION,
+        )
+        if not claim.claimed:
+            return _resubmitted_authorization(
+                claim, facilitator, payment_payload, requirements_dict,
+                req.query,
+            )
     try:
         items = pull_signals(req.query, venues=req.venues, limit=req.limit)
     except SignalsError:
+        if paid_with_credits and credit_account:
+            try:
+                credit_ledger.refund(
+                    credit_account, request_id=request_id, note="refund_venue_unavailable",
+                )
+            except RefundNotAllowed:
+                pass
+            return JSONResponse(
+                status_code=503,
+                content={
+                    **error_envelope(ErrorCode.SIGNALS_UNAVAILABLE),
+                    "status": "unavailable",
+                    "billable": False,
+                    "request_id": request_id,
+                    "payment": {
+                        "settled": False,
+                        "mode": "credits",
+                        "reason": "not_billable_venue_unavailable_credits_refunded",
+                        "refund_rail": "ledger_credit",
+                    },
+                },
+            )
+        if cfg.require_payment and not paid_with_credits:
+            ledger.record_delivery(
+                request_id, status="unavailable", billable=False,
+                custody_root=None, query=req.query,
+                response={"status": "unavailable", "billable": False},
+            )
         return JSONResponse(
             status_code=503,
-            content=error_envelope(ErrorCode.SIGNALS_UNAVAILABLE),
+            content={
+                **error_envelope(ErrorCode.SIGNALS_UNAVAILABLE),
+                "status": "unavailable",
+                "billable": False,
+                "request_id": request_id,
+            },
         )
     written = signal_snapshots.put_many(items)
-    return {
+    body: dict[str, Any] = {
         "signals": items,
         "stored": written,
         "analysis": analyze_signals(items),
         "method": "veritas.signals.v1",
         "note": "market-implied prices, not a verdict",
+        "request_id": request_id,
+        "query": req.query,
+        "status": "completed" if items else "refused",
+        "billable": True,
     }
+    if paid_with_credits:
+        body["payment"] = {"settled": True, "mode": "credits"}
+        return body
+    if cfg.require_payment:
+        ledger.record_delivery(
+            request_id, status=body["status"], billable=True,
+            custody_root=None, query=req.query, response=body,
+        )
+        return _settle_and_respond(
+            body, request_id, facilitator, payment_payload, requirements_dict,
+        )
+    return body
 
 
 @app.get("/v1/trust")
@@ -1798,9 +1678,10 @@ async def trust_from_records(req: TrustScoreRequest):
 @app.get("/v1/schema")
 async def schema():
     """The wire contract as JSON Schema, generated from veritas.schema."""
-    from veritas.schema import response_json_schema
+    from veritas.schema import catalog_json_schema, response_json_schema
 
     return {
+        "catalog": catalog_json_schema(),
         "response": response_json_schema(),
         "error_envelope": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2254,7 +2135,7 @@ async def well_known():
     body: dict[str, Any] = {
         "x402Version": 1,
         "resources": [
-            {"resource": resource_url(), "method": "POST"},
+            {"resource": signals_resource_url(), "method": "POST"},
             {"resource": notarize_resource_url(), "method": "POST"},
         ],
         "facilitator": cfg.facilitator,
@@ -2283,7 +2164,6 @@ async def well_known():
             # The paid resource is in resources[]; an agent traversing links
             # alone must still reach it, and verify/receipts close the loop
             # a delivered response starts.
-            "research": RESOURCE_PATH,
             "verify": "/v1/verify",
             "receipts": "/v1/receipts/{request_id}",
             "evidence": "/v1/evidence/{content_hash}",
@@ -2318,10 +2198,10 @@ async def well_known():
     if cfg.is_live_ready():
         try:
             body["accepts"] = [build_payment_requirements(
-                cfg.pay_to, cfg.network, cfg.price, resource_url(),
+                cfg.pay_to, cfg.network, cfg.price, signals_resource_url(),
             ).to_dict()]
         except PriceError:
-            # Category only, same as the /v1/research path: the exception
+            # Category only: the exception text describes server-side configuration.
             # text describes server-side configuration.
             body["error"] = "payment_misconfigured: price configuration rejected"
     return body

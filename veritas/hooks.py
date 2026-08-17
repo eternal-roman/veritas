@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.13"
+HOOKS_VERSION = "1.15"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -139,7 +139,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _http("constitution", "GET", "/v1/constitution",
           "The venue constitution: each article enforced or marked aspirational."),
     _http("schema", "GET", "/v1/schema",
-          "The research wire contract as JSON Schema, plus the error envelope."),
+          "The served wire contract as JSON Schema, plus the error envelope."),
     _http("errors", "GET", "/v1/errors",
           "Registered error codes with HTTP status and retriability."),
     _http("openapi", "GET", "/openapi.json",
@@ -155,13 +155,12 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _http("operator_enroll", "POST", "/v1/operator/enroll",
           "Create or refresh the local agent account. Loopback only; same as veritas-agent enroll.",
           access="local"),
-    _http("research", "POST", "/v1/research",
-          "The paid product: evidence-grounded research with custody chain; "
-          "402 challenge in live mode, X-PAYMENT or credit session to proceed.",
-          access="payment-gated"),
+    _http("research_removed", "POST", "/v1/research",
+          "Removed product. Always 410 product_removed. Use POST /v1/signals "
+          "or POST /v1/notarize."),
     _http("notarize", "POST", "/v1/notarize",
           "Paid observe-once evidence notary for a URL; same payment gates "
-          "as research; unavailable is never billable.",
+          "as catalog pull; unavailable is never billable.",
           access="payment-gated"),
     _http("verify", "POST", "/v1/verify",
           "Origin re-fetch verification of a published content hash."),
@@ -192,7 +191,8 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "submit the lock only if the challenge fired. Live facilitator "
           "required; free mode refuses rather than inventing."),
     _http("signals", "GET", "/v1/signals",
-          "Recent prediction-market snapshots. Prices, not verdicts."),
+          "Latest catalog snapshot per market. Optional q searches the store. "
+          "Prices, not verdicts."),
     _http("signals_history", "GET", "/v1/signals/history",
           "Time-ordered snapshots of one venue market, plus arithmetic analysis. "
           "Not a forecast."),
@@ -200,7 +200,9 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "One stored snapshot by content hash; 404 when never stored."),
     _http("signals_pull", "POST", "/v1/signals",
           "Pull public Kalshi/Polymarket books, store snapshots, and return "
-          "arithmetic analysis. No trading, no keys."),
+          "arithmetic analysis. Payment-gated in live mode (same price as "
+          "notarize). GET catalog stays free. No trading, no keys.",
+          "payment-gated"),
     _http("trust", "GET", "/v1/trust",
           "Independent-audit score; UNPROVEN until buyer-supplied verified records."),
     _http("trust_score", "POST", "/v1/trust",
@@ -220,7 +222,8 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "route exists only when VERITAS_METRICS_TOKEN is configured.",
           access="token-gated", absent_without_config=True),
     # -------------------------------------------------- MCP (stdio) —
-    _mcp("research", "Evidence-grounded research over the local free-mode engine."),
+    _mcp("signals_list", "List latest catalog snapshots (local free-mode store)."),
+    _mcp("signals_pull", "Pull Kalshi/Polymarket books into the local store."),
     _mcp("verify", "Re-check a published content hash."),
     _mcp("verify_attestation", "Check an EIP-191 EvidenceRecord attestation."),
     _mcp("verify_pack", "Check a portable EvidencePack's integrity."),
@@ -246,7 +249,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _cli("veritas-ops",
          "Operator reports off the ledger as JSON: revenue, owed, reconcile, "
          "reconcile-chain, reconcile-loop, existence, usage, pricing, "
-         "authorization, prune, escrow-sweep, escrow.",
+         "authorization, prune, escrow-sweep, escrow, signals-ingest.",
          _EXIT_OK),
     _cli("veritas-money-loop",
          "Compose one settle-then-reconcile pass and report it.",

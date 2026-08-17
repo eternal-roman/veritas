@@ -1,1 +1,1 @@
-"""Evaluation harness for Veritas."""
+"""Evaluations: catalog honesty and payment model."""

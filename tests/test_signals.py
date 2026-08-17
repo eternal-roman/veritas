@@ -11,12 +11,10 @@ from fastapi.testclient import TestClient
 
 from veritas.evidence_store import EvidenceStore
 from veritas.hashing import compute_content_hash
-from veritas.pipeline import run_research
 from veritas.signals import (
     ALLOWED_HOSTS,
     METHOD,
     VENUE_ENDPOINTS,
-    PredictionMarketRetriever,
     SignalsError,
     SignalStore,
     analyze,
@@ -201,21 +199,96 @@ def test_as_evidence_is_not_a_verdict_and_uses_license():
     assert "licence" not in item
 
 
-def test_prediction_market_retriever_is_opt_in(tmp_path):
-    store = SignalStore(tmp_path)
-    retriever = PredictionMarketRetriever(
-        opener=_opener_for(POLYMARKET_SEARCH, KALSHI_MARKETS),
-        venues=["polymarket"],
-        store=store,
+def test_venue_unavailable_is_not_an_empty_catalog():
+    with pytest.raises(SignalsError, match="venue"):
+        pull_polymarket("fed", opener=_opener_for())
+
+
+def test_venue_unavailable_is_not_settled(tmp_path, monkeypatch):
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "ab" * 20)
+    monkeypatch.setenv("VERITAS_NETWORK", "eip155:84532")
+    import veritas.server as server
+
+    importlib.reload(server)
+    monkeypatch.setattr(
+        server,
+        "pull_signals",
+        lambda *a, **k: (_ for _ in ()).throw(SignalsError("venues_unavailable:down")),
     )
-    result = retriever.retrieve("fed", max_results=4)
-    assert result.sources
-    assert "polymarket" in result.providers_succeeded
-    # Not wired into default_retriever: a default research run stays offline.
-    offline = run_research("What is the x402 protocol?", allow_network=False)
-    providers = offline.get("retrieval", {}).get("providers_attempted") or []
-    assert "prediction_markets" not in providers
-    assert "polymarket" not in providers
+    client = TestClient(server.app)
+    # Unpaid: 402, no catalog invented.
+    unpaid = client.post("/v1/signals", json={"query": "fed"})
+    assert unpaid.status_code == 402
+
+
+def test_raising_opener_becomes_signals_error():
+    def boom(request, timeout=None):
+        raise URLError("down")
+
+    with pytest.raises(SignalsError):
+        pull_kalshi("fed", opener=boom)
+
+
+def test_pull_caps_limit():
+    many = {
+        "events": [
+            {
+                "markets": [
+                    {
+                        "id": f"m-{i}",
+                        "question": f"Fed item {i}",
+                        "outcomes": '["Yes", "No"]',
+                        "outcomePrices": '["0.4", "0.6"]',
+                        "closed": False,
+                    }
+                    for i in range(20)
+                ]
+            }
+        ]
+    }
+    signals = pull_polymarket("fed", limit=3, opener=_opener_for(many))
+    assert len(signals) <= 3
+
+
+def test_catalog_response_conforms_to_contract(tmp_path, monkeypatch):
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    fixtures = pull_polymarket("fed", opener=_opener_for(POLYMARKET_SEARCH))
+    import veritas.server as server
+
+    importlib.reload(server)
+    monkeypatch.setattr(server, "pull_signals", lambda *a, **k: fixtures)
+    client = TestClient(server.app)
+    body = client.post("/v1/signals", json={"query": "fed", "venues": ["polymarket"]}).json()
+    assert body["method"] == METHOD
+    assert "not a verdict" in body["note"]
+    assert isinstance(body["signals"], list)
+    assert "analysis" in body
+
+
+def test_snapshots_state_they_are_not_verdicts():
+    signals = pull_polymarket("fed", opener=_opener_for(POLYMARKET_SEARCH))
+    assert all("not a verdict" in item["note"] for item in signals)
+
+
+def test_live_mode_unpaid_pull_returns_402(tmp_path, monkeypatch):
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
+    monkeypatch.setenv("VERITAS_PUBLIC_URL", "https://veritas.test")
+    monkeypatch.setenv("VERITAS_PAY_TO", "0x" + "ab" * 20)
+    monkeypatch.setenv("VERITAS_NETWORK", "eip155:84532")
+    import veritas.server as server
+
+    importlib.reload(server)
+    client = TestClient(server.app)
+    response = client.post("/v1/signals", json={"query": "fed"})
+    assert response.status_code == 402
+    accepts = response.json().get("accepts") or []
+    assert accepts
+    assert "/v1/signals" in str(accepts[0].get("resource") or "")
 
 
 def test_http_pull_persists_and_lists(tmp_path, monkeypatch):
@@ -262,6 +335,98 @@ def test_http_pull_persists_and_lists(tmp_path, monkeypatch):
         "/v1/signals/history", params={"venue": "betfair", "market_id": "x"}
     )
     assert bad_hist.status_code == 422
+
+
+def test_polymarket_search_miss_does_not_dump_the_book():
+    empty = {"events": [], "markets": []}
+    signals = pull_polymarket("nomatch", opener=_opener_for(empty))
+    assert signals == []
+
+
+def test_kalshi_pages_cursor_until_match(tmp_path):
+    page1 = {
+        "markets": [
+            {
+                "ticker": "RAIN-NYC",
+                "title": "Rain in New York tomorrow",
+                "last_price": 10,
+                "status": "open",
+            }
+        ],
+        "cursor": "page-2",
+    }
+    page2 = {
+        "markets": [
+            {
+                "ticker": "FED-24OCT",
+                "title": "Fed funds rate decision October",
+                "last_price": 42,
+                "status": "open",
+            }
+        ],
+        "cursor": "",
+    }
+    signals = pull_kalshi("fed", opener=_opener_for(page1, page2))
+    assert len(signals) == 1
+    assert signals[0]["market_id"] == "FED-24OCT"
+
+
+def test_catalog_list_is_latest_per_market_and_searchable(tmp_path):
+    store = SignalStore(tmp_path)
+    first = {
+        "venue": "polymarket",
+        "market_id": "m-fed",
+        "question": "Will the Fed cut rates in October?",
+        "outcomes": [{"name": "Yes", "price": 0.40}],
+        "observed_at": "2026-08-01T00:00:00Z",
+        "source_url": "https://gamma-api.polymarket.com/markets/m-fed",
+        "method": METHOD,
+        "note": "market-implied prices, not a verdict",
+    }
+    second = dict(first)
+    second["outcomes"] = [{"name": "Yes", "price": 0.55}]
+    second["observed_at"] = "2026-08-02T00:00:00Z"
+    other = {
+        "venue": "kalshi",
+        "market_id": "RAIN-NYC",
+        "question": "Rain in New York tomorrow",
+        "outcomes": [{"name": "Yes", "price": 0.10}],
+        "observed_at": "2026-08-02T00:00:00Z",
+        "source_url": "https://external-api.kalshi.com/trade-api/v2/markets/RAIN-NYC",
+        "method": METHOD,
+        "note": "market-implied prices, not a verdict",
+    }
+    assert store.put(first)
+    assert store.put(second)
+    assert store.put(other)
+    listed = store.list()
+    assert len(listed) == 2
+    fed = next(item for item in listed if item["market_id"] == "m-fed")
+    assert fed["outcomes"][0]["price"] == 0.55
+    searched = store.list(q="fed")
+    assert len(searched) == 1
+    assert searched[0]["market_id"] == "m-fed"
+    hist = store.history(venue="polymarket", market_id="m-fed")
+    assert [row["observed_at"] for row in hist] == [
+        "2026-08-02T00:00:00Z",
+        "2026-08-01T00:00:00Z",
+    ]
+
+
+def test_ingest_watchlist_stores(tmp_path, monkeypatch):
+    from veritas.signals import ingest
+
+    store = SignalStore(tmp_path)
+    monkeypatch.delenv("VERITAS_SIGNALS_WATCHLIST", raising=False)
+    report = ingest(
+        ["fed"],
+        venues=["polymarket"],
+        opener=_opener_for(POLYMARKET_SEARCH),
+        store=store,
+    )
+    assert report["stored"] == 1
+    assert report["pulled"] == 1
+    assert store.list(q="fed")
 
 
 def test_analyze_is_arithmetic_not_a_forecast():

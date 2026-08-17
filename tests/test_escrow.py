@@ -227,6 +227,27 @@ def test_claim_serializes_collect_and_refusal_unlocks(tmp_path):
     assert store.get(lock["lock_id"])["state"] == "forfeited"
 
 
+def test_resume_refusal_does_not_unlock(tmp_path):
+    """A collect that did not itself claim must not revert. The nonce may
+    already have been submitted by the in-flight collect."""
+    store = EscrowStore(tmp_path)
+    lock = escrow_bond(_auth(nonce="0x" + "69" * 32), network=NETWORK, store=store)
+    store.claim_for_settle(lock["lock_id"])
+
+    class Refusing:
+        def settle(self, payload, requirements):
+            return SettlementResult(False, error_reason="authorization_invalid")
+
+    with pytest.raises(EscrowError, match="settlement_refused"):
+        settle_forfeit(
+            lock,
+            outcome={"outcome": "fired"},
+            facilitator=Refusing(),
+            store=store,
+        )
+    assert store.get(lock["lock_id"])["state"] == STATE_SETTLING
+
+
 def test_http_lock_get_release(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)

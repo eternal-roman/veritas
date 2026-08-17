@@ -537,7 +537,8 @@ def settle_forfeit(
     not submitted twice. Concurrent collects serialize on the
     ``locked`` → ``settling`` claim; a crash after a successful submit
     leaves ``settling`` so a retry can finish the persist without
-    unlocking.
+    unlocking. A resume that is refused does *not* revert — the nonce
+    may already have been spent.
     """
     if not isinstance(outcome, dict) or outcome.get("outcome") != "fired":
         raise EscrowError("forfeit_requires_fired_challenge")
@@ -552,10 +553,12 @@ def settle_forfeit(
     current = db.get(lock_id)
     if current is None:
         raise EscrowError("lock_not_found")
+    claimed_now = False
     if current["state"] == STATE_SETTLING:
         held = current
     elif current["state"] == STATE_LOCKED:
         held = db.claim_for_settle(lock_id)
+        claimed_now = True
     else:
         raise EscrowError(f"lock_not_locked:{current['state']}")
 
@@ -589,7 +592,9 @@ def settle_forfeit(
             settlement_state=state or settled.get("error_reason"),
         )
     except Exception:
-        if not submitted:
+        # Only the call that just claimed may unlock. A resume must not
+        # revert: another collect may already have spent the nonce.
+        if not submitted and claimed_now:
             try:
                 db.revert_settle(lock_id)
             except EscrowError:

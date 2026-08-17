@@ -20,7 +20,7 @@ public seller URL. See [Known limitations](#known-limitations) and [ROADMAP.md](
 
 ```bash
 pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
-veritas-agent adopt --id self --interests research,verify
+veritas-agent adopt --id self --interests signals,verify
 veritas-agent up
 ```
 

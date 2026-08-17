@@ -28,10 +28,10 @@ def build_identity(
     configured = base_url or os.getenv("VERITAS_PUBLIC_URL") or None
     base = configured.rstrip("/") if configured else ""
 
-    # Capabilities and description must match the served path (pipeline +
-    # custody + support counts). Bayesian belief updating was removed from the
-    # product surface (see veritas/support.py and pipeline.py) — advertising it
-    # here was a discovery-document lie that survived the Phase T retract.
+    # Capabilities and description must match the served path (catalog +
+    # custody + support counts). Bayesian belief updating is not on the
+    # product surface (see veritas/support.py) — advertising it here was a
+    # discovery-document lie that survived the Phase T retract.
     doc: dict[str, Any] = {
         "name": "Veritas",
         "description": (

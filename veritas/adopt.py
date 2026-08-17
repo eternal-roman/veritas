@@ -27,7 +27,7 @@ def build_adopt_card(*, public_url: str | None = None) -> dict[str, Any]:
     https = bool(public_url and public_url.startswith("https://"))
     return {
         "schema": ADOPT_SCHEMA,
-        "name": "Veritas Research",
+        "name": "Veritas",
         "repository": REPO_URL,
         "raw_card": RAW_CARD,
         "public_seller": public_url,

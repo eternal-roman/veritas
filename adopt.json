@@ -1,6 +1,6 @@
 {
   "schema": "veritas.adopt.v1",
-  "name": "Veritas Research",
+  "name": "Veritas",
   "repository": "https://github.com/eternal-roman/veritas",
   "raw_card": "https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json",
   "public_seller": null,

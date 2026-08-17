@@ -8,7 +8,7 @@ One local account binds identity, wallets, and skills. No signup server.
 
 ```bash
 pip install -e ".[signing,dev]"
-veritas-agent adopt --id <your-name> --interests research,buy,verify
+veritas-agent adopt --id <your-name> --interests signals,buy,verify
 veritas-agent whoami
 veritas-agent fund-proof   # after funding the commerce address at https://faucet.circle.com/
 ```

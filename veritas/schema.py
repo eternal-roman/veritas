@@ -1,11 +1,11 @@
 """The canonical Veritas response contract.
 
 The contract is constants plus `validate_response`, which the test suite runs
-against real pipeline output so the published shape cannot silently diverge
-from the emitted one. An earlier revision also carried dataclasses mirroring
-the wire shape; they were never instantiated and drifted from the real
-contract twice — a contract nothing produces is where drift hides, so they
-were removed rather than re-synced.
+against real catalog and notary output so the published shape cannot silently
+diverge from the emitted one. An earlier revision also carried dataclasses
+mirroring the wire shape; they were never instantiated and drifted from the
+real contract twice — a contract nothing produces is where drift hides, so
+they were removed rather than re-synced.
 """
 
 from __future__ import annotations
@@ -29,8 +29,8 @@ class RefusalReason(str, Enum):
 class Provenance(str, Enum):
     LIVE_FETCH = "live_fetch"
     OFFLINE_CORPUS = "offline_corpus"
-    # Stamped by the pipeline when a source was re-observed through the
-    # notary engine (observe_urls=True) and carried no provenance of its own.
+    # Stamped when a source was re-observed through the notary engine
+    # (observe_urls=True) and carried no provenance of its own.
     NOTARY_OBSERVE = "notary.observe"
 
 
@@ -49,9 +49,9 @@ def response_json_schema() -> dict[str, Any]:
 
     Derived from the same constants `validate_response` enforces, so the
     served schema cannot drift from the enforced one. Nullability mirrors the
-    pipeline's actual output (refusal_reason is null on completed responses;
-    custody_root is typed nullable only for an empty ledger, which the
-    pipeline never produces).
+    served path's actual output (refusal_reason is null on completed
+    responses; custody_root is typed nullable only for an empty ledger, which
+    the catalog and notary paths never produce).
     """
     evidence_properties = {
         "url": {"type": "string"},

@@ -200,6 +200,11 @@ def test_constitution_md_in_sync():
             assert "aspirational" in tail, (
                 f"{article['id']} is L0 but not rendered as aspirational"
             )
+        for enforcement in article["enforcement"]:
+            assert enforcement["pointer"] in text, (
+                f"{article['id']} enforcement pointer missing from "
+                f"CONSTITUTION.md: {enforcement['pointer']}"
+            )
     for gap in KNOWN_GAPS:
         assert gap["id"] in text, f"{gap['id']} missing from CONSTITUTION.md"
 

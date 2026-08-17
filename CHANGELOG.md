@@ -11,6 +11,10 @@
 - Honesty: README no longer advertises deleted JIT/hiding-wallet
   prototypes. `STATE.md` resume tip is `#163`. Identity-TLS design
   doc records issued/card/intro as shipped and pin-on-fetch as wired.
+  `CONSTITUTION.md` enforcement lines match `constitution.py` (A11,
+  A12, A13, A22, A23); the markdown sync test now requires every
+  pointer. Adopt card name is Veritas. First-boot copy and cycle-1
+  report drop `run_research`.
 - Catalog: `GET /v1/signals` is latest-per-market and store-searchable
   (`q`). History is newest-first. Kalshi pull pages a cursor. A
   Polymarket search miss is empty, not an open-book dump. `veritas-ops
@@ -21,11 +25,11 @@
 - Live `POST /v1/signals` is payment-gated (same price as notarize).
   GET catalog stays free. Credit refunds name `refund_rail: ledger_credit`.
   `/health` and `/v1/operator` report `store_mode` (unset/sqlite/postgres).
-- CI runs dogfood cycles, the evaluation harness, and the payment-model
+- CI runs dogfood cycles, catalog honesty, and the payment-model
   checker once each. Pytest no longer repeats those jobs. The payment-model
   mutant (charge-on-signer-failure) stays in pytest — CI's module run
   does not replace it. A1's `test_control_plane_uses_shared_engine` now
-  walks HTTP and MCP onto `run_research`.
+  walks HTTP and MCP onto the catalog engine.
 
 ### Removed
 - Duplicate pytest wrappers for the harness and the payment-model

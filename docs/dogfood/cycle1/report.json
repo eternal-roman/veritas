@@ -34,9 +34,9 @@
       "pass": true
     },
     {
-      "check": "offline_research",
-      "expected": "run_research(allow_network=False) returns a contract-shaped body",
-      "observed": "status=completed, has_custody=True",
+      "check": "offline_catalog",
+      "expected": "SignalStore persist + list works offline",
+      "observed": "digest=sha256:447418261e21a2059284bc41dc0871adc268b6ee99419e001bb5d00dafc909de, n=1",
       "pass": true
     },
     {

@@ -18,8 +18,8 @@ the repository, vendor it, read all of it in one sitting, and run it::
 It re-implements the hash chain rather than importing it. That duplication is
 the point: two independent implementations that agree is a stronger statement
 than one implementation asserting it is right. ``tests/test_verifier.py``
-pins the agreement differentially against ``veritas.custody`` on real pipeline
-output and on tampered variants, so the copy cannot silently drift.
+pins the agreement differentially against ``veritas.custody`` on real catalog
+and notary output and on tampered variants, so the copy cannot silently drift.
 
 **What agreement here is and is not evidence of.** A valid result means the
 records are internally consistent: nothing was altered after the chain was

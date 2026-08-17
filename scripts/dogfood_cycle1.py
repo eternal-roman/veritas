@@ -10,7 +10,7 @@ What is measured (no outbound network):
     entry_points          console scripts the install contract must expose
     free_bootstrap        veritas-agent init-style free-mode config + runtime dir
     free_server_surfaces  health, discovery, identity, schema after bootstrap
-    offline_research      run_research(allow_network=False) is usable
+    offline_catalog       SignalStore persist + list works offline
     notary_offline        observe with injected fetch → evidence_pack present
     pack_verify           free POST /v1/packs/verify accepts the pack
     one_top_level_package installable distribution has exactly one top-level package
@@ -226,7 +226,7 @@ def check_free_server_surfaces(tmp: Path) -> dict[str, Any]:
     )
 
 
-def check_offline_research(tmp: Path) -> dict[str, Any]:
+def check_offline_catalog(tmp: Path) -> dict[str, Any]:
     os.environ["VERITAS_RUNTIME_DIR"] = str(tmp / "catalog")
     from veritas.signals import METHOD, SignalStore
 
@@ -322,7 +322,7 @@ def run() -> dict[str, Any]:
                 check_one_top_level_package(),
                 check_free_bootstrap(tmp / "boot"),
                 check_free_server_surfaces(tmp / "srv"),
-                check_offline_research(tmp / "res"),
+                check_offline_catalog(tmp / "res"),
                 check_notary_and_pack(tmp / "notary"),
             ]
         finally:

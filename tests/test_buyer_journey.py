@@ -144,6 +144,24 @@ def test_journey_free_mode_exposes_hash_path():
     assert fr["content_hash"]
 
 
+def test_journey_content_hash_mismatch_is_not_ok():
+    """verify_content_hash returns (bool, meta). bool(tuple) is always True —
+    the journey must unpack the first element."""
+    report = run_buyer_journey(
+        BASE,
+        fetch=_fetch_map(),
+        exchange=_exchange_free,
+        resolver=_public,
+        policy=DiligencePolicy(require_challenge_matches_discovery=False),
+        content="this is not hello",
+        content_hash=compute_content_hash("hello"),
+    )
+    steps = {s["step"]: s for s in report["steps"]}
+    verify = steps["verify_content_hash"]
+    assert verify["ok"] is False
+    assert verify["matched"] is False
+
+
 def test_probe_research_records_network_error():
     def bad_exchange(url, **kwargs):
         return {"status": None, "body": b"", "error": "URLError: down"}

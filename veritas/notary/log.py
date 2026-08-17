@@ -15,14 +15,13 @@ Honesty:
 from __future__ import annotations
 
 import json
-import os
 import threading
 from pathlib import Path
 from typing import Any
 
 from veritas.notary.merkle import inclusion_proof, merkle_root, verify_inclusion
+from veritas.runtime import ENV_RUNTIME, resolve_runtime_dir
 
-ENV_RUNTIME = "VERITAS_RUNTIME_DIR"
 LOG_NOTE = (
     "operator-local Merkle evidence log; inclusion proves membership in this "
     "instance's leaf list at the stated root — not a public transparency log "
@@ -46,11 +45,7 @@ class EvidenceLog:
     """Thread-safe append-only leaf log with Merkle proofs."""
 
     def __init__(self, base_dir: str | Path | None = None) -> None:
-        runtime = Path(
-            base_dir
-            or os.getenv(ENV_RUNTIME)
-            or ".veritas_runtime"
-        )
+        runtime = resolve_runtime_dir(base_dir)
         self.path = runtime / "evidence_log" / "leaves.json"
         self._lock = threading.Lock()
 

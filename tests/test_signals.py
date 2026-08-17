@@ -131,6 +131,14 @@ def test_pull_kalshi_clamps_cents_and_filters():
     assert item["outcomes"][1]["price"] == pytest.approx(0.58)
 
 
+def test_pull_kalshi_does_not_dump_the_book_on_short_tokens():
+    """A query that matches nothing must not return unfiltered open markets."""
+    signals = pull_kalshi("zz", opener=_opener_for(KALSHI_MARKETS))
+    assert signals == []
+    signals = pull_kalshi("x", opener=_opener_for(KALSHI_MARKETS))
+    assert signals == []
+
+
 def test_kalshi_last_price_one_is_one_cent_not_certainty():
     """Kalshi last_price is cents. 1 must be 0.01, not 1.00 (review-2)."""
     payload = {

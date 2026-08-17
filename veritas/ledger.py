@@ -59,7 +59,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import sqlite3
 from collections import Counter
 from dataclasses import dataclass
@@ -71,10 +70,10 @@ from typing import Any
 
 from .metering import UNPRICED, CostTable, Usage, cost_of
 from .retention import is_expired
+from .runtime import resolve_runtime_dir
 from .store import StoreUnavailable, connect_target, parse_database_url
 from .x402 import NONCE_RE, USDC_ASSETS
 
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DB_FILENAME = "ledger.sqlite3"
 
 
@@ -218,9 +217,7 @@ class Ledger:
     """Durable record of authorizations, deliveries and settlements."""
 
     def __init__(self, base_dir: Path | str | None = None) -> None:
-        self.base_dir = Path(
-            base_dir or os.getenv("VERITAS_RUNTIME_DIR") or _DEFAULT_RUNTIME_DIR
-        )
+        self.base_dir = resolve_runtime_dir(base_dir)
 
     @property
     def path(self) -> Path:

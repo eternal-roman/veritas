@@ -29,7 +29,7 @@ from veritas import __version__
 from veritas.agent_account import AgentAccountError
 from veritas.constitution import build_constitution
 from veritas.credits import CreditLedger, InsufficientCredits, RefundNotAllowed
-from veritas.custody import CustodyStore, ReceiptPresence
+from veritas.custody import CustodyStore, ReceiptPresence, redact_receipt_for_wire
 from veritas.deadline import (
     MIN_USABLE_SECONDS,
     SETTLEMENT_MARGIN_SECONDS,
@@ -38,7 +38,7 @@ from veritas.deadline import (
 )
 from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
-from veritas.escrow import EscrowError, EscrowStore, is_safe_lock_id, settle_forfeit
+from veritas.escrow import EscrowError, EscrowStore, is_safe_lock_id, public_lock, settle_forfeit
 from veritas.evidence_store import EvidenceStore, is_safe_content_hash
 from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
@@ -57,6 +57,7 @@ from veritas.operator_ui import (
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
+from veritas.runtime import probe_runtime_dir
 from veritas.signals import VENUES, SignalsError, SignalStore
 from veritas.signals import pull as pull_signals
 from veritas.siwx import SiwxError, SiwxSessionError, SiwxSessionStore, SiwxVerifyError
@@ -450,6 +451,9 @@ async def readyz():
     """
     cfg = get_payment_config()
     reasons = list(cfg.config_errors) if cfg.mode == "misconfigured" else []
+    writable, runtime_reason = probe_runtime_dir()
+    if not writable and runtime_reason:
+        reasons.append(runtime_reason)
     ready = not reasons
     body = {"ready": ready, "payment_mode": cfg.mode, "reasons": reasons}
     if ready:
@@ -1345,27 +1349,22 @@ async def verify(req: VerifyRequest):
         url = record.get("query")
         hashes = record.get("evidence_hashes") or []
         published = req.content_hash or (hashes[0] if hashes else None)
-        if not isinstance(url, str) or not url or not published:
-            return {
-                "valid": False,
-                "binding": "receipt_refetch",
-                "match": False,
-                "reason": "receipt_incomplete",
-                "request_id": req.request_id,
-                "note": (
-                    "receipt lacked a URL or published content_hash; "
-                    "cannot re-fetch"
-                ),
-            }
-        if not url.startswith(("http://", "https://")):
-            # A research receipt stores the buyer's question in `query` and
-            # per-evidence content hashes — there is no single origin to
-            # re-fetch. Before this guard the question itself was fetched as
-            # a URL and the refusal came back `robots_unknown`: a claim about
-            # an origin's robots policy for something that was never an
-            # origin. Could-not-check must not impersonate a specific
-            # failure (the same separation the diligence/audit exit codes
-            # hold), and no research slot or outbound fetch is owed to it.
+        if isinstance(url, str) and url.startswith(("http://", "https://")) and published:
+            if not research_slots.acquire(blocking=False):
+                return _research_slot_shed_response()
+            try:
+                from veritas.notary.refetch import refetch_verify
+
+                result = await run_in_threadpool(refetch_verify, url, published)
+                result["binding"] = "receipt_refetch"
+                result["request_id"] = req.request_id
+                return result
+            finally:
+                research_slots.release()
+        # Research receipts store query_hash, not an origin URL. Saying
+        # receipt_incomplete here would collapse "we have the receipt" into
+        # "the receipt is broken" after L6 stopped persisting the question.
+        if record.get("query_hash") or hashes or (isinstance(url, str) and url):
             return {
                 "valid": False,
                 "binding": "receipt_refetch",
@@ -1379,17 +1378,17 @@ async def verify(req: VerifyRequest):
                     "(veritas-verify / veritas.custody.verify_chain_records)"
                 ),
             }
-        if not research_slots.acquire(blocking=False):
-            return _research_slot_shed_response()
-        try:
-            from veritas.notary.refetch import refetch_verify
-
-            result = await run_in_threadpool(refetch_verify, url, published)
-            result["binding"] = "receipt_refetch"
-            result["request_id"] = req.request_id
-            return result
-        finally:
-            research_slots.release()
+        return {
+            "valid": False,
+            "binding": "receipt_refetch",
+            "match": False,
+            "reason": "receipt_incomplete",
+            "request_id": req.request_id,
+            "note": (
+                "receipt lacked a URL or published content_hash; "
+                "cannot re-fetch"
+            ),
+        }
 
     # --- Independent: caller names URL + published hash; we re-fetch ---
     if req.url and req.content_hash:
@@ -1519,7 +1518,7 @@ async def receipt(request_id: str):
     if presence is ReceiptPresence.PRESENT:
         record = store.load(request_id)
         if record is not None:
-            return record
+            return redact_receipt_for_wire(record)
         # Race: pruned between lookup and load → gone, not unknown.
         presence = store.lookup(request_id)
     if presence is ReceiptPresence.GONE:
@@ -1562,7 +1561,8 @@ class EscrowLockRequest(BaseModel):
 
 
 class EscrowForfeitRequest(BaseModel):
-    outcome: dict[str, Any]
+    warranty: dict[str, Any]
+    response: dict[str, Any]
 
 
 @app.post(ESCROW_LOCK_PATH)
@@ -1597,12 +1597,25 @@ async def escrow_get(lock_id: str):
             status_code=404,
             content=error_envelope(ErrorCode.ESCROW_LOCK_NOT_FOUND, lock_id=lock_id),
         )
-    return found
+    return public_lock(found)
 
 
 @app.post("/v1/escrow/{lock_id}/release")
-async def escrow_release(lock_id: str):
-    """Mark a lock unclaimable. Never submits on-chain."""
+async def escrow_release(lock_id: str, request: Request):
+    """Mark a lock unclaimable. Never submits on-chain.
+
+    Loopback-only: a stranger who saw the lock id on a warranty must not
+    be able to void the bond. The seller who locked it releases from the
+    same host (or ``veritas-ops``).
+    """
+    if not is_loopback_client(request):
+        return JSONResponse(
+            status_code=401,
+            content=error_envelope(
+                ErrorCode.UNAUTHORIZED,
+                "escrow release is loopback-only",
+            ),
+        )
     try:
         return escrow_locks.release(lock_id)
     except EscrowError as exc:
@@ -1620,6 +1633,9 @@ async def escrow_release(lock_id: str):
 async def escrow_forfeit(lock_id: str, req: EscrowForfeitRequest):
     """Submit a locked authorization after a fired challenge.
 
+    The caller supplies the warranty and the deliverable. This handler
+    re-runs ``evaluate_challenge`` and refuses anything that is not
+    ``fired``. A client-authored ``outcome: fired`` is not enough.
     Refuses in free mode rather than inventing a simulated settlement.
     """
     if not is_safe_lock_id(lock_id):
@@ -1632,6 +1648,24 @@ async def escrow_forfeit(lock_id: str, req: EscrowForfeitRequest):
         return JSONResponse(
             status_code=404,
             content=error_envelope(ErrorCode.ESCROW_LOCK_NOT_FOUND, lock_id=lock_id),
+        )
+    from veritas.warranty import OUTCOME_FIRED, evaluate_challenge
+
+    try:
+        outcome = evaluate_challenge(req.warranty, req.response)
+    except Exception:
+        return JSONResponse(
+            status_code=409,
+            content=error_envelope(ErrorCode.ESCROW_REFUSED, lock_id=lock_id),
+        )
+    claimed = (outcome.get("forfeit") or {}).get("lock_id")
+    if (
+        outcome.get("outcome") != OUTCOME_FIRED
+        or claimed != lock_id
+    ):
+        return JSONResponse(
+            status_code=409,
+            content=error_envelope(ErrorCode.ESCROW_REFUSED, lock_id=lock_id),
         )
     cfg = get_payment_config()
     if not cfg.is_live_ready():
@@ -1646,7 +1680,7 @@ async def escrow_forfeit(lock_id: str, req: EscrowForfeitRequest):
     try:
         return settle_forfeit(
             found,
-            outcome=req.outcome,
+            outcome=outcome,
             facilitator=get_facilitator(cfg.facilitator, live=True),
             store=escrow_locks,
         )

@@ -7,13 +7,15 @@ Can be updated automatically from harness runs or from online feedback.
 from __future__ import annotations
 
 import json
-import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-RUNTIME = Path(os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
-STATE_PATH = RUNTIME / "calibrator_state.json"
+from veritas.runtime import resolve_runtime_dir
+
+
+def _state_path() -> Path:
+    return resolve_runtime_dir() / "calibrator_state.json"
 
 
 class SelfCalibrator:
@@ -53,18 +55,20 @@ class SelfCalibrator:
         return stats["sum"] / stats["count"]
 
     def save(self) -> None:
-        RUNTIME.mkdir(parents=True, exist_ok=True)
+        path = _state_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
         serializable = {str(k): v for k, v in self.bins.items()}
-        STATE_PATH.write_text(
+        path.write_text(
             json.dumps({"n_bins": self.n_bins, "bins": serializable}, indent=2),
             encoding="utf-8",
         )
 
     def _load(self) -> None:
-        if not STATE_PATH.exists():
+        path = _state_path()
+        if not path.exists():
             return
         try:
-            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+            data = json.loads(path.read_text(encoding="utf-8"))
             self.n_bins = data.get("n_bins", 10)
             for k, v in data.get("bins", {}).items():
                 self.bins[int(k)] = v

@@ -18,7 +18,6 @@ same pattern as ``veritas.ledger.Ledger``).
 from __future__ import annotations
 
 import hashlib
-import os
 import re
 import secrets
 import sqlite3
@@ -27,7 +26,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
+from .runtime import resolve_runtime_dir
+
 _DB_FILENAME = "siwx_sessions.sqlite3"
 _DEFAULT_TTL_SECONDS = 3600
 _CHALLENGE_TTL_SECONDS = 300
@@ -222,11 +222,7 @@ class SiwxSessionStore:
     """Challenge + session store for SIWx-authenticated credit spending."""
 
     def __init__(self, base_dir: Path | str | None = None) -> None:
-        self.base_dir = Path(
-            base_dir
-            or os.environ.get("VERITAS_RUNTIME_DIR")
-            or _DEFAULT_RUNTIME_DIR
-        )
+        self.base_dir = resolve_runtime_dir(base_dir)
 
     @property
     def path(self) -> Path:

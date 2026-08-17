@@ -29,12 +29,13 @@ basis as an operator log and never set ``overall``.
 
 from __future__ import annotations
 
-import os
 import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from .runtime import resolve_runtime_dir
 
 MIN_SAMPLES_FOR_SCORE = 10
 
@@ -86,9 +87,7 @@ class OutcomeLog:
     """Counters of served requests, split by whether anyone paid for them."""
 
     def __init__(self, base_dir: str | Path | None = None):
-        self.base_dir = Path(
-            base_dir or os.getenv("VERITAS_RUNTIME_DIR") or ".veritas_runtime"
-        )
+        self.base_dir = resolve_runtime_dir(base_dir)
 
     @property
     def path(self) -> Path:

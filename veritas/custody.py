@@ -12,7 +12,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .hashing import compute_content_hash
 from .retention import is_expired
+from .runtime import resolve_runtime_dir
 
 
 def _now() -> str:
@@ -22,6 +24,24 @@ def _now() -> str:
 def _hash_record(record: dict) -> str:
     canonical = json.dumps(record, sort_keys=True, separators=(",", ":"))
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def redact_receipt_for_wire(record: dict[str, Any]) -> dict[str, Any]:
+    """Strip a research question from a receipt before it leaves the process.
+
+    Origin URLs stay: ``POST /v1/verify`` re-fetches them. A free-text
+    question is the buyer's, and GET /v1/receipts is unauthenticated (L6).
+    Legacy on-disk receipts that still carry a question are redacted here
+    so an upgrade does not keep serving them.
+    """
+    out = dict(record)
+    query = out.get("query")
+    if isinstance(query, str) and query and not query.startswith(("http://", "https://")):
+        out.pop("query", None)
+        out["query_redacted"] = True
+        if "query_hash" not in out:
+            out["query_hash"] = compute_content_hash(query)
+    return out
 
 
 @dataclass
@@ -180,22 +200,29 @@ class CustodyStore:
     """
 
     def __init__(self, base_dir: str | None = None):
-        runtime = Path(base_dir or os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
+        runtime = resolve_runtime_dir(base_dir)
         self.base_dir = runtime / "receipts"
         # Sibling of receipts, not a child: a recursive wipe of the receipt
         # directory must not take the tombstones with it.
         self.tombstone_dir = runtime / "receipt_tombstones"
 
     def save(self, result: dict[str, Any]) -> dict[str, Any]:
-        record = {
+        query = result.get("query")
+        record: dict[str, Any] = {
             "request_id": result.get("request_id"),
-            "query": result.get("query"),
             "status": result.get("status"),
             "custody_root": result.get("custody_root"),
             "custody_valid": result.get("custody_valid"),
             "evidence_hashes": [e.get("content_hash") for e in result.get("evidence", [])],
             "stored_at": _now(),
         }
+        # L6: a research question is the buyer's business. Persist a hash
+        # so the receipt still binds to what was asked; persist the
+        # plaintext only when it is an origin URL (notarize refetch).
+        if isinstance(query, str) and query:
+            record["query_hash"] = compute_content_hash(query)
+            if query.startswith(("http://", "https://")):
+                record["query"] = query
         try:
             self.base_dir.mkdir(parents=True, exist_ok=True)
             # The write side takes the same guard as the read side: ids are

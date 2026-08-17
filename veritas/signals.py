@@ -27,7 +27,6 @@ venue is a miss, not a crash.
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 import urllib.error
 import urllib.parse
@@ -40,6 +39,7 @@ from veritas import __version__
 from veritas.evidence_store import EvidenceStore, is_safe_content_hash
 from veritas.hashing import compute_content_hash
 from veritas.retrieval import RetrievalError, RetrievalResult
+from veritas.runtime import resolve_runtime_dir
 from veritas.safeurl import UnsafeUrlError, assert_public_destination, require_http_url
 from veritas.store import StoreUnavailable, connect_target, parse_database_url
 
@@ -68,7 +68,6 @@ VENUE_ENDPOINTS: dict[str, dict[str, str]] = {
 
 ALLOWED_HOSTS = frozenset(spec["host"] for spec in VENUE_ENDPOINTS.values())
 
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DB_FILENAME = "signals.sqlite3"
 
 _SCHEMA = """
@@ -359,20 +358,20 @@ def pull_kalshi(
     markets = payload.get("markets") if isinstance(payload, dict) else payload
     if not isinstance(markets, list):
         markets = []
-    tokens = {tok for tok in query.lower().split() if len(tok) > 2}
-    if tokens:
-        filtered = []
-        for item in markets:
-            if not isinstance(item, dict):
-                continue
-            blob = " ".join(
-                str(item.get(key) or "")
-                for key in ("title", "ticker", "yes_sub_title", "subtitle", "event_ticker")
-            ).lower()
-            if any(tok in blob for tok in tokens):
-                filtered.append(item)
-        markets = filtered
-    return _finish_signals(markets, venue_norm=_normalize_kalshi, limit=limit)
+    tokens = {tok for tok in query.lower().split() if len(tok) >= 2}
+    if not tokens:
+        return []
+    filtered = []
+    for item in markets:
+        if not isinstance(item, dict):
+            continue
+        blob = " ".join(
+            str(item.get(key) or "")
+            for key in ("title", "ticker", "yes_sub_title", "subtitle", "event_ticker")
+        ).lower()
+        if any(tok in blob for tok in tokens):
+            filtered.append(item)
+    return _finish_signals(filtered, venue_norm=_normalize_kalshi, limit=limit)
 
 
 def pull(
@@ -410,11 +409,7 @@ class SignalStore:
     """Persist snapshots in the evidence store and a signals table."""
 
     def __init__(self, base_dir: Path | str | None = None) -> None:
-        self.base_dir = Path(
-            base_dir
-            or os.getenv("VERITAS_RUNTIME_DIR")
-            or _DEFAULT_RUNTIME_DIR
-        )
+        self.base_dir = resolve_runtime_dir(base_dir)
         self.evidence = EvidenceStore(self.base_dir)
 
     def _connect(self):
@@ -438,13 +433,15 @@ class SignalStore:
         excerpt = canonical_signal(signal)
         digest = compute_content_hash(excerpt)
         try:
-            self.evidence.put(
+            stored_excerpt = self.evidence.put(
                 digest, excerpt,
                 url=signal.get("source_url") if isinstance(signal.get("source_url"), str) else None,
                 title=signal.get("question") if isinstance(signal.get("question"), str) else None,
             )
         except Exception:
-            pass
+            return None
+        if not stored_excerpt:
+            return None
         conn = None
         try:
             conn = self._connect()
@@ -463,7 +460,7 @@ class SignalStore:
                 ),
             )
         except Exception:
-            return digest
+            return None
         finally:
             if conn is not None:
                 conn.close()

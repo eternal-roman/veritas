@@ -46,6 +46,25 @@
   are `bond_binding: eip3009_authorization` and collectable via
   `settle_forfeit`. Warranties that omit a lock stay
   `signed_commitment_not_escrow`.
+- Runtime directory (O5): default is
+  `$XDG_DATA_HOME/veritas/runtime` or `~/.local/share/veritas/runtime`,
+  never cwd-relative `.veritas_runtime`. `veritas-agent` binds
+  `{base-dir}/runtime`. `/readyz` is 503 if the directory cannot be
+  written. A pre-existing `./.veritas_runtime` is still honoured.
+- Receipts (L6): research questions persist as `query_hash` only. GET
+  `/v1/receipts/{id}` never returns a free-text question. Origin URLs
+  stay so notarize re-fetch works.
+- Retrieval (R10): Serper is not registered in free mode unless
+  `VERITAS_SERPER_IN_FREE_MODE` is set.
+- VCAE HTTP: GET strips `authorization.signature`. Forfeit re-runs
+  `evaluate_challenge` on the supplied warranty + deliverable. Release
+  is loopback-only.
+- `veritas-buy --content` reports a real hash match (the previous
+  `bool((ok, meta))` was always true).
+- Kalshi pull never returns the unfiltered open book for a
+  non-matching query. `SignalStore.put` returns None on write failure.
+- `/v1/hooks` 1.8: receipt query redaction, escrow GET/release/forfeit
+  honesty, runtime-dir wording.
 - VCAE collect claims `locked` → `settling` before the facilitator
   submit so two agents cannot both submit the same nonce. A refusal
   reverts to `locked`; success or indeterminate stays `forfeited`.

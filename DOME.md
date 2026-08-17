@@ -14,7 +14,7 @@ Dated 2026-08-16. Status of each item is as of this branch's tip.
 | **G2 signature check** | Local facilitator recovers the EIP-712 signer. Forged payments fail. |
 | **Signals analytics** | Store was not enough. History + arithmetic analysis on venue prices. |
 | **Observe-grade retrieval** | Wikipedia official extracts; served path re-observes search hits. |
-| **Research is a primitive** | No auto-warranty. Not a truth arbiter. |
+| **P13 stored_excerpt** | Origin-gone verify can return stored bytes with an honest class. Not a fresh observation. |
 
 ## Constitution gaps
 
@@ -65,7 +65,7 @@ Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists;
 
 ## Defect register still `open` (`docs/program/STATE.md`)
 
-P13 remainder (origin re-fetch still depends on the live URL), O6 (multi-instance), O15 remainder.
+P13 remainder: `stored_excerpt` fallback now exists when EvidenceStore has the body and the origin cannot be re-observed; a *fresh* independent observation still needs the live URL (not a public CT). O6 (multi-instance), O15 remainder.
 
 O5, L6, R10 closed on #157.
 

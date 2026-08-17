@@ -16,7 +16,10 @@ This module is that check, in-process:
    window.
 
 This does **not** prove the nonce is unused on chain or that the payer
-has balance. Those stay on-chain. Missing ``eth_account`` fails closed.
+has balance. Those stay on-chain (constitution G13). Calldata helpers for
+the USDC ``authorizationState`` and ERC-20 ``balanceOf`` views live here
+so an operator-opted-in checker can encode them; the signature check
+itself never calls RPC. Missing ``eth_account`` fails closed.
 """
 
 from __future__ import annotations
@@ -51,6 +54,11 @@ _SIG_RE = re.compile(r"\A0x[0-9a-fA-F]{130}\Z")
 _NONCE_RE = re.compile(r"\A0x[0-9a-fA-F]{64}\Z")
 _UINT_RE = re.compile(r"\A[0-9]+\Z")
 _ADDR = re.compile(r"\A0x[0-9a-fA-F]{40}\Z")
+
+# keccak256("authorizationState(address,bytes32)")[:4]
+AUTHORIZATION_STATE_SELECTOR = "0xe94a0102"
+# keccak256("balanceOf(address)")[:4]
+BALANCE_OF_SELECTOR = "0x70a08231"
 
 
 def payment_signature(payload: dict[str, Any]) -> str | None:
@@ -88,6 +96,79 @@ def _as_address(value: Any) -> str | None:
     if isinstance(value, str) and _ADDR.fullmatch(value):
         return value
     return None
+
+
+def _pad_address_word(address: str) -> str:
+    """Left-pad a 0x-address to a 32-byte ABI word (no 0x prefix)."""
+    return address[2:].lower().zfill(64)
+
+
+def authorization_state_calldata(authorizer: str, nonce: str) -> str:
+    """``eth_call`` data for USDC ``authorizationState(from, nonce)``.
+
+    The view returns ``true`` when that nonce has already been used.
+    Raises ``ValueError`` if the arguments are not an address + bytes32.
+    """
+    addr = _as_address(authorizer)
+    nonce_bytes = _as_nonce(nonce)
+    if addr is None or nonce_bytes is None:
+        raise ValueError("authorization_state_args_invalid")
+    return AUTHORIZATION_STATE_SELECTOR + _pad_address_word(addr) + nonce_bytes.hex()
+
+
+def balance_of_calldata(holder: str) -> str:
+    """``eth_call`` data for ERC-20 ``balanceOf(holder)``.
+
+    Raises ``ValueError`` if ``holder`` is not an address.
+    """
+    addr = _as_address(holder)
+    if addr is None:
+        raise ValueError("balance_of_args_invalid")
+    return BALANCE_OF_SELECTOR + _pad_address_word(addr)
+
+
+def decode_eth_bool(raw: Any) -> bool | None:
+    """Decode an ``eth_call`` bool word. ``None`` if the value is unreadable."""
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, int) and not isinstance(raw, bool):
+        if raw == 0:
+            return False
+        if raw == 1:
+            return True
+        return None
+    if not isinstance(raw, str):
+        return None
+    text = raw.strip()
+    if not text:
+        return None
+    try:
+        value = int(text, 16) if text[:2].lower() == "0x" else int(text)
+    except ValueError:
+        return None
+    if value == 0:
+        return False
+    if value == 1:
+        return True
+    return None
+
+
+def decode_eth_uint(raw: Any) -> int | None:
+    """Decode an ``eth_call`` uint256 word. ``None`` if the value is unreadable."""
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw if raw >= 0 else None
+    if not isinstance(raw, str):
+        return None
+    text = raw.strip()
+    if not text:
+        return None
+    try:
+        value = int(text, 16) if text[:2].lower() == "0x" else int(text)
+    except ValueError:
+        return None
+    return value if value >= 0 else None
 
 
 def typed_data_for_authorization(

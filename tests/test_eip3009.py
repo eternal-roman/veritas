@@ -8,6 +8,12 @@ import time
 import pytest
 
 from veritas.eip3009 import (
+    AUTHORIZATION_STATE_SELECTOR,
+    BALANCE_OF_SELECTOR,
+    authorization_state_calldata,
+    balance_of_calldata,
+    decode_eth_bool,
+    decode_eth_uint,
     recover_authorization_signer,
     typed_data_for_authorization,
     verify_payment_signature,
@@ -98,3 +104,29 @@ def test_wrong_from_is_signer_mismatch():
     ok, reason = verify_payment_signature(payload, now=int(time.time()))
     assert ok is False
     assert reason == "signer_mismatch"
+
+
+def test_authorization_state_calldata_encodes_selector_and_args():
+    authorizer = "0x" + "1" * 40
+    nonce = "0x" + "ab" * 32
+    data = authorization_state_calldata(authorizer, nonce)
+    assert data.startswith(AUTHORIZATION_STATE_SELECTOR)
+    assert data[10:74] == "0" * 24 + "1" * 40
+    assert data[74:] == "ab" * 32
+
+
+def test_balance_of_calldata_matches_erc20():
+    holder = "0x" + "aA" * 20
+    data = balance_of_calldata(holder)
+    assert data.startswith(BALANCE_OF_SELECTOR)
+    assert data[10:] == "0" * 24 + "aa" * 20
+
+
+def test_decode_eth_words():
+    assert decode_eth_bool("0x" + "0" * 64) is False
+    assert decode_eth_bool("0x" + "0" * 63 + "1") is True
+    assert decode_eth_bool("0x02") is None
+    assert decode_eth_bool("not-a-word") is None
+    assert decode_eth_uint("0x2710") == 10000
+    assert decode_eth_uint("0x0") == 0
+    assert decode_eth_uint(True) is None

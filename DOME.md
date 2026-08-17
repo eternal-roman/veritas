@@ -1,7 +1,7 @@
 # DOME — do-me punch list
 
 What is still unresolved after `main` @ `3b06f6b` plus this branch
-(`feat/a2a-peer-mesh`). No GitHub issues were open. This is the
+(`feat/a2a-hosting-and-remediation`). No GitHub issues were open. This is the
 honest remainder, not a wish list.
 
 Dated 2026-08-16. Status of each item is as of this branch's tip.
@@ -12,6 +12,7 @@ Dated 2026-08-16. Status of each item is as of this branch's tip.
 |------|---------|
 | **Self-host + connect** | Public TLS always-on central host is the wrong product. Each agent serves and can `connect` to another. No Veritas cloud. **Not** the program Mesh Runner (`ecosystem_cycle`) and **not** stranger discovery — public TLS remains required for strangers; local/LAN A2A does not. |
 | **G2 signature check** | Local facilitator recovers the EIP-712 signer. Forged payments fail. |
+| **Optional chain checks** | When `VERITAS_FACILITATOR_CHAIN_CHECKS` is set **and** `VERITAS_RPC_URL` is configured, `verify_payment` may also read USDC `authorizationState` and `balanceOf`. Default path unchanged. **G13 stays open.** |
 | **Signals analytics** | Store was not enough. History + arithmetic analysis on venue prices. |
 | **Observe-grade retrieval** | Wikipedia official extracts; served path re-observes search hits. |
 | **P13 stored_excerpt** | Origin-gone verify can return stored bytes with an honest class. Not a fresh observation. |
@@ -21,7 +22,7 @@ Dated 2026-08-16. Status of each item is as of this branch's tip.
 | Id | Status | What is still true |
 |----|--------|--------------------|
 | **G2** | **closed on this branch** | EIP-712 recover of `transferWithAuthorization`. Balance and nonce-unused stay on-chain (G13). |
-| **G13** | **open** | Local facilitator does not check nonce-unused or balance. Do not expose the control plane as a paid network surface. |
+| **G13** | **open** | Default local facilitator does not check nonce-unused or balance. Optional RPC checks exist only when `VERITAS_FACILITATOR_CHAIN_CHECKS` is set and `VERITAS_RPC_URL` is configured; they do not close the gap. The witness (`test_known_gap_simulator_does_not_check_nonce_or_balance`) still passes. Do not expose the control plane as a paid network surface. |
 | **G12** | **closed (library + HTTP primitive)** | `escrow_bond` + `settle_forfeit`. Research does **not** auto-attach a warranty. Mainnet collect unproven. |
 
 Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists; mainnet still needs `VERITAS_RPC_URL`).
@@ -71,5 +72,10 @@ O5, L6, R10 closed on #157.
 
 ## Honesty bound
 
-Closing G2 does **not** mean: on-chain nonce/balance check, public TLS host, unsolicited volume, or "the local facilitator settles."
-Those stay on this list. Peer connect is **not** the Mesh Runner and **not** a public seller.
+Closing G2 does **not** mean: default on-chain nonce/balance check, public TLS
+host, unsolicited volume, or "the local facilitator settles." Optional
+local-facilitator chain checks exist when `VERITAS_FACILITATOR_CHAIN_CHECKS=1`
+and `VERITAS_RPC_URL` is set; they fail closed on RPC error. **G13 stays
+open** because the default path still does not consult the chain. Peer
+connect is **not** the Mesh Runner and **not** a public seller. Those stay
+on this list.

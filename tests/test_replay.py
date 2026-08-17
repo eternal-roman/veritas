@@ -90,13 +90,23 @@ def live_client(tmp_path, monkeypatch):
     monkeypatch.setattr(server, "get_facilitator", lambda *a, **k: _AcceptingFacilitator())
 
     calls = {"n": 0}
-    real_run = server.run_research
 
     def counting_run(query, **kwargs):
         calls["n"] += 1
-        return real_run(query, allow_network=False, **kwargs)
+        return [
+            {
+                "venue": "polymarket",
+                "market_id": "m-replay",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-replay",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ]
 
-    monkeypatch.setattr(server, "run_research", counting_run)
+    monkeypatch.setattr(server, "pull_signals", counting_run)
     return TestClient(server.app), calls
 
 
@@ -107,11 +117,11 @@ def test_resubmitted_header_does_the_work_once(live_client):
     body = {"query": "What is the x402 protocol?"}
     headers = {"X-PAYMENT": _header()}
 
-    first = client.post("/v1/research", json=body, headers=headers)
+    first = client.post("/v1/signals", json=body, headers=headers)
     assert first.status_code == 200, first.text
     assert calls["n"] == 1
 
-    second = client.post("/v1/research", json=body, headers=headers)
+    second = client.post("/v1/signals", json=body, headers=headers)
     assert calls["n"] == 1, "the retrieval pass must not run a second time"
     # The buyer paid; they get the deliverable rather than a 409 (gap G6).
     assert second.status_code == 200
@@ -122,11 +132,11 @@ def test_fresh_nonce_is_served_after_a_replay(live_client):
     client, calls = live_client
     body = {"query": "What is the x402 protocol?"}
 
-    assert client.post("/v1/research", json=body,
+    assert client.post("/v1/signals", json=body,
                        headers={"X-PAYMENT": _header()}).status_code == 200
-    assert client.post("/v1/research", json=body,
+    assert client.post("/v1/signals", json=body,
                        headers={"X-PAYMENT": _header()}).status_code == 200
-    third = client.post("/v1/research", json=body,
+    third = client.post("/v1/signals", json=body,
                         headers={"X-PAYMENT": _header(OTHER_NONCE)})
     assert third.status_code == 200
     assert calls["n"] == 2
@@ -135,7 +145,7 @@ def test_fresh_nonce_is_served_after_a_replay(live_client):
 def test_payment_without_a_nonce_is_refused_before_work(live_client):
     client, calls = live_client
     naked = base64.b64encode(json.dumps({"x402Version": 1, "scheme": "exact"}).encode()).decode()
-    response = client.post("/v1/research", json={"query": "What is the x402 protocol?"},
+    response = client.post("/v1/signals", json={"query": "What is the x402 protocol?"},
                            headers={"X-PAYMENT": naked})
     assert response.status_code == 409
     assert response.json()["error"] == "payment_nonce_missing"
@@ -152,7 +162,7 @@ def test_an_unusable_ledger_refuses_rather_than_waving_through(live_client, monk
         server.ledger, "claim",
         lambda *a, **k: ClaimResult(False, "replay_store_unavailable"),
     )
-    response = client.post("/v1/research", json={"query": "What is the x402 protocol?"},
+    response = client.post("/v1/signals", json={"query": "What is the x402 protocol?"},
                            headers={"X-PAYMENT": _header()})
     assert response.status_code == 503
     assert response.json()["error"] == "replay_protection_unavailable"

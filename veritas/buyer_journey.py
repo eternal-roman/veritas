@@ -8,7 +8,7 @@ This module **does not settle payment**. The default path is dry:
 
 1. Fetch discovery + linked surfaces (via :mod:`veritas.counterparty`).
 2. Diligence verdict (pass / fail / unverifiable) — fail-closed for pay.
-3. Probe ``POST /v1/research`` **without** ``X-PAYMENT`` and report whether
+3. Probe ``POST /v1/signals`` **without** ``X-PAYMENT`` and report whether
    the seller returned a 402 accepts array (live) or a free-mode body.
 4. If a ``content_hash`` is available (free response or ``--content-hash``),
    run local hash verify; optional receipt fetch when ``--request-id`` given.
@@ -43,7 +43,7 @@ from veritas.safeurl import UnsafeUrlError, assert_public_destination
 
 SCHEMA = "veritas.buyer_journey.v0"
 USER_AGENT = f"veritas-buy/{__version__}"
-RESEARCH_PATH = "/v1/research"
+RESEARCH_PATH = "/v1/signals"
 RECEIPTS_PATH = "/v1/receipts/"
 
 # Process contract (aligned with diligence: UNVERIFIABLE ≠ FAIL).

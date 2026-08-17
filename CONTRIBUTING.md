@@ -20,7 +20,7 @@ CI runs all of these. Do not add `|| true` or `continue-on-error`.
 python -m pytest tests/ -q                    # suite must stay green
 ruff check veritas tests scripts              # lint
 bandit -r veritas scripts -ll -q              # security scan
-python -m veritas.evaluations.harness         # quality report
+python -m veritas.evaluations.catalog         # catalog honesty
 python -m veritas.evaluations.payment_model   # bounded payment-invariant check
 ```
 
@@ -28,7 +28,7 @@ python -m veritas.evaluations.payment_model   # bounded payment-invariant check
 
 Well-meaning changes break these most often. Each is tested.
 
-1. **One engine.** Every surface calls `veritas.pipeline.run_research`. Do not
+1. **One engine.** Catalog pull is `veritas.signals`. URL observe is `notary.observe`. Do not
    add a second retrieval, custody or payment path.
 2. **`unavailable` is not `no_evidence`.** If retrieval failed, say so. Never
    report an absence of evidence you did not observe.

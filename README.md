@@ -1,6 +1,6 @@
 # Veritas
 
-**A multi-agent commerce venue: prediction-market signals, x402 settlement, and escrowed bonds. Research is an observe primitive — it refuses to guess, and never charges you when it fails.**
+**A multi-agent commerce venue: Kalshi/Polymarket catalog, x402 settlement, and escrowed bonds. Catalog pull is the sold observe SKU. It is not a truth arbiter, and it never charges you for its own failure.**
 
 [![CI](https://github.com/eternal-roman/veritas/actions/workflows/ci.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml/badge.svg)](https://github.com/eternal-roman/veritas/actions/workflows/codeql.yml)
@@ -81,7 +81,6 @@ up` provisions config and wallet and serves. Public TLS is the operator's
 - **Falsifiable commerce W0/W1** (`veritas/warranty.py`, `veritas/escrow.py`) — seller-authored D0 predicates, bonded stake, challenge window; `fired` / `not_fired` / `undecidable`; no predicate → class `U`. An EIP-3009 lock is collectable via `settle_forfeit`; omitting it stays `signed_commitment_not_escrow`. Not a vault contract. See `docs/program/FALSIFIABLE_COMMERCE.md`
 - **Diligence** (`veritas-diligence <url>`) — 402 must match advertised payee/network/asset/price; L1 articles must name enforcement; a seller claiming no gaps fails. `0` pass / `1` fail / `2` unverifiable. SSRF-guarded. None of this proves delivery
 - **Standalone verifier** (`veritas-verify receipt.json`) — one file, zero deps, imports nothing from `veritas`. Differential test vs the engine. Consistent records ≠ we contacted the named URLs
-- **Privacy prototypes** — hiding-wallet commitments and JIT packets in `veritas/autonomous/`; experiments (`docs/design/`)
 
 ## Install
 
@@ -99,7 +98,7 @@ Python >= 3.10, pip >= 24.1. Wheel is one package (`veritas`) plus
 `veritas-server` / `veritas-agent`. Smoke-test:
 
 ```bash
-python -c "from veritas.pipeline import run_research; print(run_research('What is x402?', allow_network=False)['status'])"
+python -c "from veritas.signals import METHOD; print(METHOD)"
 ```
 
 ## Quick start (free mode)
@@ -112,26 +111,15 @@ veritas-server                   # VERITAS_HOST / VERITAS_PORT to bind
 ```
 
 ```python
-from veritas.pipeline import run_research
-run_research("What is x402?", allow_network=False)  # labelled offline corpus
+from veritas.signals import SignalStore
+SignalStore().list()  # latest snapshot per market; prices, not verdicts
 ```
 
-## Retrieval
+## Catalog
 
-Wikipedia uses the official MediaWiki Extracts API (plaintext article body,
-capped). DuckDuckGo Instant Answer and Serper return snippets labelled
-`search_snippet`. The served path then re-observes those URLs through
-`notary.observe` (set `VERITAS_OBSERVE_URLS=0` to disable). To rank a keyed
-provider:
-
-```bash
-export VERITAS_SERPER_API_KEY=...   # or SERPER_API_KEY
-```
-
-Keys are env config, never payload: header to the provider only, never in
-responses, errors, custody, or receipts (`tests/test_providers.py`). No key →
-provider not registered. A keyed outage degrades to the next tier with the
-error in `retrieval.errors`.
+`GET /v1/signals` is the latest snapshot per market. `POST /v1/signals` pulls
+Kalshi and Polymarket (payment-gated in live mode). `veritas-ops signals-ingest`
+pulls a watchlist. A dead venue is unavailable, not an empty book.
 
 ## Live payments
 
@@ -156,7 +144,8 @@ mainnet without `--i-understand-this-is-real-money`. Invalid config →
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /v1/research` | Research (402 in live mode) |
+| `POST /v1/research` | Removed (410). Use `POST /v1/signals` |
+| `POST /v1/signals` | Catalog pull (402 in live mode); GET is free |
 | `POST /v1/notarize` | Observe-once URL notary; same payment gates |
 | `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`) |
 | `GET /v1/receipts/{id}` | Durable custody receipt (research questions redacted) |
@@ -184,7 +173,7 @@ access is HTTP).
 ```bash
 pip install -e ".[signing,dev]"
 python -m pytest tests/ -q
-python -m veritas.evaluations.harness
+python -m veritas.evaluations.catalog
 ruff check veritas tests
 ```
 
@@ -235,13 +224,13 @@ See `AGENTS.md` (how to work here, including live-settlement field notes) and
 
 ```
 veritas/               # installable package (the wheel)
-  pipeline.py          # single engine: retrieval -> relevance -> hashing -> custody
-  retrieval.py custody.py hashing.py support.py schema.py
+  signals.py           # catalog pull, store, analyze
+  custody.py hashing.py schema.py
   x402.py facilitator.py payment_config.py networks.py
   server.py            # FastAPI (`veritas-server`)
   agent_account.py     # enroll / whoami / skills
-  autonomous/          # zero-key retrieval, wallet, bootstrap; JIT/hiding-wallet experiments
-  evaluations/         # harness + CI gates
+  autonomous/          # wallet, bootstrap, local facilitator (G13 open)
+  evaluations/         # catalog honesty + payment model
 tests/                 # not in the wheel
 ```
 

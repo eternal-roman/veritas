@@ -37,13 +37,12 @@ def build_identity(
         "description": (
             "Multi-agent commerce venue: prediction-market signal snapshots "
             "(prices, not verdicts), x402 settlement, and escrowed warranty "
-            "bonds. Research is an observe primitive with hash-chained custody "
-            "and explicit refusal — not a truth arbiter, and it does not "
-            "auto-attach a warranty."
+            "bonds. Catalog pull is the sold observe SKU. It is not a truth "
+            "arbiter and does not auto-attach a warranty."
         ),
         "paymentAddress": pay_to,
         "capabilities": [
-            "evidence-grounded-research",
+            "prediction-market-catalog",
             "evidence-notarization",
             "custody-chain",
             "support-counts",
@@ -63,7 +62,6 @@ def build_identity(
         # identity consumer most needs, and a sync test keeps every one of
         # them registered there (no phantom, no omission of a paid product).
         "endpoints": {
-            "research": f"{base}/v1/research",
             "notarize": f"{base}/v1/notarize",
             "verify": f"{base}/v1/verify",
             "attestations_verify": f"{base}/v1/attestations/verify",

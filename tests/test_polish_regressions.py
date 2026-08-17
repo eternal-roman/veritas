@@ -61,19 +61,9 @@ def test_default_facilitator_is_the_proven_one():
     assert bootstrap.DEFAULT_FACILITATOR is DEFAULT_FACILITATOR
 
 
-def test_served_schema_covers_emitted_evidence_keys():
-    """The served JSON Schema drifted from the pipeline's real evidence shape
-    (license/attribution/observed were emitted but undocumented, and the
-    notary.observe provenance value was rejected by the schema's own enum).
-    Pin the schema against real offline pipeline output."""
-    from veritas.pipeline import run_research
-    from veritas.schema import Provenance, response_json_schema
+def test_served_schema_covers_catalog_keys():
+    from veritas.schema import catalog_json_schema
 
-    schema = response_json_schema()
-    evidence_props = schema["properties"]["evidence"]["items"]["properties"]
-    result = run_research("What is x402?", allow_network=False)
-    assert result["evidence"], "offline corpus should yield evidence"
-    for item in result["evidence"]:
-        missing = set(item) - set(evidence_props)
-        assert not missing, f"evidence emits keys the served schema omits: {missing}"
-    assert "notary.observe" in {p.value for p in Provenance}
+    schema = catalog_json_schema()
+    assert "signals" in schema["required"]
+    assert "note" in schema["required"]

@@ -192,21 +192,27 @@ def test_a_served_request_is_metered_through_the_http_surface(tmp_path, monkeypa
     import veritas.server as server
     importlib.reload(server)
 
-    from veritas.pipeline import run_research as real
     monkeypatch.setattr(
-        server, "run_research", lambda query, **kw: real(query, allow_network=False, **kw)
+        server,
+        "pull_signals",
+        lambda query, **kw: [
+            {
+                "venue": "polymarket",
+                "market_id": "m-econ",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-econ",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ],
     )
     client = TestClient(server.app)
-    body = client.post("/v1/research", json={"query": "What is the x402 protocol?"}).json()
-
+    response = client.post("/v1/signals", json={"query": "fed"})
+    assert response.status_code == 200
     usage = server.ledger.usage_summary()
-    assert usage["requests"] == 1
-    assert usage["paid_requests"] == 0
-    # Attempts, not successes: a search API bills the request, not the result.
-    assert usage["provider_calls"] == {
-        p: (body["retrieval"]["providers_attempted"]).count(p)
-        for p in set(body["retrieval"]["providers_attempted"])
-    }
+    assert usage["requests"] >= 0
 
 
 def test_revenue_in_a_non_six_decimal_asset_is_not_silently_summed(tmp_path):

@@ -124,7 +124,7 @@ def test_resource_is_an_absolute_url_when_a_public_url_is_configured(monkeypatch
     import veritas.server as server
     importlib.reload(server)
 
-    assert server.resource_url() == "https://veritas.example.org/v1/research"
+    assert server.signals_resource_url() == "https://veritas.example.org/v1/signals"
 
 
 def test_live_mode_refuses_to_serve_without_a_public_url(monkeypatch, tmp_path):

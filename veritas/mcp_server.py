@@ -1,11 +1,8 @@
-"""MCP surface: Veritas research as local MCP tools (stdio).
+"""MCP surface: Veritas catalog + verify tools (stdio).
 
 Honest scope: these tools run the local free-mode engine in-process. There
 is no payment path over MCP — an MCP client pays nothing — so paid access
-remains the HTTP surface (`/v1/research` with x402). What this gives an
-agent framework is the same evidence-grounded engine, custody receipts and
-all, one `veritas-mcp` command away, and it makes the long-advertised "mcp"
-package keyword true instead of aspirational.
+remains the HTTP surface (`/v1/signals` with x402).
 
 The MCP SDK is imported lazily inside `build_server`/`main`: the bare wheel
 imports this module without the `mcp` extra installed
@@ -17,17 +14,34 @@ from __future__ import annotations
 from typing import Any
 
 
-def tool_research(query: str, max_results: int = 5, allow_network: bool = True) -> dict[str, Any]:
-    """Evidence-grounded research over the one shared engine (free mode).
+def tool_signals_list(venue: str | None = None, q: str | None = None, limit: int = 20) -> dict[str, Any]:
+    """Latest catalog snapshots from the local store. Prices, not verdicts."""
+    from veritas.signals import SignalStore
 
-    Returns the full wire-contract body: claims citing content-hashed
-    evidence, recomputable support counts, custody root, and the honest
-    outcome taxonomy (completed / refused / unavailable). `allow_network=False`
-    pins the labelled offline corpus (deterministic, not live evidence).
-    """
-    from veritas.pipeline import run_research
+    items = SignalStore().list(venue=venue, q=q, limit=limit)
+    return {
+        "signals": items,
+        "count": len(items),
+        "method": "veritas.signals.v1",
+        "note": "latest snapshot per market; prices, not a verdict",
+    }
 
-    return run_research(query, max_results=max_results, allow_network=allow_network)
+
+def tool_signals_pull(
+    query: str, venues: list[str] | None = None, limit: int = 8
+) -> dict[str, Any]:
+    """Pull Kalshi/Polymarket books into the local store (free-mode MCP)."""
+    from veritas.signals import SignalStore, analyze, pull
+
+    items = pull(query, venues=venues, limit=limit)
+    stored = SignalStore().put_many(items)
+    return {
+        "signals": items,
+        "stored": stored,
+        "analysis": analyze(items),
+        "method": "veritas.signals.v1",
+        "note": "market-implied prices, not a verdict",
+    }
 
 
 def tool_verify(content: str, content_hash: str) -> dict[str, Any]:
@@ -114,7 +128,8 @@ def tool_whoami() -> dict[str, Any]:
 #: (`veritas/hooks.py`) imports `MCP_TOOL_NAMES`, so the HTTP-discoverable
 #: announcement cannot drift from what actually registers.
 _TOOL_IMPLEMENTATIONS = {
-    "research": tool_research,
+    "signals_list": tool_signals_list,
+    "signals_pull": tool_signals_pull,
     "verify": tool_verify,
     "verify_attestation": tool_verify_attestation,
     "verify_pack": tool_verify_pack,
@@ -148,10 +163,8 @@ def build_server():
     server = FastMCP(
         "veritas-research",
         instructions=(
-            "Evidence-grounded research (local free-mode engine). The "
-            "service separates 'no evidence exists' from 'I could not "
-            "look'; an unavailable result is a retrieval failure, not an "
-            "absence of evidence. Paid access with settlement is the HTTP "
+            "Prediction-market catalog (local free-mode). Snapshots are "
+            "prices, not verdicts. Paid pull with settlement is the HTTP "
             "surface, not these tools."
         ),
     )

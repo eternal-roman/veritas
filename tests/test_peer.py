@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import json
+from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import urlsplit
 
@@ -426,4 +427,58 @@ def test_get_v1_peer_attaches_tls_fingerprint_when_cert_present(tmp_path, monkey
     fingerprint = body["tls"]["fingerprint"]
     assert fingerprint.startswith("sha256:")
     assert len(fingerprint) == len("sha256:") + 64
+
+
+def test_connect_pins_presented_cert_to_card_fingerprint(tmp_path):
+    pytest.importorskip("cryptography")
+    from cryptography.hazmat.primitives.serialization import Encoding
+    from cryptography.x509 import load_pem_x509_certificate
+
+    from veritas.peer import apply_tls_pin
+    from veritas.peer_tls import issue_tls_material
+
+    good = issue_tls_material(tmp_path / "good")
+    bad = issue_tls_material(tmp_path / "bad")
+    good_der = load_pem_x509_certificate(
+        Path(good["cert_path"]).read_bytes()
+    ).public_bytes(Encoding.DER)
+    bad_der = load_pem_x509_certificate(
+        Path(bad["cert_path"]).read_bytes()
+    ).public_bytes(Encoding.DER)
+    card = {
+        **PEER_CARD,
+        "tls": {"fingerprint": good["fingerprint"]},
+    }
+    assert apply_tls_pin(
+        card, good_der, injected=False, allow_local=False, url="https://peer.example"
+    ) is None
+    mismatch = apply_tls_pin(
+        card, bad_der, injected=False, allow_local=False, url="https://peer.example"
+    )
+    assert mismatch and "tls pin failed" in mismatch
+    required = apply_tls_pin(
+        PEER_CARD, None, injected=False, allow_local=False, url="https://peer.example"
+    )
+    assert required == "peer_tls_required"
+
+    result = connect(
+        "https://peer.example",
+        fetcher=_fetcher({"https://peer.example/v1/peer": card}),
+        presented_der=bad_der,
+        base_dir=tmp_path,
+        resolver=_public_resolver,
+    )
+    assert result["ok"] is False
+    assert result["code"] == "refused"
+    accepted = connect(
+        "https://peer.example",
+        fetcher=_fetcher({"https://peer.example/v1/peer": card}),
+        presented_der=good_der,
+        base_dir=tmp_path,
+        resolver=_public_resolver,
+    )
+    assert accepted["ok"] is True
+    stored = find_peer(PEER_CARD["identity_hash"], tmp_path)
+    assert stored is not None
+    assert stored["tls"]["fingerprint"] == good["fingerprint"]
 

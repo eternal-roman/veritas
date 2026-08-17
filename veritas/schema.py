@@ -125,6 +125,27 @@ def response_json_schema() -> dict[str, Any]:
     }
 
 
+def catalog_json_schema() -> dict[str, Any]:
+    """Served contract for POST /v1/signals and GET catalog."""
+    return {
+        "type": "object",
+        "required": ["signals", "method", "note"],
+        "properties": {
+            "signals": {"type": "array"},
+            "count": {"type": "integer"},
+            "stored": {"type": "integer"},
+            "analysis": {"type": "object"},
+            "method": {"type": "string"},
+            "note": {"type": "string"},
+            "request_id": {"type": "string"},
+            "query": {"type": "string"},
+            "status": {"type": "string"},
+            "billable": {"type": "boolean"},
+            "payment": {"type": "object"},
+        },
+    }
+
+
 def validate_response(payload: dict[str, Any]) -> list[str]:
     """Return a list of contract violations; empty means conformant."""
     problems: list[str] = []

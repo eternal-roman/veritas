@@ -53,6 +53,7 @@ class ErrorCode(str, Enum):
     ESCROW_SETTLEMENT_UNAVAILABLE = "escrow_settlement_unavailable"
     SIGNALS_UNAVAILABLE = "signals_unavailable"
     SIGNALS_REFUSED = "signals_refused"
+    PRODUCT_REMOVED = "product_removed"
 
 
 ERROR_REGISTRY: dict[str, dict[str, Any]] = {
@@ -153,7 +154,7 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
     },
     ErrorCode.SERVICE_OVERLOADED.value: {
         "status": 503,
-        "meaning": "Every concurrent research slot is in use. The request was shed immediately rather than queued, so no work was done, no payment authorization was claimed and nothing is owed. Retry-After gives a suggested wait.",
+        "meaning": "Every concurrent work slot is in use. The request was shed immediately rather than queued, so no work was done, no payment authorization was claimed and nothing is owed. Retry-After gives a suggested wait.",
         "retriable": True,
     },
     ErrorCode.NOT_READY.value: {
@@ -205,6 +206,11 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "status": 503,
         "meaning": "Every named prediction-market venue failed to answer. Nothing was stored.",
         "retriable": True,
+    },
+    ErrorCode.PRODUCT_REMOVED.value: {
+        "status": 410,
+        "meaning": "This sold surface was removed. POST /v1/signals is the catalog pull; POST /v1/notarize is observe-once. There is no research product.",
+        "retriable": False,
     },
     ErrorCode.SIGNALS_REFUSED.value: {
         "status": 422,

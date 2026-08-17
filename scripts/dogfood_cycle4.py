@@ -93,25 +93,35 @@ def _serve(runtime: Path, journals: Path, count: int) -> dict[str, Any]:
     importlib.reload(server)
     server.get_facilitator = lambda *a, **k: Facilitator()
 
-    from veritas.pipeline import run_research as real_run
-    server.run_research = lambda query, **kw: real_run(query, allow_network=False, **kw)
+    server.pull_signals = lambda query, **kw: [
+        {
+            "venue": "polymarket",
+            "market_id": "m-cycle4",
+            "question": query,
+            "outcomes": [{"name": "Yes", "price": 0.5}],
+            "observed_at": "2026-08-17T00:00:00Z",
+            "source_url": "https://gamma-api.polymarket.com/markets/m-cycle4",
+            "method": "veritas.signals.v1",
+            "note": "market-implied prices, not a verdict",
+        }
+    ]
 
     client = TestClient(server.app, raise_server_exceptions=False)
     statuses = []
     for i in range(count):
-        challenge = client.post("/v1/research", json={"query": QUERY})
+        challenge = client.post("/v1/signals", json={"query": QUERY})
         header = _pay(challenge.json()["accepts"][0], journals / f"buyer-{i}")
         statuses.append(
-            client.post("/v1/research", json={"query": QUERY},
+            client.post("/v1/signals", json={"query": QUERY},
                         headers={"X-PAYMENT": header}).status_code
         )
     # One more that is delivered and never settled, so "what am I owed?" has a
     # real answer rather than a trivially empty one.
     server.get_facilitator = lambda *a, **k: Facilitator("timeout")
-    challenge = client.post("/v1/research", json={"query": QUERY})
+    challenge = client.post("/v1/signals", json={"query": QUERY})
     header = _pay(challenge.json()["accepts"][0], journals / "buyer-unsettled")
     statuses.append(
-        client.post("/v1/research", json={"query": QUERY},
+        client.post("/v1/signals", json={"query": QUERY},
                     headers={"X-PAYMENT": header}).status_code
     )
     return {"statuses": statuses, "paid_requests": count}

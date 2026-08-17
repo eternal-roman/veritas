@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "veritas-research"
 dynamic = ["version"]
-description = "Multi-agent commerce venue: prediction-market signals, x402 settlement, and escrowed bonds. Research is an observe primitive — hash-chained custody, countable support, explicit refusal."
+description = "Multi-agent commerce venue: Kalshi/Polymarket catalog, x402 settlement, and escrowed bonds."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"

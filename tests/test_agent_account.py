@@ -24,7 +24,7 @@ def test_enroll_binds_identity_wallet_and_default_skills(tmp_path):
     assert acc["did"].startswith("did:")
     assert "visa" not in acc
     assert "plane" not in acc.get("wallets", {})
-    assert [s["id"] for s in acc["skills"]] == ["research", "verify"]
+    assert [s["id"] for s in acc["skills"]] == ["signals", "verify"]
     assert all(s["mapped"] for s in acc["skills"])
     assert acc["binding_hash"]
     assert load_account(tmp_path)["binding_hash"] == acc["binding_hash"]
@@ -37,9 +37,9 @@ def test_interests_map_aliases_and_record_unknown(tmp_path):
         interests="search,vet,knitting,buy",
     )
     ids = [s["id"] for s in acc["skills"]]
-    assert ids == ["research", "diligence", "knitting", "buy"]
+    assert ids == ["signals", "diligence", "knitting", "buy"]
     by_id = {s["id"]: s for s in acc["skills"]}
-    assert by_id["research"]["mapped"] is True
+    assert by_id["signals"]["mapped"] is True
     assert by_id["diligence"]["command"] == "veritas-diligence"
     assert by_id["knitting"]["mapped"] is False
     assert "recorded as interest only" in by_id["knitting"]["note"]
@@ -76,7 +76,7 @@ def test_enroll_cli_and_whoami(tmp_path, capsys):
                  "--interests", "research,sell"]) == 0
     out = json.loads(capsys.readouterr().out)
     assert out["agent_id"] == "dana"
-    assert {s["id"] for s in out["skills"]} == {"research", "sell"}
+    assert {s["id"] for s in out["skills"]} == {"signals", "sell"}
     assert main(["--base-dir", str(tmp_path), "whoami"]) == 0
     who = json.loads(capsys.readouterr().out)
     assert who["enrolled"] is True
@@ -101,7 +101,7 @@ def test_init_auto_enrolls_default_account(tmp_path, capsys):
     assert main(["--base-dir", str(tmp_path / ".veritas_agent"), "init"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["account"]["agent_id"] == "self"
-    assert "research" in payload["account"]["skills"]
+    assert "signals" in payload["account"]["skills"]
     home = tmp_path / ".veritas_agent"
     # main(["init"]) uses default .veritas_agent relative to cwd (tmp_path via fixture?)
     # This test passes --base-dir explicitly.

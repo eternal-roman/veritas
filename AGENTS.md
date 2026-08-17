@@ -37,7 +37,7 @@ Home is `--base-dir` (default `.veritas_agent/`, or `VERITAS_AGENT_HOME`): `acco
 ```bash
 pip install -e ".[signing,dev]"
 python -m pytest tests/ -q
-python -m veritas.evaluations.harness
+python -m veritas.evaluations.catalog
 python -m veritas.evaluations.payment_model
 ruff check veritas tests
 bandit -r veritas scripts -ll -q
@@ -57,9 +57,7 @@ veritas-verify receipt.json                # one file, zero deps
 python scripts/lock_requirements.py --check  # Linux/CPython 3.12 only
 ```
 
-`VERITAS_SERPER_API_KEY` (or `SERPER_API_KEY`) ranks keyed Serper ahead of the zero-key tier. Keys are env config, never payload: request header only, never in results, errors, custody, or receipts (tested).
-
-`run_research(query, allow_network=False)` uses the labelled offline corpus. That corpus is not an outage fallback — outages must surface as `unavailable`.
+There is no research product. Catalog pull is `POST /v1/signals`. Observe-once is `POST /v1/notarize`.
 
 ## Layout
 
@@ -67,12 +65,12 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 
 ## Invariants (CI-gated or tested)
 
-1. **One engine.** All surfaces call `veritas.pipeline.run_research`. No second retrieval/custody/Bayes path.
-2. **`unavailable` is not `no_evidence`.** Failed retrieval is not an observed absence.
-3. **Never bill our own failure.** `billable: false` on `unavailable` gates settlement. x402 charges last, so pre-settle failure leaves the buyer uncharged. Credits debit first, so the research handler refunds on unexpected death. Refunds are idempotent.
-4. **Verify payment before work, settle after.** Unpaid callers do not retrieve. Nonces are claimed before work so a resubmitted `X-PAYMENT` cannot buy twice.
-5. **Retrievers are untrusted.** They may raise or ignore `max_results`; the pipeline defends both.
-6. **Wire contract is enforced.** `veritas.schema.validate_response` runs on real pipeline output. Extend the response only with the contract.
+1. **One engine.** Catalog pull (`veritas.signals`) and URL observe (`notary.observe`) share one money path. There is no research engine.
+2. **`unavailable` is not an empty catalog.** A dead venue is 503, not a miss.
+3. **Never bill our own failure.** Venue/notary unavailable is never settled. x402 charges last. Credits debit first and refund on unexpected death. Refunds are idempotent.
+4. **Verify payment before work, settle after.** Unpaid callers do not pull. Nonces are claimed before work so a resubmitted `X-PAYMENT` cannot buy twice.
+5. **Venues are untrusted.** They may raise or ignore `limit`; the catalog pull defends both.
+6. **Wire contract is enforced.** Catalog and error envelopes are tested against real output.
 7. **Misconfiguration is not free service.** Invalid payment config → `mode: misconfigured` → 503.
 8. **One buyer payment path.** `veritas.payer` owns challenge validation, diligence, spend caps, the attempt journal, and the `Signer` seam. Backends adapt to that seam (`LocalAccountSigner` is the testnet one). Diligence is opt-in (`require_diligence=True`); with it off, only a spend cap bounds a hostile seller.
 9. **Version is single-sourced.** Bump only `veritas/__init__.py`. It feeds pyproject (dynamic), the server, identity, and the retrieval User-Agent.
@@ -98,7 +96,7 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 | Norms | `/v1/constitution` (enforced or aspirational; see CONSTITUTION.md, ECOSYSTEM.md) |
 | Surfaces | `/v1/hooks` (HTTP, MCP, CLI exits, headers, stores; **no push**). Sync-tested both ways |
 | Operator | `GET /ui` (HTML, excluded from hooks), `GET /v1/operator`, `POST /v1/operator/enroll` (loopback only) |
-| Research | `POST /v1/research` — live mode 402 + `accepts`; retry with `X-PAYMENT` |
+| Catalog | `POST /v1/signals` — live mode 402 + `accepts`; retry with `X-PAYMENT`. GET is free |
 | Verify | `POST /v1/verify`; `GET /v1/receipts/{request_id}`; client-side `verify_chain_records` |
 | Trust | `GET /v1/trust` UNPROVEN from operator log; `POST /v1/trust` scores verified audits |
 | Local | `veritas-mcp` — free-mode engine over stdio; no payment path |

@@ -79,7 +79,7 @@ def test_build_payload_requires_key():
         "0x1111111111111111111111111111111111111111",
         "eip155:84532",
         "0.01",
-        "/v1/research",
+        "/v1/signals",
     )["accepts"][0]
     with pytest.raises(BuyerPaymentError, match="private_key"):
         build_exact_payment_payload(req, "")
@@ -97,7 +97,7 @@ def test_build_payload_signs_with_eth_account():
         "0x2222222222222222222222222222222222222222",
         "eip155:84532",
         "0.01",
-        "/v1/research",
+        "/v1/signals",
     )["accepts"][0]
     payload = build_exact_payment_payload(req, acct.key.hex(), now=1_700_000_000)
     assert payload["scheme"] == "exact"
@@ -132,7 +132,7 @@ def test_challenge_accepts_compatible_with_buyer_payload():
         "0x3333333333333333333333333333333333333333",
         "eip155:84532",
         "$0.01",
-        "/v1/research",
+        "/v1/signals",
     )
     req = body["accepts"][0]
     assert req["maxAmountRequired"] == "10000"

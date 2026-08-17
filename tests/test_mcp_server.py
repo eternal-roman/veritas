@@ -18,14 +18,13 @@ from pathlib import Path
 import pytest
 
 from veritas import mcp_server
-from veritas.schema import validate_response
 
 
-def test_tool_research_returns_contract_valid_body(tmp_path, monkeypatch):
+def test_tool_signals_list_returns_contract_valid_body(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
-    body = mcp_server.tool_research("What is x402?", allow_network=False)
-    assert validate_response(body) == []
-    assert body["status"] == "completed"
+    body = mcp_server.tool_signals_list()
+    assert body["method"] == "veritas.signals.v1"
+    assert "signals" in body
 
 
 def test_tool_verify_checks_hashes():

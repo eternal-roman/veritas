@@ -48,7 +48,7 @@ jobs:
         run: |
           # Every console-script entry module is here: they are what a
           # buyer's shell hits first, before pytest ever imports anything.
-          python -c "import veritas.server, veritas.autonomous.local_facilitator, veritas.evaluations.harness, veritas.pipeline, veritas.identity, veritas.constitution, veritas.hooks, veritas.support, veritas.safeurl, veritas.payer, veritas.ledger, veritas.metering, veritas.pricing, veritas.observability, veritas.ops_cli, veritas.providers, veritas.buyer_payment, veritas.diligence, veritas.counterparty, veritas.diligence_cli, veritas.verifier, veritas.cli, veritas.agent_cli, veritas.mcp_server, veritas.money_loop, veritas.buyer_journey, veritas.audit_cli, veritas.siwx, veritas.credits, veritas.warranty, veritas.standing, veritas.escrow, veritas.signals, veritas.notary.observe, veritas.notary.pack, veritas.notary.sign, veritas.notary.log, veritas.store, veritas.synthesis, veritas.evidence_store, veritas.archive, veritas.reconcile_loop"
+          python -c "import veritas.server, veritas.autonomous.local_facilitator, veritas.evaluations.catalog, veritas.evaluations.payment_model, veritas.identity, veritas.constitution, veritas.hooks, veritas.safeurl, veritas.payer, veritas.ledger, veritas.metering, veritas.pricing, veritas.observability, veritas.ops_cli, veritas.buyer_payment, veritas.diligence, veritas.counterparty, veritas.diligence_cli, veritas.verifier, veritas.cli, veritas.agent_cli, veritas.mcp_server, veritas.money_loop, veritas.buyer_journey, veritas.audit_cli, veritas.siwx, veritas.credits, veritas.warranty, veritas.standing, veritas.escrow, veritas.signals, veritas.notary.observe, veritas.notary.pack, veritas.notary.sign, veritas.notary.log, veritas.store, veritas.evidence_store, veritas.archive, veritas.reconcile_loop"
           # veritas.diligence and veritas.payer import each other, so import
           # each first in its own process. A cycle that breaks in only one
           # order would otherwise pass here and fail for a user.
@@ -72,28 +72,10 @@ jobs:
           python scripts/dogfood_cycle4.py --out /tmp/cycle4.json
           python scripts/dogfood_cycle5.py --out /tmp/cycle5.json
 
-      - name: Evaluation harness must meet quality gates
+      - name: Catalog honesty must meet quality gates
         run: |
-          python - <<'PY'
-          import sys
-          from veritas.evaluations.harness import run_full_harness
-
-          report = run_full_harness()
-          failures = []
-
-          if report["fidelity"]["citation_fidelity"] < 1.0:
-              failures.append(f"citation fidelity {report['fidelity']['citation_fidelity']} < 1.0")
-          if not report["fidelity"]["all_custody_valid"]:
-              failures.append("custody chain invalid on at least one query")
-          if report["refusal"]["discrimination"] <= 0.0:
-              failures.append("refusal does not discriminate supported from unsupported")
-          if not report["unavailability_honesty"]["correct"]:
-              failures.append("outage reported as no_evidence, or billed")
-
-          for f in failures:
-              print(f"QUALITY GATE FAILED: {f}")
-          sys.exit(1 if failures else 0)
-          PY
+          # catalog_honesty
+          python -m veritas.evaluations.catalog
 
       - name: Payment model — bounded invariant check must hold
         run: |

@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.9.** This file
+**The normative source is `veritas/constitution.py`, version 3.0.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -40,23 +40,23 @@ can reference in an attestation or a dispute.
 
 ### A1 — One engine (L1)
 
-Every surface routes research through veritas.pipeline.run_research; there is no second retrieval, custody, or belief path.
+Catalog pull and URL observe share one money path and one signals store; there is no research engine.
 
-Enforced by `tests/test_integration.py::test_control_plane_uses_shared_engine`.
+Enforced by `tests/test_integration.py::test_catalog_engine_is_signals_not_research`.
 
 ### A2 — Outage honesty (L1)
 
 Absent evidence is never reported when retrieval failed: unavailable is not no_evidence.
 
-Enforced by `tests/test_pipeline.py::test_outage_is_unavailable_not_no_evidence`
-and the `unavailability_honesty` gate in CI.
+Enforced by `tests/test_signals.py::test_venue_unavailable_is_not_an_empty_catalog`
+and the `catalog_honesty` gate in CI.
 
 ### A3 — Never bill own failure (L1)
 
 The service never bills for its own failure: an unavailable response is never billable.
 
 Enforced by the schema invariant "unavailable response must not be billable"
-(`veritas/schema.py`) and `tests/test_pipeline.py::test_outage_is_not_billable`.
+(`veritas/schema.py`) and `tests/test_signals.py::test_venue_unavailable_is_not_settled`.
 
 ### A4 — Verify before work, settle after (L1)
 
@@ -64,18 +64,18 @@ Payment is verified before work begins and settled only after deliverable work e
 
 Enforced by `tests/test_integration.py::test_payment_is_checked_before_work_is_done`.
 
-### A5 — Retrievers are untrusted (L1)
+### A5 — Venues are untrusted (L1)
 
-Retrievers may raise and may ignore max_results; the pipeline defends against both.
+Venue fetches may raise and may ignore limit; the catalog pull defends against both.
 
-Enforced by `tests/test_pipeline.py::test_raising_retriever_becomes_unavailable_not_a_crash`
-and `tests/test_pipeline.py::test_max_results_is_enforced_against_the_retriever`.
+Enforced by `tests/test_signals.py::test_raising_opener_becomes_signals_error`
+and `tests/test_signals.py::test_pull_caps_limit`.
 
 ### A6 — Enforced wire contract (L1)
 
-The wire contract is validated against real pipeline output, so contract and behaviour cannot silently diverge.
+The wire contract is validated against real catalog output, so contract and behaviour cannot silently diverge.
 
-Enforced by `tests/test_pipeline.py::test_response_conforms_to_contract`.
+Enforced by `tests/test_signals.py::test_catalog_response_conforms_to_contract`.
 
 ### A7 — Misconfiguration is never free service (L1)
 

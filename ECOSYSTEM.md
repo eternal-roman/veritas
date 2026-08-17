@@ -43,11 +43,11 @@ discover ──> evaluate ──> pay ──> consume ──> verify ──> att
    test suite, and reads `GET /v1/trust` — which reports `UNPROVEN` rather
    than a manufactured score below its sample floor (article A11). Trust is
    an input to the buyer's spend policy, not authorization.
-3. **Pay.** `POST /v1/research` without payment returns a spec-shaped 402
+3. **Pay.** `POST /v1/signals` without payment returns a spec-shaped 402
    with exact atomic amounts (article A10). The buyer signs and retries with
    an `X-PAYMENT` header; the seller verifies through the facilitator before
    doing any work (article A4).
-4. **Consume.** The pipeline runs once, in one engine (article A1), and the
+4. **Consume.** Catalog pull is one engine (article A1), and the
    response separates `completed`, `refused`, and `unavailable` — the third
    is never billed (articles A2, A3, A13).
 5. **Verify.** The buyer re-checks any hash at `POST /v1/verify`, fetches the
@@ -89,7 +89,8 @@ exercised cases; L0 means design intent, nothing more.
   peer adoption exists; the pattern ships here first.
 
 None of these loops has been observed to compound. The first is real but
-locally fed; the rest are architecture waiting on Phases 3–5.
+locally fed; the rest are architecture waiting on Phases 3–5. The staged
+plan and falsifiers live in `docs/program/ECOSYSTEM_LOOPS.md`.
 
 ## What must be true before the flywheel turns
 

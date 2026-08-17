@@ -31,9 +31,21 @@ def client(tmp_path, monkeypatch):
     import veritas.server as server
     importlib.reload(server)
 
-    from veritas.pipeline import run_research as real
     monkeypatch.setattr(
-        server, "run_research", lambda query, **kw: real(query, allow_network=False, **kw)
+        server,
+        "pull_signals",
+        lambda query, **kw: [
+            {
+                "venue": "polymarket",
+                "market_id": "m-ops",
+                "question": query,
+                "outcomes": [{"name": "Yes", "price": 0.5}],
+                "observed_at": "2026-08-17T00:00:00Z",
+                "source_url": "https://gamma-api.polymarket.com/markets/m-ops",
+                "method": "veritas.signals.v1",
+                "note": "market-implied prices, not a verdict",
+            }
+        ],
     )
     # This module is about how the service fails. TestClient re-raises server
     # exceptions by default, which would hide the very response an external
@@ -70,7 +82,7 @@ def test_research_is_capped_and_sheds_load_rather_than_queueing(client):
                 for _ in range(server.MAX_CONCURRENT_RESEARCH)]
     assert all(acquired)
     try:
-        response = http.post("/v1/research", json=BODY)
+        response = http.post("/v1/signals", json=BODY)
         assert response.status_code == 503
         assert response.json()["error"] == "service_overloaded"
         assert response.headers.get("Retry-After")
@@ -93,17 +105,17 @@ def test_health_still_answers_while_research_is_saturated(client):
 def test_a_shed_request_does_no_work_and_claims_no_authorization(client):
     server, http = client
     calls = {"n": 0}
-    real = server.run_research
+    real = server.pull_signals
 
     def counting(query, **kw):
         calls["n"] += 1
         return real(query, **kw)
 
-    server.run_research = counting
+    server.pull_signals = counting
     held = [server.research_slots.acquire(blocking=False)
             for _ in range(server.MAX_CONCURRENT_RESEARCH)]
     try:
-        assert http.post("/v1/research", json=BODY).status_code == 503
+        assert http.post("/v1/signals", json=BODY).status_code == 503
         assert calls["n"] == 0
     finally:
         for _ in held:
@@ -116,8 +128,8 @@ def test_slots_are_released_even_when_the_handler_raises(client):
     def exploding(query, **kw):
         raise RuntimeError("boom")
 
-    server.run_research = exploding
-    http.post("/v1/research", json=BODY)
+    server.pull_signals = exploding
+    http.post("/v1/signals", json=BODY)
 
     # If the slot leaked, this acquire fails and the endpoint is wedged.
     got = [server.research_slots.acquire(blocking=False)
@@ -189,8 +201,8 @@ def test_an_unhandled_exception_returns_the_registered_envelope(client):
     def exploding(query, **kw):
         raise RuntimeError("boom")
 
-    server.run_research = exploding
-    response = http.post("/v1/research", json=BODY)
+    server.pull_signals = exploding
+    response = http.post("/v1/signals", json=BODY)
     assert response.status_code == 500
     assert response.headers["content-type"].startswith("application/json")
     assert response.json()["error"] == "internal_error"
@@ -203,8 +215,8 @@ def test_the_internal_error_body_carries_no_exception_text(client):
     def exploding(query, **kw):
         raise RuntimeError("secret-internal-detail-/srv/veritas")
 
-    server.run_research = exploding
-    body = http.post("/v1/research", json=BODY).text
+    server.pull_signals = exploding
+    body = http.post("/v1/signals", json=BODY).text
     assert "secret-internal-detail" not in body
     assert "/srv/veritas" not in body
 

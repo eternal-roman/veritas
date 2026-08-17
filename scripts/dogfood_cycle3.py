@@ -59,8 +59,18 @@ def _client(tmp: Path, **env):
     import veritas.server as server
     importlib.reload(server)
 
-    from veritas.pipeline import run_research as real_run
-    server.run_research = lambda query, **kw: real_run(query, allow_network=False, **kw)
+    server.pull_signals = lambda query, **kw: [
+        {
+            "venue": "polymarket",
+            "market_id": "m-cycle3",
+            "question": query,
+            "outcomes": [{"name": "Yes", "price": 0.5}],
+            "observed_at": "2026-08-17T00:00:00Z",
+            "source_url": "https://gamma-api.polymarket.com/markets/m-cycle3",
+            "method": "veritas.signals.v1",
+            "note": "market-implied prices, not a verdict",
+        }
+    ]
     return server, TestClient(server.app, raise_server_exceptions=False)
 
 
@@ -167,7 +177,7 @@ def probe_payment_fuzzing(tmp: Path) -> dict[str, Any]:
     served, leaks, statuses = [], [], {}
 
     def send(name, header):
-        response = client.post("/v1/research", json={"query": QUERY},
+        response = client.post("/v1/signals", json={"query": QUERY},
                                headers={"X-PAYMENT": header})
         statuses[name] = response.status_code
         if response.status_code == 200:
@@ -221,13 +231,13 @@ def probe_nonce_flooding(tmp: Path) -> dict[str, Any]:
     )
     import veritas.server as server
     calls = {"n": 0}
-    inner = server.run_research
+    inner = server.pull_signals
 
     def counting(query, **kw):
         calls["n"] += 1
         return inner(query, **kw)
 
-    server.run_research = counting
+    server.pull_signals = counting
 
     statuses = []
     for i in range(25):
@@ -236,7 +246,7 @@ def probe_nonce_flooding(tmp: Path) -> dict[str, Any]:
             "payload": {"signature": "0x" + "cd" * 65,
                         "authorization": {"nonce": f"0x{i:064x}"}},
         }).encode()).decode()
-        statuses.append(client.post("/v1/research", json={"query": QUERY},
+        statuses.append(client.post("/v1/signals", json={"query": QUERY},
                                     headers={"X-PAYMENT": header}).status_code)
     ok = calls["n"] == 0 and 200 not in statuses
     return _finding(
@@ -333,11 +343,11 @@ def probe_error_leakage(tmp: Path) -> dict[str, Any]:
     def exploding(query, **kw):
         raise RuntimeError("/home/veritas/secret/path exploded")
 
-    server.run_research = exploding
+    server.pull_signals = exploding
 
     responses = {
-        "unhandled": client.post("/v1/research", json={"query": QUERY}),
-        "validation": client.post("/v1/research", json={"query": "x"}),
+        "unhandled": client.post("/v1/signals", json={"query": QUERY}),
+        "validation": client.post("/v1/signals", json={"query": "x"}),
         "missing_receipt": client.get("/v1/receipts/nope"),
         "bad_verify": client.post("/v1/verify", json={"content": "a"}),
     }

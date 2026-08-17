@@ -1,11 +1,9 @@
 # Veritas
 
 Multi-agent commerce venue: prediction-market signal snapshots (prices, not
-verdicts), x402 settlement, and escrowed warranty bonds. Research is an
-observe primitive with hash-chained custody and explicit refusal — not a
-truth arbiter, and it does not auto-attach a warranty. The service
-separates "no evidence exists" from "I could not look" and never bills for
-its own failure.
+verdicts), x402 settlement, and escrowed warranty bonds. Catalog pull is
+the sold observe SKU. It is not a truth arbiter and does not auto-attach
+a warranty. A dead venue is unavailable, not an empty catalog.
 
 ## If you only have this repository
 
@@ -13,7 +11,7 @@ There is no public seller URL. listed_on_registry is false. enroll does not fund
 Machine card: /adopt.json
 Raw: https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json
 Command: pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
-Then: veritas-agent adopt --id self --interests research,buy,verify
+Then: veritas-agent adopt --id self --interests signals,buy,verify
 
 ## Endpoints
 
@@ -24,8 +22,8 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 - /v1/peer/introductions: signed public-URL peers this node already connected to (empty without a commerce signer; never LAN)
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
 - /v1/hooks: machine-readable integration registry — HTTP surfaces, MCP tools, CLI exit codes, headers, signal stores; states that no push delivery exists
-- /v1/research: POST — observe primitive (not a warranted product); returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
-- /v1/notarize: POST — observe-once evidence notary for a URL; same payment gates as research (X-PAYMENT or X-VERITAS-SESSION); stores evidence text with a retention class; unavailable is non-billable
+- /v1/research: POST — removed (410 product_removed). Use /v1/signals or /v1/notarize
+- /v1/notarize: POST — observe-once evidence notary for a URL; same payment gates as catalog pull (X-PAYMENT or X-VERITAS-SESSION); stores evidence text with a retention class; unavailable is non-billable
 - /v1/siwx/challenge: POST — issue a SIWx challenge for credit-session establishment
 - /v1/siwx/verify: POST — verify SIWx signature and receive an X-VERITAS-SESSION token
 - /v1/credits: GET — prepaid credit balance for the SIWx session
@@ -57,7 +55,7 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 ## Install and run
 
 pip install "veritas-research[signing] @ git+https://github.com/eternal-roman/veritas"
-veritas-agent adopt --id self --interests research,verify
+veritas-agent adopt --id self --interests signals,verify
 veritas-agent whoami
 veritas-agent connect <peer-url> [--allow-local]
 veritas-agent peers

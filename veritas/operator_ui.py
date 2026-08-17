@@ -30,10 +30,13 @@ def public_account() -> dict[str, Any]:
 
 
 def operator_snapshot() -> dict[str, Any]:
+    from veritas.store import store_mode
+
     cfg = get_payment_config()
     return {
         "service": "veritas",
         "version": __version__,
+        "store_mode": store_mode(),
         "payment": {
             **cfg.as_dict(),
             "pricing": current_price_point(cfg.price, cfg.network),
@@ -111,7 +114,7 @@ a { color:var(--acc); }
     <form id="enroll">
       <label>Agent id <input name="agent_id" placeholder="self" autocomplete="off"></label>
       <label>Role <input name="role" placeholder="agent" autocomplete="off"></label>
-      <label>Interests <input name="interests" placeholder="research,verify" autocomplete="off"></label>
+      <label>Interests <input name="interests" placeholder="signals,verify" autocomplete="off"></label>
       <button type="submit">Write account.json</button>
     </form>
     <p id="msg" class="note">Same as <code>veritas-agent enroll</code>. Visa stays off this page.</p>

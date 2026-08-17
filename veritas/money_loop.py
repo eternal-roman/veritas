@@ -138,7 +138,7 @@ def run_settle(
         return report
 
     try:
-        status, body, hdrs = http("POST", f"{base}/v1/research", {"query": query}, None)
+        status, body, hdrs = http("POST", f"{base}/v1/signals", {"query": query}, None)
     except Exception as exc:  # noqa: BLE001
         report["error_class"] = "transport"
         report["steps"].append({"step": "unpaid_challenge", "error": str(exc)})
@@ -185,7 +185,7 @@ def run_settle(
     try:
         paid_status, paid_body, paid_hdrs = http(
             "POST",
-            f"{base}/v1/research",
+            f"{base}/v1/signals",
             {"query": query},
             {"X-PAYMENT": x_payment},
         )

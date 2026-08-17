@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.9"
+CONSTITUTION_VERSION = "3.0"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -62,10 +62,10 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     _article(
         "A1",
         "One engine",
-        "Every surface routes research through veritas.pipeline.run_research; there is no second retrieval, custody, or belief path.",
+        "Catalog pull and URL observe share one money path and one signals store; there is no research engine.",
         "service",
         "L1",
-        [{"kind": "test", "pointer": "tests/test_integration.py::test_control_plane_uses_shared_engine"}],
+        [{"kind": "test", "pointer": "tests/test_integration.py::test_catalog_engine_is_signals_not_research"}],
     ),
     _article(
         "A2",
@@ -74,8 +74,8 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "service",
         "L1",
         [
-            {"kind": "test", "pointer": "tests/test_pipeline.py::test_outage_is_unavailable_not_no_evidence"},
-            {"kind": "ci-gate", "pointer": "unavailability_honesty"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_venue_unavailable_is_not_an_empty_catalog"},
+            {"kind": "ci-gate", "pointer": "catalog_honesty"},
         ],
     ),
     _article(
@@ -86,7 +86,7 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "L1",
         [
             {"kind": "schema", "pointer": "unavailable response must not be billable"},
-            {"kind": "test", "pointer": "tests/test_pipeline.py::test_outage_is_not_billable"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_venue_unavailable_is_not_settled"},
         ],
     ),
     _article(
@@ -99,22 +99,22 @@ ARTICLES: tuple[dict[str, Any], ...] = (
     ),
     _article(
         "A5",
-        "Retrievers are untrusted",
-        "Retrievers may raise and may ignore max_results; the pipeline defends against both.",
+        "Venues are untrusted",
+        "Venue fetches may raise and may ignore limit; the catalog pull defends against both.",
         "service",
         "L1",
         [
-            {"kind": "test", "pointer": "tests/test_pipeline.py::test_raising_retriever_becomes_unavailable_not_a_crash"},
-            {"kind": "test", "pointer": "tests/test_pipeline.py::test_max_results_is_enforced_against_the_retriever"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_raising_opener_becomes_signals_error"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_pull_caps_limit"},
         ],
     ),
     _article(
         "A6",
         "Enforced wire contract",
-        "The wire contract is validated against real pipeline output, so contract and behaviour cannot silently diverge.",
+        "The wire contract is validated against real catalog output, so contract and behaviour cannot silently diverge.",
         "service",
         "L1",
-        [{"kind": "test", "pointer": "tests/test_pipeline.py::test_response_conforms_to_contract"}],
+        [{"kind": "test", "pointer": "tests/test_signals.py::test_catalog_response_conforms_to_contract"}],
     ),
     _article(
         "A7",
@@ -174,8 +174,8 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "venue",
         "L1",
         [
-            {"kind": "test", "pointer": "tests/test_pipeline.py::test_genuine_emptiness_is_billable_refusal"},
-            {"kind": "test", "pointer": "tests/test_truth_restoration.py::test_delivered_chain_is_verifiable_without_the_seller"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_polymarket_search_miss_does_not_dump_the_book"},
+            {"kind": "test", "pointer": "tests/test_custody.py::test_delivered_chain_is_verifiable_without_the_seller"},
             {"kind": "test", "pointer": "tests/test_custody.py::test_ledger_detects_tampering"},
         ],
     ),
@@ -186,9 +186,9 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "venue",
         "L1",
         [
-            {"kind": "test", "pointer": "tests/test_pipeline.py::test_outage_is_not_billable"},
-            {"kind": "test", "pointer": "tests/test_money_path.py::test_retrieval_failure_abandons_the_authorization_and_never_settles"},
-            {"kind": "ci-gate", "pointer": "unavailability_honesty"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_venue_unavailable_is_not_settled"},
+            {"kind": "test", "pointer": "tests/test_money_path.py::test_venue_failure_abandons_the_authorization_and_never_settles"},
+            {"kind": "ci-gate", "pointer": "catalog_honesty"},
         ],
     ),
     _article(
@@ -251,7 +251,7 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "venue",
         "L1",
         [
-            {"kind": "test", "pointer": "tests/test_truth_restoration.py::test_responses_state_what_they_attest"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_snapshots_state_they_are_not_verdicts"},
         ],
     ),
     _article(
@@ -261,8 +261,8 @@ ARTICLES: tuple[dict[str, Any], ...] = (
         "venue",
         "L1",
         [
-            {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used"},
-            {"kind": "test", "pointer": "tests/test_retrieval_honesty.py::test_evidence_carries_licence_through_to_the_response"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_off_allowlist_host_is_refused"},
+            {"kind": "test", "pointer": "tests/test_signals.py::test_as_evidence_is_not_a_verdict_and_uses_license"},
         ],
     ),
     _article(

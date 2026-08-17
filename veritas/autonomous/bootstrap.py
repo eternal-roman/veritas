@@ -31,13 +31,13 @@ def bootstrap_free_mode(agent_id: str = "self", base_dir: str = ".veritas_agent"
     config = {
         "mode": "free",
         "agent_id": agent_id,
-        "retrieval": "zero_key",          # uses veritas/autonomous/zero_key_retrieval.py
-        "require_payment": False,        # can be flipped later by the agent
-        "pay_to": None,                  # agent can later set its own address
-        "facilitator": DEFAULT_FACILITATOR,  # single-sourced with the money path
+        "retrieval": "catalog",
+        "require_payment": False,
+        "pay_to": None,
+        "facilitator": DEFAULT_FACILITATOR,
         "seed_hint": generate_local_seed(agent_id)[:16] + "...",
         "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "notes": "Free mode uses only zero-key sources. Upgrade by setting paid keys or a real receiving wallet."
+        "notes": "Free mode serves the local catalog. Upgrade by setting a funded pay-to.",
     }
 
     config_path = path / "config.json"

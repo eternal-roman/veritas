@@ -4,6 +4,8 @@ What is still unresolved after `main` @ `2fddf73` plus this branch
 (`feat/identity-tls-mesh`). No GitHub issues were open. This is the
 honest remainder, not a wish list.
 
+Numeric limits and outliers (this tip): `docs/program/LIMITS.md`.
+
 Dated 2026-08-16. Status of each item is as of this branch's tip.
 
 ## This branch is doing

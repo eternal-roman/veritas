@@ -10,7 +10,8 @@ committed and pushed survives. Update this file and push after every sub-step.
 > integration branch stacks G2/signals/observe, self-host peer connect,
 > shared receipts, P13 `stored_excerpt`, optional G13 chain checks, and
 > O15 SBOM checksum. Default **HOLD invent money**; Stage-1 human owns
-> PyPI · public TLS for strangers · mainnet pay-to.
+> PyPI · public TLS for strangers · mainnet pay-to. Limits/outliers snapshot:
+> `docs/program/LIMITS.md` (`docs/limits-and-outliers`).
 
 ## Progress log
 

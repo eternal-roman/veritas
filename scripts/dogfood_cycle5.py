@@ -100,12 +100,11 @@ def check_constitution_enforcement_shape(tmp: Path) -> dict[str, Any]:
     gaps = body.get("known_gaps") or []
     g12 = [g for g in gaps if g.get("id") == "G12"]
     articles = body.get("articles") or []
-    # Every article must be L1 with pointer or L0 aspirational (enforced by tests;
-    # here we only require non-empty articles + G12 still disclosed).
-    ok = bool(articles) and len(g12) == 1 and g12[0].get("status") == "open"
+    # G12 is closed in constitution 2.8 and must stay disclosed (closed ≠ omitted).
+    ok = bool(articles) and len(g12) == 1 and g12[0].get("status") == "closed"
     return _check(
         "constitution_g12_disclosed",
-        "constitution served; G12 still open and disclosed to buyers",
+        "constitution served; G12 closed and still disclosed to buyers",
         f"articles={len(articles)}; g12={g12[0] if g12 else None}",
         ok,
     )

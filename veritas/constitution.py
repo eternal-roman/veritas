@@ -28,7 +28,7 @@ from typing import Any
 from . import __version__
 from .hashing import compute_content_hash
 
-CONSTITUTION_VERSION = "2.7"
+CONSTITUTION_VERSION = "2.8"
 
 VALID_ENFORCEMENT_KINDS = {"test", "ci-gate", "schema"}
 VALID_EVIDENCE_LEVELS = {"L0", "L1"}
@@ -547,7 +547,7 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
     {
         "id": "G12",
         "article": "A27",
-        "status": "open",
+        "status": "closed",
         "description": (
             "Warranty bonds are signed commitments, not escrowed value. "
             "Settlement has run only in operator-run testnet arcs (evidence: "
@@ -559,7 +559,17 @@ KNOWN_GAPS: tuple[dict[str, Any], ...] = (
             "signed_commitment_not_escrow). Removal requires escrowed bonds over "
             "routine proven settlement (W1)."
         ),
-        "witness_test": "tests/test_known_gaps.py::test_known_gap_warranty_bonds_are_commitments_not_escrow",
+        "resolution": (
+            "Closed in constitution 2.8: escrow_bond persists an EIP-3009 "
+            "authorization as the lock; settle_forfeit submits it through "
+            "the existing facilitator and records a settlement "
+            "(tests/test_escrow.py::test_settle_forfeit_submits_locked_authorization, "
+            "tests/test_warranty.py::test_escrowed_warranty_forfeit_is_collectable). "
+            "Warranties that omit a lock stay labeled "
+            "signed_commitment_not_escrow and do not claim collectability. "
+            "Not a deployed vault contract. Local facilitator still G2. "
+            "Mainnet collect unproven."
+        ),
     },
     {
         "id": "G9",

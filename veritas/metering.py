@@ -52,6 +52,9 @@ FREE_PROVIDER_COSTS: dict[str, int] = {
     "static_corpus": 0,
     "zero_key": 0,
     "composite": 0,
+    "prediction_markets": 0,
+    "polymarket": 0,
+    "kalshi": 0,
 }
 
 #: One US dollar in the micro-USD unit every money figure in reports uses.

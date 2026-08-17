@@ -59,8 +59,9 @@ settlement.
 **Rules we can be held to.** The [venue constitution](CONSTITUTION.md) marks
 each article enforced or aspirational; a test rejects anything in between.
 Open gaps are listed there. `/v1/trust` scores independently verified
-audits; GET without those records is UNPROVEN. Warranty bonds are still
-commitments, not escrow (G12).
+audits; GET without those records is UNPROVEN. Warranty bonds that carry
+an EIP-3009 lock are collectable via `settle_forfeit` (G12); omitting a
+lock stays `signed_commitment_not_escrow`. Mainnet collect is unproven.
 
 **No human on the adopt path.** `/.well-known/x402` reaches every surface;
 `/v1/schema` and `/v1/errors` are the contract; payment is x402. `veritas-agent
@@ -76,7 +77,8 @@ up` provisions config and wallet and serves.
 - **x402** — real facilitator verify/settle, fail-closed; replay returns the paid deliverable, never a second pass
 - **Durable ledger** (`veritas/ledger.py`) — authorize → fsync delivery → settle; no reply is `indeterminate`
 - **Survival records** (`veritas-audit`) — third-party `confirmed` / `diverged` / `unobserved`; counts per auditor key, self-audits excluded. Diligence vets documents; survival vets history. Survival reports are `surviving` only against an auditor publication; `/v1/trust` is independent-audit sourced
-- **Falsifiable commerce W0** (`veritas/warranty.py`) — seller-authored D0 predicates, bonded stake, challenge window; `fired` / `not_fired` / `undecidable`; no predicate → class `U`. Bonds are signed commitments, not escrow (G12). See `docs/program/FALSIFIABLE_COMMERCE.md`
+- **Falsifiable commerce W0/W1** (`veritas/warranty.py`, `veritas/escrow.py`) — seller-authored D0 predicates, bonded stake, challenge window; `fired` / `not_fired` / `undecidable`; no predicate → class `U`. An EIP-3009 lock is collectable via `settle_forfeit`; omitting it stays `signed_commitment_not_escrow`. Not a vault contract. See `docs/program/FALSIFIABLE_COMMERCE.md`
+- **Prediction-market signals** (`veritas/signals.py`) — public Kalshi and Polymarket book snapshots stored through the evidence channel. The snapshot attests a price at a time, not that an event happened.
 - **Diligence** (`veritas-diligence <url>`) — 402 must match advertised payee/network/asset/price; L1 articles must name enforcement; a seller claiming no gaps fails. `0` pass / `1` fail / `2` unverifiable. SSRF-guarded. None of this proves delivery
 - **Standalone verifier** (`veritas-verify receipt.json`) — one file, zero deps, imports nothing from `veritas`. Differential test vs the engine. Consistent records ≠ we contacted the named URLs
 - **Privacy prototypes** — hiding-wallet commitments and JIT packets in `veritas/autonomous/`; experiments (`docs/design/`)

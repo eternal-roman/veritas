@@ -38,6 +38,7 @@ from veritas.deadline import (
 )
 from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
+from veritas.escrow import EscrowError, EscrowStore, is_safe_lock_id, settle_forfeit
 from veritas.evidence_store import EvidenceStore, is_safe_content_hash
 from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
@@ -56,6 +57,8 @@ from veritas.operator_ui import (
 from veritas.payment_config import get_payment_config
 from veritas.pipeline import run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
+from veritas.signals import VENUES, SignalsError, SignalStore
+from veritas.signals import pull as pull_signals
 from veritas.siwx import SiwxError, SiwxSessionError, SiwxSessionStore, SiwxVerifyError
 from veritas.trust import OutcomeLog, score_service
 from veritas.x402 import (
@@ -77,6 +80,11 @@ PACK_VERIFY_PATH = "/v1/packs/verify"
 LOG_PROOF_PATH = "/v1/log/proof"
 LOG_VERIFY_PATH = "/v1/log/verify"
 LOG_STATUS_PATH = "/v1/log"
+ESCROW_LOCK_PATH = "/v1/escrow"
+ESCROW_PATH = "/v1/escrow/{lock_id}"
+SIGNALS_PATH = "/v1/signals"
+SIGNALS_PULL_PATH = "/v1/signals"
+SIGNALS_ITEM_PATH = "/v1/signals/{content_hash}"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -123,6 +131,8 @@ outcomes = OutcomeLog()
 ledger = Ledger()
 credit_ledger = CreditLedger()
 evidence_bodies = EvidenceStore()
+escrow_locks = EscrowStore()
+signal_snapshots = SignalStore()
 siwx_store = SiwxSessionStore()
 
 #: Header carrying a SIWx-issued session token for prepaid credit spend (M7).
@@ -301,6 +311,18 @@ def _metric_path(path: str) -> str:
         return "/v1/receipts/{request_id}"
     if path.startswith("/v1/evidence/"):
         return "/v1/evidence/{content_hash}"
+    if path.startswith("/v1/escrow/"):
+        if path.endswith("/forfeit"):
+            return "/v1/escrow/{lock_id}/forfeit"
+        if path.endswith("/release"):
+            return "/v1/escrow/{lock_id}/release"
+        if path == ESCROW_LOCK_PATH:
+            return ESCROW_LOCK_PATH
+        return "/v1/escrow/{lock_id}"
+    if path.startswith("/v1/signals/"):
+        if path == SIGNALS_PULL_PATH:
+            return SIGNALS_PULL_PATH
+        return "/v1/signals/{content_hash}"
     return "unmatched"
 
 
@@ -1531,6 +1553,170 @@ async def evidence_body(content_hash: str):
     return record
 
 
+class EscrowLockRequest(BaseModel):
+    authorization: dict[str, Any]
+    kind: str = "bond"
+    network: str
+    asset: str | None = None
+    warranty_hash: str | None = None
+
+
+class EscrowForfeitRequest(BaseModel):
+    outcome: dict[str, Any]
+
+
+@app.post(ESCROW_LOCK_PATH)
+async def escrow_lock(req: EscrowLockRequest):
+    """Persist an EIP-3009 authorization as a VCAE lock. Does not settle."""
+    try:
+        lock = escrow_locks.lock(
+            req.authorization,
+            kind=req.kind,
+            network=req.network,
+            asset=req.asset,
+            warranty_hash=req.warranty_hash,
+        )
+    except EscrowError:
+        return JSONResponse(
+            status_code=409,
+            content=error_envelope(ErrorCode.ESCROW_REFUSED),
+        )
+    return lock
+
+
+@app.get(ESCROW_PATH)
+async def escrow_get(lock_id: str):
+    if not is_safe_lock_id(lock_id):
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.ESCROW_LOCK_NOT_FOUND, lock_id=lock_id),
+        )
+    found = escrow_locks.get(lock_id)
+    if found is None:
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.ESCROW_LOCK_NOT_FOUND, lock_id=lock_id),
+        )
+    return found
+
+
+@app.post("/v1/escrow/{lock_id}/release")
+async def escrow_release(lock_id: str):
+    """Mark a lock unclaimable. Never submits on-chain."""
+    try:
+        return escrow_locks.release(lock_id)
+    except EscrowError as exc:
+        missing = exc.args[:1] in {("lock_not_found",), ("lock_id_malformed",)}
+        return JSONResponse(
+            status_code=404 if missing else 409,
+            content=error_envelope(
+                ErrorCode.ESCROW_LOCK_NOT_FOUND if missing else ErrorCode.ESCROW_REFUSED,
+                lock_id=lock_id,
+            ),
+        )
+
+
+@app.post("/v1/escrow/{lock_id}/forfeit")
+async def escrow_forfeit(lock_id: str, req: EscrowForfeitRequest):
+    """Submit a locked authorization after a fired challenge.
+
+    Refuses in free mode rather than inventing a simulated settlement.
+    """
+    if not is_safe_lock_id(lock_id):
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.ESCROW_LOCK_NOT_FOUND, lock_id=lock_id),
+        )
+    found = escrow_locks.get(lock_id)
+    if found is None:
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.ESCROW_LOCK_NOT_FOUND, lock_id=lock_id),
+        )
+    cfg = get_payment_config()
+    if not cfg.is_live_ready():
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(
+                ErrorCode.ESCROW_SETTLEMENT_UNAVAILABLE,
+                "forfeit submit requires live payment configuration; "
+                "free mode does not invent a settlement",
+            ),
+        )
+    try:
+        return settle_forfeit(
+            found,
+            outcome=req.outcome,
+            facilitator=get_facilitator(cfg.facilitator, live=True),
+            store=escrow_locks,
+        )
+    except EscrowError:
+        return JSONResponse(
+            status_code=409,
+            content=error_envelope(ErrorCode.ESCROW_REFUSED, lock_id=lock_id),
+        )
+
+
+class SignalsPullRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    venues: list[str] | None = None
+    limit: int = Field(default=8, ge=1, le=8)
+
+
+@app.get(SIGNALS_PATH)
+async def signals_list(
+    venue: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=50),
+):
+    items = signal_snapshots.list(venue=venue, limit=limit)
+    return {
+        "signals": items,
+        "count": len(items),
+        "method": "veritas.signals.v1",
+        "note": "market-implied prices, not a verdict",
+    }
+
+
+@app.get(SIGNALS_ITEM_PATH)
+async def signals_get(content_hash: str):
+    if not is_safe_content_hash(content_hash):
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.NOT_FOUND, content_hash=content_hash),
+        )
+    found = signal_snapshots.get(content_hash)
+    if found is None:
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.NOT_FOUND, content_hash=content_hash),
+        )
+    return found
+
+
+@app.post(SIGNALS_PULL_PATH)
+async def signals_pull(req: SignalsPullRequest):
+    """Pull public venue books and store snapshots via the evidence channel."""
+    if req.venues and any(v not in VENUES for v in req.venues):
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(ErrorCode.SIGNALS_REFUSED),
+        )
+    try:
+        items = pull_signals(req.query, venues=req.venues, limit=req.limit)
+    except SignalsError:
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(ErrorCode.SIGNALS_UNAVAILABLE),
+        )
+    written = signal_snapshots.put_many(items)
+    return {
+        "signals": items,
+        "stored": written,
+        "method": "veritas.signals.v1",
+        "note": "market-implied prices, not a verdict",
+    }
+
+
 @app.get("/v1/trust")
 async def trust():
     s = score_service()
@@ -2029,6 +2215,9 @@ async def well_known():
             "evidence_log": LOG_STATUS_PATH,
             "evidence_log_proof": LOG_PROOF_PATH,
             "evidence_log_verify": LOG_VERIFY_PATH,
+            "escrow": "/v1/escrow/{lock_id}",
+            "escrow_lock": ESCROW_LOCK_PATH,
+            "signals": SIGNALS_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

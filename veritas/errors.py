@@ -48,6 +48,11 @@ class ErrorCode(str, Enum):
     SIWX_INVALID = "siwx_invalid"
     SESSION_INVALID = "session_invalid"
     CREDITS_TOPUP_UNAVAILABLE = "credits_topup_unavailable"
+    ESCROW_LOCK_NOT_FOUND = "escrow_lock_not_found"
+    ESCROW_REFUSED = "escrow_refused"
+    ESCROW_SETTLEMENT_UNAVAILABLE = "escrow_settlement_unavailable"
+    SIGNALS_UNAVAILABLE = "signals_unavailable"
+    SIGNALS_REFUSED = "signals_refused"
 
 
 ERROR_REGISTRY: dict[str, dict[str, Any]] = {
@@ -180,6 +185,31 @@ ERROR_REGISTRY: dict[str, dict[str, Any]] = {
         "status": 503,
         "meaning": "Credit top-up requires live payment configuration and a settled x402 authorization. Free/misconfigured modes cannot invent credits.",
         "retriable": True,
+    },
+    ErrorCode.ESCROW_LOCK_NOT_FOUND.value: {
+        "status": 404,
+        "meaning": "No escrow lock exists under the requested lock_id, or the id is not a 64-hex digest.",
+        "retriable": False,
+    },
+    ErrorCode.ESCROW_REFUSED.value: {
+        "status": 409,
+        "meaning": "The lock, release, or forfeit could not proceed (malformed authorization, nonce replay, wrong state, or facilitator refusal). The lock is unchanged on a facilitator refusal so a later collect can retry.",
+        "retriable": False,
+    },
+    ErrorCode.ESCROW_SETTLEMENT_UNAVAILABLE.value: {
+        "status": 503,
+        "meaning": "Forfeit submit requires live payment configuration. Free mode does not invent a simulated settlement.",
+        "retriable": True,
+    },
+    ErrorCode.SIGNALS_UNAVAILABLE.value: {
+        "status": 503,
+        "meaning": "Every named prediction-market venue failed to answer. Nothing was stored.",
+        "retriable": True,
+    },
+    ErrorCode.SIGNALS_REFUSED.value: {
+        "status": 422,
+        "meaning": "The signals request named an unknown venue or an empty query.",
+        "retriable": False,
     },
 }
 

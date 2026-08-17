@@ -227,6 +227,171 @@ def test_undecidable_context_forfeits_nothing_either_way(warranted):
     assert bad["reason"].startswith("warranty_invalid")
 
 
+def test_escrowed_warranty_forfeit_is_collectable(tmp_path):
+    """G12. An escrowed warranty that fires is collectable via settle_forfeit.
+
+    Construction refuses a deliverable that already fires, so a dishonest
+    seller must hand-sign over defective bytes — the same path as
+    test_fired_outcome_on_seller_signed_defective_bytes — and attach a
+    real lock. Collection submits that lock; the commitment-only path
+    stays unlabeled as collectable.
+    """
+    from veritas.escrow import (
+        BOND_BINDING_ESCROW,
+        EscrowStore,
+        escrow_bond,
+        settle_forfeit,
+    )
+    from veritas.facilitator import SimulatedFacilitatorClient
+    from veritas.warranty import (
+        WARRANTY_VERSION,
+        canonical_response_hash,
+        canonical_warranty_message,
+    )
+
+    seller = _signer()
+    defective = {
+        "status": "unavailable",
+        "billable": True,
+        "claims": [],
+        "evidence": [],
+        "custody_chain": [{"event_type": "x", "event_hash": "bad"}],
+    }
+    store = EscrowStore(tmp_path)
+    lock = escrow_bond(
+        {
+            "from": "0x" + "11" * 20,
+            "to": "0x" + "22" * 20,
+            "value": BOND["amount_atomic"],
+            "validAfter": "0",
+            "validBefore": "9999999999",
+            "nonce": "0x" + "aa" * 32,
+            "signature": "0x" + "ee" * 65,
+        },
+        network=BOND["network"],
+        warranty_hash=canonical_response_hash(defective),
+        store=store,
+    )
+    warranty = {
+        "warranty_version": WARRANTY_VERSION,
+        "response_hash": canonical_response_hash(defective),
+        "predicates": ["status_incoherent.v1"],
+        "falsifiability_class": CLASS_D0,
+        "bond": BOND,
+        "bond_binding": BOND_BINDING_ESCROW,
+        "escrow": {
+            "lock_id": lock["lock_id"],
+            "state": lock["state"],
+            "pay_to": lock["pay_to"],
+            "valid_before": lock["valid_before"],
+            "method": lock["method"],
+        },
+        "window_seconds": 3600,
+        "issued_at": "2026-08-08T12:00:00Z",
+    }
+    message = canonical_warranty_message(warranty)
+    warranty["seller"] = {
+        "scheme": "eip191",
+        "signer": seller.address.lower(),
+        "signature": seller.sign_text(message),
+        "message": message,
+    }
+    outcome = evaluate_challenge(
+        warranty, defective, challenged_at="2026-08-08T12:30:00Z"
+    )
+    assert outcome["outcome"] == OUTCOME_FIRED
+    assert outcome["forfeit"]["binding"] == BOND_BINDING_ESCROW
+    assert outcome["forfeit"]["lock_id"] == lock["lock_id"]
+    collected = settle_forfeit(
+        lock,
+        outcome=outcome,
+        facilitator=SimulatedFacilitatorClient(),
+        store=store,
+    )
+    assert collected["settlement"]["success"] is True
+    assert store.get(lock["lock_id"])["state"] == "forfeited"
+
+
+def test_escrowed_build_warranty_locks_matching_amount(completed_response, tmp_path):
+    from veritas.escrow import BOND_BINDING_ESCROW, EscrowStore, escrow_bond
+
+    store = EscrowStore(tmp_path)
+    warranty = build_warranty(
+        completed_response,
+        predicates=["status_incoherent.v1"],
+        bond=BOND,
+        window_seconds=3600,
+        signer=_signer(),
+        authorization={
+            "from": "0x" + "11" * 20,
+            "to": "0x" + "22" * 20,
+            "value": BOND["amount_atomic"],
+            "validAfter": "0",
+            "validBefore": "9999999999",
+            "nonce": "0x" + "bb" * 32,
+            "signature": "0x" + "ff" * 65,
+        },
+        escrow_store=store,
+    )
+    assert warranty["bond_binding"] == BOND_BINDING_ESCROW
+    assert warranty["escrow"]["state"] == "locked"
+    mismatch_auth = {
+        "from": "0x" + "11" * 20,
+        "to": "0x" + "22" * 20,
+        "value": "1",
+        "validAfter": "0",
+        "validBefore": "9999999999",
+        "nonce": "0x" + "cc" * 32,
+        "signature": "0x" + "ff" * 65,
+    }
+    with pytest.raises(WarrantyError, match="escrow_amount_mismatch"):
+        build_warranty(
+            completed_response,
+            predicates=["status_incoherent.v1"],
+            bond=BOND,
+            window_seconds=3600,
+            signer=_signer(),
+            authorization=mismatch_auth,
+            escrow_store=store,
+        )
+    # Amount is checked before lock — the nonce is still free.
+    leftover = escrow_bond(mismatch_auth, network=BOND["network"], store=store)
+    assert leftover["state"] == "locked"
+
+
+def test_swapping_escrow_lock_after_sign_fails_verify(completed_response, tmp_path):
+    """The lock id is in the signed message. Swapping it is a forfeit of
+    someone else's bond and must not verify."""
+    from veritas.escrow import EscrowStore
+
+    warranty = build_warranty(
+        completed_response,
+        predicates=["status_incoherent.v1"],
+        bond=BOND,
+        window_seconds=3600,
+        signer=_signer(),
+        authorization={
+            "from": "0x" + "11" * 20,
+            "to": "0x" + "22" * 20,
+            "value": BOND["amount_atomic"],
+            "validAfter": "0",
+            "validBefore": "9999999999",
+            "nonce": "0x" + "dd" * 32,
+            "signature": "0x" + "ff" * 65,
+        },
+        escrow_store=EscrowStore(tmp_path),
+    )
+    ok, _ = verify_warranty(warranty, completed_response)
+    assert ok
+    tampered = {
+        **warranty,
+        "escrow": {**warranty["escrow"], "lock_id": "ff" * 32},
+    }
+    ok, reason = verify_warranty(tampered, completed_response)
+    assert ok is False
+    assert reason in {"message_mismatch", "signer_mismatch", "signature_invalid"}
+
+
 def test_warranty_signature_is_domain_separated(warranted):
     """A warranty signature must never verify as an evidence attestation."""
     _, warranty, _ = warranted

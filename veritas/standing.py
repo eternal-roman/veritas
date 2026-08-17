@@ -7,7 +7,9 @@ the single standing view a buyer's spend policy can consume, ordered by
 evidential strength (docs/program/FALSIFIABLE_COMMERCE.md §3.4):
 
 1. ``forfeited_bond`` — a fired challenge on a seller-signed warranty;
-   settlement-grade and unomittable only at W1 (today: commitment, G12)
+   settlement-grade once the bond was an EIP-3009 lock that
+   ``settle_forfeit`` submitted (W1). Commitment-only warranties stay
+   labeled ``signed_commitment_not_escrow``.
 2. ``survived_challenge`` — an adversary staked to refute and failed
 3. ``audit`` — survival records, per distinct auditor key (A26 rules)
 4. ``expired_unchallenged`` — silence; the weakest positive there is
@@ -21,9 +23,10 @@ present: any forfeit → ``forfeited``; else observed divergence →
 ``surviving_challenged``; else the audit verdict stands.
 
 Honesty boundaries: every input set may be curated by whoever assembled it
-(G11) — negative evidence becomes unomittable only when forfeits are
-settlement events (W1); and this module never fetches anything — it is a
-pure function over records the caller holds, per A26.
+(G11 closed only for published auditor sets); a forfeited escrowed bond is
+a settlement event once ``settle_forfeit`` succeeds; this module never
+fetches anything — it is a pure function over records the caller holds,
+per A26.
 """
 
 from __future__ import annotations
@@ -51,7 +54,8 @@ EVIDENCE_HIERARCHY = (
 STANDING_NOTE = (
     "composed from records the holder provided; surviving audits require "
     "an auditor publication (withheld published records → curated); "
-    "forfeits are signed commitments until bonds are escrowed (gap G12)"
+    "forfeit_binding is eip3009_authorization when any fired outcome "
+    "carried an escrowed lock, else signed_commitment_not_escrow"
 )
 
 VERDICT_FORFEITED = "forfeited"
@@ -88,6 +92,7 @@ def standing_report(
     survived_warranties: set[str] = set()
     undecidable_reported = 0
     malformed_excluded = 0
+    bindings: set[str] = set()
     for outcome in challenge_outcomes or []:
         kind = outcome.get("outcome")
         wid = outcome.get("warranty_hash")
@@ -99,6 +104,9 @@ def standing_report(
             continue
         if kind == OUTCOME_FIRED:
             fired_warranties.add(wid)
+            binding = (outcome.get("forfeit") or {}).get("binding")
+            if isinstance(binding, str) and binding:
+                bindings.add(binding)
         else:
             survived_warranties.add(wid)
     survived_warranties -= fired_warranties  # fired dominates per warranty
@@ -112,10 +120,15 @@ def standing_report(
     else:
         verdict = audits["verdict"]  # surviving | unaudited
 
+    if "eip3009_authorization" in bindings:
+        forfeit_binding = "eip3009_authorization"
+    else:
+        forfeit_binding = "signed_commitment_not_escrow"
+
     return {
         "hierarchy": list(EVIDENCE_HIERARCHY),
         "forfeited_bonds": len(fired_warranties),
-        "forfeit_binding": "signed_commitment_not_escrow",
+        "forfeit_binding": forfeit_binding,
         "survived_challenges": len(survived_warranties),
         "undecidable_challenges_reported": undecidable_reported,
         "challenge_records_excluded": malformed_excluded,

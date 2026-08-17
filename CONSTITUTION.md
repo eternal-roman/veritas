@@ -5,7 +5,7 @@ other participant in its venue — buyer agents, peer seller services,
 facilitators, registries, and attesters — written so that a machine can read
 it, cite it, and check it.
 
-**The normative source is `veritas/constitution.py`, version 2.7.** This file
+**The normative source is `veritas/constitution.py`, version 2.8.** This file
 is a rendering of that module; `tests/test_constitution.py` keeps the two in
 sync, and the served document is available unpaid at `GET /v1/constitution`
 and referenced from `GET /v1/identity`. If this file and the module ever
@@ -234,8 +234,9 @@ This is the economic layer of the same honesty the status taxonomy holds:
 the seller writes the experiment that would refute itself and stakes on it
 (`veritas/warranty.py`, `docs/program/FALSIFIABLE_COMMERCE.md`), what cannot
 be decided is kept apart from both verdicts, and what cannot be refuted by
-any decidable procedure is priced as such instead of warranted. What it does
-not establish: that the bond behind a warranty is enforceable — that is G12.
+any decidable procedure is priced as such instead of warranted. An escrowed
+bond is an EIP-3009 lock collectable via `settle_forfeit` (G12 closed in 2.8).
+Mainnet collect remains unproven, same as payments.
 
 ### A28 — Integration surfaces are registered (L1)
 
@@ -387,7 +388,7 @@ Closed in constitution 2.7: `survival_report` is `surviving` only when an
 auditor publication is supplied and no published countable record is withheld;
 otherwise `unpublished` or `curated`.
 
-### G12 — Warranty bonds are commitments, not escrow (open, article A27)
+### G12 — Warranty bonds are commitments, not escrow (closed, article A27)
 
 Warranty bonds are signed commitments, not escrowed value. Settlement has run
 only in operator-run testnet arcs (evidence: `docs/program/fable/settlement/`),
@@ -398,7 +399,11 @@ The wire says so on every warranty
 (`bond_binding: signed_commitment_not_escrow`). Removal requires escrowed
 bonds over routine proven settlement (W1).
 
-Witness: `tests/test_known_gaps.py::test_known_gap_warranty_bonds_are_commitments_not_escrow`.
+Closed in constitution 2.8: `escrow_bond` persists an EIP-3009 authorization
+as the lock; `settle_forfeit` submits it through the existing facilitator.
+Warranties that omit a lock stay labeled `signed_commitment_not_escrow` and
+do not claim collectability. Not a deployed vault contract. Local
+facilitator still G2. Mainnet collect unproven.
 
 ### G8 — No financial ledger (closed, article A13)
 

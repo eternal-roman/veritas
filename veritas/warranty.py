@@ -36,10 +36,13 @@ Design rules inherited from this repository:
 
 Honesty boundaries:
 
-* Bonds here are **signed commitments, not escrowed value** — no settlement
-  has ever run from this codebase (constitution gap G12, witnessed). The
-  forfeit indicated by a fired challenge is a claim the rails must later
-  enforce (W1), not money that moved.
+* A warranty that carries an EIP-3009 lock has ``bond_binding:
+  eip3009_authorization``. ``settle_forfeit`` submits that lock through
+  the existing facilitator (W1 / G12 closed). Mainnet collect is
+  unproven; the local facilitator still does not check signatures (G2).
+* A warranty that omits a lock is labeled ``signed_commitment_not_escrow``
+  and cannot be collected. That label is the honest opt-out, not the
+  default product.
 * Deterministic predicates cover a subset of quality: an answer can be
   worthless yet unfalsified. Bond size signals confidence *about the
   predicate*, nothing more.
@@ -57,6 +60,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from veritas.custody import verify_chain_records
+from veritas.escrow import escrow_bond, settle_forfeit
 from veritas.hashing import compute_content_hash
 from veritas.notary.sign import (
     NotarySignError,
@@ -79,15 +83,15 @@ OUTCOME_UNDECIDABLE = "undecidable"
 
 WARRANTY_NOTE = (
     "seller-authored falsification predicates over the delivered bytes; "
-    "bond is a signed commitment, not escrowed value (gap G12); "
+    "bond is an EIP-3009 lock when escrowed, else a signed commitment; "
     "origin divergence never forfeits (P7 boundary); "
     "unfalsified does not mean useful"
 )
 
 REPORT_NOTE = (
     "counts over the outcomes provided; every outcome is recomputable by "
-    "anyone holding the warranty and the deliverable; forfeits become "
-    "unomittable only once bonds are escrowed on payment rails (W1)"
+    "anyone holding the warranty and the deliverable; a forfeited escrowed "
+    "bond is a settlement event once settle_forfeit succeeds"
 )
 
 UNWARRANTED_NOTE = (
@@ -257,6 +261,7 @@ def canonical_warranty_message(warranty: Mapping[str, Any]) -> str:
         issued_at = warranty["issued_at"]
     except KeyError as exc:
         raise WarrantyError(f"warranty missing field for signing: {exc}") from exc
+    escrow = warranty.get("escrow")
     return "\n".join(
         (
             WARRANTY_VERSION,
@@ -265,6 +270,11 @@ def canonical_warranty_message(warranty: Mapping[str, Any]) -> str:
             f"bond: {bond['amount_atomic']} {bond['asset']} {bond['network']}",
             f"window_seconds: {window}",
             f"issued_at: {issued_at}",
+            *(
+                [f"escrow_lock: {escrow['lock_id']}"]
+                if isinstance(escrow, Mapping) and escrow.get("lock_id")
+                else []
+            ),
         )
     )
 
@@ -276,6 +286,8 @@ def build_warranty(
     bond: Mapping[str, str],
     window_seconds: int,
     signer: OperatorSigner,
+    authorization: Mapping[str, Any] | None = None,
+    escrow_store: Any | None = None,
 ) -> dict[str, Any]:
     """Attach a bonded, signed falsification warranty to a deliverable.
 
@@ -285,6 +297,11 @@ def build_warranty(
     malformed; or a named predicate already fires on the deliverable — a
     seller must not be able to sell a warranty it can see is already lost,
     because that converts the buyer's challenge stake into seller revenue.
+
+    When ``authorization`` is supplied it is locked via
+    :func:`veritas.escrow.escrow_bond` and the wire says
+    ``bond_binding: eip3009_authorization``. Omitting it is the honest
+    opt-out: ``signed_commitment_not_escrow``, not collectable.
     """
     if not predicates:
         raise WarrantyError("unwarrantable_use_unwarranted_label")
@@ -308,11 +325,36 @@ def build_warranty(
         "predicates": list(predicates),
         "falsifiability_class": fclass,
         "bond": {key: bond[key] for key in ("amount_atomic", "asset", "network")},
-        "bond_binding": "signed_commitment_not_escrow",  # G12, stated on the wire
+        "bond_binding": "signed_commitment_not_escrow",
         "window_seconds": window_seconds,
         "issued_at": _iso(_now()),
         "note": WARRANTY_NOTE,
     }
+    if authorization is not None:
+        from veritas.escrow import BOND_BINDING_ESCROW, EscrowError
+
+        if not isinstance(authorization, Mapping):
+            raise WarrantyError("escrow_refused:authorization_malformed")
+        if authorization.get("value") != bond["amount_atomic"]:
+            raise WarrantyError("escrow_amount_mismatch")
+        try:
+            lock = escrow_bond(
+                dict(authorization),
+                network=bond["network"],
+                asset=bond.get("asset"),
+                warranty_hash=warranty["response_hash"],
+                store=escrow_store,
+            )
+        except EscrowError as exc:
+            raise WarrantyError(f"escrow_refused:{exc}") from exc
+        warranty["bond_binding"] = BOND_BINDING_ESCROW
+        warranty["escrow"] = {
+            "lock_id": lock["lock_id"],
+            "state": lock["state"],
+            "pay_to": lock["pay_to"],
+            "valid_before": lock["valid_before"],
+            "method": lock.get("method"),
+        }
     message = canonical_warranty_message(warranty)
     warranty["seller"] = {
         "scheme": "eip191",
@@ -383,8 +425,8 @@ def evaluate_challenge(
 ) -> dict[str, Any]:
     """Decide a challenge. Pure function: any party computes the same outcome.
 
-    ``fired`` — a warranted predicate fires on the deliverable; the bond
-    commitment is forfeit (enforceable only at W1; G12).
+    ``fired`` — a warranted predicate fires on the deliverable; an escrowed
+    bond is collectable via ``settle_forfeit``.
     ``not_fired`` — no warranted predicate fires; the challenger's stake
     goes to the seller under venue rules.
     ``undecidable`` — the challenge context is defective (invalid warranty,
@@ -442,9 +484,12 @@ def _outcome(
         "note": WARRANTY_NOTE,
     }
     if outcome == OUTCOME_FIRED:
+        binding = warranty.get("bond_binding") or "signed_commitment_not_escrow"
         record["forfeit"] = {
             **dict(warranty.get("bond") or {}),
-            "binding": "signed_commitment_not_escrow",
+            "binding": binding,
+            "lock_id": (warranty.get("escrow") or {}).get("lock_id"),
+            "response_hash": warranty.get("response_hash"),
         }
     return record
 
@@ -492,7 +537,9 @@ __all__ = [
     "canonical_response_hash",
     "canonical_warranty_message",
     "evaluate_challenge",
+    "escrow_bond",
     "falsifiability_class",
+    "settle_forfeit",
     "unwarranted_label",
     "verify_warranty",
     "warranty_report",

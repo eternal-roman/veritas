@@ -5,21 +5,22 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next:** claim **free**. Product **#136** PS9 landed (`694626a`) —
-> `veritas-buy` + `veritas-agent status` Stage-1 + catalog seed one-shot.
+> **Do this next:** claim **free**. Product glue **#155** is on main
+> (`b217aac`). This branch (`feat/a2a-escrow-signals`) closes G12 with
+> VCAE (EIP-3009 authorization as the lock) and adds prediction-market
+> signal snapshots (Kalshi/Polymarket, prices not verdicts).
 > Default **HOLD invent money**; Stage-1 human owns PyPI · public TLS ·
-> mainnet pay-to. No singular agent invent NEXT named.
-> **G10:** do not dual-reopen **#136** PS9 thrash, **#135** 0.1-R/n=3 thrash,
-> **#134** VISION thrash, **#131** evolver thrash, **#129** existence thrash.
->
-> **On main:** settlements **5 testnet** · mainnet **0** · unsolicited **0**
-> (n=5 is the **first live evidence-notary arc** — paid notarize → attested
-> pack → independent-key audit **confirmed** → survival report → Merkle
-> inclusion; `fable/settlement/settlement_notary_arc_20260809T153700Z.json`;
-> n=4 session commerce; n=3 composed 0.1-R). Tip: see progress log.
-> Gap **G9** production-routine open. Not PyPI.
+> mainnet pay-to. G2 remains open.
 
 ## Progress log
+
+> **A2A escrow + signals (2026-08-16, feat/a2a-escrow-signals):** VCAE
+> (`veritas.escrow.v1`) — authorization is the lock; `settle_forfeit`
+> submits through the existing facilitator; facilitator refusal leaves
+> the lock collectable. Prediction-market signals (`veritas.signals.v1`)
+> store public Kalshi/Polymarket books via EvidenceStore. Not a vault,
+> not a truth arbiter, not mainnet. Constitution 2.8 closes G12.
+> Hooks 1.7. G2 remains open.
 
 > **Review/polish PR (2026-08-09, fable):** six-territory adversarial review
 > of the whole repo → one cleanup/debloat/polish PR. Execution-confirmed bug:

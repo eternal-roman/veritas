@@ -140,7 +140,7 @@ def test_the_default_cost_table_is_empty_rather_than_invented(monkeypatch):
     assert table.micros_per_call("serper") is None
     for name in (
         "wikipedia", "duckduckgo_instant_answer", "static_corpus",
-        "zero_key", "composite",
+        "zero_key", "composite", "prediction_markets", "polymarket", "kalshi",
     ):
         assert table.micros_per_call(name) == 0
 

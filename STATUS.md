@@ -42,6 +42,8 @@ file described a system that did not import.
 | EvidencePack + Merkle log | Operator-local. Not public CT; not on-chain |
 | Dogfood cycles 1–5 | CI-gated. Offline / no chain |
 | G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop + `veritas-ops reconcile-loop`. Mainnet still needs env RPC |
+| VCAE escrow (G12) | Library + HTTP lock/release/forfeit. Forfeit submit needs live facilitator. Not a vault. G2 open. Mainnet collect unproven |
+| Prediction-market signals | Public Kalshi/Polymarket snapshots stored as evidence. Prices, not verdicts. No trading |
 
 ## Found false and fixed (2026-08-05)
 
@@ -84,9 +86,9 @@ The payment path is real code. After the 2026-08-05 audit the served path no
 longer claims what it cannot support.
 
 What remains is mostly operational: operator-run testnet only, no unsolicited
-buyers, snippet retrieval with lexical synthesis, PyPI unpublished. G12 escrow
-still open. Shared state is a URL the operator must set. Tracked in
-`docs/program/STATE.md`.
+buyers, snippet retrieval with lexical synthesis, PyPI unpublished. G12
+library/HTTP is closed; mainnet collect and G2 stay open. Shared state is a
+URL the operator must set. Tracked in `docs/program/STATE.md`.
 
 ## Security / CI
 

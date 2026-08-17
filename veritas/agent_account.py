@@ -99,16 +99,28 @@ SKILL_CATALOG: dict[str, dict[str, str]] = {
         "note": "JSON from this instance's ledger; reconcile-chain is report-only",
     },
     "warranty": {
-        "title": "Falsifiable warranties (W0)",
+        "title": "Falsifiable warranties (W0/W1)",
         "command": "",
-        "http": "",
-        "note": "veritas.warranty — bonds are signed commitments, not escrow (G12)",
+        "http": "POST /v1/escrow",
+        "note": "veritas.warranty — escrowed EIP-3009 lock when authorization present; else signed_commitment_not_escrow (G12 closed; G2 and mainnet remain)",
     },
     "standing": {
         "title": "Composed standing from records you hold",
         "command": "",
         "http": "",
         "note": "veritas.standing — curated sets remain possible (G11)",
+    },
+    "escrow": {
+        "title": "Conditional authorization escrow (VCAE)",
+        "command": "veritas-ops escrow-sweep",
+        "http": "GET /v1/escrow/{lock_id}",
+        "note": "Authorization is the lock; forfeit submits via facilitator; not a vault contract",
+    },
+    "signals": {
+        "title": "Prediction-market snapshots",
+        "command": "",
+        "http": "GET /v1/signals",
+        "note": "Kalshi/Polymarket prices stored as evidence; not a verdict",
     },
 }
 

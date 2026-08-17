@@ -222,9 +222,14 @@ evidence of prior art, checked, not proof.
   central reviewer. Whether that force suffices is an open empirical
   question and is stated as such.
 - Bond settlement requires the payment rail this repo has not yet proven
-  live (settlements observed: 0). Until Phase 0 completes, bonds here are
-  **signed commitments, not escrowed value** — registered as gap G12 with
-  a witness test, the same discipline as every other unproven claim.
+  on mainnet (operator-run testnet only). Constitution 2.8 closes G12 at
+  the library/HTTP layer: an EIP-3009 authorization is the lock
+  (`veritas.escrow`); `settle_forfeit` claims the lock (`locked` →
+  `settling`) then submits it through the existing facilitator after a
+  fired challenge. Two collects cannot both submit. A facilitator
+  refusal reverts to `locked`. Warranties that omit a lock stay
+  `signed_commitment_not_escrow`. Not a deployed vault. Local facilitator
+  still G2. Mainnet collect is unproven.
 - Collusion between a seller and friendly challengers can farm "survived
   challenges" at the cost of the venue cut; the cut parameterization that
   makes this uneconomic is future calibration work, stated, not solved.
@@ -234,10 +239,11 @@ evidence of prior art, checked, not proof.
 - **W0 — this branch.** Warranty schema, D0 predicate registry,
   deterministic challenge evaluation, warranty outcome records feeding the
   reputation hierarchy, falsifiability-class labels on responses.
-  Constitution: enforce-or-admit (A27 L1; G12 open, witnessed).
-- **W1 — after Phase 0 (settlement proof).** Escrowed bonds over x402
-  rails; forfeit = settlement event; the unomittable-negative-reputation
-  property becomes real rather than designed.
+  Constitution: enforce-or-admit (A27 L1; G12 closed in 2.8).
+- **W1 — escrowed bonds over x402 rails.** VCAE: the EIP-3009
+  authorization *is* the lock (Lightning/HTLC timeout + x402 exact).
+  `settle_forfeit` claims then submits; that is a settlement event. Implemented in
+  `veritas/escrow.py`. Mainnet collect unproven; G2 still open.
 - **W2 — with ROADMAP 1.1/1.3.** D2 predicates: pinned-model entailment
   warranties on synthesized claims; synthesis ships only warranted-or-
   labeled.
@@ -259,9 +265,11 @@ with U-class refusing warranty construction. Also implemented
 (`veritas/standing.py`, `tests/test_standing.py`): the §3.4 evidence
 hierarchy composed into one recomputable standing document — forfeits
 dominate, one warranty counts once, survived challenges upgrade the audit
-verdict, the self-report is carried only as the labeled floor. Proposed,
-not implemented: escrowed bonds (G12), D2 predicates, venue-cut
-calibration, registry advertisement of warranty terms.
+verdict, the self-report is carried only as the labeled floor. Escrow
+(`veritas/escrow.py`, `tests/test_escrow.py`): EIP-3009 lock, settle_forfeit
+submits through the facilitator, commitment-only warranties stay labeled.
+Proposed, not implemented: D2 predicates, venue-cut calibration, registry
+advertisement of warranty terms, mainnet collect.
 
 ## 9. Objective completion criteria for the mandate (§0)
 

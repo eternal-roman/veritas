@@ -242,6 +242,30 @@ def test_prune_reports_json_counts_against_tmp_runtime(tmp_path, capsys):
     datetime.fromisoformat(report["cutoff"].replace("Z", "+00:00"))
 
 
+def test_escrow_sweep_and_get(tmp_path, capsys):
+    from veritas.escrow import EscrowStore, escrow_bond
+
+    lock = escrow_bond(
+        {
+            "from": "0x" + "11" * 20,
+            "to": "0x" + "22" * 20,
+            "value": "250000",
+            "validAfter": "0",
+            "validBefore": "9999999999",
+            "nonce": "0x" + "ab" * 32,
+            "signature": "0x" + "cd" * 65,
+        },
+        network="eip155:84532",
+        store=EscrowStore(tmp_path),
+    )
+    sweep = _run(capsys, "--runtime-dir", str(tmp_path), "escrow-sweep")
+    assert sweep["expired"] == 0
+    assert sweep["method"] == "veritas.escrow.v1"
+    found = _run(capsys, "--runtime-dir", str(tmp_path), "escrow", lock["lock_id"])
+    assert found["state"] == "locked"
+    assert main(["--runtime-dir", str(tmp_path), "escrow", "00" * 32]) == 1
+
+
 def test_prune_rejects_nonsense_retention_without_mass_delete(tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("VERITAS_RETENTION_DAYS", "0")
     code = main(["--runtime-dir", str(tmp_path), "prune"])

@@ -16,7 +16,7 @@ veritas-agent fund-proof   # after funding the commerce address at https://fauce
 Machine card (GitHub-only agents): `adopt.json` —
 `https://raw.githubusercontent.com/eternal-roman/veritas/main/adopt.json`
 
-Interests map to existing capabilities: `research`, `verify`, `diligence`, `audit`, `buy`, `sell`, `notarize`, `ops`, `warranty`, `standing`. Unknown interests stay unmapped.
+Interests map to existing capabilities: `research`, `verify`, `diligence`, `audit`, `buy`, `sell`, `notarize`, `ops`, `warranty`, `standing`, `escrow`, `signals`. Unknown interests stay unmapped.
 
 | Goal | Command |
 |------|---------|

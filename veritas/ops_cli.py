@@ -13,6 +13,8 @@ there was no way to ask any of them:
     veritas-ops authorization <nonce>    one payment, end to end
     veritas-ops pricing                  what price are new entries stamped with?
     veritas-ops prune                    drop expired receipts and ledger rows
+    veritas-ops escrow-sweep             expire locked escrow rows past validBefore
+    veritas-ops escrow <lock_id>         one VCAE lock
 
 Every command prints JSON to stdout, because the first consumer of an
 operations CLI for an agent-native service is another agent.
@@ -283,6 +285,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Override VERITAS_RECONCILE_ALERT_URL for this invocation.",
     )
+    sub.add_parser(
+        "escrow-sweep",
+        help="Expire locked escrow rows whose validBefore has elapsed. Never submits on-chain.",
+    )
+    one_lock = sub.add_parser("escrow", help="One VCAE lock, by lock_id.")
+    one_lock.add_argument("lock_id", help="64-hex lock id.")
     return parser
 
 
@@ -333,6 +341,20 @@ def main(argv: list[str] | None = None) -> int:
             ledger=ledger,
         )
         payload["interval_seconds"] = args.interval
+    elif args.command == "escrow-sweep":
+        from veritas.escrow import EscrowStore
+
+        payload = EscrowStore(args.runtime_dir).expire_due()
+        payload["method"] = "veritas.escrow.v1"
+        payload["note"] = "expire never submits; the chain refuses a late claim"
+    elif args.command == "escrow":
+        from veritas.escrow import EscrowStore
+
+        found = EscrowStore(args.runtime_dir).get(args.lock_id)
+        if found is None:
+            print(json.dumps({"error": "lock_not_found", "lock_id": args.lock_id}))
+            return 1
+        payload = found
     else:  # authorization
         found = _authorization(ledger, args.nonce)
         if found is None:

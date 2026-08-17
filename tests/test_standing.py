@@ -150,3 +150,21 @@ def test_self_report_is_labeled_floor_never_verdict():
     assert "operator" in report["self_reported"]["role"]
     # A glowing self-report moves nothing:
     assert report["verdict"] == "unaudited"
+
+
+def test_escrowed_forfeit_binding_is_declared():
+    report = standing_report(
+        challenge_outcomes=[
+            {
+                "outcome": "fired",
+                "warranty_hash": "sha256:" + "11" * 32,
+                "forfeit": {
+                    "binding": "eip3009_authorization",
+                    "lock_id": "aa" * 32,
+                },
+            }
+        ]
+    )
+    assert report["verdict"] == VERDICT_FORFEITED
+    assert report["forfeit_binding"] == "eip3009_authorization"
+    assert report["forfeited_bonds"] == 1

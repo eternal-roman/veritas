@@ -47,6 +47,10 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 - /v1/log/verify: POST — free offline verify of an inclusion proof
 - /v1/receipts/{request_id}: durable custody receipt
 - /v1/evidence/{content_hash}: stored excerpt body for a published content hash (404 if never stored)
+- /v1/escrow: POST — persist an EIP-3009 authorization as a VCAE lock (does not settle)
+- /v1/escrow/{lock_id}: GET one lock; POST /v1/escrow/{lock_id}/release never submits; POST /v1/escrow/{lock_id}/forfeit submits after a fired challenge (live facilitator required)
+- /v1/signals: GET recent snapshots; POST pull public Kalshi/Polymarket books and store via the evidence channel (prices, not verdicts)
+- /v1/signals/{content_hash}: one stored snapshot
 - /v1/trust: GET is UNPROVEN from the operator log; POST scores independently verified audit records
 - /v1/schema: the wire contract as JSON Schema
 - /v1/errors: registered error codes with status and retriability

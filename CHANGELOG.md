@@ -3,6 +3,22 @@
 ## [Unreleased]
 
 ### Added
+- VCAE (`veritas.escrow`, `veritas.escrow.v1`): EIP-3009 authorization
+  is the lock. `escrow_bond` / `escrow_stake` persist; `settle_forfeit`
+  submits through the existing facilitator after a fired challenge. A
+  facilitator refusal leaves the lock collectable. HTTP:
+  `POST /v1/escrow`, `GET /v1/escrow/{lock_id}`,
+  `POST /v1/escrow/{lock_id}/release` (never submits),
+  `POST /v1/escrow/{lock_id}/forfeit` (live facilitator required).
+  `veritas-ops escrow-sweep` / `escrow <lock_id>`. Not a vault contract.
+  Local facilitator still G2. Mainnet collect unproven.
+- Prediction-market signals (`veritas.signals`, `veritas.signals.v1`):
+  public Kalshi + Polymarket book snapshots stored through the evidence
+  channel. Prices, not verdicts. No trading, no keys. Hosts allowlisted;
+  redirects re-checked. HTTP: `GET /v1/signals`,
+  `GET /v1/signals/{content_hash}`, `POST /v1/signals`.
+  `PredictionMarketRetriever` is opt-in and is not on the default
+  research path.
 - Shared financial state via `VERITAS_DATABASE_URL`: a sqlite file URL
   shares ledger, credits, evidence blobs, and rate-limit hits across
   processes on one host; a postgres URL (optional `postgres` extra) is
@@ -21,10 +37,17 @@
 - Cold archive of pruned receipts when `VERITAS_ARCHIVE_DIR` is set.
   A failed archive write keeps the live copy. Local directory, not S3.
 - Known-free providers default to cost 0 (`wikipedia`,
-  `duckduckgo_instant_answer`, `static_corpus`, `zero_key`, `composite`).
+  `duckduckgo_instant_answer`, `static_corpus`, `zero_key`, `composite`,
+  `prediction_markets`, `polymarket`, `kalshi`).
   Paid APIs stay unpriced. A rejected env override drops that default.
 
 ### Changed
+- Constitution 2.8: G12 closed. Warranties that carry an EIP-3009 lock
+  are `bond_binding: eip3009_authorization` and collectable via
+  `settle_forfeit`. Warranties that omit a lock stay
+  `signed_commitment_not_escrow`.
+- `/v1/hooks` 1.7: escrow + signals routes and stores; `escrow-sweep` /
+  `escrow` on the ops CLI.
 - `/v1/hooks` 1.6: evidence route, evidence/archive stores, reconcile-loop
   on the ops CLI, shared-store locations.
 - Served research observes source URLs when `VERITAS_OBSERVE_URLS` is

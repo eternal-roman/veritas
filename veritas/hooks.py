@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.6"
+HOOKS_VERSION = "1.7"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -172,6 +172,22 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "Durable custody receipt; 410 when pruned, 404 when never issued."),
     _http("evidence", "GET", "/v1/evidence/{content_hash}",
           "Stored excerpt body for a published content hash; 404 when never stored."),
+    _http("escrow_lock", "POST", "/v1/escrow",
+          "Persist an EIP-3009 authorization as a VCAE lock. Does not settle."),
+    _http("escrow", "GET", "/v1/escrow/{lock_id}",
+          "Read one escrow lock. 404 when the id is unknown or malformed."),
+    _http("escrow_release", "POST", "/v1/escrow/{lock_id}/release",
+          "Mark a lock unclaimable. Never submits on-chain."),
+    _http("escrow_forfeit", "POST", "/v1/escrow/{lock_id}/forfeit",
+          "Submit a locked authorization after a fired challenge. Live "
+          "facilitator required; free mode refuses rather than inventing."),
+    _http("signals", "GET", "/v1/signals",
+          "Recent prediction-market snapshots. Prices, not verdicts."),
+    _http("signals_item", "GET", "/v1/signals/{content_hash}",
+          "One stored snapshot by content hash; 404 when never stored."),
+    _http("signals_pull", "POST", "/v1/signals",
+          "Pull public Kalshi/Polymarket books and store snapshots via the "
+          "evidence channel. No trading, no keys."),
     _http("trust", "GET", "/v1/trust",
           "Independent-audit score; UNPROVEN until buyer-supplied verified records."),
     _http("trust_score", "POST", "/v1/trust",
@@ -212,7 +228,7 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _cli("veritas-ops",
          "Operator reports off the ledger as JSON: revenue, owed, reconcile, "
          "reconcile-chain, reconcile-loop, existence, usage, pricing, "
-         "authorization, prune.",
+         "authorization, prune, escrow-sweep, escrow.",
          _EXIT_OK),
     _cli("veritas-money-loop",
          "Compose one settle-then-reconcile pass and report it.",
@@ -303,6 +319,22 @@ HOOKS: tuple[dict[str, Any], ...] = (
           {"location": "$VERITAS_RUNTIME_DIR/evidence/ (and the shared store when URL-set)",
            "format": "json",
            "read_via": "GET /v1/evidence/{content_hash}"}),
+    _hook("store_escrow", "store", "authorization escrow locks",
+          "EIP-3009 authorizations locked as warranty bonds or challenge "
+          "stakes. Shared when VERITAS_DATABASE_URL is set. Release and "
+          "expire never submit; forfeit submits through the facilitator.",
+          "free",
+          {"location": "$VERITAS_DATABASE_URL or $VERITAS_RUNTIME_DIR/escrow.sqlite3",
+           "format": "sqlite-or-postgres",
+           "read_via": "GET /v1/escrow/{lock_id}"}),
+    _hook("store_signals", "store", "prediction-market snapshots",
+          "Venue book snapshots, dual-written to the evidence store and a "
+          "signals index. Prices, not verdicts.",
+          "free",
+          {"location": "$VERITAS_DATABASE_URL or $VERITAS_RUNTIME_DIR/signals.sqlite3 "
+                       "(and evidence/)",
+           "format": "json",
+           "read_via": "GET /v1/signals/{content_hash}"}),
     _hook("store_archive", "store", "cold receipt archive",
           "Optional copies of pruned receipt bodies. Unset "
           "VERITAS_ARCHIVE_DIR means prune deletes without a cold copy.",

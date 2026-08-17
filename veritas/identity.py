@@ -34,7 +34,8 @@ def build_identity(
         "name": "Veritas Research",
         "description": (
             "Evidence-grounded research with a hash-chained custody ledger, "
-            "recomputable support counts, and explicit refusal."
+            "recomputable support counts, explicit refusal, escrowed warranty "
+            "bonds, and prediction-market signal snapshots (prices, not verdicts)."
         ),
         "paymentAddress": pay_to,
         "capabilities": [
@@ -49,6 +50,8 @@ def build_identity(
             "portable-evidence-pack",
             "merkle-evidence-log",
             "prepaid-credit-sessions",
+            "conditional-authorization-escrow",
+            "prediction-market-signals",
         ],
         "base_url_configured": configured is not None,
         # The complete surface lives at /v1/hooks; these are the endpoints an
@@ -65,6 +68,9 @@ def build_identity(
             "evidence_log_verify": f"{base}/v1/log/verify",
             "receipts": f"{base}/v1/receipts/{{request_id}}",
             "evidence": f"{base}/v1/evidence/{{content_hash}}",
+            "escrow": f"{base}/v1/escrow/{{lock_id}}",
+            "escrow_lock": f"{base}/v1/escrow",
+            "signals": f"{base}/v1/signals",
             "trust": f"{base}/v1/trust",
             "schema": f"{base}/v1/schema",
             "errors": f"{base}/v1/errors",

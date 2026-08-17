@@ -533,11 +533,15 @@ against an unproven payment path produces failed settlements.
   `veritas/standing.py`, `veritas-audit`: buyer-side pure functions over
   third-party-signed audit records (A26). G10 remains open (`/v1/trust`
   self-reported). Omission bound is G11. See `docs/program/FABLE_INSIGHTS.md`.
-- **5.0b Falsifiable commerce W0.** `veritas/warranty.py`: seller-authored
-  deterministic falsification predicates + signed bond commitment + challenge
-  window; evaluation is re-execution, not arbitration (A27). Bond **escrow**
-  is gap G12 (commitment only at W0). Methodology:
-  `docs/program/FALSIFIABLE_COMMERCE.md`.
+- **5.0b Falsifiable commerce W0/W1.** `veritas/warranty.py` + `veritas/escrow.py`:
+  seller-authored deterministic falsification predicates + signed bond +
+  challenge window; evaluation is re-execution, not arbitration (A27).
+  Bond **escrow** is VCAE (EIP-3009 authorization as the lock; G12 closed
+  in constitution 2.8). Mainnet collect unproven; local facilitator still
+  G2. Methodology: `docs/program/FALSIFIABLE_COMMERCE.md`.
+- **5.0c Prediction-market signals.** `veritas/signals.py`: public Kalshi
+  and Polymarket books stored as evidence. Prices, not verdicts. Not the
+  default research retriever.
 - **5.1 Signed attestations / publication.** Sign served results; publish
   outcome and audit records. **Do not** let the seller aggregate into its own
   trust basis (rebuilds G10). Prefer buyer `standing_report` / survival
@@ -546,7 +550,8 @@ against an unproven payment path produces failed settlements.
   refuses UNVERIFIABLE), not seller `/v1/trust` alone. Cap first-time exposure.
 
 *Risk:* self-report is gameable; survival reports are bounded by the held
-record set (G11); forfeits are unomittable only once bonds escrow (G12).
+record set (G11); an escrowed forfeit is a settlement event once
+`settle_forfeit` succeeds (G12 closed; mainnet collect unproven).
 
 ## Phase 6 — Operations (3 weeks, parallel from Phase 1)
 

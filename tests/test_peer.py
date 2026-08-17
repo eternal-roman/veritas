@@ -44,7 +44,7 @@ SIGNAL = {
 
 
 def _fetcher(pages):
-    def fetch(url: str) -> bytes:
+    def fetch(url: str, *args, **kwargs) -> bytes:
         page = pages.get(url)
         if page is None:
             raise OSError(f"missing {url}")
@@ -141,6 +141,24 @@ def test_pull_signals_stores_via_signal_store(tmp_path, monkeypatch):
     assert listed[0]["market_id"] == "m-peer"
     assert listed[0]["question"] == SIGNAL["question"]
     assert store.get(listed[0]["content_hash"]) is not None
+
+
+def test_connect_refuses_redirect_to_metadata(tmp_path):
+    """urlopen follows 3xx; a peer that 302s at the metadata IP must not pass."""
+    from veritas.peer import _GuardedRedirectHandler
+    from veritas.safeurl import UnsafeUrlError
+
+    handler = _GuardedRedirectHandler(allow_local=True, resolver=None)
+    req = type("Req", (), {})()
+    try:
+        handler.redirect_request(
+            req, None, 302, "Found", {}, "http://169.254.169.254/latest/meta-data"
+        )
+    except (UnsafeUrlError, Exception) as exc:
+        # urllib wraps or we raise UnsafeUrlError directly
+        assert "169.254" in str(exc) or isinstance(exc, UnsafeUrlError) or "disallowed" in str(exc).lower() or "refusing" in str(exc).lower()
+    else:
+        raise AssertionError("redirect to metadata must be refused")
 
 
 def test_get_v1_peer_returns_schema_and_no_central_network(tmp_path, monkeypatch):

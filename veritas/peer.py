@@ -5,6 +5,12 @@ fetch another agent's card and pull that agent's prediction-market
 snapshots through the existing SignalStore. There is no central
 network, no DHT, no gossip, no relay, and no push.
 
+This is **not** the program Mesh Runner (`veritas.ecosystem_cycle`,
+`docs/program/TRACK_MESH_RUNNER.md`). That kernel ranks offline
+research tracks. Conductor forbids presenting that kernel as a
+product network or as settlement. This module is only: one agent
+serves, another agent connects.
+
 The card at ``GET /v1/peer`` advertises *this* node. The address book
 lives only on disk (``peers.json``) and is never served over HTTP —
 LAN URLs must not leak.
@@ -134,14 +140,37 @@ def assert_connect_destination(
     return url
 
 
-def _default_fetch(url: str, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> bytes:
+class _GuardedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Re-run the connect SSRF guard on every redirect hop."""
+
+    def __init__(self, *, allow_local: bool, resolver) -> None:
+        super().__init__()
+        self._allow_local = allow_local
+        self._resolver = resolver
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        assert_connect_destination(
+            newurl, allow_local=self._allow_local, resolver=self._resolver
+        )
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _default_fetch(
+    url: str,
+    timeout: int = DEFAULT_TIMEOUT_SECONDS,
+    *,
+    allow_local: bool = False,
+    resolver=None,
+) -> bytes:
     require_http_url(url)
+    assert_connect_destination(url, allow_local=allow_local, resolver=resolver)
     request = urllib.request.Request(  # noqa: S310 - scheme checked above
         url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"}
     )
-    with urllib.request.urlopen(  # nosec B310 - scheme checked by assert_connect_destination
-        request, timeout=timeout
-    ) as response:
+    opener = urllib.request.build_opener(
+        _GuardedRedirectHandler(allow_local=allow_local, resolver=resolver)
+    )
+    with opener.open(request, timeout=timeout) as response:  # nosec B310
         return response.read(MAX_DOCUMENT_BYTES + 1)
 
 
@@ -290,7 +319,9 @@ def connect(
     Returns a structured result. Does not raise into a caller path.
     Does not require ``VERITAS_PUBLIC_URL``.
     """
-    fetch = fetcher or _default_fetch
+    fetch = fetcher or (
+        lambda url: _default_fetch(url, allow_local=allow_local, resolver=resolver)
+    )
     raw_url = (base_url or "").strip()
     if not raw_url:
         return _fail("refused", "empty url")
@@ -410,7 +441,9 @@ def pull_signals(
     Prices are not interpreted as truth. Failures record ``last_error``
     on the local book entry when one exists.
     """
-    fetch = fetcher or _default_fetch
+    fetch = fetcher or (
+        lambda url: _default_fetch(url, allow_local=allow_local, resolver=resolver)
+    )
     wanted = (peer_id_or_url or "").strip()
     if not wanted:
         return _fail("refused", "empty peer id or url")

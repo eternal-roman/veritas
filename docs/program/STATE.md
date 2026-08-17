@@ -5,14 +5,28 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 ## NEXT ACTION
 
-> **Do this next:** claim **free**. Product glue **#155** is on main
-> (`b217aac`). This branch (`feat/a2a-escrow-signals`) closes G12 with
-> VCAE (EIP-3009 authorization as the lock) and adds prediction-market
-> signal snapshots (Kalshi/Polymarket, prices not verdicts).
-> Default **HOLD invent money**; Stage-1 human owns PyPI · public TLS ·
-> mainnet pay-to. G2 remains open.
+> **Do this next:** claim **free**. Product glue **#155** and VCAE/signals
+> **#156** are on main (`9bf043a`). This branch closes O5 (absolute
+> runtime dir + `/readyz` write probe), L6 (receipts no longer serve a
+> research question), R10 (Serper stays off in free mode), and the VCAE
+> collect holes (signature not on GET; forfeit re-runs the challenge;
+> release is loopback). Default **HOLD invent money**; Stage-1 human
+> owns PyPI · public TLS · mainnet pay-to. G2 remains open.
 
 ## Progress log
+
+> **Product-quality pass (2026-08-16, fix/product-quality-o5-l6-r10):**
+> O5 closed — `veritas.runtime.resolve_runtime_dir` is absolute;
+> `/readyz` probes writability; `veritas-agent` binds `{base-dir}/runtime`.
+> L6 closed for the served receipt — research questions persist as
+> `query_hash` only; GET redacts legacy plaintext. R10 closed — Serper
+> is not on the free-mode retriever unless `VERITAS_SERPER_IN_FREE_MODE`.
+> VCAE HTTP: GET strips `authorization.signature`; forfeit requires a
+> server-evaluated `fired` challenge; release is loopback-only.
+> `veritas-buy --content` unpacks the verify tuple (was always-true).
+> Kalshi pull no longer dumps the open book on a non-matching query.
+> SignalStore.put returns None on write failure. G2 remains open.
+> Research still does not auto-attach a warranty.
 
 > **A2A escrow + signals (2026-08-16, feat/a2a-escrow-signals):** VCAE
 > (`veritas.escrow.v1`) — authorization is the lock; `settle_forfeit`
@@ -331,7 +345,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 - [x] O.1 Async handlers; research capped and shed rather than queued (O1)
 - [x] O.2 Body-size cap, verify `max_length`, per-IP rate limit (O2)
 - [x] O.3 SQLite-backed trust counters and atomic receipt writes (O3, O4, O7); retention closed via O.6 (O10)
-- [~] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Lifespan state and graceful drain still open (O5)
+- [x] O.4 `/readyz` split from `/health`; catch-all envelope (O14). Runtime writability probed on `/readyz` (O5 closed).
 - [x] O.5 JSON logging + token-gated `/metrics` (O9)
 - [x] O.6 Retention/pruning; 410 Gone ≠ 404 (`veritas/retention.py`, custody tombstones, `Ledger.prune`, `veritas-ops prune`)
 - [x] O.7 `.dockerignore` allowlist, VOLUME, docker-compose.yml (O12, O13)
@@ -339,7 +353,7 @@ See the checklist further down; execution order is X → M → O → N0 → N1 �
 
 ### Phase L — Legal
 - [ ] L.1 TERMS.md, PRIVACY.md, provider compliance matrix, retention policy
-- [ ] L.2 Authorization on `/v1/receipts` (L6)
+- [x] L.2 Authorization on `/v1/receipts` (L6) — query redacted on the public GET; capability-token auth still not built
 - [ ] L.3 Erasure with hash-preserving tombstones
 
 ### Phase G — Ecosystem
@@ -365,24 +379,24 @@ Ids from the three audits. `open` until a test pins the fix.
 | P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** — branch removed with the posterior |
 | P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
 | P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | **closed** for origin-bound paths — `tests/test_refetch_verify.py`; legacy `content`+hash remains `binding: caller_supplied` only (`4697c8d` #38). Not multi-party origin proof; not on-chain |
-| P13 | med | Evidence text never stored; hashes only | open |
+| P13 | med | Evidence text never stored; hashes only | **partial** — excerpt store + `GET /v1/evidence/{hash}` on #155; origin re-fetch still depends on the live URL |
 | L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** — `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
 | L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
 | L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |
-| L6 | high | Buyer queries persisted forever, served unauthenticated | open |
+| L6 | high | Buyer queries persisted forever, served unauthenticated | **closed** for the served receipt — research questions persist as `query_hash` only; GET `/v1/receipts` redacts leftover plaintext (`tests/test_api.py::test_public_receipt_does_not_serve_a_research_question`). Origin URLs stay so notarize re-fetch works. Ledger still records the query operator-locally. |
 | R1 | critical | EIP-712 domain guessed from symbol; would void every signature | **closed** — pinned table with provenance; unverified networks refused (`tests/test_x402_protocol.py`). Only Base/Base Sepolia are advertisable, from the reference implementation; **none is yet confirmed on-chain** — run `scripts/verify_eip712_domains.py` |
 | R4 | critical | No deadline; authorization can expire during paid work | **closed** — `veritas/deadline.py`; too-short windows refused before work, expiry before settle returns non-billable `deadline_exceeded` (`tests/test_x402_protocol.py`) |
 | R5 | critical | No financial ledger; settlement tx hash discarded | **closed** — `veritas/ledger.py`; `tests/test_money_path.py::test_settlement_is_recorded_durably` and `::test_revenue_is_answerable_from_the_ledger_alone`. Gap G8 closed, G9 opened (nothing is reconciled against the chain) |
 | R6 | high | `request_id` never recorded against the nonce claim | **closed** — allocated in the handler, threaded through `run_research`, claim and receipt (`::test_the_nonce_is_joined_to_the_request_it_burned_for`) |
 | R7 | high | Indeterminate settlement coded as definite failure | **closed** — `SettlementResult.outcome`; a facilitator that never answered records `indeterminate` and the buyer still receives the work (`::test_indeterminate_settlement_delivers_and_says_so`) |
 | R9 | high | `price` unvalidated → live mode with 500s and a green `/health` | **closed** — `::test_price_is_validated_by_the_misconfiguration_guard` |
-| R10 | high | Paid Serper provider called in free mode | open |
+| R10 | high | Paid Serper provider called in free mode | **closed** — `default_retriever` registers Serper only when payment is required or `VERITAS_SERPER_IN_FREE_MODE` is set (`tests/test_providers.py::test_default_retriever_skips_serper_in_free_mode_even_with_key`) |
 | R11 | critical | Dropped connection after settle = charged, undelivered, retry 409 | **closed** — `::test_replayed_authorization_returns_the_deliverable_it_paid_for`; the work still runs once (`::test_a_replay_does_not_run_the_work_again`). Bounded: single-instance ledger |
 | O1 | critical | Sync handlers, 40 slots, no deadline — service stalls incl. `/health` | **closed** — cheap handlers are `async def`; research runs in the threadpool behind a `BoundedSemaphore` that sheds with 503 `service_overloaded` (`tests/test_operations.py`) |
 | O2 | critical | Unbounded `/v1/verify` body; no rate limiting anywhere | **closed** — 256KB body cap, `max_length` on verify content, per-IP window limit that never touches `/health` or `/readyz` (`tests/test_operations.py`) |
 | O3 | high | `/v1/trust` rescans the whole outcome log, free and unauthenticated | **closed** — SQLite counters, one row regardless of lifetime request count (`tests/test_durability.py::test_stats_are_counters_not_a_rescan`) |
 | O4 | high | Nonce store rescanned under global lock per paid request | **closed** — the JSONL rescan-under-flock is gone; SQLite indexes the nonce and takes a write lock only for the claim transaction |
-| O5 | high | Relative runtime dir + cwd dependence → silent 503s | open |
+| O5 | high | Relative runtime dir + cwd dependence → silent 503s | **closed** — `veritas.runtime.resolve_runtime_dir` is absolute; default is XDG/home, not cwd; `/readyz` probes writability; `veritas-agent` binds `{base-dir}/runtime` (`tests/test_runtime.py`) |
 | O6 | high | Two instances: replay, receipt 404s, divergent trust | open |
 | O7 | high | Receipt writes neither atomic nor fsynced | **closed** — temp file, fsync, `os.replace` (`tests/test_durability.py::test_a_receipt_is_never_left_half_written`) |
 | O9 | high | No logging, metrics, tracing or alerting | **closed** — `veritas/observability.py`: JSON access logs and Prometheus counters at `/metrics` behind a required token (`tests/test_observability.py`). Tracing is still absent and is not claimed |

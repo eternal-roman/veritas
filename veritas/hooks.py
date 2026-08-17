@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.7"
+HOOKS_VERSION = "1.8"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -175,12 +175,15 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _http("escrow_lock", "POST", "/v1/escrow",
           "Persist an EIP-3009 authorization as a VCAE lock. Does not settle."),
     _http("escrow", "GET", "/v1/escrow/{lock_id}",
-          "Read one escrow lock. 404 when the id is unknown or malformed."),
+          "Read one escrow lock without the authorization signature. "
+          "404 when the id is unknown or malformed."),
     _http("escrow_release", "POST", "/v1/escrow/{lock_id}/release",
-          "Mark a lock unclaimable. Never submits on-chain."),
+          "Mark a lock unclaimable. Never submits on-chain. Loopback-only.",
+          "local"),
     _http("escrow_forfeit", "POST", "/v1/escrow/{lock_id}/forfeit",
-          "Submit a locked authorization after a fired challenge. Live "
-          "facilitator required; free mode refuses rather than inventing."),
+          "Re-run evaluate_challenge on the supplied warranty+deliverable; "
+          "submit the lock only if the challenge fired. Live facilitator "
+          "required; free mode refuses rather than inventing."),
     _http("signals", "GET", "/v1/signals",
           "Recent prediction-market snapshots. Prices, not verdicts."),
     _http("signals_item", "GET", "/v1/signals/{content_hash}",
@@ -287,7 +290,10 @@ HOOKS: tuple[dict[str, Any], ...] = (
     # ------------------------------------------- durable signal stores —
     _hook("store_receipts", "store", "custody receipts",
           "One JSON custody receipt per request, durable until retention "
-          "prunes it to a tombstone.",
+          "prunes it to a tombstone. Research questions are stored as "
+          "query_hash only; origin URLs (notarize) stay so verify can "
+          "re-fetch. GET is unauthenticated and never returns a free-text "
+          "question (L6).",
           "free",
           {"location": "$VERITAS_RUNTIME_DIR/receipts/", "format": "json",
            "read_via": "GET /v1/receipts/{request_id}"}),

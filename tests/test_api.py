@@ -119,6 +119,67 @@ def test_receipt_missing_returns_404(free_client):
     assert r.json()["error"] == "receipt_not_found"
 
 
+def test_public_receipt_does_not_serve_a_research_question(free_client):
+    """L6: GET /v1/receipts is unauthenticated. A free-text question stays off
+    the wire; a hash still binds the receipt to what was asked."""
+    import veritas.server as main_module
+    from veritas.hashing import compute_content_hash
+
+    secret = "buyer-only research question about a merger"
+    record = main_module.store.save({
+        "request_id": "req-l6-question",
+        "query": secret,
+        "status": "completed",
+        "custody_root": "sha256:x",
+        "custody_valid": True,
+        "evidence": [],
+    })
+    assert record["persisted"] is True
+    assert "query" not in record
+    assert record["query_hash"] == compute_content_hash(secret)
+
+    body = free_client.get("/v1/receipts/req-l6-question").json()
+    assert secret not in json.dumps(body)
+    assert "query" not in body
+    assert body["query_hash"] == compute_content_hash(secret)
+    assert body.get("query_redacted") is not True
+
+    # Legacy on-disk receipts that still carry a question are redacted on GET.
+    main_module.store.save({
+        "request_id": "req-l6-legacy",
+        "query": secret,
+        "status": "completed",
+        "custody_root": "sha256:x",
+        "custody_valid": True,
+        "evidence": [],
+    })
+    path = main_module.store.base_dir / "req-l6-legacy.json"
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["query"] = secret
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    leaked = free_client.get("/v1/receipts/req-l6-legacy").json()
+    assert "query" not in leaked
+    assert leaked["query_redacted"] is True
+    assert secret not in json.dumps(leaked)
+
+
+def test_public_receipt_keeps_an_origin_url_for_refetch(free_client):
+    import veritas.server as main_module
+
+    url = "https://example.com/observed"
+    record = main_module.store.save({
+        "request_id": "req-l6-url",
+        "query": url,
+        "status": "completed",
+        "custody_root": "sha256:x",
+        "custody_valid": True,
+        "evidence": [],
+    })
+    assert record["query"] == url
+    body = free_client.get("/v1/receipts/req-l6-url").json()
+    assert body["query"] == url
+
+
 def test_receipt_pruned_returns_410_gone_not_404(free_client, tmp_path):
     """O.6: known-but-pruned is 410 receipt_gone; never-seen stays 404.
 

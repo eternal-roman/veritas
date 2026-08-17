@@ -14,6 +14,7 @@ means.
 from __future__ import annotations
 
 import json
+import os
 import urllib.error
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -247,6 +248,21 @@ class CompositeRetriever:
         return merged
 
 
+def paid_retrievers_enabled() -> bool:
+    """May the default retriever spend a paid provider (Serper)?
+
+    R10: a Serper key in the environment used to fire on every free-mode
+    request and burn the operator's quota for unpaid traffic. Live mode
+    (``VERITAS_REQUIRE_PAYMENT``) may use it. Free mode may not, unless
+    the operator sets ``VERITAS_SERPER_IN_FREE_MODE`` on purpose.
+    """
+    flag = (os.getenv("VERITAS_SERPER_IN_FREE_MODE") or "").strip().lower()
+    if flag in ("1", "true", "yes"):
+        return True
+    require = (os.getenv("VERITAS_REQUIRE_PAYMENT") or "").strip().lower()
+    return require in ("1", "true", "yes")
+
+
 def default_retriever(allow_network: bool = True) -> Retriever:
     """The retriever the service uses unless a caller injects its own."""
     corpus = StaticCorpusRetriever()
@@ -262,7 +278,7 @@ def default_retriever(allow_network: bool = True) -> Retriever:
     # key is a configuration state, not an outage: the provider is simply not
     # registered and the free tier serves unchanged. A registered provider's
     # outage degrades to the next retriever with the error preserved.
-    if serper_api_key():
+    if serper_api_key() and paid_retrievers_enabled():
         retrievers.append(SerperRetriever())
     retrievers.append(ZeroKeyRetriever())
     # No offline-corpus fallback on the live path. The corpus is repo-authored

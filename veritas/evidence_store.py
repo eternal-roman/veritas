@@ -23,9 +23,9 @@ from pathlib import Path
 from typing import Any
 
 from .hashing import compute_content_hash, verify_content_hash
+from .runtime import resolve_runtime_dir
 from .store import StoreUnavailable, connect_target, parse_database_url
 
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DIRNAME = "evidence"
 
 #: Only a published hash may name a file. Same allowlist idea as custody
@@ -55,11 +55,7 @@ class EvidenceStore:
     """Put / get excerpts by the hash the pipeline published."""
 
     def __init__(self, base_dir: str | Path | None = None) -> None:
-        runtime = Path(
-            base_dir
-            or os.getenv("VERITAS_RUNTIME_DIR")
-            or _DEFAULT_RUNTIME_DIR
-        )
+        runtime = resolve_runtime_dir(base_dir)
         self.base_dir = runtime / _DIRNAME
 
     def _file_path(self, content_hash: str) -> Path | None:

@@ -7,6 +7,7 @@ Constitution pointer:
 from __future__ import annotations
 
 import importlib
+from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -265,11 +266,80 @@ def test_http_lock_get_release(tmp_path, monkeypatch):
     lock_id = created.json()["lock_id"]
     fetched = client.get(f"/v1/escrow/{lock_id}")
     assert fetched.status_code == 200
-    assert fetched.json()["state"] == "locked"
+    body = fetched.json()
+    assert body["state"] == "locked"
+    assert "signature" not in body.get("authorization", {})
+    assert body["authorization"]["signature_present"] is True
     assert client.get("/v1/escrow/not-a-lock").status_code == 404
     released = client.post(f"/v1/escrow/{lock_id}/release")
     assert released.status_code == 200
     assert released.json()["state"] == "released"
+
+
+def _fired_warranty_for(lock, *, nonce_suffix="aa"):
+    """Hand-signed defective deliverable bound to ``lock`` (same as W1)."""
+    pytest.importorskip("eth_account")
+    from eth_account import Account
+
+    from veritas.notary.sign import OperatorSigner
+    from veritas.warranty import (
+        WARRANTY_VERSION,
+        canonical_response_hash,
+        canonical_warranty_message,
+    )
+
+    seller = OperatorSigner("0x" + bytes(Account.create().key).hex())
+    defective = {
+        "status": "unavailable",
+        "billable": True,
+        "claims": [],
+        "evidence": [],
+        "custody_chain": [{"event_type": "x", "event_hash": "bad"}],
+    }
+    warranty = {
+        "warranty_version": WARRANTY_VERSION,
+        "response_hash": canonical_response_hash(defective),
+        "predicates": ["status_incoherent.v1"],
+        "falsifiability_class": "D0",
+        "bond": {
+            "amount_atomic": lock["amount"],
+            "asset": "USDC",
+            "network": lock["network"],
+        },
+        "bond_binding": BOND_BINDING_ESCROW,
+        "escrow": {"lock_id": lock["lock_id"]},
+        "window_seconds": 86400,
+        "issued_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    message = canonical_warranty_message(warranty)
+    warranty["seller"] = {
+        "scheme": "eip191",
+        "signer": seller.address.lower(),
+        "signature": seller.sign_text(message),
+        "message": message,
+    }
+    return warranty, defective
+
+
+def test_http_forfeit_refuses_client_authored_fired(tmp_path, monkeypatch):
+    """A stranger cannot collect by POSTing ``outcome: fired``."""
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    import veritas.server as server
+
+    importlib.reload(server)
+    client = TestClient(server.app)
+    created = client.post("/v1/escrow", json={
+        "authorization": _auth(nonce="0x" + "77" * 32),
+        "network": NETWORK,
+    })
+    lock_id = created.json()["lock_id"]
+    forged = client.post(
+        f"/v1/escrow/{lock_id}/forfeit",
+        json={"outcome": {"outcome": "fired", "reason": "predicate_fired"}},
+    )
+    assert forged.status_code == 422
+    assert client.get(f"/v1/escrow/{lock_id}").json()["state"] == "locked"
 
 
 def test_http_forfeit_without_live_facilitator_is_unavailable(tmp_path, monkeypatch):
@@ -283,11 +353,12 @@ def test_http_forfeit_without_live_facilitator_is_unavailable(tmp_path, monkeypa
         "authorization": _auth(nonce="0x" + "99" * 32),
         "network": NETWORK,
     })
-    lock_id = created.json()["lock_id"]
+    lock = created.json()
+    warranty, defective = _fired_warranty_for(lock)
     refused = client.post(
-        f"/v1/escrow/{lock_id}/forfeit",
-        json={"outcome": {"outcome": "fired", "reason": "predicate_fired"}},
+        f"/v1/escrow/{lock['lock_id']}/forfeit",
+        json={"warranty": warranty, "response": defective},
     )
     assert refused.status_code == 503
     assert refused.json()["error"] == "escrow_settlement_unavailable"
-    assert client.get(f"/v1/escrow/{lock_id}").json()["state"] == "locked"
+    assert client.get(f"/v1/escrow/{lock['lock_id']}").json()["state"] == "locked"

@@ -115,8 +115,26 @@ def test_serper_malformed_response_is_an_error(monkeypatch):
 
 def test_default_retriever_registers_serper_first_when_key_set(monkeypatch):
     monkeypatch.setenv("VERITAS_SERPER_API_KEY", KEY)
+    monkeypatch.setenv("VERITAS_REQUIRE_PAYMENT", "true")
     r = default_retriever(allow_network=True)
     assert isinstance(r, CompositeRetriever)
+    assert [type(x).__name__ for x in r.retrievers] == ["SerperRetriever", "ZeroKeyRetriever"]
+
+
+def test_default_retriever_skips_serper_in_free_mode_even_with_key(monkeypatch):
+    """R10: unpaid traffic must not burn a paid provider."""
+    monkeypatch.setenv("VERITAS_SERPER_API_KEY", KEY)
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    monkeypatch.delenv("VERITAS_SERPER_IN_FREE_MODE", raising=False)
+    r = default_retriever(allow_network=True)
+    assert [type(x).__name__ for x in r.retrievers] == ["ZeroKeyRetriever"]
+
+
+def test_default_retriever_serper_opt_in_free_mode(monkeypatch):
+    monkeypatch.setenv("VERITAS_SERPER_API_KEY", KEY)
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    monkeypatch.setenv("VERITAS_SERPER_IN_FREE_MODE", "true")
+    r = default_retriever(allow_network=True)
     assert [type(x).__name__ for x in r.retrievers] == ["SerperRetriever", "ZeroKeyRetriever"]
 
 

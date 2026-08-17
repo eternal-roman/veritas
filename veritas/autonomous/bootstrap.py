@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from veritas.payment_config import DEFAULT_FACILITATOR
+from veritas.runtime import bind_agent_runtime
 
 
 def generate_local_seed(agent_id: str = "self") -> str:
@@ -43,7 +44,7 @@ def bootstrap_free_mode(agent_id: str = "self", base_dir: str = ".veritas_agent"
     config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
     return config
 
-def apply_to_env(config: dict) -> None:
+def apply_to_env(config: dict, base_dir: str | None = None) -> None:
     """Apply an agent config to the environment the HTTP server reads.
 
     `bootstrap_free_mode` writes a config file that only the in-process
@@ -52,7 +53,13 @@ def apply_to_env(config: dict) -> None:
     surface uses. This is the bridge: config keys map onto the VERITAS_*
     variables, and only keys actually present (and non-None) are applied —
     PaymentConfig's own validation still decides free/live/misconfigured.
+
+    When ``base_dir`` is given, the process runtime directory is bound to
+    ``{base_dir}/runtime`` unless the operator already set
+    ``VERITAS_RUNTIME_DIR`` (O5).
     """
+    if base_dir:
+        bind_agent_runtime(base_dir)
     os.environ["VERITAS_REQUIRE_PAYMENT"] = (
         "true" if config.get("require_payment") else "false"
     )

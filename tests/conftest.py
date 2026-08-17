@@ -1,21 +1,21 @@
 """Test-session isolation for Veritas.
 
 `veritas/server.py` builds its CustodyStore, OutcomeLog and Ledger at import
-time, and each reads ``VERITAS_RUNTIME_DIR`` with a cwd-relative default of
-``.veritas_runtime`` (open defect O5). Test modules import the server at
+time, and each reads ``VERITAS_RUNTIME_DIR`` via
+``veritas.runtime.resolve_runtime_dir``. Test modules import the server at
 collection time, before any fixture can run, so without this file the whole
-session shares one runtime directory in the repository root — and the suite
-becomes order-dependent, which is what it was: 2 failed and 4 errors on a full
-run against 4c3b23c, all six passing in isolation.
+session shares one runtime directory — and the suite becomes order-dependent,
+which is what it was: 2 failed and 4 errors on a full run against 4c3b23c,
+all six passing in isolation.
 
 The environment variable is therefore bound at *conftest import* time. pytest
 imports conftest before collecting test modules, so this is the only hook that
 runs early enough to reach an import-time singleton.
 
-This does not fix O5. `server.py` still binds at import and still defaults to
-a relative path, and the 23 ``importlib.reload`` calls that work around it are
-untouched. What it fixes is the suite's reproducibility, which every L1
-enforcement pointer in the constitution ultimately cashes out to.
+This does not undo import-time binding. `server.py` still constructs stores
+at import; tests that need a fresh directory still reload the module. What
+this file fixes is the suite's reproducibility, which every L1 enforcement
+pointer in the constitution ultimately cashes out to.
 """
 
 from __future__ import annotations

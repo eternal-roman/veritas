@@ -155,7 +155,12 @@ mainnet without `--i-understand-this-is-real-money`. Invalid config →
 | `POST /v1/research` | Research (402 in live mode) |
 | `POST /v1/notarize` | Observe-once URL notary; same payment gates |
 | `POST /v1/verify` | Origin re-fetch (`url`+`content_hash` or `request_id`) |
-| `GET /v1/receipts/{id}` | Durable custody receipt |
+| `GET /v1/receipts/{id}` | Durable custody receipt (research questions redacted) |
+| `GET /v1/evidence/{hash}` | Stored excerpt for a published content hash |
+| `POST /v1/escrow` · `GET /v1/escrow/{id}` | Lock an EIP-3009 authorization; GET omits the signature |
+| `POST /v1/escrow/{id}/release` | Loopback-only; never submits |
+| `POST /v1/escrow/{id}/forfeit` | Re-run the challenge; submit only if it fired (live facilitator) |
+| `GET /v1/signals` · `POST /v1/signals` | Prediction-market snapshots (prices, not verdicts) |
 | `GET /v1/trust` | UNPROVEN from the operator log |
 | `POST /v1/trust` | Score caller-supplied verified audit records |
 | `GET /v1/schema` · `/v1/errors` · `/v1/constitution` | Contract, errors, norms |
@@ -188,7 +193,9 @@ ruff check veritas tests
   the default; a synthesized claim emits only when its tokens appear in the
   cited excerpts.
 - **Shared state is opt-in.** Unset `VERITAS_DATABASE_URL` keeps per-instance
-  SQLite. Multi-host HA is the operator's Postgres.
+  SQLite under `$VERITAS_RUNTIME_DIR` (default
+  `~/.local/share/veritas/runtime`; `veritas-agent` uses `{base-dir}/runtime`).
+  Multi-host HA is the operator's Postgres.
 - **Calibrator is untrained and unused.** Reports `passthrough_untrained`.
 - **Harness is a 3-document offline corpus.** Perfect scores prove invariants, not quality.
 - **Solana is not payable.** Recognised for aliasing, excluded from advertised networks.

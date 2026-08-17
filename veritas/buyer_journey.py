@@ -309,12 +309,12 @@ def run_buyer_journey(
     hash_to_check = content_hash or free_hash
     if hash_to_check and content is not None:
         try:
-            valid = verify_content_hash(content, hash_to_check)
+            ok, _meta = verify_content_hash(content, hash_to_check)
             steps.append({
                 "step": "verify_content_hash",
-                "ok": bool(valid),
+                "ok": ok,
                 "content_hash": hash_to_check,
-                "matched": bool(valid),
+                "matched": ok,
             })
         except (TypeError, ValueError) as exc:
             steps.append({

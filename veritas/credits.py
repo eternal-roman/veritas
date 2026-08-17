@@ -31,7 +31,6 @@ credit once payment has already succeeded (or a deliberate test grant).
 
 from __future__ import annotations
 
-import os
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -39,9 +38,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .runtime import resolve_runtime_dir
 from .store import StoreUnavailable, connect_target, parse_database_url
 
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DB_FILENAME = "credits.sqlite3"
 
 _SCHEMA = """
@@ -118,11 +117,7 @@ class CreditLedger:
     """Append-only double-entry credit journal for one runtime directory."""
 
     def __init__(self, base_dir: Path | str | None = None) -> None:
-        self.base_dir = Path(
-            base_dir
-            or os.environ.get("VERITAS_RUNTIME_DIR")
-            or _DEFAULT_RUNTIME_DIR
-        )
+        self.base_dir = resolve_runtime_dir(base_dir)
 
     @property
     def path(self) -> Path:

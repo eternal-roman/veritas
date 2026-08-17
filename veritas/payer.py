@@ -70,6 +70,7 @@ try:  # advisory same-host file locking; absent on some platforms
 except ImportError:  # pragma: no cover - non-POSIX fallback
     fcntl = None  # type: ignore[assignment]
 
+from veritas.runtime import resolve_runtime_dir
 from veritas.x402 import USDC_ASSETS
 
 _CONSTRUCTION_TOKEN = object()
@@ -99,7 +100,6 @@ _UINT256_MAX = 2**256 - 1
 
 _STATE_FILENAME = "spend_policy.json"
 _ATTEMPTS_FILENAME = "authorization_attempts.jsonl"
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 
 # Ceiling on the authorization validity window PaymentClient will sign. The
 # window bounds replay exposure only if something bounds the window itself.
@@ -351,9 +351,7 @@ class SpendPolicy:
         self.max_per_day = max_per_day
         self.max_per_day_per_counterparty = max_per_day_per_counterparty
         self.allowed_networks = allowed_networks
-        self._base_dir = Path(
-            base_dir or os.environ.get("VERITAS_RUNTIME_DIR") or _DEFAULT_RUNTIME_DIR
-        )
+        self._base_dir = resolve_runtime_dir(base_dir)
         self._state_corrupt: str | None = None
         self._date, self._spent, self._per_counterparty = self._load_state()
 

@@ -8,16 +8,24 @@ the same interface can be switched to live verification.
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from veritas.runtime import resolve_runtime_dir
 from veritas.x402 import decode_payment_header, payment_authorization
 
-RUNTIME = Path(os.getenv("VERITAS_RUNTIME_DIR", ".veritas_runtime"))
-SETTLEMENTS = RUNTIME / "settlements.jsonl"
-ATTEMPTS = RUNTIME / "payment_attempts.jsonl"
+
+def _runtime() -> Path:
+    return resolve_runtime_dir()
+
+
+def _settlements() -> Path:
+    return _runtime() / "settlements.jsonl"
+
+
+def _attempts() -> Path:
+    return _runtime() / "payment_attempts.jsonl"
 
 
 def _now() -> str:
@@ -25,7 +33,8 @@ def _now() -> str:
 
 
 def record_attempt(request_id: str, headers: dict[str, str], amount: str = "$0.25") -> dict[str, Any]:
-    RUNTIME.mkdir(parents=True, exist_ok=True)
+    runtime = _runtime()
+    runtime.mkdir(parents=True, exist_ok=True)
     entry = {
         "timestamp": _now(),
         "request_id": request_id,
@@ -33,13 +42,14 @@ def record_attempt(request_id: str, headers: dict[str, str], amount: str = "$0.2
         "has_signature": bool(headers.get("PAYMENT-SIGNATURE") or headers.get("X-PAYMENT")),
         "mode": "local_simulator",
     }
-    with ATTEMPTS.open("a", encoding="utf-8") as f:
+    with _attempts().open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
     return entry
 
 
 def record_settlement(request_id: str, amount: str, status: str = "recorded", meta: dict | None = None) -> dict[str, Any]:
-    RUNTIME.mkdir(parents=True, exist_ok=True)
+    runtime = _runtime()
+    runtime.mkdir(parents=True, exist_ok=True)
     entry = {
         "timestamp": _now(),
         "request_id": request_id,
@@ -48,7 +58,7 @@ def record_settlement(request_id: str, amount: str, status: str = "recorded", me
         "meta": meta or {},
         "mode": "local_simulator",
     }
-    with SETTLEMENTS.open("a", encoding="utf-8") as f:
+    with _settlements().open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
     return entry
 

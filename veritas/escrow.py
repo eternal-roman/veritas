@@ -41,7 +41,6 @@ refusal leaves the lock ``locked`` so a later collect can retry.
 from __future__ import annotations
 
 import json
-import os
 import re
 import sqlite3
 from datetime import datetime, timezone
@@ -49,6 +48,7 @@ from pathlib import Path
 from typing import Any
 
 from veritas.hashing import compute_content_hash
+from veritas.runtime import resolve_runtime_dir
 from veritas.store import StoreUnavailable, connect_target, parse_database_url
 from veritas.x402 import NONCE_RE, USDC_ASSETS
 
@@ -73,7 +73,6 @@ ADDRESS_RE = re.compile(r"\A0x[0-9a-fA-F]{40}\Z")
 ATOMIC_RE = re.compile(r"\A[0-9]+\Z")
 LOCK_ID_RE = re.compile(r"\A[0-9a-f]{64}\Z")
 
-_DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DB_FILENAME = "escrow.sqlite3"
 
 _SCHEMA = """
@@ -205,11 +204,7 @@ class EscrowStore:
     """Durable locks. Shared when VERITAS_DATABASE_URL is set."""
 
     def __init__(self, base_dir: Path | str | None = None) -> None:
-        self.base_dir = Path(
-            base_dir
-            or os.getenv("VERITAS_RUNTIME_DIR")
-            or _DEFAULT_RUNTIME_DIR
-        )
+        self.base_dir = resolve_runtime_dir(base_dir)
 
     def _target(self):
         try:
@@ -479,6 +474,20 @@ def _row_to_record(row: Any) -> dict[str, Any]:
         "method": METHOD,
         "binding": BOND_BINDING_ESCROW,
     }
+
+
+def public_lock(record: dict[str, Any]) -> dict[str, Any]:
+    """HTTP view of a lock. The signature *is* the money — it never leaves
+    the store except when ``settle_forfeit`` submits it. GET must not
+    publish a collectable authorization.
+    """
+    out = dict(record)
+    auth = out.get("authorization")
+    if isinstance(auth, dict):
+        visible = {k: v for k, v in auth.items() if k != "signature"}
+        visible["signature_present"] = bool(auth.get("signature"))
+        out["authorization"] = visible
+    return out
 
 
 def escrow_bond(

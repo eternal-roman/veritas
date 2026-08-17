@@ -103,7 +103,7 @@ def _provision(
 
 def _serve(base_dir: str) -> None:
     config = load_config(base_dir)
-    apply_to_env(config)
+    apply_to_env(config, base_dir=base_dir)
 
     import veritas.server
 
@@ -168,6 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     fund_p.add_argument("--tx", dest="tx_hash", default=None)
 
     args = parser.parse_args(argv)
+    args.base_dir = str(Path(args.base_dir).expanduser().resolve())
 
     if args.command == "enroll":
         account = enroll_account(

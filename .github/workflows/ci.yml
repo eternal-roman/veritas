@@ -265,11 +265,23 @@ jobs:
           print(f"SBOM OK: {len(listed)} components, CycloneDX {bom['specVersion']}")
           PY
 
+      # A checksum is not a signature. It lets a downloader notice a bit-flip
+      # of the artifact they fetched; it does not bind the SBOM to a publisher
+      # identity. Signed SBOM stays open (O15) — no operator key in this
+      # environment, and keyless cosign is not available here.
+      - name: Checksum the artifact SBOM
+        run: |
+          sha256sum sbom/veritas-artifact.cdx.json \
+            | tee sbom/veritas-artifact.cdx.json.sha256
+          sha256sum -c sbom/veritas-artifact.cdx.json.sha256
+
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: sbom-cyclonedx
-          path: sbom/veritas-artifact.cdx.json
+          path: |
+            sbom/veritas-artifact.cdx.json
+            sbom/veritas-artifact.cdx.json.sha256
           if-no-files-found: error
 
   docker:

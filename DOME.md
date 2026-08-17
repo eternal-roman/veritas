@@ -59,7 +59,7 @@ Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists;
 | Shared receipts | Medium | File backend remains. When `VERITAS_DATABASE_URL` is set, `custody_receipts` is also upserted so a sibling can `GET /v1/receipts/{id}`. Two sqlite-file nodes: L1. Multi-host Postgres / real balancer: not proven. |
 | Rate-limit fail-open | Low | When DATABASE_URL is set but the store cannot open, `shared_rate_limited` uses a process-local limiter (same limit/window). Unset URL still uses server.py buckets. Outage is not a free pass. |
 | Abuse 10× load | Medium | Roadmap 6.3 acceptance unmet. |
-| Docker hash-lock + signed SBOM | Medium | O15 partial. |
+| Docker hash-lock + signed SBOM | Medium | O15 partial. Image already installs from hashed `requirements.lock`. CI now checksums the CycloneDX SBOM. Signed SBOM still open — no operator key / keyless cosign here. |
 | Wallet ACLs on Windows (O16) | Medium | Linux/Docker is the deploy target. |
 | Solana settlement | Low | Deliberately not advertised. |
 | Tracing | Low | Logs + metrics exist; tracing is not claimed. |

@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.10"
+HOOKS_VERSION = "1.11"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -225,11 +225,15 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _mcp("constitution", "The venue constitution document."),
     _mcp("whoami", "Local agent account (identity, wallets, bound skills) or how to enroll."),
     # --------------------------------------------------------- CLIs —
-    _cli("veritas-server", "Serve the HTTP surface (free mode by default).", _EXIT_OK),
+    _cli("veritas-server",
+         "Serve the HTTP surface (free mode by default). "
+         "VERITAS_TLS_CERT + VERITAS_TLS_KEY enable HTTPS from PEM files.",
+         _EXIT_OK),
     _cli(
         "veritas-agent",
         "Enroll identity + wallets + interest-bound skills; "
-        "init/up also serve. Subcommands: adopt, enroll, whoami, skills, "
+        "init/up also serve. --tls terminates HTTPS from VERITAS_TLS_* or "
+        "{base-dir}/tls. Subcommands: adopt, enroll, whoami, skills, "
         "fund-proof, init, up, serve, status, connect, peers, pull-signals.",
         _EXIT_OK,
     ),

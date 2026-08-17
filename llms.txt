@@ -62,6 +62,7 @@ veritas-agent connect <peer-url> [--allow-local]
 veritas-agent peers
 veritas-agent pull-signals <peer-id-or-url>
 veritas-server
+veritas-agent serve --tls
 
 ## Source and norms
 

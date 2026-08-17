@@ -2330,6 +2330,25 @@ async def llms_txt():
     return PlainTextResponse(LLMS_TXT)
 
 
+def tls_files_from_env() -> tuple[str, str] | None:
+    """Return ``(cert, key)`` PEM paths from env, or ``None`` when TLS is unset.
+
+    Both ``VERITAS_TLS_CERT`` and ``VERITAS_TLS_KEY`` must be set together.
+    A half-set pair is a configuration error, not silent plaintext.
+    Paths are returned as given; uvicorn (or the caller) opens the files.
+    """
+    cert = (os.getenv("VERITAS_TLS_CERT") or "").strip()
+    key = (os.getenv("VERITAS_TLS_KEY") or "").strip()
+    if not cert and not key:
+        return None
+    if not cert or not key:
+        raise SystemExit(
+            "TLS is half-configured: set both VERITAS_TLS_CERT and "
+            "VERITAS_TLS_KEY to PEM paths, or unset both"
+        )
+    return cert, key
+
+
 def main(argv: list[str] | None = None) -> None:
     """Console entry point (`veritas-server`). Configuration is env-only.
 
@@ -2343,19 +2362,24 @@ def main(argv: list[str] | None = None) -> None:
         description=(
             "Run the Veritas HTTP service. Configuration is environment-only: "
             "VERITAS_HOST / VERITAS_PORT bind the socket (default "
-            "127.0.0.1:8000); payment, retrieval and observability variables "
-            "are listed in the README configuration reference."
+            "127.0.0.1:8000); VERITAS_TLS_CERT / VERITAS_TLS_KEY enable "
+            "HTTPS from PEM files; payment, retrieval and observability "
+            "variables are listed in the README configuration reference."
         ),
     )
     parser.parse_args(argv)
     import uvicorn
 
     configure_logging()
-    uvicorn.run(
-        "veritas.server:app",
-        host=os.getenv("VERITAS_HOST", "127.0.0.1"),
-        port=int(os.getenv("VERITAS_PORT", "8000")),
-    )
+    run_kwargs: dict[str, Any] = {
+        "host": os.getenv("VERITAS_HOST", "127.0.0.1"),
+        "port": int(os.getenv("VERITAS_PORT", "8000")),
+    }
+    tls = tls_files_from_env()
+    if tls is not None:
+        run_kwargs["ssl_certfile"] = tls[0]
+        run_kwargs["ssl_keyfile"] = tls[1]
+    uvicorn.run("veritas.server:app", **run_kwargs)
 
 
 if __name__ == "__main__":

@@ -18,9 +18,12 @@ LAN URLs must not leak.
 
 from __future__ import annotations
 
+import hashlib
 import ipaddress
 import json
+import os
 import socket
+import ssl
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -76,6 +79,34 @@ def peers_path(base_dir: Path | str | None = None) -> Path:
     return resolve_runtime_dir() / PEERS_FILENAME
 
 
+def tls_cert_fingerprint(cert_path: str | Path) -> str | None:
+    """SHA-256 of a PEM certificate as ``sha256:<hex>``. Stdlib only."""
+    try:
+        pem = Path(cert_path).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    try:
+        der = ssl.PEM_cert_to_DER_cert(pem)
+    except ValueError:
+        return None
+    return "sha256:" + hashlib.sha256(der).hexdigest()
+
+
+def _tls_card_fields() -> dict[str, Any] | None:
+    """Attach ``tls.fingerprint`` when a readable cert is configured.
+
+    Binding signature is optional and left to ``veritas.peer_tls`` when
+    that module exists; this branch never invents one.
+    """
+    cert = (os.getenv("VERITAS_TLS_CERT") or "").strip()
+    if not cert:
+        return None
+    fingerprint = tls_cert_fingerprint(cert)
+    if not fingerprint:
+        return None
+    return {"fingerprint": fingerprint}
+
+
 def build_peer_card() -> dict[str, Any]:
     """This node's card. Not an address book. ``central_network`` is false."""
     card: dict[str, Any] = {"schema": SCHEMA}
@@ -94,6 +125,9 @@ def build_peer_card() -> dict[str, Any]:
         "adopt": ADOPT_PATH,
         "central_network": False,
     })
+    tls = _tls_card_fields()
+    if tls is not None:
+        card["tls"] = tls
     return card
 
 

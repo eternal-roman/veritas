@@ -21,6 +21,7 @@ PAYMENT_VARS = (
     "VERITAS_REQUIRE_PAYMENT", "VERITAS_PAY_TO", "VERITAS_NETWORK",
     "VERITAS_PRICE", "VERITAS_FACILITATOR",
 )
+TLS_VARS = ("VERITAS_TLS_CERT", "VERITAS_TLS_KEY")
 
 
 @pytest.fixture(autouse=True)
@@ -28,12 +29,12 @@ def _clean_env(monkeypatch, tmp_path):
     """apply_to_env writes os.environ directly (that is its job), so this
     fixture must restore the payment variables itself — monkeypatch only
     undoes its own changes."""
-    for var in PAYMENT_VARS:
+    for var in (*PAYMENT_VARS, *TLS_VARS):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
     yield tmp_path
-    for var in PAYMENT_VARS:
+    for var in (*PAYMENT_VARS, *TLS_VARS):
         os.environ.pop(var, None)
 
 
@@ -131,3 +132,56 @@ def test_status_includes_stage1_readiness_scorecard(tmp_path, capsys):
     assert "unsolicited demand" in readiness["not_proven"]
     assert readiness["testnet_settlements_confirmed"] is not None
     assert readiness["stage1_prep"]["vision_stage"] == "1_public_existence"
+
+
+def test_serve_tls_without_files_exits_1(tmp_path, monkeypatch):
+    """--tls with no env and no {base-dir}/tls PEMs is a hard refusal."""
+    monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
+    monkeypatch.setattr("veritas.server.main", lambda argv=None: None)
+    with pytest.raises(SystemExit, match="TLS requested") as exc:
+        main(["--base-dir", str(tmp_path / "home"), "serve", "--tls"])
+    code = exc.value.code
+    assert code == 1 or (isinstance(code, str) and "TLS requested" in code)
+
+
+def test_serve_tls_uses_base_dir_files(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    tls_dir = home / "tls"
+    tls_dir.mkdir(parents=True)
+    cert = tls_dir / "cert.pem"
+    key = tls_dir / "key.pem"
+    cert.write_text("CERT", encoding="utf-8")
+    key.write_text("KEY", encoding="utf-8")
+    monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
+    seen: dict[str, str | None] = {}
+
+    def fake_serve(argv=None):
+        seen["cert"] = os.environ.get("VERITAS_TLS_CERT")
+        seen["key"] = os.environ.get("VERITAS_TLS_KEY")
+
+    monkeypatch.setattr("veritas.server.main", fake_serve)
+    assert main(["--base-dir", str(home), "serve", "--tls"]) == 0
+    assert seen["cert"] == str(cert.resolve())
+    assert seen["key"] == str(key.resolve())
+
+
+def test_serve_tls_env_wins_over_base_dir_files(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    tls_dir = home / "tls"
+    tls_dir.mkdir(parents=True)
+    (tls_dir / "cert.pem").write_text("DISK", encoding="utf-8")
+    (tls_dir / "key.pem").write_text("DISK", encoding="utf-8")
+    monkeypatch.setenv("VERITAS_TLS_CERT", "/env/cert.pem")
+    monkeypatch.setenv("VERITAS_TLS_KEY", "/env/key.pem")
+    seen: dict[str, str | None] = {}
+
+    def fake_serve(argv=None):
+        seen["cert"] = os.environ.get("VERITAS_TLS_CERT")
+        seen["key"] = os.environ.get("VERITAS_TLS_KEY")
+
+    monkeypatch.setattr("veritas.server.main", fake_serve)
+    assert main(["--base-dir", str(home), "serve", "--tls"]) == 0
+    assert seen["cert"] == "/env/cert.pem"
+    assert seen["key"] == "/env/key.pem"

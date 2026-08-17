@@ -7,6 +7,7 @@ import json
 from urllib.error import HTTPError
 from urllib.parse import urlsplit
 
+import pytest
 from fastapi.testclient import TestClient
 
 from veritas.agent_cli import main
@@ -188,6 +189,10 @@ def test_get_v1_peer_returns_schema_and_no_central_network(tmp_path, monkeypatch
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
     monkeypatch.delenv("VERITAS_PUBLIC_URL", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
     import veritas.server as server
 
     importlib.reload(server)
@@ -307,6 +312,8 @@ def test_two_agent_handshake_without_a_central_host(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "agent-a-runtime"))
     monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
     monkeypatch.delenv("VERITAS_PUBLIC_URL", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_CERT", raising=False)
+    monkeypatch.delenv("VERITAS_TLS_KEY", raising=False)
     import veritas.server as server
 
     importlib.reload(server)
@@ -355,3 +362,61 @@ def test_two_agent_handshake_without_a_central_host(tmp_path, monkeypatch):
         item.get("market_id") == SIGNAL["market_id"]
         for item in server.signal_snapshots.list()
     )
+
+
+def _issue_self_signed(tmp_path):
+    """Throwaway self-signed cert for fingerprint tests."""
+    from datetime import datetime, timedelta, timezone
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "127.0.0.1")])
+    now = datetime.now(timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=1))
+        .not_valid_after(now + timedelta(hours=1))
+        .sign(key, hashes.SHA256())
+    )
+    cert_path = tmp_path / "cert.pem"
+    key_path = tmp_path / "key.pem"
+    cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    key_path.write_bytes(
+        key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
+    return cert_path, key_path
+
+
+def test_get_v1_peer_attaches_tls_fingerprint_when_cert_present(tmp_path, monkeypatch):
+    pytest.importorskip("cryptography")
+    cert_path, key_path = _issue_self_signed(tmp_path)
+    monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path / "runtime"))
+    monkeypatch.setenv("VERITAS_TLS_CERT", str(cert_path))
+    monkeypatch.setenv("VERITAS_TLS_KEY", str(key_path))
+    monkeypatch.delenv("VERITAS_REQUIRE_PAYMENT", raising=False)
+    monkeypatch.delenv("VERITAS_PUBLIC_URL", raising=False)
+    import veritas.server as server
+
+    importlib.reload(server)
+    client = TestClient(server.app)
+    response = client.get("/v1/peer")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema"] == SCHEMA
+    assert body["central_network"] is False
+    fingerprint = body["tls"]["fingerprint"]
+    assert fingerprint.startswith("sha256:")
+    assert len(fingerprint) == len("sha256:") + 64
+

@@ -34,6 +34,7 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 - /.well-known/x402: discovery document (payment requirements, links to every surface below)
 - /v1/identity: identity document with stable content hash
 - /v1/peer: this node's A2A peer card (veritas.peer.v1; not an address book; central_network is false)
+- /v1/peer/introductions: signed public-URL peers this node already connected to (empty without a commerce signer; never LAN)
 - /v1/constitution: the venue constitution — norms with enforcement pointers or an explicit aspirational marker
 - /v1/hooks: machine-readable integration registry — HTTP surfaces, MCP tools, CLI exit codes, headers, signal stores; states that no push delivery exists
 - /v1/research: POST — observe primitive (not a warranted product); returns 402 with an accepts array in live mode, retry with an X-PAYMENT header or spend prepaid credits via X-VERITAS-SESSION
@@ -75,6 +76,7 @@ veritas-agent connect <peer-url> [--allow-local]
 veritas-agent peers
 veritas-agent pull-signals <peer-id-or-url>
 veritas-server
+veritas-agent serve --tls
 
 ## Source and norms
 

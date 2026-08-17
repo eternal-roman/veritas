@@ -87,6 +87,7 @@ def build_identity(
             "constitution": f"{base}/v1/constitution",
             "hooks": f"{base}/v1/hooks",
             "peer": f"{base}/v1/peer",
+            "peer_introductions": f"{base}/v1/peer/introductions",
             "llms": f"{base}/llms.txt",
             "adopt": f"{base}/adopt.json",
             "wellKnown": f"{base}/.well-known/x402",

@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- Identity-bound self-hosted HTTPS (`serve --tls`), optional LAN mDNS
+  browse, and signed public-URL introductions (`GET /v1/peer/introductions`).
+  TLS key is not the commerce key. Not a registry, not the Mesh Runner.
 - Self-host A2A peer connect (`veritas.peer.v1`): `GET /v1/peer` advertises
   this node; `veritas-agent connect` / `peers` / `pull-signals` talk to
   another self-hosted agent. No central network, no public peer list.

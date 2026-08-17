@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,67 @@ from veritas.autonomous.bootstrap import apply_to_env, bootstrap_free_mode, load
 from veritas.networks import DEFAULT_NETWORK, is_testnet, normalize_network
 
 CONFIG_NAME = "config.json"
+TLS_CERT_NAME = "cert.pem"
+TLS_KEY_NAME = "key.pem"
+
+
+def _tls_paths(base_dir: str) -> tuple[Path, Path]:
+    tls_dir = Path(base_dir) / "tls"
+    return tls_dir / TLS_CERT_NAME, tls_dir / TLS_KEY_NAME
+
+
+def _env_tls_files() -> tuple[str, str] | None:
+    cert = (os.environ.get("VERITAS_TLS_CERT") or "").strip()
+    key = (os.environ.get("VERITAS_TLS_KEY") or "").strip()
+    if cert and key:
+        return cert, key
+    return None
+
+
+def _issue_tls_material(base_dir: str, cert: Path, key: Path) -> bool:
+    """Ask ``veritas.peer_tls`` to write material if that module is present."""
+    try:
+        from veritas.peer_tls import issue_tls_material
+    except ImportError:
+        return False
+    tls_dir = cert.parent
+    try:
+        issued = issue_tls_material(tls_dir)
+    except TypeError:
+        issued = issue_tls_material(base_dir)
+    if isinstance(issued, (tuple, list)) and len(issued) >= 2:
+        return Path(issued[0]).is_file() and Path(issued[1]).is_file()
+    return cert.is_file() and key.is_file()
+
+
+def _apply_tls(base_dir: str, *, want_tls: bool) -> None:
+    """Resolve TLS files into ``VERITAS_TLS_CERT`` / ``VERITAS_TLS_KEY``.
+
+    Env wins. ``--tls`` looks under ``{base-dir}/tls/{cert,key}.pem`` when
+    env is unset. Missing files: call ``issue_tls_material`` if
+    ``veritas.peer_tls`` is importable; otherwise exit 1.
+    """
+    if _env_tls_files() is not None:
+        return
+    if not want_tls:
+        return
+    cert, key = _tls_paths(base_dir)
+    if not (cert.is_file() and key.is_file()):
+        if not _issue_tls_material(base_dir, cert, key):
+            raise SystemExit(
+                "TLS requested (--tls) but no certificate files found. "
+                "Set VERITAS_TLS_CERT and VERITAS_TLS_KEY to PEM paths, or "
+                f"place {TLS_CERT_NAME} and {TLS_KEY_NAME} under "
+                f"{Path(base_dir) / 'tls'}/. This build does not generate "
+                "certificates (veritas.peer_tls is unavailable)."
+            )
+    if not (cert.is_file() and key.is_file()):
+        raise SystemExit(
+            "TLS requested (--tls) but issue_tls_material did not write "
+            f"{cert} and {key}"
+        )
+    os.environ["VERITAS_TLS_CERT"] = str(cert.resolve())
+    os.environ["VERITAS_TLS_KEY"] = str(key.resolve())
 
 
 def _write_config(base_dir: str, config: dict[str, Any]) -> None:
@@ -101,9 +163,10 @@ def _provision(
     return config
 
 
-def _serve(base_dir: str) -> None:
+def _serve(base_dir: str, want_tls: bool = False) -> None:
     config = load_config(base_dir)
     apply_to_env(config, base_dir=base_dir)
+    _apply_tls(base_dir, want_tls=want_tls)
 
     import veritas.server
 
@@ -129,9 +192,25 @@ def main(argv: list[str] | None = None) -> int:
 
     init_p = sub.add_parser("init", help="provision config, wallet, and account; do not serve")
     _payment_flags(init_p)
-    sub.add_parser("serve", help="apply provisioned config to env and run the server")
+    serve_p = sub.add_parser("serve", help="apply provisioned config to env and run the server")
+    serve_p.add_argument(
+        "--tls",
+        action="store_true",
+        help=(
+            "Terminate TLS from VERITAS_TLS_CERT / VERITAS_TLS_KEY, or "
+            "{base-dir}/tls/cert.pem and key.pem if env is unset"
+        ),
+    )
     up_p = sub.add_parser("up", help="init if missing, then serve (the zero-touch path)")
     _payment_flags(up_p)
+    up_p.add_argument(
+        "--tls",
+        action="store_true",
+        help=(
+            "Terminate TLS from VERITAS_TLS_CERT / VERITAS_TLS_KEY, or "
+            "{base-dir}/tls/cert.pem and key.pem if env is unset"
+        ),
+    )
     sub.add_parser("status", help="print provisioned config, wallet, and account")
 
     enroll_p = sub.add_parser(
@@ -195,6 +274,14 @@ def main(argv: list[str] | None = None) -> int:
         "--allow-local",
         action="store_true",
         help="permit loopback and RFC1918; never permits cloud metadata IPs",
+    )
+    sub.add_parser(
+        "browse",
+        help="mDNS browse for LAN peer card URLs (no-op without zeroconf extra)",
+    )
+    sub.add_parser(
+        "introductions",
+        help="print signed public-URL introductions from the local book (empty without a signer)",
     )
 
     args = parser.parse_args(argv)
@@ -295,6 +382,30 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         return 2 if result.get("code") == "unreachable" else 1
 
+    if args.command == "browse":
+        from veritas.peer_mdns import browse
+
+        result = browse()
+        print(json.dumps(result, indent=2))
+        if isinstance(result, list):
+            return 0
+        return 0 if result.get("unavailable") else 1
+
+    if args.command == "introductions":
+        from veritas.peer import load_peers
+        from veritas.peer_intro import DEFAULT_LIMIT, public_introductions
+
+        items = public_introductions(load_peers(args.base_dir), limit=DEFAULT_LIMIT)
+        print(json.dumps({
+            "schema": "veritas.peer.introductions.v1",
+            "items": items,
+            "count": len(items),
+            "cap": DEFAULT_LIMIT,
+            "central_network": False,
+            "note": "public-URL only; empty without a commerce signer",
+        }, indent=2))
+        return 0
+
     if args.command == "init":
         _provision(args.base_dir, paid=args.paid, network=args.network,
                    acknowledged_real_money=args.acknowledged_real_money)
@@ -303,11 +414,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "up":
         _provision(args.base_dir, paid=args.paid, network=args.network,
                    acknowledged_real_money=args.acknowledged_real_money)
-        _serve(args.base_dir)
+        _serve(args.base_dir, want_tls=args.tls)
         return 0
 
     if args.command == "serve":
-        _serve(args.base_dir)
+        _serve(args.base_dir, want_tls=args.tls)
         return 0
 
     if args.command == "status":

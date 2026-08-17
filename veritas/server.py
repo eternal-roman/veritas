@@ -90,6 +90,7 @@ SIGNALS_PULL_PATH = "/v1/signals"
 SIGNALS_HISTORY_PATH = "/v1/signals/history"
 SIGNALS_ITEM_PATH = "/v1/signals/{content_hash}"
 PEER_PATH = "/v1/peer"
+PEER_INTRODUCTIONS_PATH = "/v1/peer/introductions"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -1865,6 +1866,30 @@ async def peer():
     return build_peer_card()
 
 
+@app.get(PEER_INTRODUCTIONS_PATH)
+async def peer_introductions():
+    """Signed public-URL peers this node already connected to.
+
+    Empty without a commerce signer. Never lists LAN or metadata URLs.
+    Not an address book of *this* node — that stays in peers.json.
+    """
+    from veritas.peer import load_peers
+    from veritas.peer_intro import DEFAULT_LIMIT, public_introductions
+
+    items = public_introductions(load_peers(), limit=DEFAULT_LIMIT)
+    return {
+        "schema": "veritas.peer.introductions.v1",
+        "items": items,
+        "count": len(items),
+        "cap": DEFAULT_LIMIT,
+        "central_network": False,
+        "note": (
+            "public-URL peers only; empty without a commerce signer; "
+            "the local book is never published"
+        ),
+    }
+
+
 @app.get("/ui", response_class=HTMLResponse)
 async def operator_ui():
     """Human viewer + enroll form. Excluded from the hooks registry."""
@@ -2284,6 +2309,7 @@ async def well_known():
             "signals": SIGNALS_PATH,
             "signals_history": SIGNALS_HISTORY_PATH,
             "peer": PEER_PATH,
+            "peer_introductions": PEER_INTRODUCTIONS_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),
@@ -2330,6 +2356,25 @@ async def llms_txt():
     return PlainTextResponse(LLMS_TXT)
 
 
+def tls_files_from_env() -> tuple[str, str] | None:
+    """Return ``(cert, key)`` PEM paths from env, or ``None`` when TLS is unset.
+
+    Both ``VERITAS_TLS_CERT`` and ``VERITAS_TLS_KEY`` must be set together.
+    A half-set pair is a configuration error, not silent plaintext.
+    Paths are returned as given; uvicorn (or the caller) opens the files.
+    """
+    cert = (os.getenv("VERITAS_TLS_CERT") or "").strip()
+    key = (os.getenv("VERITAS_TLS_KEY") or "").strip()
+    if not cert and not key:
+        return None
+    if not cert or not key:
+        raise SystemExit(
+            "TLS is half-configured: set both VERITAS_TLS_CERT and "
+            "VERITAS_TLS_KEY to PEM paths, or unset both"
+        )
+    return cert, key
+
+
 def main(argv: list[str] | None = None) -> None:
     """Console entry point (`veritas-server`). Configuration is env-only.
 
@@ -2343,19 +2388,24 @@ def main(argv: list[str] | None = None) -> None:
         description=(
             "Run the Veritas HTTP service. Configuration is environment-only: "
             "VERITAS_HOST / VERITAS_PORT bind the socket (default "
-            "127.0.0.1:8000); payment, retrieval and observability variables "
-            "are listed in the README configuration reference."
+            "127.0.0.1:8000); VERITAS_TLS_CERT / VERITAS_TLS_KEY enable "
+            "HTTPS from PEM files; payment, retrieval and observability "
+            "variables are listed in the README configuration reference."
         ),
     )
     parser.parse_args(argv)
     import uvicorn
 
     configure_logging()
-    uvicorn.run(
-        "veritas.server:app",
-        host=os.getenv("VERITAS_HOST", "127.0.0.1"),
-        port=int(os.getenv("VERITAS_PORT", "8000")),
-    )
+    run_kwargs: dict[str, Any] = {
+        "host": os.getenv("VERITAS_HOST", "127.0.0.1"),
+        "port": int(os.getenv("VERITAS_PORT", "8000")),
+    }
+    tls = tls_files_from_env()
+    if tls is not None:
+        run_kwargs["ssl_certfile"] = tls[0]
+        run_kwargs["ssl_keyfile"] = tls[1]
+    uvicorn.run("veritas.server:app", **run_kwargs)
 
 
 if __name__ == "__main__":

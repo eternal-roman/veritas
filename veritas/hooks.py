@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.10"
+HOOKS_VERSION = "1.12"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -132,6 +132,10 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _http("peer", "GET", "/v1/peer",
           "This node's A2A peer card (veritas.peer.v1). Not an address book. "
           "central_network is false: another agent self-hosts; no Veritas cloud."),
+    _http("peer_introductions", "GET", "/v1/peer/introductions",
+          "Signed public-URL introductions of peers this node already "
+          "connected to (PEX/SSB, not a registry). Empty without a "
+          "commerce signer. Never lists LAN or metadata URLs."),
     _http("constitution", "GET", "/v1/constitution",
           "The venue constitution: each article enforced or marked aspirational."),
     _http("schema", "GET", "/v1/schema",
@@ -225,12 +229,17 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _mcp("constitution", "The venue constitution document."),
     _mcp("whoami", "Local agent account (identity, wallets, bound skills) or how to enroll."),
     # --------------------------------------------------------- CLIs —
-    _cli("veritas-server", "Serve the HTTP surface (free mode by default).", _EXIT_OK),
+    _cli("veritas-server",
+         "Serve the HTTP surface (free mode by default). "
+         "VERITAS_TLS_CERT + VERITAS_TLS_KEY enable HTTPS from PEM files.",
+         _EXIT_OK),
     _cli(
         "veritas-agent",
         "Enroll identity + wallets + interest-bound skills; "
-        "init/up also serve. Subcommands: adopt, enroll, whoami, skills, "
-        "fund-proof, init, up, serve, status, connect, peers, pull-signals.",
+        "init/up also serve. --tls terminates HTTPS from VERITAS_TLS_* or "
+        "{base-dir}/tls. Subcommands: adopt, enroll, whoami, skills, "
+        "fund-proof, init, up, serve, status, connect, peers, "
+        "pull-signals, browse, introductions.",
         _EXIT_OK,
     ),
     _cli("veritas-mcp", "Serve the engine as local MCP tools over stdio.", _EXIT_OK),

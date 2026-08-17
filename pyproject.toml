@@ -64,6 +64,9 @@ evolver = [
     "langgraph>=0.2",
     "langchain-core>=0.3",
 ]
+# Optional LAN mDNS advertise/browse for self-hosted peers. The module
+# imports without it; advertise()/browse() return structured unavailable.
+mdns = ["zeroconf>=0.132"]
 dev = [
     "eth_account>=0.13",
     "pytest>=8.0",

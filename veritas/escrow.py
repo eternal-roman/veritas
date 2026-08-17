@@ -18,11 +18,14 @@ VCAE is that primitive specialized for warranty bonds and challenge stakes.
    payload). ``to`` is the published payee — a known counterparty, or the
    venue address advertised on identity.
 2. ``lock`` stores it, keyed by nonce. A replayed nonce is refused.
-3. ``settle_forfeit`` (only after a ``fired`` challenge) submits the
-   authorization through the existing facilitator. That is a settlement
-   event — unomittable once the rail accepts it or answers indeterminate.
+3. ``settle_forfeit`` (only after a ``fired`` challenge) claims the lock
+   (``locked`` → ``settling``) then submits the authorization through the
+   existing facilitator. A second collect on the same lock cannot start
+   another submit. That is a settlement event — unomittable once the rail
+   accepts it or answers indeterminate.
 4. ``release`` / ``expire`` never submit. The chain itself refuses a late
-   claim once ``validBefore`` passes.
+   claim once ``validBefore`` passes. An in-flight ``settling`` row is
+   not expired (the rail may still accept the nonce).
 
 Scale: the lock table lives in the shared store when
 ``VERITAS_DATABASE_URL`` is set. No per-agent thread. Expire sweep is an
@@ -58,10 +61,13 @@ KIND_CHALLENGE_STAKE = "challenge_stake"
 KINDS = frozenset({KIND_BOND, KIND_CHALLENGE_STAKE})
 
 STATE_LOCKED = "locked"
+STATE_SETTLING = "settling"
 STATE_RELEASED = "released"
 STATE_FORFEITED = "forfeited"
 STATE_EXPIRED = "expired"
-STATES = frozenset({STATE_LOCKED, STATE_RELEASED, STATE_FORFEITED, STATE_EXPIRED})
+STATES = frozenset({
+    STATE_LOCKED, STATE_SETTLING, STATE_RELEASED, STATE_FORFEITED, STATE_EXPIRED,
+})
 
 ADDRESS_RE = re.compile(r"\A0x[0-9a-fA-F]{40}\Z")
 ATOMIC_RE = re.compile(r"\A[0-9]+\Z")
@@ -408,6 +414,24 @@ class EscrowStore:
                 skipped += 1
         return {"expired": expired, "skipped": skipped}
 
+    def claim_for_settle(self, lock_id: str) -> dict[str, Any]:
+        """locked → settling. Second collect fails here, before another submit."""
+        return self._transition(
+            lock_id,
+            expect=STATE_LOCKED,
+            new_state=STATE_SETTLING,
+            reason="settlement_in_flight",
+        )
+
+    def revert_settle(self, lock_id: str) -> dict[str, Any]:
+        """settling → locked after a facilitator refusal. Nonce was not spent."""
+        return self._transition(
+            lock_id,
+            expect=STATE_SETTLING,
+            new_state=STATE_LOCKED,
+            reason="settlement_refused",
+        )
+
     def forfeit(
         self,
         lock_id: str,
@@ -415,10 +439,11 @@ class EscrowStore:
         reason: str = "predicate_fired",
         settlement_tx: str | None = None,
         settlement_state: str | None = None,
+        expect: str = STATE_SETTLING,
     ) -> dict[str, Any]:
         return self._transition(
             lock_id,
-            expect=STATE_LOCKED,
+            expect=expect,
             new_state=STATE_FORFEITED,
             reason=reason,
             settlement_tx=settlement_tx,
@@ -509,41 +534,67 @@ def settle_forfeit(
     A facilitator *refusal* leaves the lock ``locked`` so a later collect
     can retry. Success or an indeterminate answer (the rail may have
     moved the funds) transitions to ``forfeited`` so the same nonce is
-    not submitted twice.
+    not submitted twice. Concurrent collects serialize on the
+    ``locked`` → ``settling`` claim; a crash after a successful submit
+    leaves ``settling`` so a retry can finish the persist without
+    unlocking.
     """
     if not isinstance(outcome, dict) or outcome.get("outcome") != "fired":
         raise EscrowError("forfeit_requires_fired_challenge")
-    if lock.get("state") != STATE_LOCKED:
-        raise EscrowError(f"lock_not_locked:{lock.get('state')}")
-    auth = lock.get("authorization")
-    if not isinstance(auth, dict) or not auth.get("signature"):
-        raise EscrowError("authorization_not_signed")
+    lock_id = lock.get("lock_id")
+    if not is_safe_lock_id(lock_id):
+        raise EscrowError("lock_id_malformed")
     claimed_lock = (outcome.get("forfeit") or {}).get("lock_id")
-    if claimed_lock and claimed_lock != lock.get("lock_id"):
+    if claimed_lock and claimed_lock != lock_id:
         raise EscrowError("forfeit_lock_mismatch")
-    bound = lock.get("warranty_hash")
-    claimed_response = (outcome.get("forfeit") or {}).get("response_hash")
-    if bound and claimed_response and bound != claimed_response:
-        raise EscrowError("forfeit_warranty_mismatch")
-    network = lock.get("network") or ""
-    payload = to_payment_payload(auth, network=network)
-    requirements = to_requirements(auth, network=network, asset=lock.get("asset"))
-    result = facilitator.settle(payload, requirements)
-    settled = result.to_dict() if hasattr(result, "to_dict") else dict(result)
-    state = settled.get("state")
-    if hasattr(result, "outcome"):
-        state = result.outcome
-    success = bool(settled.get("success"))
-    if not success and state != "indeterminate":
-        raise EscrowError(
-            f"settlement_refused:{settled.get('error_reason') or state or 'failed'}"
+
+    db = store or EscrowStore()
+    current = db.get(lock_id)
+    if current is None:
+        raise EscrowError("lock_not_found")
+    if current["state"] == STATE_SETTLING:
+        held = current
+    elif current["state"] == STATE_LOCKED:
+        held = db.claim_for_settle(lock_id)
+    else:
+        raise EscrowError(f"lock_not_locked:{current['state']}")
+
+    submitted = False
+    try:
+        auth = held.get("authorization")
+        if not isinstance(auth, dict) or not auth.get("signature"):
+            raise EscrowError("authorization_not_signed")
+        bound = held.get("warranty_hash")
+        claimed_response = (outcome.get("forfeit") or {}).get("response_hash")
+        if bound and claimed_response and bound != claimed_response:
+            raise EscrowError("forfeit_warranty_mismatch")
+        network = held.get("network") or ""
+        payload = to_payment_payload(auth, network=network)
+        requirements = to_requirements(auth, network=network, asset=held.get("asset"))
+        result = facilitator.settle(payload, requirements)
+        settled = result.to_dict() if hasattr(result, "to_dict") else dict(result)
+        state = settled.get("state")
+        if hasattr(result, "outcome"):
+            state = result.outcome
+        success = bool(settled.get("success"))
+        if not success and state != "indeterminate":
+            raise EscrowError(
+                f"settlement_refused:{settled.get('error_reason') or state or 'failed'}"
+            )
+        submitted = True
+        updated = db.forfeit(
+            lock_id,
+            reason=str(outcome.get("reason") or "predicate_fired"),
+            settlement_tx=settled.get("transaction"),
+            settlement_state=state or settled.get("error_reason"),
         )
-    updated = (store or EscrowStore()).forfeit(
-        lock["lock_id"],
-        reason=str(outcome.get("reason") or "predicate_fired"),
-        settlement_tx=settled.get("transaction"),
-        settlement_state=state or settled.get("error_reason"),
-    )
+    except Exception:
+        if not submitted:
+            try:
+                db.revert_settle(lock_id)
+            except EscrowError:
+                pass
+        raise
     return {
         "lock_id": lock["lock_id"],
         "state": updated.get("state"),

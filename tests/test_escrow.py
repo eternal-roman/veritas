@@ -15,6 +15,7 @@ from veritas.escrow import (
     BOND_BINDING_ESCROW,
     KIND_CHALLENGE_STAKE,
     METHOD,
+    STATE_SETTLING,
     EscrowError,
     EscrowStore,
     canonical_authorization,
@@ -195,6 +196,35 @@ def test_challenge_stake_is_the_same_primitive(tmp_path):
     lock = escrow_stake(_auth(nonce="0x" + "77" * 32), network=NETWORK, store=store)
     assert lock["kind"] == KIND_CHALLENGE_STAKE
     assert lock["state"] == "locked"
+
+
+def test_claim_serializes_collect_and_refusal_unlocks(tmp_path):
+    """Two collects cannot both submit. Refusal returns the lock to locked."""
+    import time
+    from datetime import datetime, timezone
+
+    store = EscrowStore(tmp_path)
+    soon = str(int(time.time()) + 30)
+    lock = escrow_bond(
+        _auth(nonce="0x" + "68" * 32, validBefore=soon),
+        network=NETWORK, store=store,
+    )
+    held = store.claim_for_settle(lock["lock_id"])
+    assert held["state"] == STATE_SETTLING
+    with pytest.raises(EscrowError, match="lock_not_locked:settling"):
+        store.claim_for_settle(lock["lock_id"])
+    later = datetime.fromtimestamp(int(soon) + 5, tz=timezone.utc)
+    report = store.expire_due(now=later)
+    assert report["expired"] == 0
+    assert store.get(lock["lock_id"])["state"] == STATE_SETTLING
+    collected = settle_forfeit(
+        lock,
+        outcome={"outcome": "fired", "reason": "predicate_fired"},
+        facilitator=SimulatedFacilitatorClient(),
+        store=store,
+    )
+    assert collected["state"] == "forfeited"
+    assert store.get(lock["lock_id"])["state"] == "forfeited"
 
 
 def test_http_lock_get_release(tmp_path, monkeypatch):

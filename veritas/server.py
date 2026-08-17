@@ -1576,10 +1576,10 @@ async def escrow_lock(req: EscrowLockRequest):
             asset=req.asset,
             warranty_hash=req.warranty_hash,
         )
-    except EscrowError as exc:
+    except EscrowError:
         return JSONResponse(
             status_code=409,
-            content=error_envelope(ErrorCode.ESCROW_REFUSED, str(exc)),
+            content=error_envelope(ErrorCode.ESCROW_REFUSED),
         )
     return lock
 
@@ -1606,15 +1606,13 @@ async def escrow_release(lock_id: str):
     try:
         return escrow_locks.release(lock_id)
     except EscrowError as exc:
-        code = (
-            ErrorCode.ESCROW_LOCK_NOT_FOUND
-            if str(exc) in {"lock_not_found", "lock_id_malformed"}
-            else ErrorCode.ESCROW_REFUSED
-        )
-        status = 404 if code is ErrorCode.ESCROW_LOCK_NOT_FOUND else 409
+        missing = exc.args[:1] in {("lock_not_found",), ("lock_id_malformed",)}
         return JSONResponse(
-            status_code=status,
-            content=error_envelope(code, str(exc), lock_id=lock_id),
+            status_code=404 if missing else 409,
+            content=error_envelope(
+                ErrorCode.ESCROW_LOCK_NOT_FOUND if missing else ErrorCode.ESCROW_REFUSED,
+                lock_id=lock_id,
+            ),
         )
 
 
@@ -1652,10 +1650,10 @@ async def escrow_forfeit(lock_id: str, req: EscrowForfeitRequest):
             facilitator=get_facilitator(cfg.facilitator, live=True),
             store=escrow_locks,
         )
-    except EscrowError as exc:
+    except EscrowError:
         return JSONResponse(
             status_code=409,
-            content=error_envelope(ErrorCode.ESCROW_REFUSED, str(exc), lock_id=lock_id),
+            content=error_envelope(ErrorCode.ESCROW_REFUSED, lock_id=lock_id),
         )
 
 
@@ -1698,23 +1696,17 @@ async def signals_get(content_hash: str):
 @app.post(SIGNALS_PULL_PATH)
 async def signals_pull(req: SignalsPullRequest):
     """Pull public venue books and store snapshots via the evidence channel."""
-    try:
-        if req.venues:
-            unknown = [v for v in req.venues if v not in VENUES]
-            if unknown:
-                raise SignalsError("venue_unknown:" + ",".join(unknown))
-        items = pull_signals(req.query, venues=req.venues, limit=req.limit)
-    except SignalsError as exc:
-        text = str(exc)
-        code = (
-            ErrorCode.SIGNALS_REFUSED
-            if text.startswith(("query_empty", "venue_unknown"))
-            else ErrorCode.SIGNALS_UNAVAILABLE
-        )
-        status = 422 if code is ErrorCode.SIGNALS_REFUSED else 503
+    if req.venues and any(v not in VENUES for v in req.venues):
         return JSONResponse(
-            status_code=status,
-            content=error_envelope(code, text),
+            status_code=422,
+            content=error_envelope(ErrorCode.SIGNALS_REFUSED),
+        )
+    try:
+        items = pull_signals(req.query, venues=req.venues, limit=req.limit)
+    except SignalsError:
+        return JSONResponse(
+            status_code=503,
+            content=error_envelope(ErrorCode.SIGNALS_UNAVAILABLE),
         )
     written = signal_snapshots.put_many(items)
     return {

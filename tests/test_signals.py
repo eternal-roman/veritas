@@ -15,6 +15,7 @@ from veritas.pipeline import run_research
 from veritas.signals import (
     ALLOWED_HOSTS,
     METHOD,
+    VENUE_ENDPOINTS,
     PredictionMarketRetriever,
     SignalsError,
     SignalStore,
@@ -104,8 +105,9 @@ def test_off_allowlist_host_is_refused():
         fetch_json("https://evil.example/markets")
     with pytest.raises(SignalsError, match="venue_url_refused"):
         fetch_json("file:///etc/passwd")
-    assert "gamma-api.polymarket.com" in ALLOWED_HOSTS
-    assert "external-api.kalshi.com" in ALLOWED_HOSTS
+    assert ALLOWED_HOSTS == frozenset(
+        spec["host"] for spec in VENUE_ENDPOINTS.values()
+    )
 
 
 def test_pull_polymarket_normalizes_and_hashes():
@@ -127,6 +129,40 @@ def test_pull_kalshi_clamps_cents_and_filters():
     assert item["market_id"] == "FED-24OCT"
     assert item["outcomes"][0]["price"] == 0.42
     assert item["outcomes"][1]["price"] == pytest.approx(0.58)
+
+
+def test_kalshi_last_price_one_is_one_cent_not_certainty():
+    """Kalshi last_price is cents. 1 must be 0.01, not 1.00 (review-2)."""
+    payload = {
+        "markets": [
+            {
+                "ticker": "ONE-CENT",
+                "title": "One cent last trade",
+                "last_price": 1,
+                "status": "open",
+            }
+        ]
+    }
+    signals = pull_kalshi("cent", opener=_opener_for(payload))
+    assert len(signals) == 1
+    assert signals[0]["outcomes"][0]["price"] == 0.01
+    assert signals[0]["outcomes"][1]["price"] == pytest.approx(0.99)
+
+
+def test_kalshi_prefers_dollars_fields_over_cents():
+    payload = {
+        "markets": [
+            {
+                "ticker": "USD-FIELD",
+                "title": "Dollars field wins",
+                "last_price": 42,
+                "last_price_dollars": "0.17",
+                "status": "open",
+            }
+        ]
+    }
+    signals = pull_kalshi("dollars", opener=_opener_for(payload))
+    assert signals[0]["outcomes"][0]["price"] == 0.17
 
 
 def test_signal_store_lands_in_evidence_store(tmp_path):

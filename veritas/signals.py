@@ -113,6 +113,36 @@ def _clamp_price(value: Any) -> float | None:
     return round(number, 6)
 
 
+def _clamp_cents(value: Any) -> float | None:
+    """Kalshi integer fields are cents in [0, 100]. ``1`` is 1¢, not 100%."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number < 0.0 or number > 100.0:
+        return None
+    return round(number / 100.0, 6)
+
+
+def _kalshi_yes_price(item: dict[str, Any]) -> float | None:
+    """Prefer ``*_dollars`` (0–1). Fall back to integer-cent fields."""
+    for key in ("last_price_dollars", "yes_bid_dollars", "yes_ask_dollars"):
+        raw = item.get(key)
+        if raw is None or raw == "":
+            continue
+        priced = _clamp_price(raw)
+        if priced is not None:
+            return priced
+    for key in ("last_price", "yes_bid", "yes_ask"):
+        raw = item.get(key)
+        if raw is None or raw == "":
+            continue
+        priced = _clamp_cents(raw)
+        if priced is not None:
+            return priced
+    return None
+
+
 def _body_without_hash(signal: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in signal.items() if k != "content_hash"}
 
@@ -234,11 +264,7 @@ def _normalize_kalshi(item: dict[str, Any], *, observed_at: str) -> dict[str, An
         return None
     if not isinstance(title, str) or not title.strip():
         title = ticker
-    yes = _clamp_price(
-        item.get("yes_bid") if item.get("last_price") is None else item.get("last_price")
-    )
-    if yes is None:
-        yes = _clamp_price(item.get("yes_ask"))
+    yes = _kalshi_yes_price(item)
     no_price = None if yes is None else round(1.0 - yes, 6)
     status_raw = str(item.get("status") or "open").lower()
     if status_raw in {"open", "active", "initialized"}:

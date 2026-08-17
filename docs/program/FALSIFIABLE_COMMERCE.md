@@ -224,8 +224,10 @@ evidence of prior art, checked, not proof.
 - Bond settlement requires the payment rail this repo has not yet proven
   on mainnet (operator-run testnet only). Constitution 2.8 closes G12 at
   the library/HTTP layer: an EIP-3009 authorization is the lock
-  (`veritas.escrow`); `settle_forfeit` submits it through the existing
-  facilitator after a fired challenge. Warranties that omit a lock stay
+  (`veritas.escrow`); `settle_forfeit` claims the lock (`locked` →
+  `settling`) then submits it through the existing facilitator after a
+  fired challenge. Two collects cannot both submit. A facilitator
+  refusal reverts to `locked`. Warranties that omit a lock stay
   `signed_commitment_not_escrow`. Not a deployed vault. Local facilitator
   still G2. Mainnet collect is unproven.
 - Collusion between a seller and friendly challengers can farm "survived
@@ -240,7 +242,7 @@ evidence of prior art, checked, not proof.
   Constitution: enforce-or-admit (A27 L1; G12 closed in 2.8).
 - **W1 — escrowed bonds over x402 rails.** VCAE: the EIP-3009
   authorization *is* the lock (Lightning/HTLC timeout + x402 exact).
-  `settle_forfeit` is a settlement event. Implemented in
+  `settle_forfeit` claims then submits; that is a settlement event. Implemented in
   `veritas/escrow.py`. Mainnet collect unproven; G2 still open.
 - **W2 — with ROADMAP 1.1/1.3.** D2 predicates: pinned-model entailment
   warranties on synthesized claims; synthesis ships only warranted-or-

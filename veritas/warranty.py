@@ -333,6 +333,10 @@ def build_warranty(
     if authorization is not None:
         from veritas.escrow import BOND_BINDING_ESCROW, EscrowError
 
+        if not isinstance(authorization, Mapping):
+            raise WarrantyError("escrow_refused:authorization_malformed")
+        if authorization.get("value") != bond["amount_atomic"]:
+            raise WarrantyError("escrow_amount_mismatch")
         try:
             lock = escrow_bond(
                 dict(authorization),
@@ -343,8 +347,6 @@ def build_warranty(
             )
         except EscrowError as exc:
             raise WarrantyError(f"escrow_refused:{exc}") from exc
-        if lock.get("amount") != bond["amount_atomic"]:
-            raise WarrantyError("escrow_amount_mismatch")
         warranty["bond_binding"] = BOND_BINDING_ESCROW
         warranty["escrow"] = {
             "lock_id": lock["lock_id"],

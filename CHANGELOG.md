@@ -46,6 +46,14 @@
   are `bond_binding: eip3009_authorization` and collectable via
   `settle_forfeit`. Warranties that omit a lock stay
   `signed_commitment_not_escrow`.
+- VCAE collect claims `locked` → `settling` before the facilitator
+  submit so two agents cannot both submit the same nonce. A refusal
+  reverts to `locked`; success or indeterminate stays `forfeited`.
+- Kalshi integer fields are cents (`last_price=1` is 1¢). Dollar
+  fields win when present. Amount mismatch on an escrowed warranty is
+  refused before the lock is written.
+- Escrow/signals HTTP error envelopes carry category codes only
+  (no exception text on the wire).
 - `/v1/hooks` 1.7: escrow + signals routes and stores; `escrow-sweep` /
   `escrow` on the ops CLI.
 - `/v1/hooks` 1.6: evidence route, evidence/archive stores, reconcile-loop

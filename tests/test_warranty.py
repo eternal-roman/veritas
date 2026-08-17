@@ -313,7 +313,7 @@ def test_escrowed_warranty_forfeit_is_collectable(tmp_path):
 
 
 def test_escrowed_build_warranty_locks_matching_amount(completed_response, tmp_path):
-    from veritas.escrow import BOND_BINDING_ESCROW, EscrowStore
+    from veritas.escrow import BOND_BINDING_ESCROW, EscrowStore, escrow_bond
 
     store = EscrowStore(tmp_path)
     warranty = build_warranty(
@@ -335,6 +335,15 @@ def test_escrowed_build_warranty_locks_matching_amount(completed_response, tmp_p
     )
     assert warranty["bond_binding"] == BOND_BINDING_ESCROW
     assert warranty["escrow"]["state"] == "locked"
+    mismatch_auth = {
+        "from": "0x" + "11" * 20,
+        "to": "0x" + "22" * 20,
+        "value": "1",
+        "validAfter": "0",
+        "validBefore": "9999999999",
+        "nonce": "0x" + "cc" * 32,
+        "signature": "0x" + "ff" * 65,
+    }
     with pytest.raises(WarrantyError, match="escrow_amount_mismatch"):
         build_warranty(
             completed_response,
@@ -342,17 +351,12 @@ def test_escrowed_build_warranty_locks_matching_amount(completed_response, tmp_p
             bond=BOND,
             window_seconds=3600,
             signer=_signer(),
-            authorization={
-                "from": "0x" + "11" * 20,
-                "to": "0x" + "22" * 20,
-                "value": "1",
-                "validAfter": "0",
-                "validBefore": "9999999999",
-                "nonce": "0x" + "cc" * 32,
-                "signature": "0x" + "ff" * 65,
-            },
+            authorization=mismatch_auth,
             escrow_store=store,
         )
+    # Amount is checked before lock — the nonce is still free.
+    leftover = escrow_bond(mismatch_auth, network=BOND["network"], store=store)
+    assert leftover["state"] == "locked"
 
 
 def test_swapping_escrow_lock_after_sign_fails_verify(completed_response, tmp_path):

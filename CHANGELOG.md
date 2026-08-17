@@ -2,7 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+- CI runs dogfood cycles, the evaluation harness, and the payment-model
+  checker once each. Pytest no longer repeats those jobs. The payment-model
+  mutant (charge-on-signer-failure) stays in pytest — CI's module run
+  does not replace it. A1's `test_control_plane_uses_shared_engine` now
+  walks HTTP and MCP onto `run_research`.
+
 ### Removed
+- Duplicate pytest wrappers for the harness and the payment-model
+  enumeration, plus the five dogfood cycle re-runs.
+- `test_product_worth` (humility report) and `test_unblock_probe`
+  (leftover program probe). Existence tests keep landmass honesty only.
 - Second product in the wheel: VAAT ledger, HMAC plane visas, org-cycle
   mesh runner, evolver CLI, block board, plane stock. Enroll is commerce
   wallet + did:pkh card only.

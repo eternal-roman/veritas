@@ -15,9 +15,9 @@ python scripts/dogfood_cycle4.py --out /tmp/cycle4.json   # operator economics
 python scripts/dogfood_cycle5.py --out /tmp/cycle5.json   # ecosystem participant
 ```
 
-Both print JSON and exit non-zero on any failure. `tests/test_dogfood.py` runs
-them in CI, so a regression in the money path or in the limits breaks the
-build rather than quietly invalidating a committed report.
+Both print JSON and exit non-zero on any failure. CI runs these scripts as
+their own job (not again under pytest), so a regression in the money path
+or in the limits breaks the build.
 
 | Cycle | Perspective | Report | Defects it found |
 |---|---|---|---|

@@ -1355,7 +1355,8 @@ async def verify(req: VerifyRequest):
                 from veritas.notary.refetch import refetch_verify
 
                 result = await run_in_threadpool(refetch_verify, url, published)
-                result["binding"] = "receipt_refetch"
+                if result.get("binding") != "stored_excerpt":
+                    result["binding"] = "receipt_refetch"
                 result["request_id"] = req.request_id
                 return result
             finally:

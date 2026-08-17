@@ -44,6 +44,22 @@ def test_put_and_get_roundtrip(tmp_path):
     assert got["url"] == "https://example/x402"
 
 
+def test_get_refuses_tampered_excerpt(tmp_path):
+    """A on-disk record whose excerpt no longer hashes to its key is a miss."""
+    store = EvidenceStore(tmp_path)
+    text = "canonical body that will be overwritten"
+    digest = compute_content_hash(text)
+    assert store.put(digest, text)
+    path = store._file_path(digest)
+    assert path is not None
+    path.write_text(
+        f'{{"content_hash":"{digest}","excerpt":"not the original","url":null,'
+        '"title":null,"stored_at":"x"}',
+        encoding="utf-8",
+    )
+    assert store.get(digest) is None
+
+
 def test_pipeline_persists_excerpts_for_later_fetch(tmp_path, monkeypatch):
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(tmp_path))
     result = run_research(

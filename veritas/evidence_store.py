@@ -139,11 +139,27 @@ class EvidenceStore:
             target = parse_database_url()
         except StoreUnavailable:
             target = None
+        record: dict[str, Any] | None = None
         if target is not None:
-            found = self._get_shared(target, content_hash)
-            if found is not None:
-                return found
-        return self._get_file(content_hash)
+            record = self._get_shared(target, content_hash)
+        if record is None:
+            record = self._get_file(content_hash)
+        return self._verified(record, content_hash)
+
+    @staticmethod
+    def _verified(
+        record: dict[str, Any] | None, content_hash: str
+    ) -> dict[str, Any] | None:
+        """Refuse a record whose excerpt no longer hashes to the published key."""
+        if record is None:
+            return None
+        if record.get("content_hash") != content_hash:
+            return None
+        excerpt = record.get("excerpt")
+        if not isinstance(excerpt, str):
+            return None
+        ok, _ = verify_content_hash(excerpt, content_hash)
+        return record if ok else None
 
     def _put_file(self, record: dict[str, Any]) -> bool:
         path = self._file_path(record["content_hash"])

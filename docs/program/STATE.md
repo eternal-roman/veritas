@@ -7,13 +7,23 @@ committed and pushed survives. Update this file and push after every sub-step.
 
 > **Do this next:** claim **free**. Product glue **#155**, VCAE/signals
 > **#156**, and product-quality **#157** are on main (`3b06f6b`). This
-> branch closes G2 (local facilitator recovers the EIP-712 signer),
-> turns signals into a store+analyze surface, and upgrades retrieval
-> off snippet-only (Wikipedia official extracts; served path observes
-> origins). Research does not auto-attach a warranty. Default **HOLD
+> branch (`feat/p13-durable-origin`) adds an honest `stored_excerpt`
+> verify class when the origin is gone and EvidenceStore still has the
+> body. A *fresh* independent observation still needs the live URL —
+> P13 is not a public CT and is not fully closed. Default **HOLD
 > invent money**; Stage-1 human owns PyPI · public TLS · mainnet pay-to.
 
 ## Progress log
+
+> **P13 stored_excerpt fallback (2026-08-16, feat/p13-durable-origin):**
+> `POST /v1/verify` url+hash still re-observes through `notary.observe`.
+> When that fails (dead host, 404/410, timeout, SSRF-safe refusal) and
+> EvidenceStore has a body whose excerpt still hashes to the claimed
+> digest, the result is `binding: stored_excerpt` — not `origin_refetch`,
+> not a fresh observe, not an independent observation. No stored body
+> keeps the existing failure class. Live match/diverge is unchanged.
+> Research receipts stay `receipt_not_refetchable`. Origin independence
+> still needs the live URL for a *fresh* observation.
 
 > **G2 + signals analyze + observe retrieval (2026-08-16, feat/g2-signals-observe):**
 > G2 closed — local facilitator recovers the EIP-712 signer of
@@ -389,7 +399,7 @@ Ids from the three audits. `open` until a test pins the fix.
 | P3 | critical | `low_confidence` refusal unreachable (posterior strictly increases) | **closed** — branch removed with the posterior |
 | P4/P5 | high | Posterior cosmetic; claim confidence positional | **closed** — `::test_no_posterior_or_confidence_appears_on_the_wire` |
 | P7 | high | `/v1/verify` circular — re-hashes caller input, no source binding | **closed** for origin-bound paths — `tests/test_refetch_verify.py`; legacy `content`+hash remains `binding: caller_supplied` only (`4697c8d` #38). Not multi-party origin proof; not on-chain |
-| P13 | med | Evidence text never stored; hashes only | **partial** — excerpt store + `GET /v1/evidence/{hash}` on #155; origin re-fetch still depends on the live URL |
+| P13 | med | Evidence text never stored; hashes only | **partial** — excerpt store + `GET /v1/evidence/{hash}` on #155; `POST /v1/verify` now returns honest `stored_excerpt` when the origin is gone and the store still has the body (`feat/p13-durable-origin`). A *fresh* independent observation still needs the live URL. Not a public CT |
 | L1/L2 | critical | `ddgs` metasearch resells scraped SERPs; provenance falsified as `duckduckgo` | **closed** — `tests/test_retrieval_honesty.py::test_no_metasearch_backend_is_used` |
 | L3 | high | Wikipedia CC BY-SA reused without licence notice | **closed** — `::test_wikipedia_sources_carry_their_licence_and_attribution` |
 | L4 | high | Repo-authored corpus text published under third-party URLs | **closed** — `::test_corpus_urls_are_not_third_party_attributions` |

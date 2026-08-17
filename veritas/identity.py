@@ -10,12 +10,14 @@ from typing import Any
 from . import __version__
 from .constitution import CONSTITUTION_VERSION
 from .hashing import compute_content_hash
+from .networks import DEFAULT_NETWORK
+from .payment_config import DEFAULT_PRICE
 
 
 def build_identity(
     pay_to: str = "0x0000000000000000000000000000000000000000",
-    network: str = "eip155:8453",
-    price: str = "$0.25",
+    network: str = DEFAULT_NETWORK,
+    price: str = DEFAULT_PRICE,
     base_url: str | None = None,
 ) -> dict[str, Any]:
     # The previous version defaulted to https://api.veritas.example — a

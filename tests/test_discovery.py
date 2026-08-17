@@ -77,6 +77,19 @@ def test_identity_does_not_advertise_removed_bayesian_surface(free_client):
     assert "refusal" in caps
 
 
+def test_identity_defaults_match_payment_config():
+    """A caller that omits price/network must not revive the retracted
+    $0.25 / mainnet pair. Server always passes config; peer/hooks call
+    the function with no args."""
+    from veritas.identity import build_identity
+    from veritas.networks import DEFAULT_NETWORK
+    from veritas.payment_config import DEFAULT_PRICE
+
+    doc = build_identity()
+    assert doc["x402"]["price"] == DEFAULT_PRICE
+    assert doc["x402"]["network"] == DEFAULT_NETWORK
+
+
 def test_llms_and_mcp_do_not_advertise_removed_bayesian_surface(free_client):
     """The identity fix above did not reach llms.txt or the MCP tool
     descriptions, which kept advertising the retracted posterior to agents —

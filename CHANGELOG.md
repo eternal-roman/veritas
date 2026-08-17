@@ -8,6 +8,9 @@
   wallet + did:pkh card only.
 - Off-path prototypes: `zk_wallet`, JIT packets, self-calibrator, the
   unused `control_plane` entry. Local facilitator remains for G13.
+- Unused `record_attempt` (hardcoded `$0.25`) on the local simulator.
+  Identity defaults now follow `DEFAULT_PRICE` / `DEFAULT_NETWORK`
+  (`$0.01` on Base Sepolia), not the retracted `$0.25` / mainnet pair.
 - Program theater (role ticks, CURRENT stamps, Rhai org workflows,
   Superpowers diligence plan). Tenets stay in `AGENTS.md` / `MIND.md`.
 - Duplicate status files (`DOME.md`, `fable/STATE.md`). `STATUS.md` is
@@ -127,13 +130,6 @@
   unset or truthy. `run_research()` itself still defaults off. Tests pin
   the env to `0`.
 - Metric path collapse covers `/v1/evidence/{content_hash}`.
-
-### Removed
-- Unused helpers with no callers: `_unb64`, `ensure_agents`,
-  `list_agent_ids`, `list_for_agent`, `timeout_for`, `hash_excerpt`,
-  `is_free_mode`, `resolve_database_url`, unused `PopulationMember`.
-- `evolutionary_ensemble/` scaffold (implementation is `veritas.evolver`).
-- Spent Superpowers diligence plan under `docs/superpowers/` (shipped).
 
 ## [0.12.0] - 2026-08-14
 

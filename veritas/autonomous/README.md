@@ -1,13 +1,9 @@
-# Autonomous Components for Veritas
+# Autonomous helpers
 
-Gap-filling, agent-native modules that remove human-in-the-loop requirements.
-
-First engagement is `veritas-agent enroll` (see root `AGENTS.md`), not these
+First engagement is `veritas-agent adopt` (see root `AGENTS.md`), not these
 files directly.
 
-## Components
-
-- `wallet.py` — Local ETH keystore used as x402 `pay_to`. Funding is external.
-- `zero_key_retrieval.py` — Free multi-source search (DuckDuckGo + Wikipedia). No API keys.
-- `bootstrap.py` — Free-mode config that `veritas-agent` applies to the served env.
-- JIT / hiding-wallet prototypes — experiments, not product surfaces (`docs/design/`).
+- `wallet.py` — local ETH keystore used as x402 `pay_to`. Funding is external.
+- `zero_key_retrieval.py` — Wikipedia extracts + DDG Instant Answer. No API keys.
+- `bootstrap.py` — free-mode config that `veritas-agent` applies to the served env.
+- `local_facilitator.py` — signature check for free/local mode. G13 nonce/balance stay on-chain.

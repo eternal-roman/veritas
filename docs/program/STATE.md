@@ -6,11 +6,10 @@ restate counts, gap narratives, or capability tables here.
 
 ## NEXT ACTION
 
-> **Do this next:** claim **free**. Tip of `main` is `#160` (`b1cf532`) —
-> identity-bound TLS, LAN browse, signed introductions. `#155`–`#157` and
-> `#159` are on main. Open constitution gap: **G13** (simulator nonce/balance).
-> Default **HOLD invent money**. Stage-1 human owns PyPI · public TLS for
-> strangers · mainnet pay-to.
+> **Do this next:** claim **free**. Tip of `main` is `#162` (`aa17f44`) —
+> one product, one truth file. Open constitution gap: **G13** (simulator
+> nonce/balance). Default **HOLD invent money**. Stage-1 human owns PyPI ·
+> public TLS for strangers · mainnet pay-to.
 
 ## Pointers
 

@@ -1,8 +1,8 @@
 """Local facilitator simulator for fully autonomous free-mode operation.
 
-Records payment attempts and settlements without requiring a human-provisioned
-facilitator or mainnet wallet. When real facilitator + pay_to are present,
-the same interface can be switched to live verification.
+Records settlements without requiring a human-provisioned facilitator or
+mainnet wallet. When real facilitator + pay_to are present, the same
+interface can be switched to live verification.
 """
 
 from __future__ import annotations
@@ -42,27 +42,8 @@ def _settlements() -> Path:
     return _runtime() / "settlements.jsonl"
 
 
-def _attempts() -> Path:
-    return _runtime() / "payment_attempts.jsonl"
-
-
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def record_attempt(request_id: str, headers: dict[str, str], amount: str = "$0.25") -> dict[str, Any]:
-    runtime = _runtime()
-    runtime.mkdir(parents=True, exist_ok=True)
-    entry = {
-        "timestamp": _now(),
-        "request_id": request_id,
-        "amount": amount,
-        "has_signature": bool(headers.get("PAYMENT-SIGNATURE") or headers.get("X-PAYMENT")),
-        "mode": "local_simulator",
-    }
-    with _attempts().open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
-    return entry
 
 
 def record_settlement(request_id: str, amount: str, status: str = "recorded", meta: dict | None = None) -> dict[str, Any]:

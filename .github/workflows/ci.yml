@@ -176,11 +176,13 @@ jobs:
           cd /tmp
           /tmp/venv/bin/python - <<'PY'
           import importlib.util
-          import veritas, veritas.server, veritas.autonomous.local_facilitator, veritas.evaluations.harness
-          from veritas.pipeline import run_research
+          import veritas, veritas.server, veritas.autonomous.local_facilitator
+          from veritas.evaluations.catalog import run_catalog_honesty
+          from veritas.signals import METHOD
 
-          r = run_research("What is x402?", allow_network=False)
-          assert r["status"] == "completed" and r["custody_valid"], r["status"]
+          report = run_catalog_honesty()
+          assert report["ok"], report
+          assert METHOD.startswith("veritas.signals")
           # The wheel must ship exactly one top-level package.
           for stray in ("autonomous", "app", "evaluations"):
               assert importlib.util.find_spec(stray) is None, f"stray top-level package: {stray}"

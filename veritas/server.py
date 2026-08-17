@@ -1560,6 +1560,21 @@ async def _signals_pull_inner(req: SignalsPullRequest, request: Request):
                     ),
                 )
             return _challenge(cfg, reason, resource=signals_resource_url())
+        try:
+            Deadline.for_authorization(
+                valid_before=_authorization_valid_before(payment_payload),
+                max_work_seconds=MAX_WORK_SECONDS,
+            )
+        except DeadlineTooShort:
+            return _challenge(
+                cfg,
+                (
+                    "authorization window too short: it must leave at least "
+                    f"{MIN_USABLE_SECONDS}s of work time plus a "
+                    f"{SETTLEMENT_MARGIN_SECONDS}s settlement margin"
+                ),
+                resource=signals_resource_url(),
+            )
         claim = ledger.claim(
             nonce, request_id,
             network=requirements_dict.get("network"),

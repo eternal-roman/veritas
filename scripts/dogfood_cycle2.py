@@ -203,7 +203,7 @@ def scenario_replay(tmp: Path) -> dict[str, Any]:
     same = (
         first.status_code == 200 and second.status_code == 200
         and first.json()["request_id"] == second.json()["request_id"]
-        and first.json()["claims"] == second.json()["claims"]
+        and first.json()["signals"] == second.json()["signals"]
     )
     ok = same and calls["n"] == 1 and second.json()["payment"].get("replayed") is True
     return _finding(
@@ -284,7 +284,7 @@ def scenario_settle_timeout(tmp: Path) -> dict[str, Any]:
     ok = (
         response.status_code == 200
         and body.get("payment", {}).get("state") == "indeterminate"
-        and bool(body.get("claims"))
+        and bool(body.get("signals"))
         and summary["indeterminate_count"] == 1
         and summary["failed_count"] == 0
     )

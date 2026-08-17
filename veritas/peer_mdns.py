@@ -153,7 +153,7 @@ def filter_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def advertise_addresses(host: str) -> list[str]:
     """Resolve ``host`` to IPs that may be advertised. Never metadata."""
     text = (host or "").strip()
-    if not text or text in {"0.0.0.0", "::", "*"}:
+    if not text or text == "*":
         return _local_addresses()
     if text.lower() in {"localhost", "localhost.localdomain"}:
         return ["127.0.0.1"]
@@ -161,6 +161,8 @@ def advertise_addresses(host: str) -> list[str]:
         ip = ipaddress.ip_address(_strip_zone(text))
     except ValueError:
         return _resolve_host(text)
+    if ip.is_unspecified:
+        return _local_addresses()
     rendered = str(ip)
     return [rendered] if is_advertisable_address(rendered) else []
 

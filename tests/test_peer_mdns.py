@@ -154,6 +154,17 @@ def test_advertise_refuses_metadata_host_without_raising(monkeypatch):
     assert advertise_addresses("169.254.169.254") == []
 
 
+def test_unspecified_listen_host_expands_to_local_addresses(monkeypatch):
+    monkeypatch.setattr(
+        "veritas.peer_mdns._local_addresses",
+        lambda: ["192.168.1.20"],
+    )
+    assert advertise_addresses("0.0.0.0") == ["192.168.1.20"]
+    assert advertise_addresses("::") == ["192.168.1.20"]
+    assert advertise_addresses("*") == ["192.168.1.20"]
+    assert advertise_addresses("") == ["192.168.1.20"]
+
+
 def test_fake_zeroconf_advertise_browse_roundtrip(monkeypatch):
     _install_fake(monkeypatch)
     advertised = advertise("127.0.0.1", 8765, name="veritas-mdns-selftest")

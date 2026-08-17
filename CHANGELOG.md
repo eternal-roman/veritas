@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Added
+- Self-host A2A peer connect (`veritas.peer.v1`): `GET /v1/peer` advertises
+  this node; `veritas-agent connect` / `peers` / `pull-signals` talk to
+  another self-hosted agent. No central network, no public peer list.
+  Local/LAN needs `--allow-local`. Cloud metadata stays refused.
+
+### Changed
+- Adopt sell step: public TLS is optional for stranger discovery;
+  local/LAN A2A works with `--allow-local`.
+
+### Added
 - Local facilitator recovers the EIP-712 signer of an EIP-3009
   `transferWithAuthorization` (constitution G2 closed, 2.9). Forged,
   expired, and incomplete authorizations fail closed. Balance and

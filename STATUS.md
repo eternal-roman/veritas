@@ -31,7 +31,7 @@ file described a system that did not import.
 | Error contract (`/v1/errors`) | Registered codes on every non-402 error |
 | Discovery | `/.well-known/x402`, `/llms.txt`, `/adopt.json`, `/v1/schema`; identity does not invent a base URL |
 | Wallet self-provisioning | Encrypted keystore; owner-only where POSIX allows. Funding external |
-| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status) | One account binds plane identity, commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing |
+| `veritas-agent` (adopt/enroll/whoami/skills/fund-proof/init/serve/up/status/connect/peers/pull-signals) | One account binds plane identity, commerce wallet, signed did:pkh card, interest-mapped skills; fund-proof observes Transfer logs; `init`/`up` enroll if missing; `connect` stores another self-hosted agent's card locally |
 | Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only. Visa stripped from GET |
 | MCP (`veritas-mcp`; listed at `/v1/hooks`) | Tested against the SDK. Local free-mode engine; no payment path |
 | Release workflow | Dockerfile CI-built. PyPI job waits on `PYPI_TRUSTED_PUBLISHER=configured` |
@@ -44,6 +44,7 @@ file described a system that did not import.
 | G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop + `veritas-ops reconcile-loop`. Mainnet still needs env RPC |
 | VCAE escrow (G12) | Library + HTTP lock/release/forfeit. GET never serves the signature. Forfeit re-runs `evaluate_challenge`. Release is loopback-only. Forfeit submit needs live facilitator. Not a vault. G2 closed (EIP-712 recover). Mainnet collect unproven. Research does not auto-attach a warranty. |
 | Prediction-market signals | Public Kalshi/Polymarket snapshots stored as evidence. Arithmetic analysis and history. Prices, not verdicts. No trading |
+| A2A peer connect | `GET /v1/peer` + local `peers.json`. Pulls another agent's `/v1/signals` into SignalStore. No central network. Public TLS is not required for local/LAN (`--allow-local`) |
 
 ## Found false and fixed (2026-08-05)
 
@@ -71,7 +72,7 @@ Fixed and test-pinned. See `docs/program/STATE.md`.
 |-----|----------|------|
 | Commercial-grade retrieval | Medium | Wikipedia official extracts; search hits re-observed through notary.observe on the served path. Serper/DDG remain snippet-grade until observed |
 | Cross-source synthesis | Medium | Lexical NLI-gated; extractive fallback remains. Not an LLM |
-| Public host | High | None |
+| Public host | High | None for strangers. Local/LAN A2A works with `veritas-agent connect --allow-local`; public TLS is not the only sell path |
 | Quality vs strong baselines | High | Harness proves invariants |
 | Cross-instance rate limits | Medium | Shared when `VERITAS_DATABASE_URL` is set; otherwise in-process |
 | Shared ledger across instances | Medium | Seam exists (`VERITAS_DATABASE_URL`). Multi-host HA is operator Postgres, not proven behind a balancer |

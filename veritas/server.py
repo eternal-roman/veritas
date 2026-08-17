@@ -55,6 +55,7 @@ from veritas.operator_ui import (
     operator_snapshot,
 )
 from veritas.payment_config import get_payment_config
+from veritas.peer import build_peer_card
 from veritas.pipeline import observe_urls_enabled, run_research
 from veritas.pricing import PRICE_TABLE_VERSION, current_price_point
 from veritas.runtime import probe_runtime_dir
@@ -88,6 +89,7 @@ SIGNALS_PATH = "/v1/signals"
 SIGNALS_PULL_PATH = "/v1/signals"
 SIGNALS_HISTORY_PATH = "/v1/signals/history"
 SIGNALS_ITEM_PATH = "/v1/signals/{content_hash}"
+PEER_PATH = "/v1/peer"
 
 # Ceiling on retrieval work for one paid request, independent of how long the
 # buyer's authorization happens to run.
@@ -1856,6 +1858,12 @@ async def identity():
     return build_identity(pay_to=cfg.pay_to, network=cfg.network, price=cfg.price)
 
 
+@app.get(PEER_PATH)
+async def peer():
+    """This node's A2A card. Not an address book. Free, no auth."""
+    return build_peer_card()
+
+
 @app.get("/ui", response_class=HTMLResponse)
 async def operator_ui():
     """Human viewer + enroll form. Excluded from the hooks registry."""
@@ -2274,6 +2282,7 @@ async def well_known():
             "escrow_lock": ESCROW_LOCK_PATH,
             "signals": SIGNALS_PATH,
             "signals_history": SIGNALS_HISTORY_PATH,
+            "peer": PEER_PATH,
             # Only advertised when it exists: absent, the endpoint 404s and
             # its absence should not be a thing to probe for.
             **({"metrics": "/metrics"} if METRICS_ENABLED else {}),

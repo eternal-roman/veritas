@@ -63,7 +63,15 @@ def build_adopt_card(*, public_url: str | None = None) -> dict[str, Any]:
             {
                 "id": "sell",
                 "command": "veritas-agent up --paid --network eip155:84532",
-                "note": "needs funded wallet + public TLS for strangers to find you",
+                "note": (
+                    "public TLS is optional for stranger discovery; "
+                    "local/LAN A2A works with --allow-local"
+                ),
+            },
+            {
+                "id": "connect",
+                "command": "veritas-agent connect <peer-url> [--allow-local]",
+                "note": "another agent self-hosts; no central network",
             },
             {
                 "id": "buy",

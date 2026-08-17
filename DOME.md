@@ -1,7 +1,7 @@
 # DOME — do-me punch list
 
 What is still unresolved after `main` @ `3b06f6b` plus this branch
-(`feat/g2-signals-observe`). No GitHub issues were open. This is the
+(`feat/a2a-peer-mesh`). No GitHub issues were open. This is the
 honest remainder, not a wish list.
 
 Dated 2026-08-16. Status of each item is as of this branch's tip.
@@ -10,6 +10,7 @@ Dated 2026-08-16. Status of each item is as of this branch's tip.
 
 | Item | Why now |
 |------|---------|
+| **Self-host + connect** | Public TLS always-on central host is the wrong product. Each agent serves and can `connect` to another. No Veritas cloud. |
 | **G2 signature check** | Local facilitator recovers the EIP-712 signer. Forged payments fail. |
 | **Signals analytics** | Store was not enough. History + arithmetic analysis on venue prices. |
 | **Observe-grade retrieval** | Wikipedia official extracts; served path re-observes search hits. |
@@ -29,13 +30,13 @@ Closed earlier and not to be re-opened: G1, G6–G11, G9 (chain classify exists;
 
 | Item | Severity | Note |
 |------|----------|------|
-| Public TLS host | High | None live. `docs/deploy/PUBLIC_HOST.md` is the operator runbook (Fly + Caddy). Needs a funded wallet, a domain or Fly app, and secrets this environment does not have. |
+| Public TLS host | High | None live for strangers. Local/LAN A2A no longer waits on it (`veritas-agent connect --allow-local`). `docs/deploy/PUBLIC_HOST.md` remains the stranger-discovery runbook. |
 | Unsolicited buyers | High | Zero. Operator-run testnet only. |
 | Mainnet settlement | High | None. Base Sepolia only. |
 | PyPI publish | High | Job waits on `PYPI_TRUSTED_PUBLISHER=configured`. |
 | Registry auto-registration | Medium | Manual. |
 | Branch protection | Medium | Documented, not applied in Settings. |
-| Human steps | — | Fund the wallet, TLS, PyPI publisher, GHCR push. |
+| Human steps | — | Fund the wallet, TLS (stranger discovery), PyPI publisher, GHCR push. Local/LAN connect does not need TLS. |
 
 ## Product / methodology
 

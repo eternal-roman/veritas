@@ -38,6 +38,7 @@ from veritas.deadline import (
 )
 from veritas.discovery import LLMS_TXT
 from veritas.errors import ERROR_REGISTRY, ErrorCode, error_envelope
+from veritas.evidence_store import EvidenceStore, is_safe_content_hash
 from veritas.facilitator import VERIFICATION_OUTAGE_PREFIXES, get_facilitator
 from veritas.hashing import verify_content_hash
 from veritas.hooks import build_hooks, http_paths
@@ -121,6 +122,7 @@ store = CustodyStore()
 outcomes = OutcomeLog()
 ledger = Ledger()
 credit_ledger = CreditLedger()
+evidence_bodies = EvidenceStore()
 siwx_store = SiwxSessionStore()
 
 #: Header carrying a SIWx-issued session token for prepaid credit spend (M7).
@@ -168,9 +170,10 @@ def _research_slot_shed_response() -> JSONResponse:
 MAX_BODY_BYTES = int(os.getenv("VERITAS_MAX_BODY_BYTES", str(256 * 1024)))
 MAX_VERIFY_CONTENT_CHARS = 200_000
 
-#: Per-caller request budget. Local, in-process, single-instance — behind a
-#: balancer each node has its own, which is a real limit and not a closed
-#: problem (roadmap 6.2). Set to 0 to disable.
+#: Per-caller request budget. Local, in-process, single-instance unless
+#: ``VERITAS_DATABASE_URL`` is set — then hits share a table so two
+#: processes behind a balancer cannot each grant a full budget.
+#: Set to 0 to disable.
 RATE_LIMIT_PER_MINUTE = int(os.getenv("VERITAS_RATE_LIMIT_PER_MINUTE", "300"))
 RATE_LIMIT_WINDOW_SECONDS = 60
 
@@ -211,9 +214,27 @@ def _is_operator_scrape(request: Request) -> bool:
     )
 
 
+def _observe_urls_enabled() -> bool:
+    """Server-side observation switch. ``run_research`` itself stays off
+    by default so offline callers and the test corpus do not hit the
+    network. The served path defaults on; tests set ``VERITAS_OBSERVE_URLS=0``.
+    """
+    raw = (os.getenv("VERITAS_OBSERVE_URLS") or "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
 def _rate_limited(caller: str) -> bool:
     if RATE_LIMIT_PER_MINUTE <= 0:
         return False
+    from veritas.store import database_url_from_env, shared_rate_limited
+
+    if database_url_from_env():
+        return shared_rate_limited(
+            caller,
+            limit=RATE_LIMIT_PER_MINUTE,
+            window_seconds=float(RATE_LIMIT_WINDOW_SECONDS),
+            now=time.time(),
+        )
     now = time.monotonic()
     cutoff = now - RATE_LIMIT_WINDOW_SECONDS
     with _rate_lock:
@@ -278,6 +299,8 @@ def _metric_path(path: str) -> str:
         return path
     if path.startswith("/v1/receipts/"):
         return "/v1/receipts/{request_id}"
+    if path.startswith("/v1/evidence/"):
+        return "/v1/evidence/{content_hash}"
     return "unmatched"
 
 
@@ -874,7 +897,12 @@ def _research(
             )
 
     started = time.monotonic()
-    result = run_research(req.query, max_results=req.max_results, request_id=request_id)
+    result = run_research(
+        req.query,
+        max_results=req.max_results,
+        request_id=request_id,
+        observe_urls=_observe_urls_enabled(),
+    )
     _meter(result, request_id, started, paid=cfg.require_payment)
 
     def _refund_credits_if_needed(reason: str) -> None:
@@ -1481,6 +1509,28 @@ async def receipt(request_id: str):
     ))
 
 
+@app.get("/v1/evidence/{content_hash}")
+async def evidence_body(content_hash: str):
+    """Return the stored excerpt for a published content hash.
+
+    200 — body present. 404 not_found — never stored or the hash is not
+    a published digest. Distinct from receipt_gone: evidence is not
+    tombstoned; a miss is a miss.
+    """
+    if not is_safe_content_hash(content_hash):
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.NOT_FOUND, content_hash=content_hash),
+        )
+    record = evidence_bodies.get(content_hash)
+    if record is None:
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(ErrorCode.NOT_FOUND, content_hash=content_hash),
+        )
+    return record
+
+
 @app.get("/v1/trust")
 async def trust():
     s = score_service()
@@ -1961,6 +2011,7 @@ async def well_known():
             "research": RESOURCE_PATH,
             "verify": "/v1/verify",
             "receipts": "/v1/receipts/{request_id}",
+            "evidence": "/v1/evidence/{content_hash}",
             # Payment-config introspection was previously reachable from no
             # discovery document at all.
             "payment_config": "/v1/payment-config",

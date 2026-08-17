@@ -49,6 +49,7 @@ VERITAS_METRICS_TOKEN=... veritas-server   # /metrics only when set
 veritas-ops revenue
 veritas-ops reconcile                      # records only, not the chain
 veritas-ops reconcile-chain                # G9; env RPC wins, else testnet default
+veritas-ops reconcile-loop --once          # compose + optional VERITAS_RECONCILE_ALERT_URL
 veritas-diligence https://seller.example   # 0 pass / 1 fail / 2 unverifiable
 veritas-audit run pack.json                # 0 confirmed / 1 diverged / 2 unobserved
 veritas-audit report r1.json r2.json
@@ -104,7 +105,7 @@ One installable package. `veritas/` is the engine plus `autonomous/`, `server.py
 | Diligence | `veritas-diligence <url>` — 0 pass / 1 fail / 2 unverifiable. Fetches `links` under SSRF guard. Pass ≠ will deliver |
 | Provision | `veritas-agent up` — config + wallet + serve. Funding and TLS stay external |
 | Logs | JSON access logs (`VERITAS_LOG_FORMAT`) — method, path, status, duration. Never the query or `X-PAYMENT`. `/metrics` only if `VERITAS_METRICS_TOKEN` is set |
-| Ops | `veritas-ops` JSON from `veritas/ledger.py`. `reconcile` is intra-instance only (G9) |
+| Ops | `veritas-ops` JSON from `veritas/ledger.py`. `reconcile` is intra-instance only; `reconcile-loop` composes it with G9. Shared when `VERITAS_DATABASE_URL` is set |
 
 ## Field notes (money path) — 2026-08-09
 
@@ -119,4 +120,4 @@ First live settlement (`docs/program/fable/settlement/`, PR #112) found defects 
 
 ## Current state
 
-Invariants above are tested and green. Testnet settlements (Base Sepolia, real x402.org facilitator) are chain-confirmed by `reconcile-chain` — count and transcripts at `docs/program/STATE.md` and `docs/program/fable/settlement/`. Not proven: mainnet, unsolicited buyers, sustained volume. Retrieval is snippet-grade. Not on PyPI. See ROADMAP.md.
+Invariants above are tested and green. Testnet settlements (Base Sepolia, real x402.org facilitator) are chain-confirmed by `reconcile-chain` — count and transcripts at `docs/program/STATE.md` and `docs/program/fable/settlement/`. Not proven: mainnet, unsolicited buyers, sustained volume. Retrieval is snippet-grade with lexical synthesis. Not on PyPI. See ROADMAP.md.

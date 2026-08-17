@@ -64,6 +64,7 @@ def build_identity(
             "evidence_log_proof": f"{base}/v1/log/proof",
             "evidence_log_verify": f"{base}/v1/log/verify",
             "receipts": f"{base}/v1/receipts/{{request_id}}",
+            "evidence": f"{base}/v1/evidence/{{content_hash}}",
             "trust": f"{base}/v1/trust",
             "schema": f"{base}/v1/schema",
             "errors": f"{base}/v1/errors",

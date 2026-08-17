@@ -18,7 +18,9 @@ Rules (fail closed):
 * Refund requires a prior debit for the same ``request_id`` and never
   refunds more than that debit.
 * Account keys are case-folded hex addresses.
-* Single-instance SQLite scope (same limit as ``veritas.ledger``).
+* Shared-store seam (same as ``veritas.ledger``): unset
+  ``VERITAS_DATABASE_URL`` keeps per-directory SQLite; a sqlite file URL
+  or postgres URL shares the journal across instances.
 * Per-call connections (handlers run in a threadpool; sqlite3 connections
   are not shareable across threads — same trade as ``Ledger``).
 
@@ -36,6 +38,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+from .store import StoreUnavailable, connect_target, parse_database_url
 
 _DEFAULT_RUNTIME_DIR = ".veritas_runtime"
 _DB_FILENAME = "credits.sqlite3"
@@ -122,9 +126,29 @@ class CreditLedger:
 
     @property
     def path(self) -> Path:
+        target = self._target()
+        if target is not None and target.kind == "sqlite" and target.path is not None:
+            return target.path
         return self.base_dir / _DB_FILENAME
 
-    def _connect(self) -> sqlite3.Connection:
+    def _target(self):
+        try:
+            return parse_database_url()
+        except StoreUnavailable:
+            raise
+
+    def _connect(self):
+        try:
+            target = self._target()
+        except StoreUnavailable as exc:
+            raise CreditError(f"store_unavailable:{type(exc).__name__}") from exc
+        if target is not None:
+            try:
+                conn = connect_target(target)
+                conn.executescript(_SCHEMA)
+                return conn
+            except StoreUnavailable as exc:
+                raise CreditError(f"store_unavailable:{type(exc).__name__}") from exc
         self.base_dir.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.path), timeout=10, isolation_level=None)
         conn.row_factory = sqlite3.Row

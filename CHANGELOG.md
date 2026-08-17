@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+### Added
+- Shared financial state via `VERITAS_DATABASE_URL`: a sqlite file URL
+  shares ledger, credits, evidence blobs, and rate-limit hits across
+  processes on one host; a postgres URL (optional `postgres` extra) is
+  the multi-host seam. Unset keeps per-directory SQLite. In-memory
+  sqlite is refused.
+- Lexical NLI-gated synthesis on the research path. Extractive claims
+  stay. Synthesized claims (`kind: synthesized`, `support_hashes`) emit
+  only when every content token is present in the cited excerpts. Not
+  an LLM and not commercial-grade.
+- `GET /v1/evidence/{content_hash}` returns the stored excerpt for a
+  published hash (404 `not_found` on a miss). Pipeline persists excerpts
+  so a hash stays retrievable after the origin 404s.
+- `veritas-ops reconcile-loop` — one local reconcile + chain classify
+  pass (the cron shape) with optional `VERITAS_RECONCILE_ALERT_URL`.
+  Does not rewrite the ledger. Mainnet still needs `VERITAS_RPC_URL`.
+- Cold archive of pruned receipts when `VERITAS_ARCHIVE_DIR` is set.
+  A failed archive write keeps the live copy. Local directory, not S3.
+- Known-free providers default to cost 0 (`wikipedia`,
+  `duckduckgo_instant_answer`, `static_corpus`, `zero_key`, `composite`).
+  Paid APIs stay unpriced. A rejected env override drops that default.
+
+### Changed
+- `/v1/hooks` 1.6: evidence route, evidence/archive stores, reconcile-loop
+  on the ops CLI, shared-store locations.
+- Served research observes source URLs when `VERITAS_OBSERVE_URLS` is
+  unset or truthy. `run_research()` itself still defaults off. Tests pin
+  the env to `0`.
+- Metric path collapse covers `/v1/evidence/{content_hash}`.
+
 ## [0.12.0] - 2026-08-14
 
 ### Added

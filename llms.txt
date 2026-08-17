@@ -33,6 +33,7 @@ Then: veritas-agent adopt --id self --interests research,buy,verify
 - /v1/log/proof: GET — Merkle inclusion proof for a log index
 - /v1/log/verify: POST — free offline verify of an inclusion proof
 - /v1/receipts/{request_id}: durable custody receipt
+- /v1/evidence/{content_hash}: stored excerpt body for a published content hash (404 if never stored)
 - /v1/trust: GET is UNPROVEN from the operator log; POST scores independently verified audit records
 - /v1/schema: the wire contract as JSON Schema
 - /v1/errors: registered error codes with status and retriability

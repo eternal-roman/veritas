@@ -182,7 +182,11 @@ ruff check veritas tests
 - **Settlement is operator-run testnet only.** Count and evidence:
   `docs/program/fable/settlement/` and `docs/program/STATE.md`. Mainnet: none.
   Unsolicited buyers: none.
-- **Claims are extractive.** Grounded excerpts, not answers composed across sources.
+- **Synthesis is lexical-NLI gated, not LLM-grade.** Extractive claims remain
+  the default; a synthesized claim emits only when its tokens appear in the
+  cited excerpts.
+- **Shared state is opt-in.** Unset `VERITAS_DATABASE_URL` keeps per-instance
+  SQLite. Multi-host HA is the operator's Postgres.
 - **Calibrator is untrained and unused.** Reports `passthrough_untrained`.
 - **Harness is a 3-document offline corpus.** Perfect scores prove invariants, not quality.
 - **Solana is not payable.** Recognised for aliasing, excluded from advertised networks.

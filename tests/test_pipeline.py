@@ -128,7 +128,12 @@ def test_max_results_is_enforced_against_the_retriever():
     unbounded response, or inflated confidence from 50 correlated sources."""
     r = run_research("lorem ipsum", retriever=OverproducingRetriever(), max_results=5)
     assert len(r["evidence"]) == 5
-    assert len(r["claims"]) <= 5
+    # Extractive claims are 1:1 with evidence. Lexical synthesis may add a
+    # few entailed claims from those same excerpts; it must not reopen the
+    # retriever cap.
+    extractive = [c for c in r["claims"] if c.get("kind") != "synthesized"]
+    assert len(extractive) == 5
+    assert len(r["claims"]) <= 8
 
 
 def test_raising_retriever_becomes_unavailable_not_a_crash():

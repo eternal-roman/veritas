@@ -98,11 +98,12 @@ committed and pushed survives. Update this file and push after every sub-step.
 > stays explainable; `veritas/ops_cli.py` (`veritas-ops`) reports revenue,
 > owed, reconcile, usage, pricing and one authorization end-to-end, as JSON.
 >
-> **The default cost table is empty and that is deliberate.** No provider's
-> list price is verifiable from this sandbox, so `CostTable` ships with nothing
-> in it, an unpriced provider is reported as unpriced, and margin is withheld
-> rather than computed over a partial cost base. Operators supply real numbers
-> via `VERITAS_PROVIDER_COST_MICROS`.
+> **The default cost table does not invent paid-API prices.** Known-free
+> providers (wikipedia, duckduckgo_instant_answer, static_corpus, zero_key,
+> composite) default to 0 — a fact about this tree. Serper and any other
+> paid API stay unpriced until `VERITAS_PROVIDER_COST_MICROS` says
+> otherwise. A rejected override (`wikipedia=oops`) drops that default.
+> Dated 2026-08-16; earlier text in this file said the table was empty.
 >
 > **Phase O.1, O.2 and the O14 half of O.4 landed** (O1, O2, O14 closed).
 > Cheap handlers are `async def` so retrieval cannot starve `/health`;

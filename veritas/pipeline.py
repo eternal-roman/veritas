@@ -32,6 +32,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .custody import CustodyLedger
+from .evidence_store import EvidenceStore
 from .hashing import compute_content_hash, verify_content_hash
 from .retrieval import (
     MIN_RELEVANCE,
@@ -43,6 +44,7 @@ from .retrieval import (
     relevance_score,
 )
 from .support import support_report
+from .synthesis import CLAIM_KIND_EXTRACTIVE, synthesize_claims
 
 # URL observation for research goes through notary.observe — never a second scraper.
 Observer = Callable[..., dict[str, Any]]
@@ -257,6 +259,13 @@ def run_research(
             item["observed"] = True
         evidence.append(item)
 
+    try:
+        EvidenceStore().put_many(evidence)
+    except Exception as exc:  # noqa: BLE001 - store failure must not fail research
+        ledger.append("evidence_store_error", "pipeline", {
+            "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+        })
+
     # Sources were reachable but nothing usable came back. Two different honest
     # refusals: nothing was returned at all, or everything returned was off-topic.
     # Distinguishing them tells the buyer whether to rephrase or to stop asking.
@@ -282,11 +291,22 @@ def run_research(
             "source_url": ev["url"],
             "provenance": ev["provenance"],
             "relevance": ev["relevance"],
+            "kind": CLAIM_KIND_EXTRACTIVE,
         })
         ledger.append("claim_created", "pipeline", {
             "claim_id": f"c{i + 1}",
             "evidence_hash": ev["content_hash"],
             "relevance": ev["relevance"],
+            "kind": CLAIM_KIND_EXTRACTIVE,
+        })
+
+    for claim in synthesize_claims(query, evidence, start_index=len(claims) + 1):
+        claims.append(claim)
+        ledger.append("claim_created", "pipeline", {
+            "claim_id": claim["id"],
+            "evidence_hash": claim["evidence_hash"],
+            "kind": claim.get("kind"),
+            "support_hashes": claim.get("support_hashes"),
         })
 
     # Every excerpt must still hash to the value we published.

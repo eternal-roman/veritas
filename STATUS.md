@@ -25,8 +25,8 @@ file described a system that did not import.
 | Buyer pay + spend policy (`veritas.payer`) | L1 + L2 (I1–I7, 8,720 traces). EIP-712 vs `eth_account`. No on-chain settle in those tests |
 | Container / deploy | Files tested: allowlist context, no `COPY . .`, non-root, declared VOLUME, compose with no baked credentials. Image not built in CI |
 | Observability | JSON access logs; `/metrics` behind token; queries and `X-PAYMENT` absent from logs. Per-node counters |
-| Unit economics (`metering`, `pricing`, `veritas-ops`) | Calls, bytes, wall time on every request. Default cost table is empty — unpriced stays unpriced |
-| Replay + ledger | Resubmitted `X-PAYMENT` works once, returns the stored deliverable. Single-instance SQLite. Chain check is `reconcile_against_chain` |
+| Unit economics (`metering`, `pricing`, `veritas-ops`) | Calls, bytes, wall time on every request. Known-free providers default to 0; paid APIs stay unpriced |
+| Replay + ledger | Resubmitted `X-PAYMENT` works once, returns the stored deliverable. Shared when `VERITAS_DATABASE_URL` is set; otherwise per-instance SQLite. Chain check is `reconcile_against_chain` |
 | Constitution (`/v1/constitution`) | L1 pointers resolve; L0 carry none; `CONSTITUTION.md` sync-tested |
 | Error contract (`/v1/errors`) | Registered codes on every non-402 error |
 | Discovery | `/.well-known/x402`, `/llms.txt`, `/adopt.json`, `/v1/schema`; identity does not invent a base URL |
@@ -35,13 +35,13 @@ file described a system that did not import.
 | Operator viewer (`/ui`, `/v1/operator`) | HTML + JSON over existing config. Enroll is loopback-only. Visa stripped from GET |
 | MCP (`veritas-mcp`; listed at `/v1/hooks`) | Tested against the SDK. Local free-mode engine; no payment path |
 | Release workflow | Dockerfile CI-built. PyPI job waits on `PYPI_TRUSTED_PUBLISHER=configured` |
-| Credits via SIWx | Double-entry; grant only after settled x402; refund on non-billable `unavailable`. Ledger credit, not a chain refund. Single-instance SQLite |
+| Credits via SIWx | Double-entry; grant only after settled x402; refund on non-billable `unavailable`. Ledger credit, not a chain refund. Shared when `VERITAS_DATABASE_URL` is set |
 | Evidence notary (`/v1/notarize`) | One engine, SSRF-safe, inv.3. Operator-run testnet settle exists; external buyers: none |
 | EIP-191 attestation + free verify | Not multi-party origin proof; not on-chain |
 | Origin re-fetch (`/v1/verify`) | `url`+hash or receipt id. Legacy content+hash is `caller_supplied` |
 | EvidencePack + Merkle log | Operator-local. Not public CT; not on-chain |
 | Dogfood cycles 1–5 | CI-gated. Offline / no chain |
-| G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop. Mainnet still needs env RPC |
+| G9 chain reconcile | `Ledger.reconcile_against_chain` + money_loop + `veritas-ops reconcile-loop`. Mainnet still needs env RPC |
 
 ## Found false and fixed (2026-08-05)
 
@@ -67,15 +67,15 @@ Fixed and test-pinned. See `docs/program/STATE.md`.
 
 | Gap | Severity | Note |
 |-----|----------|------|
-| Commercial-grade retrieval | High | Snippets only |
-| Cross-source synthesis | High | Excerpts, not answers |
+| Commercial-grade retrieval | High | Snippets plus optional notary observation; still not a paid search stack |
+| Cross-source synthesis | Medium | Lexical NLI-gated; extractive fallback remains. Not an LLM |
 | Public host | High | None |
 | Quality vs strong baselines | High | Harness proves invariants |
-| Cross-instance rate limits | Medium | In-process per node |
-| Shared ledger across instances | Medium | Local disk; replay routed elsewhere still fails (roadmap 6.2) |
-| Production-routine chain reconcile | Medium | Ledger method + money_loop; mainnet still needs env RPC |
+| Cross-instance rate limits | Medium | Shared when `VERITAS_DATABASE_URL` is set; otherwise in-process |
+| Shared ledger across instances | Medium | Seam exists (`VERITAS_DATABASE_URL`). Multi-host HA is operator Postgres, not proven behind a balancer |
+| Production-routine chain reconcile | Medium | `veritas-ops reconcile-loop` + optional alert URL; mainnet still needs env RPC |
 | Registry auto-registration | Medium | Manual |
-| Durable evidence re-fetch | Medium | Receipts store hashes, not content |
+| Durable evidence re-fetch | Medium | `GET /v1/evidence/{content_hash}` stores excerpts; origin re-fetch still depends on the live URL |
 | Solana settlement | Low | Deliberately not advertised |
 
 ## Honest verdict
@@ -84,8 +84,9 @@ The payment path is real code. After the 2026-08-05 audit the served path no
 longer claims what it cannot support.
 
 What remains is mostly operational: operator-run testnet only, no unsolicited
-buyers, snippet retrieval, PyPI unpublished. G12 escrow still open.
-Tracked in `docs/program/STATE.md`.
+buyers, snippet retrieval with lexical synthesis, PyPI unpublished. G12 escrow
+still open. Shared state is a URL the operator must set. Tracked in
+`docs/program/STATE.md`.
 
 ## Security / CI
 

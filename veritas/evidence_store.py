@@ -63,10 +63,24 @@ class EvidenceStore:
         self.base_dir = runtime / _DIRNAME
 
     def _file_path(self, content_hash: str) -> Path | None:
+        """Filename under the evidence directory, or None if unsafe.
+
+        Same two guards as custody receipts (O17): allowlist first, then
+        containment after realpath, so a wire hash cannot name a file
+        outside this directory. CodeQL ``py/path-injection`` requires the
+        realpath + prefix check; a regex alone is not a modelled sanitizer.
+        """
         if not is_safe_content_hash(content_hash):
             return None
         digest = content_hash.split(":", 1)[1]
-        return self.base_dir / f"{digest}.json"
+        name = os.path.basename(f"{digest}.json")
+        base = os.path.realpath(self.base_dir)
+        candidate = os.path.realpath(os.path.join(base, name))
+        if not candidate.startswith(base + os.sep):
+            return None
+        if os.path.dirname(candidate) != base or os.path.basename(candidate) != name:
+            return None
+        return Path(candidate)
 
     def put(
         self,

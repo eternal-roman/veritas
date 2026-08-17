@@ -10,6 +10,7 @@ EVIDENCE LEVEL: L1. NOT proven: multi-host durability without a shared URL.
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -73,3 +74,32 @@ def test_http_surface_returns_stored_excerpt(tmp_path, monkeypatch):
     assert missing.json()["error"] == "not_found"
     traversal = client.get("/v1/evidence/../secrets")
     assert traversal.status_code == 404
+
+
+def test_a_traversing_hash_never_reaches_the_filesystem(tmp_path, monkeypatch):
+    """Rejection is by validation, not by the file happening to be absent.
+
+    Same contract as custody O17: a wire value that is not a published
+    digest must not open anything, including a canary one directory up.
+    """
+    store = EvidenceStore(tmp_path)
+    (tmp_path / "canary.json").write_text('{"SECRET":"canary"}', encoding="utf-8")
+    opened: list[str] = []
+    real = Path.read_text
+
+    def spy(self, *a, **kw):
+        opened.append(str(self))
+        return real(self, *a, **kw)
+
+    monkeypatch.setattr(Path, "read_text", spy)
+    for bad in (
+        "../secrets",
+        "sha256:zzzz",
+        "sha256:" + "ab" * 31,
+        "/etc/passwd",
+        r"..\canary",
+        "sha256:" + "../" + "ab" * 30,
+    ):
+        assert store.get(bad) is None, f"{bad!r} escaped the evidence directory"
+        assert store._file_path(bad) is None
+    assert opened == [], f"traversing hashes reached the filesystem: {opened}"

@@ -552,16 +552,20 @@ record set (G11); forfeits are unomittable only once bonds escrow (G12).
 
 - **6.1 Deployment.** Container image, health/readiness probes, structured JSON
   logs, one hosted instance behind TLS.
-- **6.2 Shared state.** Move receipts and outcome log to Postgres or object
-  storage. *Acceptance:* receipts resolve correctly with two instances behind a
-  balancer.
+- **6.2 Shared state.** `VERITAS_DATABASE_URL` shares ledger, credits,
+  evidence blobs, and rate-limit hits (sqlite file URL on one host;
+  postgres extra for multi-host). Receipts remain files under the runtime
+  directory unless the operator mounts shared disk. *Acceptance not met:*
+  two instances behind a real balancer have not been proven.
 - **6.3 Abuse controls.** Per-IP and per-payer rate limits, request and header
   size caps, retrieval timeouts and concurrency ceilings, free tier limited
   independently. *Acceptance:* 10× expected load degrades to 429 without falling
   over or serving unbilled paid work.
-- **6.4 Evidence durability.** Content-addressed storage for extracted passages
-  with a stated retention window. *Acceptance:* a passage is retrievable by
-  `content_hash` for the full window after its source URL returns 404.
+- **6.4 Evidence durability.** Content-addressed excerpts at
+  `GET /v1/evidence/{content_hash}` (files + shared store). Cold archive of
+  pruned receipts via `VERITAS_ARCHIVE_DIR`. *Acceptance not fully met:* a
+  passage is retrievable by hash only if this instance (or its shared
+  store) persisted it.
 
 ## Critical path
 

@@ -55,6 +55,9 @@ signing = ["eth_account>=0.13"]
 # extra that cannot serve. Raise this only after confirming the new major
 # provides that module; tests/test_mcp_server.py enforces both halves.
 mcp = ["mcp>=1.0,<2"]
+# Optional shared-store backend for multi-host HA. Same-host multi-process
+# uses a sqlite file URL and needs no extra.
+postgres = ["psycopg[binary]>=3.1"]
 # Optional evolutionary Idea graph (Evolver). Offline mock works without this;
 # install for LangGraph-native state machine wiring.
 evolver = [

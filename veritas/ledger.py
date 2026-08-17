@@ -48,9 +48,11 @@ Design rules, and why:
 - **The `usage` table is not.** Cost is incurred whether or not anyone paid,
   so metering covers every request. A COGS figure drawn only from paid
   requests would understate what the operator spends.
-- **Single-instance scope, stated plainly.** SQLite on local disk guards one
-  instance. Behind a load balancer two instances do not share it; that needs
-  the shared state in roadmap 6.2. This is a real limit, not a closed problem.
+- **Shared-store seam.** Unset ``VERITAS_DATABASE_URL`` keeps per-directory
+  SQLite (one instance). A sqlite file URL shares the same tables across
+  processes on one host. A postgres URL (optional extra) shares them
+  across hosts. Two instances that do not share a URL still cannot
+  reconcile each other's nonces — that needs the operator to set the URL.
 """
 
 from __future__ import annotations
@@ -69,6 +71,7 @@ from typing import Any
 
 from .metering import UNPRICED, CostTable, Usage, cost_of
 from .retention import is_expired
+from .store import StoreUnavailable, connect_target, parse_database_url
 from .x402 import NONCE_RE, USDC_ASSETS
 
 _DEFAULT_RUNTIME_DIR = ".veritas_runtime"
@@ -221,12 +224,27 @@ class Ledger:
 
     @property
     def path(self) -> Path:
+        target = self._target()
+        if target is not None and target.kind == "sqlite" and target.path is not None:
+            return target.path
         return self.base_dir / _DB_FILENAME
+
+    def _target(self):
+        try:
+            return parse_database_url()
+        except StoreUnavailable:
+            raise
 
     def _connect(self) -> sqlite3.Connection:
         """Open a fresh connection. Handlers run in a threadpool and sqlite3
         connections are not shareable across threads, so per-call connections
         are the correct trade rather than a performance oversight."""
+        try:
+            target = self._target()
+        except StoreUnavailable as exc:
+            raise LedgerUnavailable(type(exc).__name__) from exc
+        if target is not None:
+            return self._connect_shared(target)
         try:
             self.base_dir.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(self.path, timeout=10, isolation_level=None)
@@ -242,6 +260,15 @@ class Ledger:
         conn.execute("PRAGMA synchronous=FULL")
         conn.executescript(_SCHEMA)
         return conn
+
+    def _connect_shared(self, target) -> Any:
+        try:
+            conn = connect_target(target)
+            conn.executescript(_SCHEMA)
+            return conn
+        except StoreUnavailable as exc:
+            raise LedgerUnavailable(type(exc).__name__) from exc
+
 
     # -- claiming -----------------------------------------------------------
 
@@ -300,7 +327,7 @@ class Ledger:
             # ids are uuid4 so this is not reachable in practice; reporting it
             # as "store unavailable" would nonetheless be a lie.
             return ClaimResult(False, "payment_request_id_already_claimed", key)
-        except (sqlite3.Error, OSError):
+        except (sqlite3.Error, OSError, StoreUnavailable):
             return ClaimResult(False, "replay_store_unavailable")
         finally:
             conn.close()
@@ -355,9 +382,14 @@ class Ledger:
                 ).value
                 now = _now()
                 conn.execute(
-                    "INSERT OR REPLACE INTO deliveries (request_id, nonce, status,"
+                    "INSERT INTO deliveries (request_id, nonce, status,"
                     " billable, custody_root, query_hash, response, delivered_at)"
-                    " VALUES (?,?,?,?,?,?,?,?)",
+                    " VALUES (?,?,?,?,?,?,?,?)"
+                    " ON CONFLICT(request_id) DO UPDATE SET"
+                    " nonce=excluded.nonce, status=excluded.status,"
+                    " billable=excluded.billable, custody_root=excluded.custody_root,"
+                    " query_hash=excluded.query_hash, response=excluded.response,"
+                    " delivered_at=excluded.delivered_at",
                     (request_id, row["nonce"], status, int(bool(billable)),
                      custody_root, _query_hash(query),
                      json.dumps(response, separators=(",", ":")), now),
@@ -367,7 +399,7 @@ class Ledger:
                     " WHERE request_id = ?",
                     (state, now, request_id),
                 )
-        except (sqlite3.Error, OSError):
+        except (sqlite3.Error, OSError, StoreUnavailable):
             return False
         finally:
             conn.close()
@@ -496,15 +528,20 @@ class Ledger:
         try:
             with conn:
                 conn.execute(
-                    "INSERT OR REPLACE INTO usage (request_id, status, billable,"
+                    "INSERT INTO usage (request_id, status, billable,"
                     " paid, provider_calls, evidence_bytes, duration_ms, recorded_at)"
-                    " VALUES (?,?,?,?,?,?,?,?)",
+                    " VALUES (?,?,?,?,?,?,?,?)"
+                    " ON CONFLICT(request_id) DO UPDATE SET"
+                    " status=excluded.status, billable=excluded.billable,"
+                    " paid=excluded.paid, provider_calls=excluded.provider_calls,"
+                    " evidence_bytes=excluded.evidence_bytes,"
+                    " duration_ms=excluded.duration_ms, recorded_at=excluded.recorded_at",
                     (usage.request_id, usage.status, int(bool(usage.billable)),
                      int(bool(usage.paid)),
                      json.dumps(usage.provider_calls, separators=(",", ":")),
                      int(usage.evidence_bytes), int(usage.duration_ms), _now()),
                 )
-        except (sqlite3.Error, OSError):
+        except (sqlite3.Error, OSError, StoreUnavailable):
             return False
         finally:
             conn.close()
@@ -848,7 +885,7 @@ class Ledger:
                         f"DELETE FROM usage WHERE request_id IN ({placeholders})",  # nosec B608
                         orphan_ids,
                     ).rowcount
-        except (sqlite3.Error, OSError):
+        except (sqlite3.Error, OSError, StoreUnavailable):
             return empty
         finally:
             conn.close()

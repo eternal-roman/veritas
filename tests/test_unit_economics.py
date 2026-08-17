@@ -132,10 +132,17 @@ def test_malformed_cost_configuration_is_ignored_entry_by_entry(monkeypatch):
 
 
 def test_the_default_cost_table_is_empty_rather_than_invented(monkeypatch):
-    """This repository cannot verify any provider's list price from inside a
-    sandbox. Shipping a plausible number would be a fabricated measurement."""
+    """Paid-API prices cannot be verified from this repository. Serper
+    stays unpriced until an operator sets a number. Known-free providers
+    default to zero — that is a fact about the code, not an invoice."""
     monkeypatch.delenv("VERITAS_PROVIDER_COST_MICROS", raising=False)
-    assert CostTable.from_env().micros_per_call("serper") is None
+    table = CostTable.from_env()
+    assert table.micros_per_call("serper") is None
+    for name in (
+        "wikipedia", "duckduckgo_instant_answer", "static_corpus",
+        "zero_key", "composite",
+    ):
+        assert table.micros_per_call(name) == 0
 
 
 # -- the joined report ------------------------------------------------------

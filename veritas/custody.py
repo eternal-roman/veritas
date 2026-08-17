@@ -303,13 +303,14 @@ class CustodyStore:
         deleted = 0
         tombstoned = 0
         skipped = 0
+        archived = 0
         if not self.base_dir.is_dir():
-            return {"deleted": 0, "tombstoned": 0, "skipped": 0}
+            return {"deleted": 0, "tombstoned": 0, "skipped": 0, "archived": 0}
 
         try:
             self.tombstone_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
-            return {"deleted": 0, "tombstoned": 0, "skipped": 0}
+            return {"deleted": 0, "tombstoned": 0, "skipped": 0, "archived": 0}
 
         for path in list(self.base_dir.iterdir()):
             if not path.is_file() or not path.name.endswith(".json"):
@@ -343,6 +344,16 @@ class CustodyStore:
                 "pruned_at": _now(),
                 "status": "gone",
             }
+            from .archive import archive_enabled, archive_receipt
+
+            if archive_enabled():
+                try:
+                    archive_receipt(record)
+                    archived += 1
+                except OSError:
+                    # Configured archive failed: keep the live copy.
+                    skipped += 1
+                    continue
             try:
                 _atomic_write(tomb_path, json.dumps(marker, indent=2))
                 path.unlink(missing_ok=True)
@@ -351,4 +362,9 @@ class CustodyStore:
                 continue
             deleted += 1
             tombstoned += 1
-        return {"deleted": deleted, "tombstoned": tombstoned, "skipped": skipped}
+        return {
+            "deleted": deleted,
+            "tombstoned": tombstoned,
+            "skipped": skipped,
+            "archived": archived,
+        }

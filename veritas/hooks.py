@@ -28,7 +28,7 @@ from .hashing import compute_content_hash
 from .mcp_server import MCP_TOOL_NAMES
 from .observability import METRIC_HELP
 
-HOOKS_VERSION = "1.5"
+HOOKS_VERSION = "1.6"
 
 VALID_KINDS = {"http", "mcp-tool", "cli", "header", "store"}
 VALID_ACCESS = {"free", "payment-gated", "session-gated", "token-gated", "local"}
@@ -170,6 +170,8 @@ HOOKS: tuple[dict[str, Any], ...] = (
           "Free offline verification of an inclusion proof."),
     _http("receipts", "GET", "/v1/receipts/{request_id}",
           "Durable custody receipt; 410 when pruned, 404 when never issued."),
+    _http("evidence", "GET", "/v1/evidence/{content_hash}",
+          "Stored excerpt body for a published content hash; 404 when never stored."),
     _http("trust", "GET", "/v1/trust",
           "Independent-audit score; UNPROVEN until buyer-supplied verified records."),
     _http("trust_score", "POST", "/v1/trust",
@@ -209,7 +211,8 @@ HOOKS: tuple[dict[str, Any], ...] = (
     _cli("veritas-mcp", "Serve the engine as local MCP tools over stdio.", _EXIT_OK),
     _cli("veritas-ops",
          "Operator reports off the ledger as JSON: revenue, owed, reconcile, "
-         "reconcile-chain, existence, usage, pricing, authorization, prune.",
+         "reconcile-chain, reconcile-loop, existence, usage, pricing, "
+         "authorization, prune.",
          _EXIT_OK),
     _cli("veritas-money-loop",
          "Compose one settle-then-reconcile pass and report it.",
@@ -273,11 +276,13 @@ HOOKS: tuple[dict[str, Any], ...] = (
           {"location": "$VERITAS_RUNTIME_DIR/receipts/", "format": "json",
            "read_via": "GET /v1/receipts/{request_id}"}),
     _hook("store_ledger", "store", "money ledger",
-          "Authorizations, deliveries, settlement attempts, and usage — this "
-          "instance's own records; chain reconcile is the independent check.",
+          "Authorizations, deliveries, settlement attempts, and usage. "
+          "Shared when VERITAS_DATABASE_URL is set; otherwise this "
+          "instance's own SQLite file. Chain reconcile is the independent check.",
           "local",
-          {"location": "$VERITAS_RUNTIME_DIR/ledger.sqlite3", "format": "sqlite",
-           "read_via": "veritas-ops {revenue,owed,reconcile,reconcile-chain,usage}"}),
+          {"location": "$VERITAS_DATABASE_URL or $VERITAS_RUNTIME_DIR/ledger.sqlite3",
+           "format": "sqlite-or-postgres",
+           "read_via": "veritas-ops {revenue,owed,reconcile,reconcile-chain,reconcile-loop,usage}"}),
     _hook("store_trust_outcomes", "store", "trust outcome log",
           "Recorded outcome counters behind the trust score; only paid "
           "outcomes score.",
@@ -285,10 +290,26 @@ HOOKS: tuple[dict[str, Any], ...] = (
           {"location": "$VERITAS_RUNTIME_DIR/trust.sqlite3", "format": "sqlite",
            "read_via": "GET /v1/trust"}),
     _hook("store_credits", "store", "credit ledger",
-          "Prepaid credit balances and their debit/refund journal.",
+          "Prepaid credit balances and their debit/refund journal. Shared "
+          "when VERITAS_DATABASE_URL is set.",
           "session-gated",
-          {"location": "$VERITAS_RUNTIME_DIR/credits.sqlite3", "format": "sqlite",
+          {"location": "$VERITAS_DATABASE_URL or $VERITAS_RUNTIME_DIR/credits.sqlite3",
+           "format": "sqlite-or-postgres",
            "read_via": "GET /v1/credits"}),
+    _hook("store_evidence", "store", "evidence excerpts",
+          "Content-addressed excerpt bodies, keyed by the published "
+          "content_hash, so a hash stays retrievable after the origin 404s.",
+          "free",
+          {"location": "$VERITAS_RUNTIME_DIR/evidence/ (and the shared store when URL-set)",
+           "format": "json",
+           "read_via": "GET /v1/evidence/{content_hash}"}),
+    _hook("store_archive", "store", "cold receipt archive",
+          "Optional copies of pruned receipt bodies. Unset "
+          "VERITAS_ARCHIVE_DIR means prune deletes without a cold copy.",
+          "local",
+          {"location": "$VERITAS_ARCHIVE_DIR/receipts/ (optional)",
+           "format": "json",
+           "read_via": "operator filesystem"}),
     _hook("store_evidence_log", "store", "Merkle evidence log",
           "Operator-local append-only evidence log (not public CT, not "
           "on-chain).",

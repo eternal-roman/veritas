@@ -30,6 +30,12 @@ import pytest
 # that pins VERITAS_RUNTIME_DIR deliberately keeps their value.
 _SESSION_RUNTIME = Path(tempfile.mkdtemp(prefix="veritas-test-runtime-"))
 os.environ.setdefault("VERITAS_RUNTIME_DIR", str(_SESSION_RUNTIME))
+# Shared-store and live URL observation stay off unless a test opts in.
+# DATABASE_URL would join every test to one file and destroy isolation.
+# OBSERVE_URLS defaults on for the served path; tests must not hit the
+# network because a fixture forgot to say so.
+os.environ.pop("VERITAS_DATABASE_URL", None)
+os.environ["VERITAS_OBSERVE_URLS"] = "0"
 
 
 @pytest.fixture(autouse=True)
@@ -44,4 +50,6 @@ def isolated_runtime_dir(tmp_path, monkeypatch):
     runtime = tmp_path / "runtime"
     runtime.mkdir(parents=True, exist_ok=True)
     monkeypatch.setenv("VERITAS_RUNTIME_DIR", str(runtime))
+    monkeypatch.delenv("VERITAS_DATABASE_URL", raising=False)
+    monkeypatch.setenv("VERITAS_OBSERVE_URLS", "0")
     return runtime

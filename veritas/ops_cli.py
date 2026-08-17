@@ -7,6 +7,7 @@ there was no way to ask any of them:
     veritas-ops owed                     what did I deliver and never get paid for?
     veritas-ops reconcile                what needs my attention?
     veritas-ops reconcile-chain          classify settled tx hashes via RPC
+    veritas-ops reconcile-loop           routine G9 compose + optional alert
     veritas-ops existence                Stage-1 landmass + human residues (evidence dir)
     veritas-ops usage                    what did serving actually consume?
     veritas-ops authorization <nonce>    one payment, end to end
@@ -256,6 +257,32 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Retention window in days (default: VERITAS_RETENTION_DAYS or 30).",
     )
+    loop = sub.add_parser(
+        "reconcile-loop",
+        help=(
+            "One local reconcile + chain classify pass (the cron shape). "
+            "Optional VERITAS_RECONCILE_ALERT_URL / --alert-url receives a "
+            "POST when the report is not clean. Does not rewrite the ledger. "
+            "Does not sleep: schedule it, or call veritas.reconcile_loop.run_loop."
+        ),
+    )
+    loop.add_argument(
+        "--interval",
+        type=int,
+        default=300,
+        help="Intended cadence in seconds, recorded on the report (default: 300).",
+    )
+    loop.add_argument(
+        "--once",
+        action="store_true",
+        default=True,
+        help="Run a single pass (default; this CLI never sleep-loops).",
+    )
+    loop.add_argument(
+        "--alert-url",
+        default=None,
+        help="Override VERITAS_RECONCILE_ALERT_URL for this invocation.",
+    )
     return parser
 
 
@@ -296,6 +323,16 @@ def main(argv: list[str] | None = None) -> int:
         if payload.get("error"):
             print(json.dumps(payload, indent=2, sort_keys=True))
             return 1
+    elif args.command == "reconcile-loop":
+        from veritas.reconcile_loop import run_loop
+
+        payload = run_loop(
+            interval=args.interval,
+            once=True,
+            alert_url=args.alert_url,
+            ledger=ledger,
+        )
+        payload["interval_seconds"] = args.interval
     else:  # authorization
         found = _authorization(ledger, args.nonce)
         if found is None:

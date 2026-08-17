@@ -168,3 +168,18 @@ def test_cli_records_cover_every_console_script():
     assert scripts, "no console scripts parsed from pyproject"
     registered = {h["interface"]["command"] for h in HOOKS if h["kind"] == "cli"}
     assert registered == scripts
+
+
+def test_identity_endpoints_are_registered_http_hooks():
+    """Identity's endpoint map is a discovery surface; a path it names
+    that the registry does not is a phantom for any agent that started
+    at /v1/identity."""
+    from urllib.parse import urlparse
+
+    from veritas.identity import build_identity
+
+    registered = http_paths()
+    for name, raw in build_identity().get("endpoints", {}).items():
+        path = urlparse(raw).path if "://" in raw else raw
+        assert path in registered, f"identity endpoints[{name!r}]={path} not in hooks"
+

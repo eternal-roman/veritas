@@ -76,6 +76,13 @@ def response_json_schema() -> dict[str, Any]:
         "evidence_hash": {"type": "string", "pattern": "^sha256:"},
         "source_url": {"type": "string"},
         "provenance": {"type": ["string", "null"], "enum": [p.value for p in Provenance] + [None]},
+        # Optional. Extractive claims are the default product; synthesized
+        # claims are lexical-NLI gated and never required for a valid response.
+        "kind": {"type": "string", "enum": ["extractive", "synthesized"]},
+        "support_hashes": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "^sha256:"},
+        },
     }
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -166,5 +173,18 @@ def validate_response(payload: dict[str, Any]) -> list[str]:
         # Every claim must cite evidence actually present in the response.
         if claim.get("evidence_hash") not in evidence_hashes:
             problems.append(f"claims[{i}] cites evidence absent from response")
+        kind = claim.get("kind")
+        if kind is not None and kind not in {"extractive", "synthesized"}:
+            problems.append(f"claims[{i}] has unknown kind {kind!r}")
+        extra = claim.get("support_hashes")
+        if extra is not None:
+            if not isinstance(extra, list):
+                problems.append(f"claims[{i}] support_hashes must be a list")
+            else:
+                for digest in extra:
+                    if digest not in evidence_hashes:
+                        problems.append(
+                            f"claims[{i}] support_hashes cites evidence absent from response"
+                        )
 
     return problems
